@@ -38,6 +38,6 @@ MOBATSim is continously updated with different versions of MATLAB. Therefore, at
 
 Toolbox requirements
 ---
-* Simulink 3D Animation Toolbox (required for the 3D Animation Model)
-* Model Predictive Control Toolbox  (will be soon required)
-* Stateflow (may be required in the next versions)
+* Simulink 3D Animation Toolbox™ (required for the 3D Animation Model)
+* Model Predictive Control Toolbox™  (will be soon required)
+* Simulink Coverage™ (will be required in the next versions for testing and code coverage analyses)
