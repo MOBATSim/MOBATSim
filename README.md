@@ -32,6 +32,9 @@ Copyright Notice
 ---
 © 2017 MOBATSim.
 
+Please cite as:
+Saraoglu, M., Morozov, A., & Janschek, K. (2019). MOBATSim: MOdel-Based Autonomous Traffic Simulation Framework for Fault-Error-Failure Chain Analysis. IFAC-PapersOnLine, 52(8), 239–244. Elsevier BV. Retrieved from https://doi.org/10.1016%2Fj.ifacol.2019.08.077
+
 # **Requirements**
 
 MATLAB version requirement
