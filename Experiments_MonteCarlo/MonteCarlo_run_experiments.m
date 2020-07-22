@@ -4,10 +4,10 @@ prepare_simulator()
     for k = 1:1
         try
             rng('shuffle');
-            evalin('base', 'run_simulation');
+            evalin('base', 'run_Sim');
             MonteCarlo_preprocess();
         catch ME
-            disp('Deney gg');
+            disp('Error in Simulation');
             disp(startingPoints);
             disp(destinationPoints);            
         end
