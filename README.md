@@ -13,7 +13,7 @@ Website: https://mobatsim.com/
   * [Author](#author)
   * [Copyright Notice](#copyright-notice)
 - [**Requirements**](#--requirements--)
-  * [Matlab version requirement](#matlab-version-requirement)
+  * [MATLAB version requirement](#matlab-version-requirement)
   * [Toolbox requirements](#toolbox-requirements)
 
 Overview
