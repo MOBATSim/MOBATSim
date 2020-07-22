@@ -13,7 +13,7 @@ Website: https://mobatsim.com/
   * [Author](#author)
   * [Copyright Notice](#copyright-notice)
 - [**Requirements**](#--requirements--)
-  * [Matlab version requirement](#matlab-version-requirement)
+  * [MATLAB version requirement](#matlab-version-requirement)
   * [Toolbox requirements](#toolbox-requirements)
 
 Overview
@@ -39,7 +39,7 @@ Saraoglu, M., Morozov, A., & Janschek, K. (2019). MOBATSim: MOdel-Based Autonomo
 
 MATLAB version requirement
 ---
-MOBATSim is continously updated with different versions of MATLAB. Therefore, at this moment, the requirement is MATLAB 2020a.
+MOBATSim is continuously updated with different versions of MATLAB. Therefore, at this moment, the requirement is MATLAB 2020a.
 
 Toolbox requirements
 ---
