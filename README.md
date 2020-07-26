@@ -5,6 +5,7 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation f
 Website: https://mobatsim.com/
 
 [![View MOBATSim_OpenSource on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/78444-mobatsim_opensource)
+[![Download](https://img.shields.io/badge/MATLAB-R2020a-brightgreen)]()
 
 <img src="img/logo_big.jpg" alt="Combined Image" />
 
