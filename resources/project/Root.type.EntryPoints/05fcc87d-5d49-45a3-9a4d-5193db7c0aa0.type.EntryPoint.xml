@@ -1,0 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Info Type="StartUp" Visible="0" Icon="" File="addPath_Startup.m" Name="addPath_Startup">
+    <Extension Value="HEAD" Name="StartUpPrev" />
+</Info>

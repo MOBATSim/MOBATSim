@@ -5,6 +5,9 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation f
 Website: https://mobatsim.com/
 
 [![View MOBATSim_OpenSource on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/78444-mobatsim_opensource)
+[![Download](https://img.shields.io/badge/MATLAB-R2020a-brightgreen)]()
+[![View Article](https://img.shields.io/badge/DOI-https%3A%2F%2Fdoi.org%2F10.1016%2Fj.ifacol.2019.08.077-blue)](https://www.sciencedirect.com/science/article/pii/S2405896319304100)
+
 
 <img src="img/logo_big.jpg" alt="Combined Image" />
 
@@ -32,8 +35,26 @@ Copyright Notice
 ---
 © 2017 MOBATSim.
 
+## Citation
+
 Please cite as:
 Saraoglu, M., Morozov, A., & Janschek, K. (2019). MOBATSim: MOdel-Based Autonomous Traffic Simulation Framework for Fault-Error-Failure Chain Analysis. IFAC-PapersOnLine, 52(8), 239–244. Elsevier BV. Retrieved from https://doi.org/10.1016%2Fj.ifacol.2019.08.077
+
+BibTex:
+@article{MOBATSim,
+                title = {{MOBATSim}: {MOdel}-Based Autonomous Traffic Simulation Framework for Fault-Error-Failure Chain Analysis},
+                journal = "IFAC-PapersOnLine",
+                volume = "52",
+                number = "8",
+                pages = "239 - 244",
+                year = "2019",
+                note = "10th IFAC Symposium on Intelligent Autonomous Vehicles IAV 2019",
+                issn = "2405-8963",
+                doi = "https://doi.org/10.1016/j.ifacol.2019.08.077",
+                url = "http://www.sciencedirect.com/science/article/pii/S2405896319304100",
+                author = "Mustafa Saraoglu and Andrey Morozov and Klaus Janschek",
+                keywords = "Autonomous driving, Fault injection, Error propagation, Safety analysis, Traffic simulator",
+                }
 
 # **Requirements**
 
