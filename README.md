@@ -65,7 +65,7 @@ MATLAB version requirement
 ---
 MOBATSim is continuously updated with different versions of MATLAB. Therefore, at this moment, the requirement is MATLAB 2020a.
 
-Toolbox requirements
+Toolbox Requirements
 ---
 * Simulink 3D Animation Toolbox™ (required for the 3D Animation Model)
 * Model Predictive Control Toolbox™  (will be soon required)
