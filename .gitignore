@@ -13,11 +13,11 @@
 
 # Simulink Code Generation
 slprj/
-slprj/*
+slprj/**
 
 # Project resource folder
 resources/
-resources/*
+resources/**
 
 # Session info
 octave-workspace
