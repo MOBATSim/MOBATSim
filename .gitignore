@@ -24,3 +24,4 @@ octave-workspace
 
 # Simulink autosave extension
 .autosave
+*.slxc
