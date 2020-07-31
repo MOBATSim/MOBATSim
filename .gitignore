@@ -4,6 +4,7 @@
 
 # Windows default autosave extension
 *.asv
+LICENCE
 
 # OSX / *nix default autosave extension
 *.m~
