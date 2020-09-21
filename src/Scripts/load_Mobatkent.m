@@ -82,8 +82,9 @@ waypoints = [[0 0 0]
 [220  0 -100]
 [370  0 -140]
 [370  0 -240]
-[-140  0 -100] %trying now
-
+[-140  0 -100]
+[45 0 -470] % double lane nodes
+[-155 0 -470] % double lane nodes
 
 
 
@@ -191,7 +192,9 @@ connections_translation = [[2 1 100]
 [75 66 100]
 [72 71 100]
 [71 62 100]
-
+[58 80 99] %double lane
+[80 81 99] %double lane
+[81 57 99] %double lane
 ];
 
 % crossroads waypoint defintions
