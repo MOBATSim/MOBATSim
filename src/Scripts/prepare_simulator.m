@@ -69,4 +69,4 @@ FI_distance = 0;
 FI_speed = 0;
 SafeDistance =18;
 
-%sim(modelName); % Uncomment this line for a single button execution
+sim(modelName); % Uncomment this line for a single button execution
