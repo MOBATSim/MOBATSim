@@ -18,8 +18,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         
     end
     
-    properties(DiscreteState)
-        State        
+    properties(DiscreteState)   
     end
     
     % Pre-computed constants
@@ -77,7 +76,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
     
     methods
         % Constructor
-        function obj = Untitled(varargin)
+        function obj = VehiclePathPlanner(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:});
         end
@@ -2162,7 +2161,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         
         
         %% Standard Simulink Output functions
-        function resetImpl(obj)
+        function resetImpl(~)
             % Initialize / reset discrete-state properties
         end
         
@@ -2186,18 +2185,18 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             loadObjectImpl@matlab.System(obj,s,wasLocked);
         end
         
-        function ds = getDiscreteStateImpl(obj)
+        function ds = getDiscreteStateImpl(~)
             % Return structure of properties with DiscreteState attribute
             ds = struct([]);
         end
         
-        function flag = isInputSizeLockedImpl(obj,index)
+        function flag = isInputSizeLockedImpl(~,~)
             % Return true if input size is not allowed to change while
             % system is running
             flag = false;
         end
         
-        function [out,out2] = getOutputSizeImpl(obj)
+        function [out,out2] = getOutputSizeImpl(~)
             % Return size for each output port
             %out = [50 5];
             out = [2000 6];
@@ -2207,7 +2206,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             % out = propagatedInputSize(obj,1);
         end
         
-        function [out,out2] = getOutputDataTypeImpl(obj)
+        function [out,out2] = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
             out2 = 'double';
@@ -2216,7 +2215,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             % out = propagatedInputDataType(obj,1);
         end
         
-        function [out,out2] = isOutputComplexImpl(obj)
+        function [out,out2] = isOutputComplexImpl(~)
             % Return true for each output port with complex data
             out = false;
             out2 = false;
@@ -2225,7 +2224,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             % out = propagatedInputComplexity(obj,1);
         end
         
-        function [out,out2] = isOutputFixedSizeImpl(obj)
+        function [out,out2] = isOutputFixedSizeImpl(~)
             % Return true for each output port with fixed size
             out = false;
             out2 = true;
@@ -2234,7 +2233,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             % out = propagatedInputFixedSize(obj,1);
         end
         
-        function icon = getIconImpl(obj)
+        function icon = getIconImpl(~)
             % Return text as string or cell array of strings for the System
             % block icon
             icon = mfilename('class'); % Use class name
