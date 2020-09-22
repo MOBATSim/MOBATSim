@@ -15,7 +15,7 @@ classdef GridLocation
         parent;                 %GL that came before this one on our path
         edgeStart;              %node nr of the start of the current edge
         totalDistance;          %distance travelled so far
-        speedLimit = 0;             %maximum speed on this GL
+        speedLimit = [];        %maximum speed on this GL
         deviation = 0;          %standard deviation
         blocked;                %true = blocked
         

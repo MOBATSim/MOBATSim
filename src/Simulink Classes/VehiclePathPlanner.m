@@ -37,6 +37,12 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         % 1 -> arrivingZone
         % 2 -> stoppingZone
         % 3 -> intersectionZone
+        
+        %variables for gridA*
+        %tempGoalNode;
+        
+        %variables for visualization
+        pathPlot;
     end
     
     methods
@@ -71,6 +77,14 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
             %This block shouldn't run if the vehicle has reached its
             %destination
+            
+            %comment this in if you want the visualization of the cars
+            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0 
+                %plotting can decrease performance, so dont update to often
+                delete(obj.pathPlot)
+                obj.pathPlot = plotPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
+            end
+            
             if obj.vehicle.pathInfo.destinationReached
                 FuturePlan = obj.vehicle.decisionUnit.futureData;
                 waypointReached=1;               
@@ -87,6 +101,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     % Build the future plan by deriving the next routes and building the path
                     %Output 1: Future plan of the vehicle
                     FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+                    %[FuturePlan,obj] = gridAStar(obj,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
                     obj.vehicle.setStopStatus(false);
                 else
                     % If the vehicle is still on its route then the future data stays the same

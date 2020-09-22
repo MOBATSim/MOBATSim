@@ -12,6 +12,12 @@ classdef GridMap < handle
         plots
         crossroadUnits
         crossroads
+        %grid related varibles
+        bogMap;
+        gridSize = 0.5;
+        gridLocationMap;
+        xOffset;
+        yOffset; 
     end
     
     methods
@@ -51,6 +57,9 @@ classdef GridMap < handle
             % Plot the map on the figure
             generateMapVisual(obj,false);
             
+            %create bog container map object
+            obj.gridLocationMap = containers.Map();
+            
             % Turn off useless properties for performance optimization
             MapFig = gcf;
             MapFig.WindowState ='maximized';
@@ -62,8 +71,10 @@ classdef GridMap < handle
             ax.Interactions = [];
             view(2)
             hold on
-            obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles
+            obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles            
             hold off
+            %push vehicles on top of the plot
+            obj.plots.Vehicles.ZData = 0.1 .* ones(1,10);
                         
             obj.crossroads.startingNodes = startingNodes;
             obj.crossroads.breakingNodes = breakingNodes;
@@ -73,7 +84,7 @@ classdef GridMap < handle
             for i = 1:  size(startingNodes,1)
                 
                 obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i,startingNodes(i,:),breakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
-            end
+            end          
             
         end %Constructor
         
@@ -228,7 +239,7 @@ classdef GridMap < handle
             
             
             % Vehicles' Annotation Position
-            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-10, -allVehiclePositions(1:length(obj.Vehicles),3)+12, zeros(1,10)'];
+            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-10, -allVehiclePositions(1:length(obj.Vehicles),3)+12, 0.2 .* ones(1,10)'];
             allTextPositions = mat2cell(allVehiclePositions,ones(1,10),3); % Matrix to Cell for the handle format
             
             %set the position and string handles

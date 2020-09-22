@@ -3,9 +3,9 @@ startingTimes = [0 0 0 0 0 0 0 0 0 0];
 switch scenarioName
     case 'Urban City Traffic'
         %% Complex crossroad scenario
-        startingPoints =    [8  46 61 18 54 52 64 6 15 63];
-        destinationPoints = [26 59 60 1  3  27 42 25 76 46];
-        maxSpeeds = [20 20 10 10 20 20 10 12 10 10];
+%         startingPoints =    [8  46 61 18 54 52 64 6 15 63];
+%         destinationPoints = [26 59 60 1  3  27 42 25 76 46];
+%         maxSpeeds = [20 20 10 10 20 20 10 12 10 10];
         
         %% Collision scenario    
         %startingPoints =    [51 47 48 4 55 53 6 7 15 49]; 
@@ -15,9 +15,9 @@ switch scenarioName
         %% SC2a edge cost test
         %V1 and V2 should take the left route, because the slow V3 takes
         %the shorter right one
-        %startingPoints =    [21  19 18  7 48 72 56 57 78 51]; % Test futureData
-        %destinationPoints = [ 2  35 74 27 47 71 70 56 77 78];% Test futureData
-        %maxSpeeds = [ 20 19  8 20 20 20 20 20 20 20];% Test futureData
+        startingPoints =    [21  19 18  7 48 72 56 57 78 51]; % Test futureData
+        destinationPoints = [ 2  35 74 27 47 71 70 56 77 78];% Test futureData
+        maxSpeeds = [ 20 19  8 20 20 20 20 20 20 20];% Test futureData
         
         %% SC2b edge cost test
         %V1 and V2 should take the left route, because the slow V3 takes
