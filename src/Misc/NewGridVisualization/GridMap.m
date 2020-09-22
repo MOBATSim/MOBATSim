@@ -71,8 +71,10 @@ classdef GridMap < handle
             ax.Interactions = [];
             view(2)
             hold on
-            obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles
+            obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles            
             hold off
+            %push vehicles on top of the plot
+            obj.plots.Vehicles.ZData = 0.1 .* ones(1,10);
                         
             obj.crossroads.startingNodes = startingNodes;
             obj.crossroads.breakingNodes = breakingNodes;
@@ -237,7 +239,7 @@ classdef GridMap < handle
             
             
             % Vehicles' Annotation Position
-            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-10, -allVehiclePositions(1:length(obj.Vehicles),3)+12, zeros(1,10)'];
+            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-10, -allVehiclePositions(1:length(obj.Vehicles),3)+12, 0.2 .* ones(1,10)'];
             allTextPositions = mat2cell(allVehiclePositions,ones(1,10),3); % Matrix to Cell for the handle format
             
             %set the position and string handles
