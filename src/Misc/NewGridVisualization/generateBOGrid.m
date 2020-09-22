@@ -1,45 +1,51 @@
-function map = generateBOGrid(obj)
+function [bogMap,xOff,yOff] = generateBOGrid(map)
             %create binary occupancy grid object and grid location objects
             
             %% prepare for drawing
-            nrOfCars = length([obj.Map.Vehicles.id]);
-            gSize = obj.gridSize;
+            %nrOfCars = length([map.Vehicles.id]); %comment in if you know
+            %the number of cars
+            nrOfCars = 10;
+            gSize = map.gridSize;
             %first we need map size
             %we can get it from waypoints with some space for better
             %display
-            distances = obj.Map.connections.distances;
-            w = obj.vehicle.map.waypoints;  %[x z y]
+            distances = map.connections.distances;
+            w = map.waypoints;  %[x z y]
             w(:,3) = -1.*w(:,3);%transform to mobatsim coordinates
             xSize = max(w(:,1))-min(w(:,1))+100;
             xOff = min(w(:,1))-50;            
             ySize = max(w(:,3))-min(w(:,3))+100;
             yOff = min(w(:,3))-50;
+            %calculate speedLimit [carID,edgeNR]
+            maxEdgeSpeed = [map.connections.circle(:,end);map.connections.translation(:,end)];%TODO move to GridMap object and make it unique for every vehicle!
+            speedLimit = zeros(nrOfCars,length(maxEdgeSpeed));
+            for car = 1 : nrOfCars
+                maxSpeed = map.Vehicles(car).dynamics.maxSpeed ;
+                maxEdgeSpeed(maxEdgeSpeed>maxSpeed)= maxSpeed;
+                speedLimit(car,:) = maxEdgeSpeed;
+            end 
             
-            %these two variables are needed for the A* inside the grid
-            %obj.xOffset = xOff;
-            %obj.yOffset = yOff;
-            
-            map = binaryOccupancyMap(xSize,ySize,gSize);
+            bogMap = binaryOccupancyMap(xSize,ySize,gSize);
             %mark everything as blocked
             occ = ones(ySize*gSize,xSize*gSize);
-            setOccupancy(map,[0,0],occ);%lower left corner to set values
+            setOccupancy(bogMap,[0,0],occ);%lower left corner to set values
             
             %import map details
-            trans = obj.vehicle.map.connections.translation; %[from to speed]
-            circ = obj.vehicle.map.connections.circle; %[from to angle xzyCenter speed]
+            trans = map.connections.translation; %[from to speed]
+            circ = map.connections.circle; %[from to angle xzyCenter speed]
             circ(:,6) = -1.*circ(:,6);           
             
             %we iterate backwards in case we want to preallocate something
             
             %% bresenham algorithm
-            for j = size(obj.vehicle.map.connections.all,1) :-1: (size(circ,1)+1) 
+            for j = size(map.connections.all,1) :-1: (size(circ,1)+1) 
                 t= j - size(circ,1);
                 %j is nr for all, t only inside transitions
                 dist = distances(j);
                 %start node coordinates in grid
-                p1 = map.world2grid([w(trans(t,1),1)-xOff,w(trans(t,1),3)-yOff]);
+                p1 = bogMap.world2grid([w(trans(t,1),1)-xOff,w(trans(t,1),3)-yOff]);
                 %end node coordinates in grid
-                p2 = map.world2grid([w(trans(t,2),1)-xOff,w(trans(t,2),3)-yOff]);
+                p2 = bogMap.world2grid([w(trans(t,2),1)-xOff,w(trans(t,2),3)-yOff]);
                 %get difference
                 deltaX = p2(1)-p1(1);
                 delatY = p2(2)-p1(2);
@@ -69,18 +75,18 @@ function map = generateBOGrid(obj)
                 %start at node 1
                 x = p1(1);
                 y = p1(2);
-                setOccupancy(map,[x,y],0,"grid");
+                setOccupancy(bogMap,[x,y],0,"grid");
                 
                 %create grid location================================= 
-                startNodeNR = obj.vehicle.map.connections.all(j,1);
-                endNodeNR = obj.vehicle.map.connections.all(j,2);
+                startNodeNR = map.connections.all(j,1);
+                endNodeNR = map.connections.all(j,2);
                 curKey = append(num2str(x), ",", num2str(y));
                 %if we dont have it -> create, else we import it
-                if ~obj.gridLocationMap.isKey(curKey)                
+                if ~map.gridLocationMap.isKey(curKey)                
                     %if we dont have the gl in our map we need to add it
                     curGL = GridLocation([x,y],nrOfCars,startNodeNR,0);
                 else
-                    curGL = obj.gridLocationMap(curKey);
+                    curGL = map.gridLocationMap(curKey);
                 end
                 pixelArray = [];
                 %=====================================================                
@@ -102,17 +108,17 @@ function map = generateBOGrid(obj)
                         x = x + pdx;
                         y = y + pdy; % parallel
                     end
-                    setOccupancy(map,[x,y],0,"grid");
+                    setOccupancy(bogMap,[x,y],0,"grid");
                     %================={build grid}=======================
                     %treat the last one different
                     if i ~= deltaShortDirection                        
                         %create new GL
                         newKey = append(num2str(x), ",", num2str(y));                        
                         %create new key
-                        if ~obj.gridLocationMap.isKey(newKey)
+                        if ~map.gridLocationMap.isKey(newKey)
                             newGL = GridLocation([x,y],nrOfCars,0,j);
                         else
-                            newGL = obj.gridLocationMap(newKey);
+                            newGL = map.gridLocationMap(newKey);
                         end
                         curGL = curGL.addTransSucc(newKey,startNodeNR);
                         newGL = newGL.addTransPred(curKey,endNodeNR);
@@ -125,12 +131,12 @@ function map = generateBOGrid(obj)
                     else
                         %if we dont have the gl in our map we need to add it
                         newKey = append(num2str(x), ",", num2str(y));
-                        if ~obj.gridLocationMap.isKey(newKey)
+                        if ~map.gridLocationMap.isKey(newKey)
                             %create new GL
-                            newGL = GridLocation([x,y],nrOfCars,obj.vehicle.map.connections.all(j,2),0);
+                            newGL = GridLocation([x,y],nrOfCars,map.connections.all(j,2),0);
                         else
                             %if it already exist, we just update succs and preds
-                            newGL = obj.gridLocationMap(newKey);
+                            newGL = map.gridLocationMap(newKey);
                         end
                         %assign grid relation
                         curGL = curGL.addTransSucc(newKey,startNodeNR);
@@ -143,9 +149,9 @@ function map = generateBOGrid(obj)
                 dist = dist/size(pixelArray,2);
                 for pix = pixelArray
                     p = pix.assignDistance(dist);
-                    p.speedLimit = obj.maxEdgeSpeed(j);
+                    p.speedLimit = speedLimit(:,j);
                     %assign to map
-                    obj.gridLocationMap(append(num2str(p.coordinates(1)), ",", num2str(pix.coordinates(2))))=p;
+                    map.gridLocationMap(append(num2str(p.coordinates(1)), ",", num2str(pix.coordinates(2))))=p;
                 end
             end
                         
@@ -153,9 +159,9 @@ function map = generateBOGrid(obj)
             for t = size(circ,1):-1:1
                 
                 dist = distances(t);
-                pStart = map.world2grid([w(circ(t,1),1)-xOff,w(circ(t,1),3)-yOff]); %start
-                pGoal = map.world2grid([w(circ(t,2),1)-xOff,w(circ(t,2),3)-yOff]); %goal
-                pCenter = map.world2grid([circ(t,4)-xOff,circ(t,6)-yOff]); %central point
+                pStart = bogMap.world2grid([w(circ(t,1),1)-xOff,w(circ(t,1),3)-yOff]); %start
+                pGoal = bogMap.world2grid([w(circ(t,2),1)-xOff,w(circ(t,2),3)-yOff]); %goal
+                pCenter = bogMap.world2grid([circ(t,4)-xOff,circ(t,6)-yOff]); %central point
                 radius = round(norm( pGoal-pCenter  ),0);
                 phiStart = angle(complex((pStart(1)-pCenter(1)) , (pStart(2)-pCenter(2))));
                 phiGoal = angle(complex((pGoal(1)-pCenter(1)) , (pGoal(2)-pCenter(2))));
@@ -220,64 +226,61 @@ function map = generateBOGrid(obj)
                     pixelArray = [pixelArray, append(num2str(curPix(1)), ",", num2str(curPix(2)))];
                 end
                 %now draw pixel and assign to map
-                startNodeNR = obj.vehicle.map.connections.all(t,1);
-                endNodeNR = obj.vehicle.map.connections.all(t,2);
+                startNodeNR = map.connections.all(t,1);
+                endNodeNR = map.connections.all(t,2);
                 curKey = pixelArray(1);
                 dist = dist/size(pixelArray,2);
                 %load or create gl for starting node
-                if ~obj.gridLocationMap.isKey(curKey)
-                    curGL = GridLocation(pStart,nrOfCars,obj.vehicle.map.connections.all(t,1),0);
+                if ~map.gridLocationMap.isKey(curKey)
+                    curGL = GridLocation(pStart,nrOfCars,map.connections.all(t,1),0);
                 else
-                    curGL = obj.gridLocationMap(curKey);
+                    curGL = map.gridLocationMap(curKey);
                 end
                 curGL = curGL.assignDistance(dist);%assign distance
-                curGL.speedLimit = obj.maxEdgeSpeed(t);
+                curGL.speedLimit = speedLimit(:,t);
                 p = str2num(pixelArray(1));
-                setOccupancy(map,p,0,"grid");%draw
+                setOccupancy(bogMap,p,0,"grid");%draw
                 
                 for s = 2 : (length(pixelArray)-1)   %start connecting                 
                     newKey = pixelArray(s);
                     p = str2num(newKey);
-                    setOccupancy(map,p,0,"grid");
+                    setOccupancy(bogMap,p,0,"grid");
                     %create new GL
-                    if ~obj.gridLocationMap.isKey(newKey)
+                    if ~map.gridLocationMap.isKey(newKey)
                         newGL = GridLocation(p,nrOfCars,0,t);
                     else
                         %load
-                        newGL = obj.gridLocationMap(newKey);
+                        newGL = map.gridLocationMap(newKey);
                     end
                     newGL = newGL.assignDistance(dist);
-                    curGL.speedLimit = obj.maxEdgeSpeed(t);
+                    curGL.speedLimit = speedLimit(:,t);
                     %assign succ
                     curGL = curGL.addTransSucc(newKey,startNodeNR);
                     newGL = newGL.addTransPred(curKey,endNodeNR);
-                    obj.gridLocationMap(curKey)=curGL;
+                    map.gridLocationMap(curKey)=curGL;
                     curGL = newGL;
                     oldKey = curKey;
                     curKey = newKey;                    
                 end
                 %if we dont have the gl in our map we need to add it
                 newKey = pixelArray(end);
-                if ~obj.gridLocationMap.isKey(newKey)
+                if ~map.gridLocationMap.isKey(newKey)
                     %create new
                     p = str2num(newKey);
-                    newGL = GridLocation(p,nrOfCars,obj.vehicle.map.connections.all(t,2),0);
+                    newGL = GridLocation(p,nrOfCars,map.connections.all(t,2),0);
                 else
                     %load
-                    newGL = obj.gridLocationMap(newKey);
+                    newGL = map.gridLocationMap(newKey);
                 end
-                setOccupancy(map,p,0,"grid");
+                setOccupancy(bogMap,p,0,"grid");
                 p = str2num(oldKey);
-                setOccupancy(map,p,0,"grid");
+                setOccupancy(bogMap,p,0,"grid");
                 %assign grid relation               
                 newGL = newGL.assignDistance(dist);
-                newGL.speedLimit = obj.maxEdgeSpeed(t);
+                newGL.speedLimit = speedLimit(:,t);
                 curGL = curGL.addTransSucc(newKey,startNodeNR);
                 newGL = newGL.addTransPred(curKey,endNodeNR);
-                obj.gridLocationMap(curKey)=curGL;
-                obj.gridLocationMap(newKey)=newGL;
-            end
-            
-            %% export maps
-            %TODO export to other vehicles or make the generation global
+                map.gridLocationMap(curKey)=curGL;
+                map.gridLocationMap(newKey)=newGL;
+            end            
         end

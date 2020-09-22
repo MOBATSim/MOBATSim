@@ -12,6 +12,12 @@ classdef GridMap < handle
         plots
         crossroadUnits
         crossroads
+        %grid related varibles
+        bogMap;
+        gridSize = 0.5;
+        gridLocationMap;
+        xOffset;
+        yOffset; 
     end
     
     methods
@@ -51,6 +57,9 @@ classdef GridMap < handle
             % Plot the map on the figure
             generateMapVisual(obj,false);
             
+            %create bog container map object
+            obj.gridLocationMap = containers.Map();
+            
             % Turn off useless properties for performance optimization
             MapFig = gcf;
             MapFig.WindowState ='maximized';
@@ -73,7 +82,7 @@ classdef GridMap < handle
             for i = 1:  size(startingNodes,1)
                 
                 obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i,startingNodes(i,:),breakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
-            end
+            end          
             
         end %Constructor
         

@@ -59,6 +59,9 @@ load_vehicles(); % default on - for Monte Carlo experiments comment out
 Map.Vehicles = Vehicles;
 Map.initCarDescriptionPlot();
 
+%create BOG
+[Map.bogMap,Map.xOffset,Map.yOffset] = generateBOGrid(Map);
+            
 % Clear the initializing variables
 clear_init_variables();
 
