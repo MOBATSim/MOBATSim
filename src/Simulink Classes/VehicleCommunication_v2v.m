@@ -160,7 +160,7 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
 
         function [out,out2] = getOutputSizeImpl(~)
             % Return size for each output port
-            out = [300 5];
+            out = [8000 6];
             out2 = [1 1];
 
             % Example: inherit size from first input port

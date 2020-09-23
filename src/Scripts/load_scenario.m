@@ -12,25 +12,48 @@ switch scenarioName
         %destinationPoints = [11 15 18 33 34 15 18 20 16 19];
         %maxSpeeds = [13 12.4 11 8.4 13 13 9.2 13.2 9 13];
         
+        %% SC1
+        %short driving scenario
+%         startingPoints =    [30  41 18  7 48 72 56 57 78 51];
+%         destinationPoints = [28  34 16 27 47 71 70 56 77 78];
+%         maxSpeeds =         [20  10 15 20 20 20 20 20 20 20];
+
+        %% SC2
+        %V2 should be detected by V1, even if it only drives a short time
+%         startingPoints =    [28  41 19  7 48 72 56 57 78 51];
+%         destinationPoints = [11  40 15 27 47 71 70 56 77 78];
+%         maxSpeeds =         [18  20 20 20 20 20 20 20 20 20];
+        
         %% SC2a edge cost test
         %V1 and V2 should take the left route, because the slow V3 takes
         %the shorter right one
-        startingPoints =    [21  19 18  7 48 72 56 57 78 51]; % Test futureData
-        destinationPoints = [ 2  35 74 27 47 71 70 56 77 78];% Test futureData
-        maxSpeeds = [ 20 19  8 20 20 20 20 20 20 20];% Test futureData
+%         startingPoints =    [21  19 18  7 48 72 56 57 78 51]; % Test futureData
+%         destinationPoints = [ 2  35 74 27 47 71 70 56 77 78];% Test futureData
+%         maxSpeeds =         [20  19  8 20 20 20 20 20 20 20];% Test futureData
         
         %% SC2b edge cost test
-        %V1 and V2 should take the left route, because the slow V3 takes
-        %the shorter right one
-        %startingPoints =    [24  41 20  7 48 72 56 57 78 51];
-        %destinationPoints = [ 2  35 74 27 47 71 70 56 77 78];
-        %maxSpeeds = [ 18 8  19 20 20 20 20 20 20 20];
+        %Long driving to see if other cars change the chosen route
+        startingPoints =    [28  41 20  7 48 72 56 57 78 51];
+        destinationPoints = [ 2  35 74 27 47 71 70 56 77 78];
+        maxSpeeds =         [18   8 19 20 20 20 20 20 20 20];
         
-        %% SC3 dont block before you are there
+        %% SC3 test temporary goal
+        %V1 should redirect the path before the crashed vehicles V2 and V3
+%         startingPoints =    [14   7  6 41 48 72 56 57 78 51];
+%         destinationPoints = [ 2  27 10 34 47 71 70 56 77 78];
+%         maxSpeeds =         [20   5 10 20 20 20 20 20 20 20];
+        
+        %% SC3a dont block before you are there
         %V2 should reach node 10, even if node 11 is blocked
         %         startingPoints =    [23  22 19  7 48 72 56 57 78 51];
         %         destinationPoints = [10  11 15 27 47 71 70 56 77 78];
-        %         maxSpeeds = [ 20 11  20 20 20 20 20 20 20 20];
+        %         maxSpeeds =         [20  11 20 20 20 20 20 20 20 20];
+        
+        %% SC3a use temporary goal
+        %V2 should drive to node 11
+        %         startingPoints =    [23  22 19  7 48 72 56 57 78 51];
+        %         destinationPoints = [11  11 15 27 47 71 70 56 77 78];
+        %         maxSpeeds =         [20  20 20 20 20 20 20 20 20 20];
         
         
         SimTimeOut= '20';
