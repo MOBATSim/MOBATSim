@@ -4,7 +4,18 @@ function pathPlot = plotPath(map,path,carID)
     %Input: map is the XML map object,
     %displayInGridCoordinates is a boolean: true = display grid, false = display normal plot
     %% prepare everything
-    hold on
+    hold on      
+    colourMatrix = [1 0 0;                      %1  red
+                    1 1 0 ;                     %2	yellow
+                    0 1 1 ;                     %3  light blue
+                    0 0.2470 0.5410;            %4  dark blue
+                    0.8500 0.3250 0.0980;       %5  orange
+                    1 0 1;                      %6  magenta
+                    0 0.4470 0.7410;            %7  blue
+                    0.6350 0.0780 0.1840;       %8  dark red
+                    0.3 0.3 0.3;                %9  grey
+                    0.4940 0.1840 0.5560;       %10 violet
+                    ];
     w = map.waypoints;
     w(:,3) = -1.*w(:,3);
     circ = map.connections.circle;
@@ -26,9 +37,7 @@ function pathPlot = plotPath(map,path,carID)
         if straight
             %just draw a line
             if isempty(bogPath)
-                bogPath = [bogPath;[w(p1,1)-xOff,w(p1,3)-yOff]; [w(p2,1)-xOff,w(p2,3)-yOff]];
-                %replace first entry with current position
-                bogPath(1,:) = [map.Vehicles(carID).dynamics.position(1)-xOff,-map.Vehicles(carID).dynamics.position(3)-yOff];
+                bogPath = [[map.Vehicles(carID).dynamics.position(1)-xOff,-map.Vehicles(carID).dynamics.position(3)-yOff]; [w(p2,1)-xOff,w(p2,3)-yOff]];
             else
                 bogPath = [bogPath;[w(p1,1)-xOff,w(p1,3)-yOff]; [w(p2,1)-xOff,w(p2,3)-yOff]];
             end
@@ -75,47 +84,47 @@ function pathPlot = plotPath(map,path,carID)
         switch carID
             case 1
                 %red
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[1 0 0],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(1,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[1 0 0],'color',contrastArray);
             case 2
                 %yellow
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[1 1 0],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(2,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[1 1 0],'color',contrastArray);
             case 3
                 %light blue
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[0 1 1],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(3,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[0 1 1],'color',contrastArray);
             case 4
                 %green
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[0.4660 0.6740 0.1880],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(4,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[0.4660 0.6740 0.1880],'color',contrastArray);
             case 5
                 %orange
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[0.8500 0.3250 0.0980],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(5,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[0.8500 0.3250 0.0980],'color',contrastArray);
             case 6
                 %magenta
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[1 0 1],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(6,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[1 0 1],'color',contrastArray);
             case 7
                 %blue
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[0 0.4470 0.7410],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(7,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[0 0.4470 0.7410],'color',contrastArray);
             case 8
                 %dark red
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[0.6350 0.0780 0.1840],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(8,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[0.6350 0.0780 0.1840],'color',contrastArray);
             case 9
                 %light green
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[0.9290 0.6940 0.1250],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(9,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[0.9290 0.6940 0.1250],'color',contrastArray);
             otherwise
                 %violet
-                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',[0.4940 0.1840 0.5560],'LineWidth',2);
+                pathPlot = plot(bogPath(:,1),bogPath(:,2),'color',colourMatrix(10,:),'LineWidth',2);
                 %plot(map.Vehicles(c).dynamics.position(1)-xOff,-map.Vehicles(c).dynamics.position(3)-yOff,'Marker','o','MarkerFaceColor',[0.4940 0.1840 0.5560],'color',contrastArray);
         end
         %make it transparent to see better
-        pathPlot.Color(4) = 0.60;
+        %pathPlot.Color(4) = 0.60;
         %text(map.Vehicles(c).dynamics.position(1)-xOff-15,-map.Vehicles(c).dynamics.position(3)-yOff+20,append("V",num2str(c)),'color',contrastArray);
     end
     hold off

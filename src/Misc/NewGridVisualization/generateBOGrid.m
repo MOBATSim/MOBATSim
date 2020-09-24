@@ -2,9 +2,8 @@ function [bogMap,xOff,yOff] = generateBOGrid(map)
             %create binary occupancy grid object and grid location objects
             
             %% prepare for drawing
-            %nrOfCars = length([map.Vehicles.id]); %comment in if you know
+            nrOfCars = length([map.Vehicles.id]); %comment in if you know
             %the number of cars
-            nrOfCars = 10;
             gSize = map.gridSize;
             %first we need map size
             %we can get it from waypoints with some space for better

@@ -1,4 +1,4 @@
-function generateMapVisual(obj,displayInGridCoordinates)
+function generateMapVisual(gridMap,displayInGridCoordinates)
             %This function plots any XML Map of MOBATSim. Keep in mind that you have to
             %do a coordinate transformation between normal coordinates and grid / mobatsim
             %Input: XML Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
@@ -9,9 +9,9 @@ function generateMapVisual(obj,displayInGridCoordinates)
             %figure(3);
             %plot(1,1,'color',[1,1,1]);%TODO replace with better solution for deleting old plot
             hold on            
-            w = obj.waypoints;
-            circ = obj.connections.circle;
-            trans = obj.connections.translation;
+            w = gridMap.waypoints;
+            circ = gridMap.connections.circle;
+            trans = gridMap.connections.translation;
             %coordinate transformation
             w(:,3) = -1.*w(:,3);
             circ(:,6) = -1.*circ(:,6);
