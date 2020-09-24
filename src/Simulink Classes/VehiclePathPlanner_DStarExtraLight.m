@@ -65,6 +65,7 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
         changedEdges = [];      % edges with new future data entries
         
         %end of D Star Extra Light variables
+        pathPlot;
     end
     
     methods
@@ -92,6 +93,8 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
         function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
             %This block shouldn't run if the vehicle has reached its
             %destination
+            
+            %% create new path
             if( isempty(obj.nodesKey) )
                 %only init once during first turn
                 initialize(obj);
@@ -121,11 +124,20 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
                     waypointReached =0;
                 end
             end
+            %% plot path
+            %comment this in if you want the visualization of the cars
+            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0 
+                %plotting can decrease performance, so dont update to often
+                delete(obj.pathPlot)
+                obj.pathPlot = plotPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
+            end
         end
         
         
         
         
+               
+        %% D* Extra Light
         function newFutureData = dStarExtraLite(obj, globalTime,futureData)
             %check https://doi.org/10.1515/amcs-2017-0020 for more details
             %algorithm from  D* Extra Lite: A Dynamic A* With Search–Tree Cutting and Frontier–Gap Repairing by Maciej Przybylski
@@ -135,12 +147,19 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
             %car: the car that uses this method to get new instructions            
             %globalTime: current simulation time
             %futureData: futureData of other vehicles
-            %% Initialization
-%             moved in deleteCollidedFD
-%             if isempty(futureData)%workaround for first turn
-%                 futureData = [0 0 0 0 0];
-%             end
             
+            %% Initialization
+            if obj.tempGoalNode == obj.vehicle.pathInfo.lastWaypoint
+                %if we are at our temp goal
+                
+                %we need to update oour goal
+                obj.tempGoalNode = obj.vehicle.pathInfo.destinationPoint;
+                %we have to repush our goal to the open list to search if
+                %the path is still blocked
+                initializeGoal(obj,obj.tempGoalNode);
+            end
+            %futureData = deleteCollidedFutureData(obj,futureData);
+            %%vectorized, but slower for now
             futureData = deleteCollidedFutureDataForLoop(obj,futureData);
             
             whichEdgecostsChangedForLoop(obj,futureData);%TODO vectorize
@@ -156,12 +175,15 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
                     reinitialize(obj,futureData);
                 end
                 % Use D*EL to get path to goal node
-                if ( ~search(obj)) %Search for optimal path and alter lists accordingly
-                    disp('Path not found error ')
-                    disp(obj.vehicle.id)
-                    stopVehicle(obj);
-                    newFutureData = [];
-                    return;
+                if ( ~searchForGoalNode(obj)) %Search for optimal path and alter lists accordingly
+                    %test if we can reach a closer node at least
+                    newFutureData = newGoalNode(obj);
+                    if isempty(newFutureData)
+                        %we cant reach any node from now
+                        disp(['No possible path was found from vehicle ' num2str(obj.vehicle.id)])
+                        stopVehicle(obj);
+                        return;
+                    end
                 else                   
                     
                     %if anything changed, we need to calculate a new path
@@ -179,12 +201,56 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
                 obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:end);%delete old node in path
             end
             
-        end
+        end        
+        function initialize(obj)
+            %initialize whole map
+            nMap = length(obj.Map.waypoints);
+            obj.nrOfNodes = nMap;
+            %nodes
+            obj.nodesKey = zeros(nMap,2);
+            obj.nodesOpen = zeros(nMap,1);
+            obj.nodesParent = zeros(nMap,1);
+            obj.nodesVisited = zeros(nMap,1);
+            obj.nodesGlobalDistance = zeros(nMap,1);
+            obj.nodesG = ones(nMap,1)*2000000000;%intmax
+            obj.nodesBlocked = zeros(nMap,1);
+            %edges
+            eMap = length(obj.Map.connections.all);
+            obj.nrOfEdges = eMap;
+            obj.edgesSpeed = zeros(eMap,1);
+            obj.edgesEntry = zeros(eMap,1);
+            obj.edgesExit = zeros(eMap,1);
+            obj.seeds = zeros(eMap,1);%if you change the init, change other code too (reinitialize)!           
+            
+            %INIT Cost
+            
+            maxSpeed = obj.vehicle.dynamics.maxSpeed ;
+            speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
+            speedRoutes(speedRoutes>maxSpeed)= maxSpeed; %possible speed for every route
+            obj.maxEdgeSpeed = speedRoutes;
+            distances = obj.Map.connections.distances;
+            %calculate costs
+            obj.edgesCost = (1/ obj.simSpeed) .* distances .* (1./ speedRoutes);
+                        
+            %rest
+            %visited(sgoal)=true
+            sgoal = obj.vehicle.pathInfo.destinationPoint;
+            obj.nodesVisited(sgoal) = 1;
+            %g(sgoal)=0
+            obj.nodesG(sgoal) = 0;
+            pushOpen(obj,sgoal,calculateKey(obj,sgoal));
+            obj.vehicle.pathInfo.path = [];            
+            obj.slast = obj.vehicle.pathInfo.lastWaypoint;
+            %set up backup goal node
+            obj.tempGoalNode = sgoal;            
+            
+        end   
         
+        %% vehilce commands
         function stopVehicle(obj)
             car = obj.vehicle;            
             %code from vehicle.checkifDestinationReached
-            car.pathInfo.path = []; %%TODO is this ok?
+            car.pathInfo.path = [];
             car.pathInfo.destinationReached = true;
             car.setStopStatus(true);
             car.pathInfo.routeCompleted = true;
@@ -193,6 +259,41 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
             car.V2VdataLink(car.V2VdataLink==1) =0;
         end
         
+        %% open list related
+        function pushOpen(obj,s,k)
+            %if node s is not open, it inserts s to the openlist with key k
+            %if node s is open, it updates the priority
+            %if the node is blocked, we must not push it
+            
+            if obj.nodesBlocked(s)
+                return;
+            end
+            if (obj.nodesOpen(s)==1)%if open
+                if obj.nodesKey(s,1) ~= k(1) || obj.nodesKey(s,2) ~= k(2)
+                    obj.nodesKey(s,:) = k; %update key
+                end
+            else%if not open
+                obj.nodesOpen(s) = 1; %set open
+                obj.nodesKey(s,:) = k; %update key
+            end
+            
+            
+        end        
+        function s = topOpen(obj)
+            %returns the node with the lowest key in the open list;
+            
+            openList = find(obj.nodesOpen ==1);
+            s = openList(1); %initialisation
+            for i = 2:size(openList,1)
+                knew = obj.nodesKey(openList(i),:);
+                kold = obj.nodesKey(s,:);
+                if knew(1) < kold(1) || (knew(1) == kold(1) && knew(2) < kold(2))
+                    s = openList(i);
+                end                
+            end
+        end
+        
+        %% path building related
         function newFutureData = calculateNewPath(obj,globalTime)
             %we calculate the new path for our vehicle and create the
             %future data and new edge costs in the process
@@ -204,7 +305,7 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
             
             id = obj.vehicle.id;
             sstart = obj.vehicle.pathInfo.lastWaypoint;
-            sgoal = obj.vehicle.pathInfo.destinationPoint;            
+            sgoal = obj.tempGoalNode;            
             i = 1;     
             currentSpeed = obj.vehicle.dynamics.speed ;           
             
@@ -223,7 +324,7 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
                 %if for loop is better try 
                 %sstart = actionSelectionForLoop(obj,sstart);
                 
-                %get edge between old and new
+                %get edge between old and new               
                 curEdge = getEdge(obj,oldstart,sstart);
                 
                 %calculate times
@@ -245,54 +346,6 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
             obj.vehicle.pathInfo.path = newpath(1:i);%cut preallocated vector
             newFutureData = newFutureData(1:i-1,:);
         end
-        
-        function pushOpen(obj,s,k)
-            %if node s is not open, it inserts s to the openlist with key k
-            %if node s is open, it updates the priority
-            %if the node is blocked, we must not push it
-            
-            if obj.nodesBlocked(s)
-                return;
-            end
-            if (obj.nodesOpen(s)==1)%if open
-                if obj.nodesKey(s,1) ~= k(1) || obj.nodesKey(s,2) ~= k(2)
-                    obj.nodesKey(s,:) = k; %update key
-                end
-            else%if not open
-                obj.nodesOpen(s) = 1; %set open
-                obj.nodesKey(s,:) = k; %update key
-            end
-            
-            
-        end
-        
-        function s = topOpen(obj)
-            %returns the node with the lowest key in the open list;
-            
-            openList = find(obj.nodesOpen ==1);
-            s = openList(1); %initialisation
-            for i = 2:size(openList,1)
-                knew = obj.nodesKey(openList(i),:);
-                kold = obj.nodesKey(s,:);
-                if knew(1) < kold(1) || (knew(1) == kold(1) && knew(2) < kold(2))
-                    s = openList(i);
-                end                
-            end
-        end
-
-        function less = compareKeys(~,k1a,k1b,k2a,k2b) 
-            %returns true if k(s1) < k(s2)
-            
-            less = false;
-            if(k1a < k2a)
-                less = true;
-            elseif(k1a == k2a)
-                if(k1b < k2b)
-                    less = true;
-                end
-            end
-        end
-        
         function nextNode = actionSelection(obj,sstart)
             % return arg min( s in Succ(sstart)(cost(sstart,s)+g(s)) )
            
@@ -302,8 +355,7 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
             G = obj.nodesG(successors);
             [~,indx] = min(G+cost);
             nextNode = successors(indx);
-        end
-        
+        end        
         function nextNode = actionSelectionForLoop(obj,sstart)
             % return arg min( su in Succ(sstart)(cost(sstart,su)+g(su)) )
             
@@ -321,29 +373,28 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
             end
         end
         
-        function solution = search(obj)
+        %% search related
+        function solution = searchForGoalNode(obj)
             %a normal A* algorithm
             %first turn, the goal node is the only entry in open list
             while fastMember(obj,1,obj.nodesOpen)  %as long as open List is not empty
-                s = topOpen(obj);
-                if solutionFound(obj,s)%search for a possible path
+                s = obj.topOpen();
+                if obj.solutionFound(s)%search for a possible path
                     solution = true;
                     return;
                 end
                 %if we have not reached the start yet, we go to the node
                 %with the lowest key in the open list
-                searchStep(obj,s);
+                obj.searchStep(s);
             end
             solution = false; %no possble path was found
-        end
-        
+        end        
         function foundSmth = solutionFound(obj,topOpen)
             %return (TOPOPEN()== sstart || (visited(sstart) && NOT open(sstart)))
             sstart = obj.vehicle.pathInfo.lastWaypoint;
             foundSmth = (topOpen == sstart || (obj.nodesOpen(sstart)~=1 &&  (obj.nodesVisited(sstart) == 1) ));
             %we have found a way from goal to start or are still on the way
-        end
-        
+        end        
         function searchStep(obj,s)
             %popOpen
             obj.nodesOpen(s) = 0;%delete s from open
@@ -375,157 +426,10 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
                     end
                 end
             end
-        end
+        end  
         
-        function key = calculateKey(obj,s)
-            %return[g(s)+h(sstart,s)+km;g(s)]
-            gn = obj.nodesG(s);
-            key = [gn+h(obj,s,obj.vehicle.pathInfo.lastWaypoint)+obj.km,gn];
-        end
-        
-        function h = h(obj,start,goal)
-            %time travel euclidian distance
-            %h is time, to make it comparable with edge time(cost)
-            h = (1/ obj.simSpeed) * (1/obj.vehicle.dynamics.maxSpeed) * norm(get_coordinates_from_waypoint(obj.Map, start)-get_coordinates_from_waypoint(obj.Map, goal));
-        end
-        
-        function initialize(obj)
-            %initialize whole map
-            lMap = length(obj.Map.waypoints);
-            obj.nrOfNodes = lMap;
-            %nodes
-            obj.nodesKey = zeros(lMap,2);
-            obj.nodesOpen = zeros(lMap,1);
-            obj.nodesParent = zeros(lMap,1);
-            obj.nodesVisited = zeros(lMap,1);
-            obj.nodesGlobalDistance = zeros(lMap,1);
-            obj.nodesG = ones(lMap,1)*2000000000;%intmax
-            obj.nodesBlocked = zeros(lMap,1);
-            %edges
-            nMap = length(obj.Map.connections.all);
-            obj.nrOfEdges = nMap;
-            obj.edgesSpeed = zeros(nMap,1);
-            obj.edgesEntry = zeros(nMap,1);
-            obj.edgesExit = zeros(nMap,1);
-            obj.seeds = zeros(nMap,1);%if you change the init, change other code too (reinitialize)!
-            
-            %INIT Cost
-            
-            maxSpeed = obj.vehicle.dynamics.maxSpeed ;
-            speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
-            speedRoutes(speedRoutes>maxSpeed)= maxSpeed; %possible speed for every route
-            obj.maxEdgeSpeed = speedRoutes;
-            distances = obj.Map.connections.distances;
-            %calculate costs
-            obj.edgesCost = (1/ obj.simSpeed) .* distances .* (1./ speedRoutes);
-                        
-            %rest
-            %visited(sgoal)=true
-            sgoal = obj.vehicle.pathInfo.destinationPoint;
-            obj.nodesVisited(sgoal) = 1;
-            %g(sgoal)=0
-            obj.nodesG(sgoal) = 0;
-            pushOpen(obj,sgoal,calculateKey(obj,sgoal));
-            obj.vehicle.pathInfo.path = [];            
-            obj.slast = obj.vehicle.pathInfo.lastWaypoint;
-            
-        end   
-        
-        function newCost = updateEdgeCost(obj,curEdge,futureData)
-            %this function returns the new cost of an edge, after its costs
-            %have changed due to future data
-            %we also check, if a car now blocks this path
-            %keep in mind, that if we want to calculate our future position
-            %correctly, you have to search from start to goal, or find a
-            %new way to calculate entry and exit times for future data
-            
-            %futureData = [carID edgeID Speed enterTime exitTime]            
-            
-            curNode = getEndOfEdge(obj,curEdge);
-            nextSpeed = obj.edgesSpeed(curEdge);
-            
-            % now check, if a car will stop here and block the road
-            %we need all entries with cur edge in cFD
-            currentFutureData = futureData(futureData(:,2) == curEdge,:);            
-            
-            %we have to check the other edge of crossroad
-            currentEntryTime = max(obj.edgesEntry(ePred(obj,curNode)));
-            currentExitTime = max(obj.edgesExit(ePred(obj,curNode)));
-            %if you entered before us or exit before us, you can block
-            currentFutureData = currentFutureData(currentFutureData(:,4)<= currentEntryTime | currentFutureData(:,5) <= currentExitTime,:);
-            %check for other cars            
-            otherCars = fastUnique(obj,currentFutureData(:,1));
-            
-            %test, if road is blocked
-            if ~isempty(otherCars)
-                blocked = checkIfBlocked(obj,otherCars,curEdge);
-            else
-                blocked = false;
-            end
-            
-            if blocked
-                
-                newCost = 2147400000;% blocked cost (int max value)
-                nextSpeed = 0;%max speed
-                obj.nodesBlocked(curNode) = 1;
-            else
-                %a car is disturbing, if it exits after us, but entered before us
-                currentFutureData = currentFutureData(currentFutureData(:,5)>currentEntryTime,:);
-                if( ~isempty(currentFutureData) )                    
-                        %% disturbing car on same route
-                        nextSpeed = min(currentFutureData(:,3));
-                        distance = obj.Map.connections.distances(curEdge);
-                        newCost = (1/ obj.simSpeed) * distance * (1/ nextSpeed);
-                else
-                    %no disturbing car means we can reuse old cost
-                    newCost = obj.edgesCost(curEdge);
-                end
-                %if it is not blocked, we can reset status
-                obj.nodesBlocked(curNode) = 0;
-            end
-            
-            %% calculate costs (costs = distance/speed)
-            obj.edgesCost(curEdge) = newCost;%cost, gets returned
-            obj.edgesSpeed(curEdge) = nextSpeed;%max speed
-            
-        end
-        
-        function blocked = checkIfBlocked(obj,otherCars, curEdge)
-            %if a car will stop after current edge, it will block the node
-            %if a car has stopped there, it is already blocked
-            pathInfo = [obj.vehicle.map.Vehicles.pathInfo];            
-            %% stopping cars
-            futurePathInfo = pathInfo(otherCars);
-            destinationPoints = [futurePathInfo.destinationPoint];
-            endOfCurEdge = obj.Map.connections.all(curEdge,2);
-            %check if the any car wants to stop after the edge
-            willBeBlocked = fastMember(obj,endOfCurEdge,destinationPoints);
-            %% stopped cars             
-            reached = [pathInfo.destinationReached];
-            if ~isempty(otherCars)
-                destinationPoints = [pathInfo(reached).destinationPoint];
-                %check if a car has stopped after the edge
-                alreadyBlocked = fastMember(obj,endOfCurEdge,destinationPoints);
-            else
-                alreadyBlocked = false;
-            end
-            
-            blocked = willBeBlocked || alreadyBlocked;
-        end
-        
-                
-        function blocked = checkIfBlockedForLoop(obj,otherCars, curEdge)
-            %if a car will stop after current edge, it will block the node
-            for c = otherCars                
-                roads = ePred(obj,obj.vehicle.map.Vehicles(c).pathInfo.destinationPoint);
-                blocked = fastMember(obj,1,fastMember(obj,roads,curEdge));
-                if blocked
-                    break;
-                end
-            end
-        end
-        
-        function reinitialize(obj,futureData)            
+        %% reinitialize related
+        function reinitialize(obj,futureData)
                 %if any edge cost changed
                 %remove every node from our storage, that has a wrong key
                 cutBranches(obj,futureData);
@@ -548,69 +452,6 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
                 end
             
         end
-        
-        function whichEdgecostsChanged(obj,futureData)
-            %check, which edgecosts have changed and return those edges
-            
-            %substract smaller from bigger to get difference
-            if(size(obj.oldFutureData,1) < size(futureData,1))
-                S = obj.oldFutureData;
-                B = futureData;
-            else
-                S= futureData;
-                B = obj.oldFutureData;
-            end
-            
-            %store old future data
-            obj.oldFutureData = futureData;
-            
-            %get difference
-            B = setdiff(B,S,'rows');%TODO to slow
-
-            %B is now all rows that are changes
-            
-            %if we have something found, we need to update the map later
-            if isempty(B)
-                obj.haveCostsChanged = false;
-            else
-                obj.changedEdges = fastUnique(obj,B(:,2));
-                obj.haveCostsChanged = true;
-            end
-        end
-        function whichEdgecostsChangedForLoop(obj,futureData)
-            %check, which edgecosts have changed and return those edges
-            
-                    %substract smaller from bigger to get difference
-                    if(size(obj.oldFutureData,1) < size(futureData,1))
-                        S = obj.oldFutureData;
-                        B = futureData;
-                    else
-                        S= futureData;
-                        B = obj.oldFutureData;
-                    end 
-                    
-                    %store old future data
-                    obj.oldFutureData = futureData;
-                    
-            
-                for i = 1:size(S,1)%compare smaller vector to bigger, to see what changed
-                    index = find(B(:,1) == S(i,1) & B(:,2) == S(i,2) & B(:,4) == S(i,4) );%compare id, edge and entry time
-                    if( ~isempty(index) )%check if row exists in both fd
-                        B(index,:) = [];% %if so, it hasnt changed -> delete it
-                    end
-                end
-                %B is now all rows that are changes
-            
-            %if we have something found, we need to update the map later
-            if isempty(B)
-                obj.haveCostsChanged = false;
-            else
-                obj.changedEdges = fastUnique(obj,B(:,2));
-                obj.haveCostsChanged = true;
-            end
-        end
-        
-        
         function cutBranches(obj,futureData)
             %resets every node with changed edge costs
             sstart = obj.vehicle.pathInfo.lastWaypoint;
@@ -620,7 +461,7 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
                 u = getStartOfEdge(obj,s);%start of edge
                 v = getEndOfEdge(obj,s);%end of edge
                 %if we visited nodes through this edge, we need to recalculate
-                if ((obj.nodesVisited(u) == 1) && (obj.nodesVisited(v) == 1))
+                if obj.nodesVisited(v) == 1 %(obj.nodesVisited(u) == 1) || 
                     cold = obj.edgesCost(s);
                     cnew = updateEdgeCost(obj,s,futureData);
                     if (cold > cnew )                        
@@ -642,8 +483,7 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
             if (reopen_start && (obj.nodesVisited(sstart) == 1))
                 obj.seeds(sstart) = 1;
             end
-        end
-        
+        end        
         function cutBranch(obj,s)
             %reset node as unvisited
             obj.nodesVisited(s)=0;
@@ -677,8 +517,108 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
                     cutBranch(obj,sx);
                 end
             end
-        end
+        end       
         
+        %% map information related
+        function newCost = updateEdgeCost(obj,curEdge,futureData)
+            %this function returns the new cost of an edge, after its costs
+            %have changed due to future data
+            %we also check, if a car now blocks this path
+            %keep in mind, that if we want to calculate our future position
+            %correctly, you have to search from start to goal, or find a
+            %new way to calculate entry and exit times for future data
+            
+            %futureData = [carID edgeID Speed enterTime exitTime]            
+            
+            curNode = getEndOfEdge(obj,curEdge);
+            nextSpeed = obj.edgesSpeed(curEdge);
+            newCost = obj.edgesCost(curEdge);
+            
+            % now check, if a car will stop here and block the road
+            %we need all entries with cur edge in cFD
+            currentFutureData = futureData(futureData(:,2) == curEdge,:);            
+            
+            %we have to check the other edge of crossroad
+            currentEntryTime = max(obj.edgesEntry(ePred(obj,curNode)));
+            currentExitTime = max(obj.edgesExit(ePred(obj,curNode)));
+            %if you entered before us or exit before us, you can block
+            currentFutureData = currentFutureData(currentFutureData(:,4)<= currentEntryTime | currentFutureData(:,5) <= currentExitTime,:);
+            %check for other cars            
+            otherCars = fastUnique(obj,currentFutureData(:,1));
+            
+            %test, if road is blocked
+            if ~isempty(otherCars)
+                blocked = checkIfBlocked(obj,otherCars,curEdge);
+            else
+                blocked = obj.nodesBlocked(curNode);
+            end
+            
+            if blocked
+                
+                newCost = 2147400000;% blocked cost (int max value)
+                nextSpeed = 0;%max speed
+                obj.nodesBlocked(curNode) = 1;
+            else
+                %unblock the node
+                obj.nodesBlocked(curNode) = 0;
+                %a car is disturbing, if it exits after us, but entered before us
+                currentFutureData = currentFutureData(currentFutureData(:,5)>currentEntryTime,:);
+                if( ~isempty(currentFutureData) )                    
+%                         %% disturbing car on same route
+%                         nextSpeed = min(currentFutureData(:,3));
+%                         %if we are slower, we keep our speed
+%                         if nextSpeed > obj.vehicle.dynamics.maxSpeed
+%                             nextSpeed = obj.maxEdgeSpeed(curEdge);
+%                         end
+%                         distance = obj.Map.connections.distances(curEdge);
+%                         newCost = (1/ obj.simSpeed) * distance * (1/ nextSpeed);
+                        [timeToReachDisturbingVehicle ,index] = max(currentFutureData(:,5));                       
+                        speedDisturbingVehicle =  currentFutureData(index,3);
+                        timeDifference = (currentEntryTime + obj.edgesCost(curEdge)) - timeToReachDisturbingVehicle ;
+                        
+                        spacingTime = 6 * 1/obj.simSpeed;
+                        if (timeDifference < spacingTime)
+                            newCost = timeToReachDisturbingVehicle + spacingTime - currentEntryTime;
+                            nextSpeed = speedDisturbingVehicle;
+                        end
+                else
+                    %no disturbing car means we can reuse old cost
+                    newCost = obj.edgesCost(curEdge);
+                end
+                %if it is not blocked, we can reset status
+                obj.nodesBlocked(curNode) = 0;
+            end
+            
+            %% calculate costs (costs = distance/speed)
+            obj.edgesCost(curEdge) = newCost;%cost, gets returned
+            obj.edgesSpeed(curEdge) = nextSpeed;%max speed
+            
+        end
+        function key = calculateKey(obj,s)
+            %return[g(s)+h(sstart,s)+km;g(s)]
+            gn = obj.nodesG(s);
+            key = [gn+h(obj,s,obj.vehicle.pathInfo.lastWaypoint)+obj.km,gn];
+        end        
+        function h = h(obj,start,goal)
+            %time travel euclidian distance
+            %h is time, to make it comparable with edge time(cost)
+            h = (1/ obj.simSpeed) * (1/obj.vehicle.dynamics.maxSpeed) * norm(get_coordinates_from_waypoint(obj.Map, start)-get_coordinates_from_waypoint(obj.Map, goal));
+        end
+        function edge = getEdge(obj,start,goal)
+            %returns edge between start and goal
+            edge = find(obj.Map.connections.all(:,1)==start & obj.Map.connections.all(:,2)==goal);
+            if(isempty(edge))%try the other way around
+                edge = find(obj.Map.connections.all(:,1)==goal & obj.Map.connections.all(:,2)==start);
+            end
+        end
+        function start = getStartOfEdge(obj,edge)
+            %returns starting node of edge
+            start = obj.Map.connections.all(edge,1);
+        end
+        function ende = getEndOfEdge(obj,edge)
+            %returns end-node of edge
+            ende = obj.Map.connections.all(edge,2);
+        end
         function pre = pred(obj,s)
             %returns all predecessors of s
             indx = obj.Map.connections.all(:,2)== s;
@@ -687,8 +627,7 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
         function predE = ePred(obj,s)
             %returns all edges to predecessors of s
             predE = find(obj.Map.connections.all(:,2)== s)';
-        end
-        
+        end        
         function su = succ(obj,s)
             %returns all successors of s
             indx = obj.Map.connections.all(:,1)== s;
@@ -699,6 +638,277 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
             succE = find(obj.Map.connections.all(:,1)== s)';
         end
         
+        %% utility functions
+        function less = compareKeys(~,k1a,k1b,k2a,k2b) 
+            %returns true if k(s1) < k(s2)
+            
+            less = false;
+            if(k1a < k2a)
+                less = true;
+            elseif(k1a == k2a)
+                if(k1b < k2b)
+                    less = true;
+                end
+            end
+        end
+        function u = fastUnique(~,A)
+            %returns an array with unique numbers from array A
+            u = zeros(length(A));
+            x = 0;
+            for i = 1:length(A)
+                contained = false;
+                for j = 1:length(u)
+                    contained = A(i) == u(j);
+                    if contained
+                        break;
+                    end
+                end
+                if ~contained
+                    x = x + 1;
+                    u(x) = A(i);
+                end
+            end
+            u = u(1:x);
+        end        
+        function m = fastMember(~,test, A)
+            %returns true if test is member of A
+            m = false;
+            for i = 1: length(A)
+                m = A(i) == test;
+                if m
+                    break;
+                end
+            end
+        end
+        
+        %% blocking nodes
+        function detectBlockingCarsForLoop(obj)
+            %if a car without future data blocks a node, we set the node blocked
+            
+            %get all other cars
+            otherCars = getNrOfAllOtherCars(obj); 
+            vehicles = obj.vehicle.map.Vehicles;
+            for car = otherCars
+                if vehicles(car).pathInfo.destinationReached
+                    obj.nodesBlocked(vehicles(car).pathInfo.lastWaypoint)=1;
+                end
+            end
+        end        
+        function detectBlockingCars(obj)
+            %blocks every goal node of a finished car
+            %this includes stopped cars by accident and destination
+            otherCars = obj.getNrOfAllOtherCars();
+            vehicles = obj.vehicle.map.Vehicles(otherCars);
+            pathInfo = [vehicles.pathInfo];
+            reached = [pathInfo.destinationReached];
+            otherCars = otherCars(reached);
+            destinationPoints = [pathInfo(otherCars).lastWaypointt];
+            obj.nodesBlocked(destinationPoints) = 1;            
+        end
+        function blocked = checkIfBlocked(obj,otherCars, curEdge)
+            %if a car will stop after current edge, it will block the node
+            %if a car has stopped there, it is already blocked
+            pathInfo = [obj.vehicle.map.Vehicles.pathInfo];            
+            %% stopping cars
+            futurePathInfo = pathInfo(otherCars);
+            destinationPoints = [futurePathInfo.destinationPoint];
+            endOfCurEdge = obj.Map.connections.all(curEdge,2);
+            %check if the any car wants to stop after the edge
+            willBeBlocked = fastMember(obj,endOfCurEdge,destinationPoints);
+            %% stopped cars             
+            reached = [pathInfo.destinationReached];
+            if ~isempty(otherCars)
+                destinationPoints = [pathInfo(reached).destinationPoint];
+                %check if a car has stopped after the edge
+                alreadyBlocked = fastMember(obj,endOfCurEdge,destinationPoints);
+            else
+                alreadyBlocked = false;
+            end
+            
+            blocked = willBeBlocked || alreadyBlocked;
+        end
+        function blocked = checkIfBlockedForLoop(obj,otherCars, curEdge)
+            %if a car will stop after current edge, it will block the node
+            for c = otherCars                
+                roads = ePred(obj,obj.vehicle.map.Vehicles(c).pathInfo.destinationPoint);
+                blocked = fastMember(obj,1,fastMember(obj,roads,curEdge));
+                if blocked
+                    break;
+                end
+            end
+        end 
+        
+        %% edit and evaluate FutureData        
+        function futureData = deleteCollidedFutureDataForLoop(obj,futureData)
+            %deletes future data of vehicles that will not move because of collision
+            otherCars = getNrOfAllOtherCars(obj); 
+            vehicles = obj.vehicle.map.Vehicles;
+            obj.changedEdges = [];%reset
+            obj.haveCostsChanged = false;
+            for car = otherCars
+                if vehicles(car).status.collided
+                    %remove every entry with the collided car from FD
+                    futureData = futureData(futureData(:,1)~=car,:);
+                    %block the start and the future node of the crash
+                    area = [vehicles(car).pathInfo.lastWaypoint,vehicles(car).pathInfo.path(2)];
+                    obj.nodesBlocked(area(1))=1;
+                    %TODO do we block too often here?
+                    obj.nodesBlocked(area(2))=1;
+                    obj.changedEdges = [obj.changedEdges, obj.getEdge(area(1),area(2))];
+                    obj.haveCostsChanged = true;
+                end                
+            end
+            
+            
+            if isempty(futureData)%workaround for first turn
+                futureData = [0 0 0 0 0];
+            end
+        end
+        
+        function whichEdgecostsChangedForLoop(obj,futureData)
+            %check, which edgecosts have changed and return those edges
+            
+                    %substract smaller from bigger to get difference
+                    if(size(obj.oldFutureData,1) < size(futureData,1))
+                        S = obj.oldFutureData;
+                        B = futureData;
+                    else
+                        S= futureData;
+                        B = obj.oldFutureData;
+                    end 
+                    
+                    %store old future data
+                    obj.oldFutureData = futureData;
+                    
+            
+                for i = 1:size(S,1)%compare smaller vector to bigger, to see what changed
+                    index = find(B(:,1) == S(i,1) & B(:,2) == S(i,2) & B(:,4) == S(i,4) );%compare id, edge and entry time
+                    if( ~isempty(index) )%check if row exists in both fd
+                        B(index,:) = [];% %if so, it hasnt changed -> delete it
+                    end
+                end
+                %B is now all rows that are changes
+            
+            %if we have something found, we need to update the map later
+            if ~isempty(B)                
+                obj.changedEdges = [obj.changedEdges,fastUnique(obj,B(:,2))];
+                obj.haveCostsChanged = true;
+            end
+        end
+        
+        %% get information on other cars in the simulation
+        function otherCars = getNrOfAllOtherCars(obj)
+            %returns a vector with all other cars id
+            
+            otherCars = 1:10;
+            otherCars = otherCars(otherCars~= obj.vehicle.id);
+        end
+        
+        %% alternative D* related pathfinding
+        function newFutureData = shortestPathFinder(obj, globalTime)
+            %returns the shortest path based on digraph
+            %no FD was usedto calculate it
+            %we only need to calculate turn one, because we wont make any
+            %changes to the edge costs
+                                            
+            if globalTime == 0 
+                checkForAccelerationPhase(obj);
+                if ( ~searchForGoalNode(obj)) %Search for optimal path and alter lists accordingly
+                    disp('Path not found error ')
+                    disp(obj.vehicle.id)
+                    stopVehicle(obj);
+                    newFutureData = [];
+                    return;
+                else
+                    newFutureData = calculateNewPath(obj,globalTime);
+                end
+                % save the future data at the beginning of the simulation for validation after simulation
+                obj.vehicle.decisionUnit.initialFutureData = newFutureData;
+            else
+                %just return the old data
+                newFutureData = obj.vehicle.decisionUnit.futureData;%new = old FD
+                obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:end);%delete old node in path
+            end
+        end
+        function newFutureData = dSELCompareToAStar(obj, globalTime,futureData)
+            %returns the shortest path based on digraph
+            %no FD was usedto calculate it
+            %we only need to calculate turn one, because we wont make any
+            %changes to the edge costs
+            
+            checkForAccelerationPhase(obj);
+            whichEdgecostsChangedForLoop(obj,futureData)
+            if obj.haveCostsChanged || isempty(obj.vehicle.pathInfo.path)
+                %% Reinititialize
+                if obj.haveCostsChanged
+                    reinitialize(obj,futureData);
+                end
+                % Use D*EL to get path to goal node
+                if ( ~searchForGoalNode(obj)) %Search for optimal path and alter lists accordingly
+                    %we cant reach any node from now
+                    disp(['No possible path was found from vehicle ' num2str(obj.vehicle.id)])
+                    stopVehicle(obj);
+                else
+                    
+                    %if anything changed, we need to calculate a new path
+                    newFutureData = calculateNewPath(obj,globalTime);
+                    
+                end
+                
+                if globalTime == 0 % save the future data at the beginning of the simulation for validation after simulation
+                    obj.vehicle.decisionUnit.initialFutureData = newFutureData;
+                end
+            else
+                %if we dont have to calculate we need to adjust path and new FD
+                
+                newFutureData = obj.vehicle.decisionUnit.futureData;%new = old FD
+                obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:end);%delete old node in path
+            end
+            
+        end
+        
+        %% temporary goal node realted
+        function tempFD = newGoalNode(obj)
+            %if our original goal node gets unreachable, we try to reach at least a
+            %closer node on our path
+            path = obj.vehicle.pathInfo.path;
+            %path(3) is the next node from current node on
+            for i = 3 : size(path,2)
+                %if the current node is blocked, we need to set the prior
+                %one as a temporary goal
+                if obj.nodesBlocked(path(i))
+                    %now set new goal
+                    if i-1 > 2
+                        %to safe memory we use i and return
+                        i = i-1;
+                    else 
+                        tempFD = [];
+                        return;
+                    end
+                    temp = path(i);
+                    obj.tempGoalNode = temp;
+                    %adjust path and FutureData
+                    obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:i);
+                    tempFD = obj.vehicle.decisionUnit.futureData(1:i,:);
+                    %push to open list                    
+                    %reinit again like in initilaize()                    
+                    initializeGoal(obj,temp);
+                    return;
+                end
+            end
+            tempFD = [];
+        end         
+        function initializeGoal(obj,s)
+            obj.nodesG(s) = 0;
+            obj.km = 0;
+            obj.nodesParent(s) = 0;
+            obj.nodesOpen = zeros(length(obj.Map.waypoints),1);
+            obj.nodesVisited = zeros(length(obj.Map.waypoints),1);
+            obj.nodesVisited(s) = 1;
+            pushOpen(obj,s,calculateKey(obj,s));
+        end
+        
+        %% acceleration estimation related
         function checkForAccelerationPhase(obj)
             %used to calculate acceleration for future data estimation
             car = obj.vehicle;
@@ -712,8 +922,7 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
                     obj.accelerationPhase = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
                 end
             end
-        end
-        
+        end        
         function [nextSpeed,timeToReach] = checkForAccelerationInPathbuilding(obj,currentRoute,currentNode,currentSpeed)
             %nextSpeed = speed on end of edge, timeToReach = exit time of edge
             
@@ -745,124 +954,6 @@ classdef VehiclePathPlanner_DStarExtraLight < matlab.System & handle & matlab.sy
             else
                 timeToReach =  (1/ obj.simSpeed) * distance* (1/ currentMaxSpeedRoutes(currentRoute)); %timesteps to reach neighbour
                 nextSpeed = currentSpeed;
-            end
-        end
-        
-        function edge = getEdge(obj,start,goal)
-            %returns edge between start and goal
-            edge = find(obj.Map.connections.all(:,1)==start & obj.Map.connections.all(:,2)==goal);
-            if(isempty(edge))%try the other way around
-                edge = find(obj.Map.connections.all(:,1)==goal & obj.Map.connections.all(:,2)==start);
-            end
-        end
-        function start = getStartOfEdge(obj,edge)
-            %returns starting node of edge
-            start = obj.Map.connections.all(edge,1);
-        end
-        function ende = getEndOfEdge(obj,edge)
-            %returns end-node of edge
-            ende = obj.Map.connections.all(edge,2);
-        end
-        
-        function u = fastUnique(~,A)
-            %returns an array with unique numbers from array A
-            u = zeros(length(A));
-            x = 0;
-            for i = 1:length(A)
-                contained = false;
-                for j = 1:length(u)
-                    contained = A(i) == u(j);
-                    if contained
-                        break;
-                    end
-                end
-                if ~contained
-                    x = x + 1;
-                    u(x) = A(i);
-                end
-            end
-            u = u(1:x);
-        end        
-        function m = fastMember(~,test, A)
-            %returns true if test is member of A
-            m = false;
-            for i = 1: length(A)
-                m = A(i) == test;
-                if m
-                    break;
-                end
-            end
-        end
-        
-        function detectBlockingCarsForLoop(obj)
-            %if a car without future data blocks a node, we set the node blocked
-            
-            %get all other cars
-            otherCars = getNrOfAllOtherCars(obj); 
-            vehicles = obj.vehicle.map.Vehicles;
-            for car = otherCars
-                if vehicles(car).pathInfo.destinationReached
-                    obj.nodesBlocked(vehicles(car).pathInfo.destinationPoint)=1;
-                end
-            end
-        end
-        
-        function detectBlockingCars(obj)
-            otherCars = getNrOfAllOtherCars(obj);
-            vehicles = obj.vehicle.map.Vehicles(otherCars);
-            pathInfo = [vehicles.pathInfo];
-            reached = [pathInfo.destinationReached];
-            otherCars = otherCars(reached);
-            destinationPoints = [pathInfo(otherCars).destinationPoint];
-            obj.nodesBlocked(destinationPoints) = 1;            
-        end
-        
-        function futureData = deleteCollidedFutureDataForLoop(obj,futureData)
-            %deletes future data of vehicles that will not move because of collision
-            
-            otherCars = getNrOfAllOtherCars(obj); 
-            vehicles = obj.vehicle.map.Vehicles;
-            for car = otherCars
-                if vehicles(car).status.collided
-                    %remove every entry with the collided car from FD
-                    futureData = futureData(futureData(:,1)~=car,:);
-                end
-            end
-            if isempty(futureData)%workaround for first turn
-                futureData = [0 0 0 0 0];
-            end
-        end
-        
-        function otherCars = getNrOfAllOtherCars(obj)
-            %returns a vector with all other cars id
-            
-            otherCars = 1:10;
-            otherCars = otherCars(otherCars~= obj.vehicle.id);
-        end
-        
-        function newFutureData = shortestPathFinder(obj, globalTime)
-            %returns the shortest path based on digraph
-            %no FD was usedto calculate it
-            %we only need to calculate turn one, because we wont make any
-            %changes to the edge costs
-                                            
-            if globalTime == 0 
-                checkForAccelerationPhase(obj);
-                if ( ~search(obj)) %Search for optimal path and alter lists accordingly
-                    disp('Path not found error ')
-                    disp(obj.vehicle.id)
-                    stopVehicle(obj);
-                    newFutureData = [];
-                    return;
-                else
-                    newFutureData = calculateNewPath(obj,globalTime);
-                end
-                % save the future data at the beginning of the simulation for validation after simulation
-                obj.vehicle.decisionUnit.initialFutureData = newFutureData;
-            else
-                %just return the old data
-                newFutureData = obj.vehicle.decisionUnit.futureData;%new = old FD
-                obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:end);%delete old node in path
             end
         end
         
