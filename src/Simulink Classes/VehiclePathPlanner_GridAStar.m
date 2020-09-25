@@ -432,6 +432,17 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                 end
             end
         end
+        function stopVehicle(obj)
+            car = obj.vehicle;            
+            %code from vehicle.checkifDestinationReached
+            car.pathInfo.path = [];
+            car.pathInfo.destinationReached = true;
+            car.setStopStatus(true);
+            car.pathInfo.routeCompleted = true;
+            car.dynamics.speed = 0;
+            car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
+            car.V2VdataLink(car.V2VdataLink==1) =0;
+        end
         
         %% acceleration estimation related
         function checkForAccelerationPhase(obj)
