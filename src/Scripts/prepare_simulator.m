@@ -40,8 +40,8 @@ switch mapSelection
 end
 
 % Generate the 2D Map and the instance from the Map class
-Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
-%Map = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+%Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+Map = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
 
 %% Load Scenario and Vehicles
 if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % new
@@ -71,3 +71,5 @@ FI_speed = 0;
 SafeDistance =18;
 
 %sim(modelName); % Uncomment this line for a single button execution
+
+runPedestrians();
