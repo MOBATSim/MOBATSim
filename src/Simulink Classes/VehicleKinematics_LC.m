@@ -361,47 +361,66 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
         end
         %% New functions
         function localWPlist = generate_left_rotation_WPs(obj, car, speed, rotation_point,rotation_angle,Destination)
-            position = car.dynamics.position;
-            localWPlist = [position(1) -position(3) car.dynamics.orientation(4)];
-            
-            r = norm(Destination-rotation_point);
-            
-            angles = pi;
-            
-            
-            
-            
-            while 1
-                
-                point_to_rotate= position;
-                a=point_to_rotate(1)-rotation_point(1);
-                b=point_to_rotate(2)-rotation_point(2);
-                c=point_to_rotate(3)-rotation_point(3);
-                
-                vector_z=[0 0 1];
-                
-                step_length = speed/r;
-                angles = angles - step_length;
-                t = angles;
-                
-                if  pi-rotation_angle>t
-                    % Complete list of local waypoints to execute the turn left maneuver
-                    localWPlist = [localWPlist; position(1) -position(3) -theta];
-                    break;
-                end
-                vector_velocity=[-a*sin(t)-cos(t)*c b a*cos(t)-c*sin(t)];
-                vector=cross(vector_velocity, vector_z);
-                vector=vector/norm(vector);
-                theta=acos(dot(vector_velocity, vector_z)/(norm(vector_velocity)*norm(vector_z)));
-                
-                position = [rotation_point(1)-(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)-(a*sin(t)+c*cos(t))];
-                orientation = [vector -theta];
-                
-                localWPlist = [position(1) -position(3) -theta];
-                
-            end
-            xRef = localWPlist(1,1);
-            yRef = localWPlist(1,2);
+%             position = car.dynamics.position;
+%             localWPlist = [position(1) -position(3) car.dynamics.orientation(4)];
+%             
+%             r = norm(Destination-rotation_point);
+%             
+%             angles = pi;
+%             
+%             
+%             
+%             
+%             while 1
+%                 
+%                 point_to_rotate= position;
+%                 a=point_to_rotate(1)-rotation_point(1);
+%                 b=point_to_rotate(2)-rotation_point(2);
+%                 c=point_to_rotate(3)-rotation_point(3);
+%                 
+%                 vector_z=[0 0 1];
+%                 
+%                 step_length = speed/r;
+%                 angles = angles - step_length;
+%                 t = angles;
+%                 
+%                 if  pi-rotation_angle>t
+%                     % Complete list of local waypoints to execute the turn left maneuver
+%                     localWPlist = [localWPlist; position(1) -position(3) -theta];
+%                     break;
+%                 end
+%                 vector_velocity=[-a*sin(t)-cos(t)*c b a*cos(t)-c*sin(t)];
+%                 vector=cross(vector_velocity, vector_z);
+%                 vector=vector/norm(vector);
+%                 theta=acos(dot(vector_velocity, vector_z)/(norm(vector_velocity)*norm(vector_z)));
+%                 
+%                 position = [rotation_point(1)-(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)-(a*sin(t)+c*cos(t))];
+%                 orientation = [vector -theta];
+%                 
+%                 localWPlist = [position(1) -position(3) -theta];
+%                 
+%             end
+%             xRef = localWPlist(1,1);
+%             yRef = localWPlist(1,2);
+             position = car.dynamics.position;
+             localWPlist = [position(1) -position(3) -car.dynamics.orientation(4)];
+             speed = car.dynamics.speed;
+             step_length = speed*0.01*obj.simSpeed;
+             local_rotation_angle = pi/2;
+             local_rotation_start_point = car.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:);
+             r = sqrt((norm(Destination-local_rotation_start_point))^2/(1-cos(local_rotation_angle))/2);
+             step_angle = step_length/r; 
+             local_rotation_point=[rotation_point(1) -rotation_point(3)];
+             
+             a = localWPlist(2)-local_rotation_point(2);
+             
+                local_position_P=[r,asin(a/r)];
+                target_point_P = [r,asin(a/r)+step_angle];
+                target_point_C = local_rotation_point+[r*cos(target_point_P(2)),r*sin(target_point_P(2))];
+                 
+
+            xRef = target_point_C(1);
+            yRef = target_point_C(2);
             
             save('way_points','xRef','yRef');
             figure(2);

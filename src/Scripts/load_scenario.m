@@ -4,7 +4,7 @@ switch scenarioName
     case 'Urban City Traffic'
         %% Complex crossroad scenario
         startingPoints =    [15 53 17 18 19 20 21 22 36 39];
-        destinationPoints = [16 81 15 17 18 19 20 21 34 36];
+        destinationPoints = [16 57 15 17 18 19 20 21 34 36];
         maxSpeeds = [20 20 20 20 20 20 20 20 20 20];
         
         %% Collision scenario    
