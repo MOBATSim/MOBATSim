@@ -400,6 +400,12 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
                 localWPlist = [position(1) -position(3) -theta];
                 
             end
+            xRef = localWPlist(1,1);
+            yRef = localWPlist(1,2);
+            
+            save('way_points','xRef','yRef');
+            figure(2);
+            plot(xRef,yRef,'.','color','b');
         end
         
         function localWPlist = generate_right_rotation_WPs(obj, car,speed, rotation_point,rotation_angle,Destination)
