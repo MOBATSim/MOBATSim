@@ -404,8 +404,8 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
 %             yRef = localWPlist(1,2);
              position = car.dynamics.position;
              localWPlist = [position(1) -position(3) -car.dynamics.orientation(4)];
-             speed = car.dynamics.speed;
-             step_length = speed*0.01*obj.simSpeed;
+%              speed = car.dynamics.speed;
+             step_length = speed*1;
              local_rotation_angle = pi/2;
              local_rotation_start_point = car.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:);
              r = sqrt((norm(Destination-local_rotation_start_point))^2/(1-cos(local_rotation_angle))/2);
@@ -496,7 +496,7 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
 
             while 1
                 
-                speed = 1;
+                speed = 10;
                 Position_Wps = Position_Wps + (DisplacementVector/norm(DisplacementVector))*(speed);
                 
                 
