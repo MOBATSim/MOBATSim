@@ -486,9 +486,12 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
                 
             end
             
+            xRef = localWPlist(1,1);
+            yRef = localWPlist(1,2);
             
-            
-            
+            save('way_points','xRef','yRef');
+            figure(2);
+            plot(xRef,yRef,'.','color','b');
         end
     end
     
