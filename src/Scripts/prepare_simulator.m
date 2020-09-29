@@ -69,4 +69,9 @@ FI_distance = 0;
 FI_speed = 0;
 SafeDistance =18;
 
-sim(modelName); % Uncomment this line for a single button execution
+% sim(modelName); % Uncomment this line for a single button execution
+
+%% figure for viewing WPlist results
+
+figure('Name','waypoints');
+hold on
