@@ -75,3 +75,7 @@ SafeDistance =18;
 
 figure('Name','waypoints');
 hold on
+
+%% define vehicle2's starting position
+v2_Xi = Map.waypoints(Vehicle2.pathInfo.startingPoint,1);
+v2_Yi = -Map.waypoints(Vehicle2.pathInfo.startingPoint,3);
