@@ -37,7 +37,7 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
         
         
         %% Loop function
-        function [position, rotation] = stepImpl(obj,speed, drivingMode)
+        function [position, rotation] = stepImpl(obj,speed,X,Y,psi, drivingMode)
             %This block shouldn't run if the vehicle has reached its
             %destination
             if obj.vehicle.status.collided
