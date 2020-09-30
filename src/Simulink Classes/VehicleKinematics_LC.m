@@ -37,9 +37,10 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
         
         
         %% Loop function
-        function [position, rotation] = stepImpl(obj,speed,X,Y,psi, drivingMode)
+        function [position, rotation] = stepImpl(obj,speed,real_speed,X,Y,psi, drivingMode)
             %This block shouldn't run if the vehicle has reached its
             %destination
+            v_pos=[X Y psi real_speed];
             if obj.vehicle.status.collided
                 %Output 1: Position of the vehicle
                 position= obj.vehicle.dynamics.position;
@@ -58,9 +59,10 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
                 end
                 % TODO Check the kinematic equations
                 speedAccordingtoSimulation = speed*0.01*obj.simSpeed;
+%                 speedAccordingtoSimulation = speed;%test qihang
                 %0.01 is the sample time but it needs to be automatically detected without a big overhead
                 %obj.getSampleTime.SampleTime creates a huge overhead
-                obj.nextMove(obj.vehicle,speedAccordingtoSimulation);
+                obj.nextMove(obj.vehicle,speedAccordingtoSimulation,v_pos);
             end
             
             %Output 1: Position of the vehicle
@@ -101,10 +103,10 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             end
         end
         
-        function moveto(obj ,car,speed,Destination)
+        function moveto(obj ,car,speed,Destination,v_pos)
             %% Waypoint generation
             if ~car.dynamics.has_local_trajectory
-            obj.generate_straight_move_WPs(car,speed,Destination);
+            obj.generate_straight_move_WPs(car,speed,Destination,v_pos);
             end
             %%
             
@@ -291,7 +293,7 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             
         end
         
-        function takeRoute(obj,car,speed,refRoute)
+        function takeRoute(obj,car,speed,refRoute,v_pos)
             if car.status.stop ==1
                 return;
             end
@@ -305,7 +307,7 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             
             
             if RotationVector(1) == 0 %Straight motion
-                obj.moveto(car,speed,refRoute(2,:));
+                obj.moveto(car,speed,refRoute(2,:),v_pos);
                 
             else %Rotational motion
                 
@@ -320,7 +322,7 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             end
         end
         
-        function nextMove(obj, car, speed)
+        function nextMove(obj, car, speed, v_pos)
             % Examining 3 different states of the car
             % car.status.stop
             % car.pathInfo.destinationReached
@@ -350,11 +352,11 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
                             return;
                         else
                             % Car has to start the next route
-                            obj.takeRoute(car,speed,car.pathInfo.currentTrajectory);
+                            obj.takeRoute(car,speed,car.pathInfo.currentTrajectory,v_pos);
                         end
                     elseif car.pathInfo.routeCompleted == false
                         % Car has to keep on going on its current route
-                        obj.takeRoute(car,speed,car.pathInfo.currentTrajectory);
+                        obj.takeRoute(car,speed,car.pathInfo.currentTrajectory,v_pos);
                     end
                 end
             end
@@ -486,31 +488,33 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             end
         end
         
-        function localWPlist = generate_straight_move_WPs(obj, car,speed,Destination)
+        function localWPlist = generate_straight_move_WPs(obj, car,speed,Destination,v_pos)
             localWPlist = [car.dynamics.position(1) -car.dynamics.position(3) car.dynamics.orientation(4)];
             
             DisplacementVector = Destination- car.dynamics.position;
             ThetaRadian = atan(DisplacementVector(1)/DisplacementVector(3));
 
 
-            Position_Wps = car.dynamics.position;
-
-            while 1
+%             Position_Wps = car.dynamics.position;
+              Position_Wps = [v_pos(1) 0 v_pos(2)];%test qihang
+% 
+%             while 1
                 
-                speed = 10;
-                Position_Wps = Position_Wps + (DisplacementVector/norm(DisplacementVector))*(speed);
+  
+%                 Position_Wps = Position_Wps + (DisplacementVector/norm(DisplacementVector))*(speed);
+                Position_Wps = Position_Wps + (DisplacementVector/norm(DisplacementVector))*(v_pos(4));%test qihang
                 
-                
-                if  norm(DisplacementVector/norm(DisplacementVector))*speed > norm(Destination-Position_Wps)
+%                 if  norm(DisplacementVector/norm(DisplacementVector))*speed > norm(Destination-Position_Wps)
+                if  norm(DisplacementVector/norm(DisplacementVector))*v_pos(4) > norm(Destination-Position_Wps)
                     localWPlist = [localWPlist; Destination(1) Destination(3) -ThetaRadian];
                     
                     car.dynamics.has_local_trajectory =0;
-                    break;
+%                     break;
                 end
                 
                 localWPlist = [localWPlist; Position_Wps(1) -Position_Wps(3) -ThetaRadian];
                 
-            end
+%             end
             
             xRef = localWPlist(1,1);
             yRef = localWPlist(1,2);
