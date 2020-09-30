@@ -386,11 +386,11 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                     futureData = futureData(futureData(:,1)~=car,:);
                     %% block the start node of the crash
                     coords = obj.Map.waypoints(vehicles(car).pathInfo.lastWaypoint,:);
-                    coords = obj.Map.mapBOG.world2grid([coords(1)-obj.Map.xOffset,-coords(3)-obj.Map.yOffset]);                    
+                    coords = obj.Map.bogMap.world2grid([coords(1)-obj.Map.xOffset,-coords(3)-obj.Map.yOffset]);                    
                     futureData = [futureData;[car , coords , 0, 0, -1]];
                     %% block the future node of the crash
                     coords = obj.Map.waypoints(vehicles(car).pathInfo.path(2),:);
-                    coords = obj.Map.mapBOG.world2grid([coords(1)-obj.Map.xOffset,-coords(3)-obj.Map.yOffset]);
+                    coords = obj.Map.bogMap.world2grid([coords(1)-obj.Map.xOffset,-coords(3)-obj.Map.yOffset]);
                     futureData = [futureData;[car , coords , 0, 0, -1]];
                 end                
             end
