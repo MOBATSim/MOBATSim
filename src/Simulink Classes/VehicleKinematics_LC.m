@@ -164,10 +164,12 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             car.dynamics.orientation = [ 0 1 0 ThetaRadian];
             
             % TODO Check if we need to add the sample time of the simulation into this equation below
-            car.dynamics.position = car.dynamics.position + (car.dynamics.directionVector/norm(car.dynamics.directionVector))*(speed);
+%             car.dynamics.position = car.dynamics.position + (car.dynamics.directionVector/norm(car.dynamics.directionVector))*(speed);
+
+            car.dynamics.position = car.dynamics.position + (car.dynamics.directionVector/norm(car.dynamics.directionVector))*v_pos(4)*0.01;%test qihang
             
-            
-            if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
+%             if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
+            if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*v_pos(4)*0.01 > norm(Destination-car.dynamics.position)
                 car.dynamics.position = Destination; %Because of the rounding errors may be modified later
                 car.pathInfo.routeCompleted=true;
                 car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
@@ -489,10 +491,13 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
         end
         
         function localWPlist = generate_straight_move_WPs(obj, car,speed,Destination,v_pos)
+            Destination = [Destination(1) Destination(2) -Destination(3)];
             localWPlist = [car.dynamics.position(1) -car.dynamics.position(3) car.dynamics.orientation(4)];
             
-            DisplacementVector = Destination- car.dynamics.position;
+%             DisplacementVector = Destination- car.dynamics.position;
+            DisplacementVector = Destination- [v_pos(1) 0 v_pos(2)];
             ThetaRadian = atan(DisplacementVector(1)/DisplacementVector(3));
+%             DisplacementVector=[DisplacementVector(1) DisplacementVector(2) -DisplacementVector(3)];%transition matrix between MOBATSim coordi and real coordi
 
 
 %             Position_Wps = car.dynamics.position;
@@ -502,18 +507,20 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
                 
   
 %                 Position_Wps = Position_Wps + (DisplacementVector/norm(DisplacementVector))*(speed);
-                Position_Wps = Position_Wps + (DisplacementVector/norm(DisplacementVector))*(v_pos(4));%test qihang
+                Position_Wps = Position_Wps + (DisplacementVector/norm(DisplacementVector))*v_pos(4)*0.01;%test qihang
                 
 %                 if  norm(DisplacementVector/norm(DisplacementVector))*speed > norm(Destination-Position_Wps)
-                if  norm(DisplacementVector/norm(DisplacementVector))*v_pos(4) > norm(Destination-Position_Wps)
-                    localWPlist = [localWPlist; Destination(1) Destination(3) -ThetaRadian];
+                if  norm(DisplacementVector/norm(DisplacementVector))*v_pos(4)*0.01 > norm(Destination-[v_pos(1) 0 v_pos(2)])%test qihang
+%                     localWPlist = [localWPlist; Destination(1) Destination(3) -ThetaRadian];
+                    localWPlist = [Destination(1) Destination(3) -ThetaRadian];%test qihang
                     
                     car.dynamics.has_local_trajectory =0;
 %                     break;
+                else
+                
+%                 localWPlist = [localWPlist; Position_Wps(1) -Position_Wps(3) -ThetaRadian];
+                localWPlist = [ Position_Wps(1) Position_Wps(3) -ThetaRadian];%test qihang
                 end
-                
-                localWPlist = [localWPlist; Position_Wps(1) -Position_Wps(3) -ThetaRadian];
-                
 %             end
             
             xRef = localWPlist(1,1);
