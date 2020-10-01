@@ -26,7 +26,7 @@ classdef load_waypoints< matlab.System
         function [xRef, yRef] = stepImpl(obj)
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
-            temp = load('waypoints');
+            temp = load('waypoints')
             xRef=temp.xRef;
             yRef=temp.yRef;
         end
