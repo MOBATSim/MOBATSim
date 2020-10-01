@@ -128,7 +128,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
         function newFutureData = gridAStar(obj, globalTime,futureData)
             %this function performs a A* search with the grid location
             %objects from obj.Map.gridLocationMap
-            %futureData = [carID, coordinates of GL x, y, speed, time, probability]
+            %futureData = [carID, coordinates of GL x, y, speed, time, deviation]
             %globalTime is the current time of the simulation
             %newFutureData is the newly created FD from this vehicle
             
@@ -278,7 +278,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                     newPath = [newPath, curGL.nodeNR];
                 end
                 %build future data
-                %FD [carID, coordinates of GL x, y, speed, time, probability]
+                %FD [carID, coordinates of GL x, y, speed, time, deviation]
                 newFD = [newFD; [carID, curGL.coordinates, curGL.speedVector(carID), curGL.gValue, curGL.deviation]];
                 %got to the parent
                 curKey = curGL.parent;
