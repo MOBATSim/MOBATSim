@@ -184,7 +184,7 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             
         end
         
-        function rotate_left(obj,car, speed, rotation_point,rotation_angle,Destination)
+        function rotate_left(obj,car, speed, rotation_point,rotation_angle,Destination,v_pos)
             
             %% WP generation
             if ~car.dynamics.has_local_trajectory
@@ -234,7 +234,8 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
                 vector=vector/norm(vector);
                 theta=acos(dot(vector_velocity, vector_z)/(norm(vector_velocity)*norm(vector_z)));
                 
-                car.dynamics.position = [rotation_point(1)-(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)-(a*sin(t)+c*cos(t))];
+          %      car.dynamics.position = [rotation_point(1)-(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)-(a*sin(t)+c*cos(t))];
+                car.dynamics.position = [v_pos(1) 0 -v_pos(2)];
                 car.dynamics.orientation = [vector -theta];
             end
             
@@ -315,7 +316,7 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
                 
                 %Determine rotation direction: left or right
                 if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
-                    obj.rotate_left(car,speed, rotation_point,rotation_angle,P_final);
+                    obj.rotate_left(car,speed, rotation_point,rotation_angle,P_final,v_pos);
                 elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
                     obj.rotate_right(car,speed, rotation_point,rotation_angle,P_final);
                 end
