@@ -188,7 +188,7 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             
             %% WP generation
             if ~car.dynamics.has_local_trajectory
-            obj.generate_left_rotation_WPs(car, speed, rotation_point,rotation_angle,Destination);
+            obj.generate_left_rotation_WPs(car, speed, rotation_point,rotation_angle,Destination,v_pos);
             end
             %%
             r = norm(Destination-rotation_point);
@@ -366,7 +366,7 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             
         end
         %% New functions
-        function localWPlist = generate_left_rotation_WPs(obj, car, speed, rotation_point,rotation_angle,Destination)
+        function localWPlist = generate_left_rotation_WPs(obj, car, speed, rotation_point,rotation_angle,Destination,v_pos)
 %             position = car.dynamics.position;
 %             localWPlist = [position(1) -position(3) car.dynamics.orientation(4)];
 %             
@@ -409,16 +409,18 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
 %             xRef = localWPlist(1,1);
 %             yRef = localWPlist(1,2);
              position = car.dynamics.position;
-             localWPlist = [position(1) -position(3) -car.dynamics.orientation(4)];
+%              localWPlist = [position(1) -position(3) -car.dynamics.orientation(4)];
+             localWPlist = [position(1) 0 -position(3)];
 %              speed = car.dynamics.speed;
-             step_length = speed*1;
+             step_length = v_pos(4)*0.01;
              local_rotation_angle = pi/2;
              local_rotation_start_point = car.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:);
+%              local_rotation_start_point = local_rotation_start_point*[1,1,-1];
              r = sqrt((norm(Destination-local_rotation_start_point))^2/(1-cos(local_rotation_angle))/2);
              step_angle = step_length/r; 
              local_rotation_point=[rotation_point(1) -rotation_point(3)];
              
-             a = localWPlist(2)-local_rotation_point(2);
+             a = localWPlist(3)-local_rotation_point(2);
              
                 local_position_P=[r,asin(a/r)];
                 target_point_P = [r,asin(a/r)+step_angle];
