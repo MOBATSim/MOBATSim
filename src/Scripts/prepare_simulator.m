@@ -79,3 +79,6 @@ hold on
 %% define vehicle2's starting position
 v2_Xi = Map.waypoints(Vehicle2.pathInfo.startingPoint,1);
 v2_Yi = -Map.waypoints(Vehicle2.pathInfo.startingPoint,3);
+xRef = v2_Xi;
+yRef = v2_Yi;
+save('waypoints','xRef','yRef');
