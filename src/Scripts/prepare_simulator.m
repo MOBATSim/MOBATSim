@@ -62,7 +62,7 @@ Map.initCarDescriptionPlot();
 clear_init_variables();
 
 % Open MOBATSim Simulink Model
-open_system(modelName)
+% open_system(modelName);
 
 %% Fault Injection properties (TODO: To be implemented soon)
 FI_distance = 0;

@@ -191,53 +191,53 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
             obj.generate_left_rotation_WPs(car, speed, rotation_point,rotation_angle,Destination,v_pos);
             end
             %%
-            r = norm(Destination-rotation_point);
-            
-            if car.pathInfo.routeCompleted == true
-                
-                car.dynamics.cornering.angles = pi;
-                car.pathInfo.routeCompleted = false;
-                
-                point_to_rotate= car.dynamics.position;
-                
-                car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
-                car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
-                car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
-                
-            end
-            
-            vector_z=[0 0 1];
-            
-            a = car.dynamics.cornering.a;
-            b = car.dynamics.cornering.b;
-            c = car.dynamics.cornering.c;
-            
-            step_length = speed/r;
-            car.dynamics.cornering.angles = car.dynamics.cornering.angles - step_length;
-            t = car.dynamics.cornering.angles;
-            
-            if  pi-rotation_angle>t
-                car.dynamics.position = Destination;
-                car.pathInfo.routeCompleted = true;
-                car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
-                
-                %% TODO - check if it works in all situations
-                idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
-                if idx+1<=length(car.pathInfo.path)
-                    car.pathInfo.currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
-                end
-                %%
-                car.dynamics.cornering.angles = 0;
-            else
-                vector_velocity=[-a*sin(t)-cos(t)*c b a*cos(t)-c*sin(t)];
-                vector=cross(vector_velocity, vector_z);
-                vector=vector/norm(vector);
-                theta=acos(dot(vector_velocity, vector_z)/(norm(vector_velocity)*norm(vector_z)));
-                
-          %      car.dynamics.position = [rotation_point(1)-(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)-(a*sin(t)+c*cos(t))];
+%             r = norm(Destination-rotation_point);
+%             
+%             if car.pathInfo.routeCompleted == true
+%                 
+%                 car.dynamics.cornering.angles = pi;
+%                 car.pathInfo.routeCompleted = false;
+%                 
+%                 point_to_rotate= car.dynamics.position;
+%                 
+%                 car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
+%                 car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
+%                 car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
+%                 
+%             end
+%             
+%             vector_z=[0 0 1];
+%             
+%             a = car.dynamics.cornering.a;
+%             b = car.dynamics.cornering.b;
+%             c = car.dynamics.cornering.c;
+%             
+%             step_length = speed/r;
+%             car.dynamics.cornering.angles = car.dynamics.cornering.angles - step_length;
+%             t = car.dynamics.cornering.angles;
+%             
+%             if  pi-rotation_angle>t
+%                 car.dynamics.position = Destination;
+%                 car.pathInfo.routeCompleted = true;
+%                 car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
+%                 
+%                 %% TODO - check if it works in all situations
+%                 idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
+%                 if idx+1<=length(car.pathInfo.path)
+%                     car.pathInfo.currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+%                 end
+%                 %%
+%                 car.dynamics.cornering.angles = 0;
+%             else
+%                 vector_velocity=[-a*sin(t)-cos(t)*c b a*cos(t)-c*sin(t)];
+%                 vector=cross(vector_velocity, vector_z);
+%                 vector=vector/norm(vector);
+%                 theta=acos(dot(vector_velocity, vector_z)/(norm(vector_velocity)*norm(vector_z)));
+%                 
+%           %      car.dynamics.position = [rotation_point(1)-(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)-(a*sin(t)+c*cos(t))];
                 car.dynamics.position = [v_pos(1) 0 -v_pos(2)];
-                car.dynamics.orientation = [vector -theta];
-            end
+%                 car.dynamics.orientation = [vector -theta];
+%             end
             
         end
         
@@ -420,10 +420,11 @@ classdef VehicleKinematics_LC < matlab.System & handle & matlab.system.mixin.Pro
              step_angle = step_length/r; 
              local_rotation_point=[rotation_point(1) -rotation_point(3)];
              
+             l = norm(localWPlist - [local_rotation_point(1) 0 local_rotation_point(2)]);
              a = localWPlist(3)-local_rotation_point(2);
              
-                local_position_P=[r,asin(a/r)];
-                target_point_P = [r,asin(a/r)+step_angle];
+                local_position_P=[l,asin(a/l)];
+                target_point_P = [r,asin(a/l)+step_angle];
                 target_point_C = local_rotation_point+[r*cos(target_point_P(2)),r*sin(target_point_P(2))];
                  
 
