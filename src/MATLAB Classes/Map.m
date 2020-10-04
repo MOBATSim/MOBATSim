@@ -65,14 +65,23 @@ classdef Map < handle
             
             obj.plots.graph2 = plot(obj.digraph_visualization,'XData',obj.waypoints(:,1),'YData',-obj.waypoints(:,3),'LineWidth',4,'NodeFontSize',0.5,'ArrowSize',1,'MarkerSize',2.5);
 %             set(gcf, 'Position', get(0, 'Screensize'))
+            axis equal
+            axis([-600 600 -500 500])
+%             axis off tight
             F=getframe(gca);
-            imwrite(F.cdata,'graphMS.png')
+            f=frame2im(F);
+            imshow(f)
+            
+            g = gcf;
+            exportgraphics(g,'graphMS.png','Resolution',349)
+%             F=getframe(gca);
+%             imwrite(F.cdata,'graphMS.png')
 %             saveas(gcf,'graphMS.png');
             image = imread('graphMS.png');
             
             grayimage = rgb2gray(image);
-            bwimage = grayimage < 200 & grayimage >87;
-            grid = binaryOccupancyMap(bwimage);
+            bwimage = ~(grayimage < 200 & grayimage >87);
+            grid = binaryOccupancyMap(bwimage,2);
 %             redmap=binaryOccupancyMap(grid(100:200,100:200),2)
             figure
             show(grid)
