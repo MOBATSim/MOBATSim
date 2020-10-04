@@ -8,6 +8,7 @@ classdef Map < handle
         connections
         direct_graph
         digraph_visualization
+        digraph_visualization2
         Vehicles
         plots
         crossroadUnits
@@ -49,15 +50,36 @@ classdef Map < handle
             %h = view(biograph(direct_graph,[],'ShowWeights','on'));
             
             obj.digraph_visualization = digraph( [obj.connections.circle(:,1)' obj.connections.translation(:,1)'],[obj.connections.circle(:,2)' obj.connections.translation(:,2)'],[ obj.connections.distances']);
+%             obj.digraph_visualization2 = graph( [obj.connections.circle(:,1)' obj.connections.translation(:,1)'],[obj.connections.circle(:,2)' obj.connections.translation(:,2)'],[ obj.connections.distances']);
+            
+            
             for i=1:length(obj.connections.all)
                 
                 graphConnectionsLabel(i) = find(obj.connections.all(:,1) == obj.digraph_visualization.Edges.EndNodes(i,1)&obj.connections.all(:,2) == obj.digraph_visualization.Edges.EndNodes(i,2));
-                
+%                 graphConnectionsLabel(i) = find(obj.connections.all(:,1) == obj.digraph_visualization2.Edges.EndNodes(i,1)&obj.connections.all(:,2) == obj.digraph_visualization2.Edges.EndNodes(i,2));
+
             end
             
             % Plot the map on the figure
+            figure('units','normalized','outerposition',[0 0 1 1])
+            
+            obj.plots.graph2 = plot(obj.digraph_visualization,'XData',obj.waypoints(:,1),'YData',-obj.waypoints(:,3),'LineWidth',4,'NodeFontSize',0.5,'ArrowSize',1,'MarkerSize',2.5);
+%             set(gcf, 'Position', get(0, 'Screensize'))
+            F=getframe(gca);
+            imwrite(F.cdata,'graphMS.png')
+%             saveas(gcf,'graphMS.png');
+            image = imread('graphMS.png');
+            
+            grayimage = rgb2gray(image);
+            bwimage = grayimage < 200 & grayimage >87;
+            grid = binaryOccupancyMap(bwimage);
+%             redmap=binaryOccupancyMap(grid(100:200,100:200),2)
+            figure
+            show(grid)
+            figure
             obj.plots.graph = plot(obj.digraph_visualization,'XData',obj.waypoints(:,1),'YData',-obj.waypoints(:,3),'EdgeLabel',graphConnectionsLabel');
             
+
             % Turn off useless properties for performance optimization
             MapFig = gcf;
             MapFig.WindowState ='maximized';

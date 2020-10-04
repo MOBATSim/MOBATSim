@@ -14,7 +14,7 @@ Map.plots.Pedestrians.YData = allPedestrianPosition(:,2);
 
 newPosPD = allPedestrianPosition(:,1);
 
-for i = 1:10000
+for i = 1:100
     newPosPD = newPosPD + [0.05; 0.1; 0.15];
     Map.plots.Pedestrians.XData = newPosPD;
     pause(0.01);
