@@ -1,5 +1,5 @@
 classdef Vehicle < handle
-    %VEHÝCLE Summary of this class goes here
+    %VEHICLE Summary of this class goes here
     
     %   Detailed explanation goes here
     
@@ -12,6 +12,7 @@ classdef Vehicle < handle
         %         mass
         dynamics
         %         position
+        %         reference_waypoints
         %         speed
         %         maxSpeed
         %         orientation
@@ -71,6 +72,7 @@ classdef Vehicle < handle
             obj.physics.mass = mass; %kg Should be edited according to the vehicle
             
             obj.dynamics.position = [0 0 0];
+            obj.dynamics.reference_waypoints = [0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;];
             obj.dynamics.speed = 0;
             obj.dynamics.maxSpeed =maxSpeed;
             obj.dynamics.directionVector=[0 0 0];
