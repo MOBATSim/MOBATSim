@@ -23,13 +23,10 @@ classdef CollisionPredictor < matlab.System & matlab.system.mixin.Propagates ...
     end
     
     methods(Access = protected)
-        %% Common functions
+        %% set the initial value of CollisionPredictor
         function setupImpl(obj)
-            % Perform one-time calculations, such as computing constants
             obj.Vehicles = evalin('base','Vehicles');
-            obj.Map = evalin('base','Map');
-            %             obj.Detector =  evalin('base','trainedModel');
-            
+            obj.Map = evalin('base','Map');      
             Warning = cell2table(cell(0,10), 'VariableNames', {'V1', 'V2','V3',  'V4', 'V5', 'V6','V7','V8','V9', 'V10'});
             Status = cell2table(cell(0,10), 'VariableNames', {'V1', 'V2','V3',  'V4', 'V5', 'V6','V7','V8','V9', 'V10'});
             t = 0;
@@ -37,10 +34,9 @@ classdef CollisionPredictor < matlab.System & matlab.system.mixin.Propagates ...
             save Warning Warning
             save Status Status
         end
+        %% check the condition of the crossway point 11, 9, 13, 44, 4, 52, 42, 36, 25, 23 and get the data for predictor every second
         
         function stepImpl(obj)
-            % Implement algorithm. Calculate y as a function of input u and
-            % discrete states.
             load('t.mat');
             if (get_param(obj.modelName,'SimulationTime') == fix(get_param(obj.modelName,'SimulationTime'))) &&...
                     (get_param(obj.modelName,'SimulationTime') ~= t)
