@@ -40,8 +40,12 @@ switch mapSelection
 end
 
 % Generate the 2D Map and the instance from the Map class
-%Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+
+
+% Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
 Map = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+Map2 = GridMapPed(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+
 
 %% Load Scenario and Vehicles
 if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % new
@@ -54,6 +58,7 @@ end
 load_vehicles(); % default on - for Monte Carlo experiments comment out
 
 %MonteCarlo_scenarios(); % default off - for Monte Carlo experiments uncomment
+figure(Map.MapFig)
 
 %% Initialize Vehicles on the Map
 Map.Vehicles = Vehicles;

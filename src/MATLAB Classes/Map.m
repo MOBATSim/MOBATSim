@@ -14,6 +14,8 @@ classdef Map < handle
         plots
         crossroadUnits
         crossroads
+        occMap
+        MapFig
     end
     
     methods
@@ -62,41 +64,45 @@ classdef Map < handle
             end
             
             % Plot the map on the figure
-            figure('units','normalized','outerposition',[0 0 1 1])
-            
-            obj.plots.graph2 = plot(obj.digraph_visualization,'XData',obj.waypoints(:,1),'YData',-obj.waypoints(:,3),'LineWidth',4,'NodeFontSize',0.5,'ArrowSize',1,'MarkerSize',2.5);
-%             set(gcf, 'Position', get(0, 'Screensize'))
-            axis equal
-            axis([-600 600 -500 500])
-%             axis off tight
-            F=getframe(gca);
-            f=frame2im(F);
-            imshow(f)
-            
-            g = gcf;
-            exportgraphics(g,'graphMS.png','Resolution',349)
+%             figure('units','normalized','outerposition',[0 0 1 1])
+%             
+%             obj.plots.graph2 = plot(obj.digraph_visualization,'XData',obj.waypoints(:,1),'YData',-obj.waypoints(:,3),'LineWidth',4,'NodeFontSize',0.5,'ArrowSize',1,'MarkerSize',2.5);
+% %             set(gcf, 'Position', get(0, 'Screensize'))
+%             axis equal
+%             axis([-600 600 -500 500])
+% %             axis off tight
 %             F=getframe(gca);
-%             imwrite(F.cdata,'graphMS.png')
-%             saveas(gcf,'graphMS.png');
-            image = imread('graphMS.png');
-            
-            
-            grayimage = rgb2gray(image);
-            bwimage = ~(grayimage < 200 & grayimage >87);
-            grid = binaryOccupancyMap(bwimage,2);
-%             redmap=binaryOccupancyMap(grid(100:200,100:200),2)
-            figure
-            show(grid)
+%             f=frame2im(F);
+%             figure
+%             imshow(f)
+%             
+%             g = gcf;
+%             exportgraphics(g,'graphMS.png','Resolution',349)
+% %             F=getframe(gca);
+% %             imwrite(F.cdata,'graphMS.png')
+% %             saveas(gcf,'graphMS.png');
+%             image = imread('graphMS.png');
+%             
+%             
+%             grayimage = rgb2gray(image);
+%             bwimage = ~(grayimage < 200 & grayimage >87);
+%             grid1 = binaryOccupancyMap(bwimage,2);
+% %             redmap=binaryOccupancyMap(grid(100:200,100:200),2)
+%             show(grid1)
+%             obj.occMap=grid1
+% %             setOccupancy(grid1,[460 410],1,"local")          
+% %             show(grid1)
+%             assignin('base','mapOc',grid1)
             figure
             obj.plots.graph = plot(obj.digraph_visualization,'XData',obj.waypoints(:,1),'YData',-obj.waypoints(:,3),'EdgeLabel',graphConnectionsLabel');
             
 
             % Turn off useless properties for performance optimization
-            MapFig = gcf;
-            MapFig.WindowState ='maximized';
+            obj.MapFig = gcf;
+            obj.MapFig.WindowState ='maximized';
             %MapFig.WindowState ='fullscreen';
-            MapFig.Name = obj.mapName;
-            MapFig.NumberTitle = 'off';
+            obj.MapFig.Name = "Mobat";
+            obj.MapFig.NumberTitle = 'off';
             ax = gca;
             ax.Toolbar = [];
             ax.Interactions = [];
@@ -250,6 +256,10 @@ classdef Map < handle
             % Vehicles' 2D scatter plot circle positions
             obj.plots.Vehicles.XData = allVehiclePositions(:,1);
             obj.plots.Vehicles.YData = -allVehiclePositions(:,3);
+            
+            figure(1)
+            setOccupancy(obj.occMap,[allVehiclePositions(:,1)+600 -allVehiclePositions(:,3)+500], ones(10,1))
+            show(obj.occMap)
             
             % Vehicles' Annotation String
             speedArray = compose('%4.1f', [cat(1,cat(1,obj.Vehicles(1:length(obj.Vehicles))).dynamics).speed]);

@@ -1,10 +1,11 @@
-hold on
+
 pd1 = Pedestrian([100 20], 5);
 pd2 = Pedestrian([100 60], 5);
 pd3 = Pedestrian([100 100], 5);
 
 pds = [pd1 pd2 pd3];
 
+hold on
 Map.plots.Pedestrians = scatter(0,0,150,'filled');
 allPedestrianPosition = cat(1,pds.position);
 
