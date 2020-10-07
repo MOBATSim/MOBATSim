@@ -47,6 +47,8 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
                 position= obj.vehicle.dynamics.position;
                 %Output 2: Rotation angle of the vehicle
                 rotation= obj.vehicle.dynamics.orientation;
+                %Output 3: reference waypoints
+                reference_waypoints = obj.vehicle.dynamics.reference_waypoints(:,[1 3]);
                 return;
             end
             
@@ -64,7 +66,9 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             %Output 2: Rotation angle of the vehicle
             rotation= obj.vehicle.dynamics.orientation;
             %Output 3: Reference waypoints for pure pursuit controller
-            reference_waypoints = [0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;0 0 0;];
+            reference_waypoints = obj.vehicle.dynamics.reference_waypoints(:,[1 3]);
+            figure(2)
+            plot(reference_waypoints(end,1),reference_waypoints(end,2),'.','color','blue');
             
             
         end
@@ -234,8 +238,8 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             car.dynamics.position = [v_pos(1) 0 -v_pos(2)];%test qihang
             
 %             if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
-            if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*v_pos(4)*0.01 > norm(Destination-car.dynamics.position)
-                car.dynamics.position = Destination; %Because of the rounding errors may be modified later
+            if  norm(car.dynamics.position-Destination)<2
+%                 car.dynamics.position = Destination; %Because of the rounding errors may be modified later
                 car.pathInfo.routeCompleted=true;
                 car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
                 
@@ -273,7 +277,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             
 
                  for i = 1:1:length(car.dynamics.reference_waypoints)
-                     car.dynamics.reference_waypoints(i,:) = local_WP_start_point+min(i*(v_pos(4)*0.01*10),norm(local_destination - local_WP_start_point))*local_route_Vector;
+                     car.dynamics.reference_waypoints(i,:) = local_WP_start_point+min(i*(v_pos(4)*0.01*100),norm(local_destination - local_WP_start_point))*local_route_Vector;
                      %10 is the factor that adjust the reference WP step length
                  end
 
@@ -294,7 +298,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             % Return size for each output port
             out = [1 3];
             out2 = [1 4];
-            out3 = [10 3];
+            out3 = [10 2];
             
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
@@ -324,7 +328,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             % Return true for each output port with fixed size
             out = true;
             out2 = true;
-            out3 = false;
+            out3 = true;
             
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);

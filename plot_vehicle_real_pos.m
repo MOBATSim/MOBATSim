@@ -27,7 +27,7 @@ classdef plot_vehicle_real_pos < matlab.System
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
             figure(2);
-            plot(x+1,y+1,'.','color','r');
+            plot(x,y,'.','color','r');
         end
 
         function resetImpl(obj)
