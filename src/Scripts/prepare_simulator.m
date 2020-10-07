@@ -17,14 +17,10 @@ Sim_Ts = 0.01; % Sample time of the simulation (may not be stable if changed)
 if ~exist('mapSelection','var')
     mapSelection = 'Mobatkent'; % Default map selection
 end
-%% new
-if ~exist('scenarioSelection','var')&&~exist('CustomScenarioGenerated','var')&&(~exist('RandomScenarioGenerated','var'))
+
+if ~exist('scenarioSelection','var')
     scenarioSelection = 'Urban City Traffic'; % Default scenario selection
 end
-%% Replacement
-% if ~exist('scenarioSelection','var')
-%     scenarioSelection = 'Urban City Traffic'; % Default scenario selection
-% end
 
 %% Load the Map
 switch mapSelection  
@@ -40,16 +36,10 @@ switch mapSelection
 end
 
 % Generate the 2D Map and the instance from the Map class
-Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
-%Map = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+Map = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
 
 %% Load Scenario and Vehicles
-if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % new
 load_scenario(scenarioSelection); % default on - for Monte Carlo experiments comment out
-end
-%uncomment line below to undo
-%load_scenario(scenarioSelection); % default on - for Monte Carlo experiments comment out
-
 % Load Vehicles
 load_vehicles(); % default on - for Monte Carlo experiments comment out
 

@@ -8,6 +8,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         map = evalin('base','Map');
         modelName = evalin('base','modelName');
+        CollisionPredictor = evalin('base','CollisionPredictor');  % enable to turn the CollisionPredictor on
     end
     
     properties(DiscreteState)
@@ -22,6 +23,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     methods(Access = protected)
         function setupImpl(obj)
             %Initializing the Vehicles on the Map
+            obj.CollisionPredictor.setupImpl();   % enable to use CollisionPredictor
             for vehicle = obj.map.Vehicles
                 vehicle.initVehicle();
             end
@@ -63,7 +65,8 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             %% 2D Traffic Plot
             obj.map.dynamicTrafficPlot();
             %obj.map.dynamicRouteHighlighting(); % enable for dynamic route highlighting - disable for performance
-
+            %% CollisionPredictor
+            obj.CollisionPredictor.stepImpl();    % enable to use CollisionPredictor
             %% Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 for vehicle = obj.map.Vehicles
