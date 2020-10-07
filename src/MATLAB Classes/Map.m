@@ -14,8 +14,12 @@ classdef Map < handle
         plots
         crossroadUnits
         crossroads
-        occMap
-        MapFig
+%         occMap
+        MapFig    
+ 
+        map2
+        map3 
+        fig2
     end
     
     methods
@@ -110,6 +114,10 @@ classdef Map < handle
             hold on
             obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles
             hold off
+            
+            obj.map2 = evalin('base','mapOc');
+            obj.map3 = copy(obj.map2);
+            obj.fig2 = evalin('base','figOc');
             
             
             obj.initialGraphHighlighting();
@@ -257,10 +265,24 @@ classdef Map < handle
             obj.plots.Vehicles.XData = allVehiclePositions(:,1);
             obj.plots.Vehicles.YData = -allVehiclePositions(:,3);
             
-            figure(1)
-            setOccupancy(obj.occMap,[allVehiclePositions(:,1)+600 -allVehiclePositions(:,3)+500], ones(10,1))
-            show(obj.occMap)
+            hold off
+%             figure(obj.fig2)
+            hold on
+            syncWith(obj.map3,obj.map2)
+%             for i=1:10
+%                 A((i-1)*10+1:10*i,1)=(allVehiclePositions(i,1)-5:allVehiclePositions(i,1)+5)'
+%                 A((i-1)*10+1:10*i,2)=(-allVehiclePositions(i,3)-5:-allVehiclePositions(i,3)+5)'
+%             setOccupancy(obj.map3,[A(:,1)+600 A(:,2)+500], ones(100,1))
+            block=ones(17,17);
             
+            for i=1:10
+            setOccupancy(obj.map3, [allVehiclePositions(i,1)-4+600 -allVehiclePositions(i,3)-4+500], block, "local");
+            end
+%             show(obj.map2)
+            hold off
+            
+            figure(obj.MapFig)
+            hold on
             % Vehicles' Annotation String
             speedArray = compose('%4.1f', [cat(1,cat(1,obj.Vehicles(1:length(obj.Vehicles))).dynamics).speed]);
             nameArray={obj.Vehicles(1:length(obj.Vehicles)).name};

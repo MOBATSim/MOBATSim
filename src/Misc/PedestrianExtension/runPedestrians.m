@@ -21,3 +21,6 @@ for i = 1:100
     pause(0.01);
 end
 hold off
+
+% figure(obj.map.fig2)
+% show(obj.map.map3)
