@@ -23,11 +23,12 @@ classdef plot_vehicle_real_pos < matlab.System
             % Perform one-time calculations, such as computing constants
         end
 
-        function y = stepImpl(obj,x,y)
+        function  stepImpl(obj,x,y)
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
             figure(2);
-            plot(x,y,'.','color','r');
+            pos = plot(x,y,'.','color','r');
+            pos.HandleVisibility = 'off';
         end
 
         function resetImpl(obj)

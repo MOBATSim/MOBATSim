@@ -41,6 +41,8 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
 
 %            vehicle's current pos from the vehicle dynamic model
 %            v_pos = [X Y psi speed];
+            obj.vehicle.dynamics.position = [v_pos(1) 0 -v_pos(2)];
+            obj.vehicle.dynamics.speed = v_pos(4);
             
             if obj.vehicle.status.collided
                 %Output 1: Position of the vehicle
@@ -68,9 +70,12 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             %Output 3: Reference waypoints for pure pursuit controller
             reference_waypoints = obj.vehicle.dynamics.reference_waypoints(:,[1 3]);
             figure(2)
-            plot(reference_waypoints(end,1),reference_waypoints(end,2),'.','color','blue');
-            
-            
+            clf;
+            WP = plot(reference_waypoints(:,1),reference_waypoints(:,2),'.','color','blue');
+            hold on;
+            pos = plot(obj.vehicle.dynamics.position(1),-obj.vehicle.dynamics.position(3),'.','color','red');
+            xlim([160 190]);
+            ylim([200 500]);           
         end
         %% Helper functions
         function currentRoute = setCurrentRoute(~,car)
@@ -119,7 +124,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
                     % Car has just arrived so it has to stop
                     car.pathInfo.routeCompleted = true;
                     car.setStopStatus(true);
-                    car.dynamics.speed = 0;
+                   % car.dynamics.speed = 0;
                     return;
                     
                 elseif car.pathInfo.destinationReached == false
@@ -235,7 +240,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             % TODO Check if we need to add the sample time of the simulation into this equation below
 %             car.dynamics.position = car.dynamics.position + (car.dynamics.directionVector/norm(car.dynamics.directionVector))*(speed);
 
-            car.dynamics.position = [v_pos(1) 0 -v_pos(2)];%test qihang
+           % car.dynamics.position = [v_pos(1) 0 -v_pos(2)];%test qihang
             
 %             if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
             if  norm(car.dynamics.position-Destination)<2
@@ -277,7 +282,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             
 
                  for i = 1:1:length(car.dynamics.reference_waypoints)
-                     car.dynamics.reference_waypoints(i,:) = local_WP_start_point+min(i*(v_pos(4)*0.01*100),norm(local_destination - local_WP_start_point))*local_route_Vector;
+                     car.dynamics.reference_waypoints(i,:) = local_WP_start_point+min(i*(v_pos(4)*sin(mod(v_pos(3),2*pi))*0.01*100),norm(local_destination - local_WP_start_point))*local_route_Vector;
                      %10 is the factor that adjust the reference WP step length
                  end
 
