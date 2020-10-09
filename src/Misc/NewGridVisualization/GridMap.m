@@ -54,6 +54,7 @@ classdef GridMap < handle
             
             %h = view(biograph(direct_graph,[],'ShowWeights','on'));
                         
+            
             % Plot the map on the figure
             generateMapVisual(obj,false);
             

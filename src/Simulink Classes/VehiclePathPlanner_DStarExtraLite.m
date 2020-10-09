@@ -565,23 +565,23 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                 %a car is disturbing, if it exits after us, but entered before us
                 currentFutureData = currentFutureData(currentFutureData(:,5)>currentEntryTime,:);
                 if( ~isempty(currentFutureData) )                    
-%                         %% disturbing car on same route
-%                         nextSpeed = min(currentFutureData(:,3));
-%                         %if we are slower, we keep our speed
-%                         if nextSpeed > obj.vehicle.dynamics.maxSpeed
-%                             nextSpeed = obj.maxEdgeSpeed(curEdge);
-%                         end
-%                         distance = obj.Map.connections.distances(curEdge);
-%                         newCost = (1/ obj.simSpeed) * distance * (1/ nextSpeed);
-                        [timeToReachDisturbingVehicle ,index] = max(currentFutureData(:,5));                       
-                        speedDisturbingVehicle =  currentFutureData(index,3);
-                        timeDifference = (currentEntryTime + obj.edgesCost(curEdge)) - timeToReachDisturbingVehicle ;
-                        
-                        spacingTime = 6 * 1/obj.simSpeed;
-                        if (timeDifference < spacingTime)
-                            newCost = timeToReachDisturbingVehicle + spacingTime - currentEntryTime;
-                            nextSpeed = speedDisturbingVehicle;
+                        %% disturbing car on same route
+                        nextSpeed = min(currentFutureData(:,3));
+                        %if we are slower, we keep our speed
+                        if nextSpeed > obj.vehicle.dynamics.maxSpeed
+                            nextSpeed = obj.maxEdgeSpeed(curEdge);
                         end
+                        distance = obj.Map.connections.distances(curEdge);
+                        newCost = (1/ obj.simSpeed) * distance * (1/ nextSpeed);
+%                         [timeToReachDisturbingVehicle ,index] = max(currentFutureData(:,5));                       
+%                         speedDisturbingVehicle =  currentFutureData(index,3);
+%                         timeDifference = (currentEntryTime + obj.edgesCost(curEdge)) - timeToReachDisturbingVehicle ;
+%                         
+%                         spacingTime = 6 * 1/obj.simSpeed;
+%                         if (timeDifference < spacingTime)
+%                             newCost = timeToReachDisturbingVehicle + spacingTime - currentEntryTime;
+%                             nextSpeed = speedDisturbingVehicle;
+%                         end
                 else
                     %no disturbing car means we can reuse old cost
                     newCost = obj.edgesCost(curEdge);

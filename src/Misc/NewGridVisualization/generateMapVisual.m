@@ -2,12 +2,8 @@ function generateMapVisual(gridMap,displayInGridCoordinates)
             %This function plots any XML Map of MOBATSim. Keep in mind that you have to
             %do a coordinate transformation between normal coordinates and grid / mobatsim
             %Input: XML Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
-            %Output TODO return the plot to use it later
 
             %% prepare everything
-            %open another figure
-            %figure(3);
-            %plot(1,1,'color',[1,1,1]);%TODO replace with better solution for deleting old plot
             hold on            
             w = gridMap.waypoints;
             circ = gridMap.connections.circle;
@@ -16,14 +12,17 @@ function generateMapVisual(gridMap,displayInGridCoordinates)
             w(:,3) = -1.*w(:,3);
             circ(:,6) = -1.*circ(:,6);
             if displayInGridCoordinates
-                xOff = min(w(:,1))-50;  %TODO make it global later
-                yOff = min(w(:,3))-50;  %offset should be global
+                xOff = min(w(:,1))-50;
+                yOff = min(w(:,3))-50;
                 
                 w(:,3) = w(:,3)-yOff;
                 w(:,1) = w(:,1)-xOff;                
                 
                 circ(:,4) = circ(:,4)-xOff;
                 circ(:,6) = circ(:,6)-yOff;
+            else
+                 xOff = 0;
+                 yOff = 0;
             end
             %% Generate a usable plot
             %% generate curves
