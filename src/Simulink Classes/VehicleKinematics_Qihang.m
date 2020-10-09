@@ -16,7 +16,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
     % Pre-computed constants
     properties(Access = private)
         vehicle
-        map = evalin('base','Map');
+        map = evalin('base','Map'); 
         simSpeed = evalin('base','simSpeed');
         modelName = evalin('base','modelName');
     end
@@ -43,6 +43,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
 %            v_pos = [X Y psi speed];
             obj.vehicle.dynamics.position = [v_pos(1) 0 -v_pos(2)];
             obj.vehicle.dynamics.speed = v_pos(4);
+            obj.vehicle.dynamics.cornering.angles = v_pos(3);
             
             if obj.vehicle.status.collided
                 %Output 1: Position of the vehicle
@@ -55,13 +56,13 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             end
             
             if ~obj.vehicle.pathInfo.destinationReached
-                obj.vehicle.dynamics.speed = v_pos(4);
+                %obj.vehicle.dynamics.speed = v_pos(4);
                 if obj.vehicle.pathInfo.routeCompleted && obj.vehicle.status.stop == 0
                    obj.vehicle.pathInfo.currentRoute = obj.setCurrentRoute(obj.vehicle);
                    obj.vehicle.pathInfo.currentTrajectory = obj.generateTrajectory(obj.vehicle);
                 elseif drivingMode == 5
                 end
-                obj.nextMove(obj.vehicle,v_pos);
+                obj.nextMove(obj.vehicle);
             end
             %Output 1: Position of the vehicle
             position= obj.vehicle.dynamics.position;
@@ -70,9 +71,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             %Output 3: Reference waypoints for pure pursuit controller
             reference_waypoints = obj.vehicle.dynamics.reference_waypoints(:,[1 3]);
             figure(2)
-            clf;
             WP = plot(reference_waypoints(:,1),reference_waypoints(:,2),'.','color','blue');
-            hold on;
             pos = plot(obj.vehicle.dynamics.position(1),-obj.vehicle.dynamics.position(3),'.','color','red');
             xlim([160 190]);
             ylim([200 500]);           
@@ -106,7 +105,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
         end
         
         
-        function nextMove(obj, car, v_pos)
+        function nextMove(obj, car)
             % Examining 3 different states of the car
             % car.status.stop
             % car.pathInfo.destinationReached
@@ -136,11 +135,11 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
                             return;
                         else
                             % Car has to start the next route
-                            obj.takeRoute(car,car.pathInfo.currentTrajectory,v_pos);
+                            obj.takeRoute(car,car.pathInfo.currentTrajectory);
                         end
                     elseif car.pathInfo.routeCompleted == false
                         % Car has to keep on going on its current route
-                        obj.takeRoute(car,car.pathInfo.currentTrajectory,v_pos);
+                        obj.takeRoute(car,car.pathInfo.currentTrajectory);
                     end
                 end
             end
@@ -148,7 +147,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
         end
      
         
-        function takeRoute(obj,car,refRoute,v_pos)
+        function takeRoute(obj,car,refRoute)
             if car.status.stop ==1
                 return;
             end
@@ -162,13 +161,13 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             
             
             if RotationVector(1) == 0 %Straight motion
-                obj.moveto(car,refRoute(2,:),v_pos);
+                obj.moveto(car,refRoute(2,:));
                 
             else %Rotational motion
                 
                 %Determine rotation direction: left or right
                 if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
-                    obj.rotate_left(car,speed, rotation_point,rotation_angle,P_final,v_pos);
+                    obj.rotate_left(car, rotation_point,rotation_angle,P_final);
                 elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
                     obj.rotate_right(car,speed, rotation_point,rotation_angle,P_final);
                 end
@@ -177,10 +176,10 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             end
         end
         
-       function moveto(obj ,car,Destination,v_pos)
+       function moveto(obj ,car,Destination)
             %% Waypoint generation
             if ~car.dynamics.has_local_trajectory
-            obj.generate_straight_move_WPs(car,Destination,v_pos);
+            obj.generate_straight_move_WPs(car,Destination);
             end
             %%
             
@@ -188,7 +187,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             if car.pathInfo.routeCompleted == true
                 DisplacementVector = Destination- car.dynamics.position;
 %                 ThetaRadian = atan(DisplacementVector(1)/DisplacementVector(3));
-                car.dynamics.orientation(4) = mod(v_pos(3),2*pi)-0.5*pi;
+%                 car.dynamics.orientation(4) = mod(v_pos(3),2*pi)-0.5*pi;
                 car.dynamics.directionVector = DisplacementVector;
                 car.pathInfo.routeCompleted = false;
             end
@@ -259,7 +258,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
        end
         
         
-       function generate_straight_move_WPs(obj, car,Destination,v_pos)
+       function generate_straight_move_WPs(obj, car,Destination)
                 local_destination = Destination.*[1 1 -1];
 %                Destination = [Destination(1) Destination(2) -Destination(3)];
 %                localWPlist = [car.dynamics.position(1) -car.dynamics.position(3) car.dynamics.orientation(4)];
@@ -273,7 +272,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             
                 %unit vector starting with route start point, aiming to
                 %vehicle's current location
-                pos_Vector = [v_pos(1) 0 v_pos(2)].*[1 1 -1]-car.pathInfo.currentTrajectory(1,:);
+                pos_Vector = car.dynamics.position-car.pathInfo.currentTrajectory(1,:);
                 local_pos_Vector = pos_Vector.*[1 1 -1];
             
                 setoff_distance = dot(local_pos_Vector,local_route_Vector)/norm(local_route_Vector);
@@ -282,14 +281,90 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             
 
                  for i = 1:1:length(car.dynamics.reference_waypoints)
-                     car.dynamics.reference_waypoints(i,:) = local_WP_start_point+min(i*(v_pos(4)*sin(mod(v_pos(3),2*pi))*0.01*100),norm(local_destination - local_WP_start_point))*local_route_Vector;
+                     car.dynamics.reference_waypoints(i,:) = local_WP_start_point+min(i*(car.dynamics.speed*sin(mod(car.dynamics.cornering.angles,2*pi))*0.01*100),norm(local_destination - local_WP_start_point))*local_route_Vector;
                      %10 is the factor that adjust the reference WP step length
                  end
 
         end
 
-  
-    end
+
+     function rotate_left(obj,car,rotation_point,rotation_angle,Destination)
+            
+            %% WP generation
+            if ~car.dynamics.has_local_trajectory
+            obj.generate_left_rotation_WPs(car,rotation_point,rotation_angle,Destination);
+            end
+            %%
+            
+%              position = car.dynamics.position;
+%              local_position = [position(1) 0 -position(3)];
+%              step_length = v_pos(4)*0.01*10;
+%              local_rotation_angle = pi/2;
+%              local_rotation_start_point = car.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:);
+%              r = sqrt((norm(Destination-local_rotation_start_point))^2/(1-cos(local_rotation_angle))/2);
+%              step_angle = step_length/r; 
+%              rotation_center=[rotation_point(1) -rotation_point(3)];
+%              
+%              l = norm(local_position - [rotation_center(1) 0 rotation_center(2)]);
+%              a = local_position(3)-rotation_center(2);
+%              
+%                 local_position_P=[l,asin(a/l)];
+%                 target_point_P = [r,asin(a/l)+step_angle];
+%                 target_point_C = rotation_center+[r*cos(target_point_P(2)),r*sin(target_point_P(2))];
+%            
+%             if  (asin(a/l)+step_angle)>local_rotation_angle
+%                 car.dynamics.position = Destination;
+%                 car.pathInfo.routeCompleted = true;
+%                  car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
+%                 %% TODO - check if it works in all situations
+%                 idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
+%                 if idx+1<=length(car.pathInfo.path)
+%                     car.pathInfo.currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+%                 end
+            end
+        function generate_left_rotation_WPs(obj, car, rotation_point,rotation_angle,Destination)
+
+%              position = car.dynamics.position;
+%              localWPlist = [position(1) -position(3) -car.dynamics.orientation(4)];
+             local_position = car.dynamics.position.*[1 1 -1];
+%              speed = car.dynamics.speed;
+             step_length = car.dynamics.speed*0.01*10;
+             %10 is look ahead faktor
+             local_rotation_angle = car.pathInfo.currentTrajectory(3,1);
+             %rotation angle of the whole curved road
+             local_rotation_start_point = car.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:).*[1 1 -1];
+%              local_rotation_start_point = local_rotation_start_point*[1,1,-1];
+             r = sqrt((norm(Destination.*[1 1 -1]-local_rotation_start_point))^2/(1-cos(local_rotation_angle))/2);
+             step_angle = step_length/r; 
+             local_displacement_vector = (Destination.*[1 1 -1]-local_rotation_start_point)/norm(Destination.*[1 1 -1]-local_rotation_start_point);
+             local_r_angle = acos(dot(local_displacement_vector,[1 0 0]));
+             if (local_displacement_vector(3)<0)
+                 local_r_angle=2*pi-local_r_angle;
+             end
+             %to change next 09.10.2020
+             rotation_center=[rotation_point(1) -rotation_point(3)];
+             
+             l = norm(local_position - [rotation_center(1) 0 rotation_center(2)]);
+             a = local_position(3)-rotation_center(2);
+             
+                local_position_P=[l,asin(a/l)];
+                target_point_P = [r,asin(a/l)+step_angle];
+                target_point_C = rotation_center+[r*cos(target_point_P(2)),r*sin(target_point_P(2))];
+ 
+             if  (asin(a/l)+step_angle)>local_rotation_angle
+                xRef = Destination(1);
+                yRef = -Destination(3);
+                car.pathInfo.routeCompleted = true;
+                car.dynamics.has_local_trajectory =0;
+             else
+                 xRef = target_point_C(1);
+                 yRef = target_point_C(2);
+             end
+            save('waypoints','xRef','yRef');
+            figure(2);
+            plot(xRef,yRef,'.','color','b');
+        end
+        end 
     
     
     
@@ -343,6 +418,6 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             % Define sample time type and parameters
             sts = obj.createSampleTime("Type", "Inherited");
         end
-    end
     
+        end
 end
