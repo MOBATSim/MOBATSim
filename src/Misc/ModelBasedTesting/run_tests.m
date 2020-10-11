@@ -30,11 +30,33 @@ coverageResult = getCoverageResults(resultObj);
 sltest.testmanager.view;
 
 % Generate a report after the simulation
-sltest.testmanager.report(resultObj,'C:\Users\62783\Documents\GitHub\MOBATSim\src\Misc\ModelBasedTesting\TestReport_UnitTest_MOBATSim.pdf',...
-    'Title','Test Result of Vehicle Longitudinal Control Part',...
-    'IncludeMATLABFigures',true,...
-    'IncludeErrorMessages',true,...
-    'IncludeTestResults',0,'LaunchReport',true);
+sltest.testmanager.report(resultObj,'.\src\Misc\ModelBasedTesting\TestReport_UnitTest_MOBATSim.pdf',...
+    'Author','Test Engineer',...
+    'Title','Test Results of Vehicle Longitudinal Control Part',...
+    'IncludeMATLABFigures',true,...     
+    'IncludeErrorMessages',true,...     
+    'IncludeTestRequirement',true,...   
+    'IncludeTestResults',0,...
+    'IncludeCoverageResult',true,...
+    'LaunchReport',true);            
 
-% Open model testing dashboard
-% modelTestingDashboard
+% 'IncludeMATLABFigures' 
+        %Option to include the figures opened from a callback script, 
+        %custom criteria, or by the model in the report
+% 'IncludeErrorMessages'
+        %Choose to include error messages from the test case simulations
+% 'IncludeTestRequirement'
+        %Choose to include the test requirement link defined under the tab Requirements in the test case
+% 'IncludeTestResults'
+        %Option to include all or a subset of test results in the report:
+        %select passed and failed results, specified as the integer value 0; 
+        %select only passed results, specified as the value 1; 
+        %or select only failed results, specified as the value 2
+% 'IncludeCoverageResult'        
+        %Choose to include coverage metrics that are collected at test execution
+% 'LaunchReport'
+        %Open the report when it is finished generating
+
+
+%Open model testing dashboard
+%modelTestingDashboard
