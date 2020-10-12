@@ -233,6 +233,11 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         end
         
         function [path, newFutureData]=findShortestPath(obj, car, startingPoint, endingPoint, global_timesteps, futureData)
+            %This function performs a normal A* search inside the XML
+            %graph.
+            %OUTPUT:
+            %newFutureData = [car id, edge number, speed, entry time, exit time]
+            %path = [nr of nodes from start to finish]
             %% Initialization
             if isempty(futureData)
                 futureData = [0 0 0 0 0];
@@ -240,7 +245,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
 
             % TODO: Explanation of the code
             waypoints =  zeros(length(obj.Map.waypoints),7);
-            
+            %get maximum speed for every edge
             maxSpeed = car.dynamics.maxSpeed ;
             currentSpeed = car.dynamics.speed ;
             speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
@@ -265,11 +270,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     obj.accelerationPhase = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
                 end
             end
-            
-            
-            
-            
-            
             %% main loop
             while (1)
                 waypoints(currentNode,1) = 2; %set state of waypoint to 2 -> waypoint in closed List
@@ -278,17 +278,12 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 routes2neighbourNode = find(connections(:,1) == currentNode); % route ID
                 neighbourNodes = connections(connections(:,1) == currentNode,2); % waypointID of neighbour
                 neighbourNodes_Routes = [neighbourNodes'; routes2neighbourNode'];
-                
-                
-                
                 %% loop over all neighbours
                 for neighbourNode_Route=neighbourNodes_Routes
-                    
-                    
                     neighbourWP = waypoints(neighbourNode_Route(1),:); % waypointID of neighbour
-                    currentTime = waypoints(currentNode,5);
-                    currentTotalDistance = waypoints(currentNode,7);
-                    currentSpeed = waypoints(currentNode,4);
+                    currentTime = waypoints(currentNode,5); % time the car will reach the node
+                    currentTotalDistance = waypoints(currentNode,7); %distance travveled unto this node
+                    currentSpeed = waypoints(currentNode,4); % the speed of the car when entering the node
                     currentRoute = neighbourNode_Route(2); % route ID 
                     
                     currentMaxSpeedRoutes = maxSpeedRoutes;
@@ -316,17 +311,24 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                         timeToReach =  1/ obj.simSpeed * distances(currentRoute)/ currentMaxSpeedRoutes(currentRoute); %timesteps to reach neighbour
                         nextSpeed = currentSpeed;
                     end
-                    
-                    
                     %% check for other cars on same route (using merged future data)
+                    %get every future data info for the current edge
                     currentFutureData = futureData(futureData(:,2) == currentRoute,:);
+                    %relevant data has to contain an arrival time before
+                    %current car and an exit time after that car
                     currentFutureData = currentFutureData(currentFutureData(:,4)<= currentTime & currentFutureData(:,5)>currentTime,:);
-                    if ~isempty(currentFutureData)
-                        
+                    if ~isempty(currentFutureData)                        
                         %% disturbing car on same route
-                        index = find(max(currentFutureData(:,5)));
+                        %search for the highest exit time, that will slow
+                        %us down the most
+                        index = find(max(currentFutureData(:,5)));%TODO use max function properly
                         timeToReachDisturbingVehicle = currentFutureData(index,5);
+                        %get speed of the slower vehicle
                         speedDisturbingVehicle =  currentFutureData(index,3);
+                        %currentTime = entry time of the edge
+                        %timeToReach = how long does it take to drive over current edge
+                        %timeToReachDisturbingVehicle = exit time of other vehicle
+                        %differnce = current car exit time - other car exit time
                         timeDifference = (currentTime + timeToReach) - timeToReachDisturbingVehicle ;
                         
                         spacingTime = 6 * 1/obj.simSpeed;

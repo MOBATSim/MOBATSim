@@ -1,26 +1,27 @@
 classdef GridMap < handle
-    %UNTITLED Summary of this class goes here
+    %A MOBATSim map object with a XML-graph and a binary occupancy grid object
     %   Detailed explanation goes here
     
     properties
         mapName
-        waypoints
-        connections
+        waypoints               %all nodes: line = nr, [X,Y]
+        connections             %struct, .all = all edges, .circles = all curves, .translations = all straight roads
         direct_graph
         digraph_visualization
-        Vehicles
+        Vehicles                %vector of all vehicles: line = nr
         plots
         crossroadUnits
         crossroads
         %grid related varibles
-        bogMap;
-        gridSize = 0.5;
-        gridLocationMap;
-        xOffset;
+        bogMap;                 %binary occupancy grid object
+        gridSize = 0.5;         %number of cells inside the grid for 1 unit on the map
+        gridLocationMap;        %container object to store and load all GridLocation objects
+        xOffset;                %Offset to transform visualization into bog coordinates if necessary
         yOffset; 
     end
     
     methods
+        %% constructor and visualization creation
         function obj = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes)
             obj.mapName = mapName;
             obj.waypoints = waypoints;
@@ -56,6 +57,7 @@ classdef GridMap < handle
                         
             % Plot the map on the figure
             generateMapVisual(obj,false);
+            %bog will be created in the prepare_simulator script, to include all vehicle data
             
             %create bog container map object
             obj.gridLocationMap = containers.Map();
@@ -88,6 +90,7 @@ classdef GridMap < handle
             
         end %Constructor
         
+        %% utility functions
         function  distance = get_distance_of_shortest_path(obj, starting_point, ending_point)
             
             [distance,path] = graphshortestpath(obj.direct_graph,starting_point,ending_point);

@@ -1,6 +1,6 @@
 classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
-    % Path Planner Plans paths.
+    % Path Planner Plans paths.         
     %
     % NOTE: When renaming the class name Untitled, the file name
     % and constructor name must be updated to use the class name.
@@ -115,6 +115,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                     % Build the future plan by deriving the next routes and building the path
                     %Output 1: Future plan of the vehicle
                     FuturePlan = obj.dStarExtraLite(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+                    %FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
                     %check acc in pathbuilding!
                     obj.vehicle.setStopStatus(false);
                     waypointReached =1;
@@ -188,6 +189,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                 else                   
                     
                     %if anything changed, we need to calculate a new path
+                    %and future data
                     newFutureData = calculateNewPath(obj,globalTime);
                                         
                 end
@@ -477,7 +479,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                         obj.seeds(v) = 1;
                     elseif (cold<cnew)%if costs increased we will mark edge as unvisited (cut from expl. branch)
                         %if we moved over the changed edge, values of all nodes in this branch are wrong                        
-                            cutBranch(obj,v);%TODO parent?                        
+                            cutBranch(obj,v);                      
                     end
                 end
             end
@@ -532,8 +534,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
             %futureData = [carID edgeID Speed enterTime exitTime]            
             
             curNode = getEndOfEdge(obj,curEdge);
-            nextSpeed = obj.edgesSpeed(curEdge);
-            newCost = obj.edgesCost(curEdge);
+            nextSpeed = obj.edgesSpeed(curEdge);            
             
             % now check, if a car will stop here and block the road
             %we need all entries with cur edge in cFD
@@ -565,7 +566,10 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                 %a car is disturbing, if it exits after us, but entered before us
                 currentFutureData = currentFutureData(currentFutureData(:,5)>currentEntryTime,:);
                 if( ~isempty(currentFutureData) )                    
-%                         %% disturbing car on same route
+                        %% disturbing car on same route
+                        
+                        %use this instead of the other code, if the
+                        %inaccurate time estimation causes problems
 %                         nextSpeed = min(currentFutureData(:,3));
 %                         %if we are slower, we keep our speed
 %                         if nextSpeed > obj.vehicle.dynamics.maxSpeed
@@ -573,6 +577,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
 %                         end
 %                         distance = obj.Map.connections.distances(curEdge);
 %                         newCost = (1/ obj.simSpeed) * distance * (1/ nextSpeed);
+
                         [timeToReachDisturbingVehicle ,index] = max(currentFutureData(:,5));                       
                         speedDisturbingVehicle =  currentFutureData(index,3);
                         timeDifference = (currentEntryTime + obj.edgesCost(curEdge)) - timeToReachDisturbingVehicle ;
@@ -581,7 +586,11 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                         if (timeDifference < spacingTime)
                             newCost = timeToReachDisturbingVehicle + spacingTime - currentEntryTime;
                             nextSpeed = speedDisturbingVehicle;
+                        else
+                            newCost = obj.edgesCost(curEdge);
                         end
+                        %change comment in/out code above to fix some
+                        %errors
                 else
                     %no disturbing car means we can reuse old cost
                     newCost = obj.edgesCost(curEdge);
@@ -753,7 +762,6 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                     %block the start and the future node of the crash
                     area = [vehicles(car).pathInfo.lastWaypoint,vehicles(car).pathInfo.path(2)];
                     obj.nodesBlocked(area(1))=1;
-                    %TODO do we block too often here?
                     obj.nodesBlocked(area(2))=1;
                     obj.changedEdges = [obj.changedEdges, obj.getEdge(area(1),area(2))];
                     obj.haveCostsChanged = true;
@@ -830,43 +838,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                 newFutureData = obj.vehicle.decisionUnit.futureData;%new = old FD
                 obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:end);%delete old node in path
             end
-        end
-        function newFutureData = dSELCompareToAStar(obj, globalTime,futureData)
-            %returns the shortest path based on digraph
-            %no FD was usedto calculate it
-            %we only need to calculate turn one, because we wont make any
-            %changes to the edge costs
-            
-            checkForAccelerationPhase(obj);
-            whichEdgecostsChangedForLoop(obj,futureData)
-            if obj.haveCostsChanged || isempty(obj.vehicle.pathInfo.path)
-                %% Reinititialize
-                if obj.haveCostsChanged
-                    reinitialize(obj,futureData);
-                end
-                % Use D*EL to get path to goal node
-                if ( ~searchForGoalNode(obj)) %Search for optimal path and alter lists accordingly
-                    %we cant reach any node from now
-                    disp(['No possible path was found from vehicle ' num2str(obj.vehicle.id)])
-                    stopVehicle(obj);
-                else
-                    
-                    %if anything changed, we need to calculate a new path
-                    newFutureData = calculateNewPath(obj,globalTime);
-                    
-                end
-                
-                if globalTime == 0 % save the future data at the beginning of the simulation for validation after simulation
-                    obj.vehicle.decisionUnit.initialFutureData = newFutureData;
-                end
-            else
-                %if we dont have to calculate we need to adjust path and new FD
-                
-                newFutureData = obj.vehicle.decisionUnit.futureData;%new = old FD
-                obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:end);%delete old node in path
-            end
-            
-        end
+        end        
         
         %% temporary goal node realted
         function tempFD = newGoalNode(obj)
@@ -900,6 +872,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
             tempFD = [];
         end         
         function initializeGoal(obj,s)
+            %set up new goal node s
             obj.nodesG(s) = 0;
             obj.km = 0;
             obj.nodesParent(s) = 0;
