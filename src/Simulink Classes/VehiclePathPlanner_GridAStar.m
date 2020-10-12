@@ -165,7 +165,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
             
             %get key of goal node
             curPos = obj.Map.waypoints(obj.tempGoalNode,:);
-            goalPos = obj.Map.bogMap.world2grid([curPos(1)-obj.Map.xOffset,-curPos(3)-obj.Map.yOffset]);%TODO move tempgoal init to a new init function
+            goalPos = obj.Map.bogMap.world2grid([curPos(1)-obj.Map.xOffset,-curPos(3)-obj.Map.yOffset]);
             goalKey = append( num2str(goalPos(1)),",",num2str(goalPos(2)) );
             goalCoordinates = str2num(goalKey); %#ok<*ST2NM>
             
@@ -256,6 +256,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
         end
         
         function initializeGrid(obj)
+            %set up everything to perform a search inside the grid
             obj.tempGoalNode = obj.vehicle.pathInfo.destinationPoint;
         end
         function [newFD,newPath] = gridBuildPath(~, carID, closedList, goalKey, startKey)
