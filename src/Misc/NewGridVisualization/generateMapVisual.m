@@ -5,20 +5,20 @@ function generateMapVisual(gridMap,displayInGridCoordinates)
 
             %% prepare everything
             hold on            
-            w = gridMap.waypoints;
+            waypoints = gridMap.waypoints;
             circ = gridMap.connections.circle; %curves
             trans = gridMap.connections.translation; %straight roads
             %coordinate transformation
-            w(:,3) = -1.*w(:,3);    %MOBATSim stores the negative y, so we have to transform it
+            waypoints(:,3) = -1.*waypoints(:,3);    %MOBATSim stores the negative y, so we have to transform it
             circ(:,6) = -1.*circ(:,6);
             %maybe it is necessary to display everything in the coordinate system of the binary occupancy grid object
             %if so, we have to shift everything here and set the input true
             if displayInGridCoordinates
-                xOff = min(w(:,1))-50;
-                yOff = min(w(:,3))-50;
+                xOff = min(waypoints(:,1))-50;
+                yOff = min(waypoints(:,3))-50;
                 
-                w(:,3) = w(:,3)-yOff;
-                w(:,1) = w(:,1)-xOff;                
+                waypoints(:,3) = waypoints(:,3)-yOff;
+                waypoints(:,1) = waypoints(:,1)-xOff;                
                 
                 circ(:,4) = circ(:,4)-xOff;
                 circ(:,6) = circ(:,6)-yOff;
@@ -28,11 +28,11 @@ function generateMapVisual(gridMap,displayInGridCoordinates)
             for c = 1 : length(circ)
                 cPart = circ(c,:); %load information on the current curve
                 %starting point
-                x1 = w(cPart(1),1); 
-                y1 = w(cPart(1),3);   
+                x1 = waypoints(cPart(1),1); 
+                y1 = waypoints(cPart(1),3);   
                 %goal point
-                x2 = w(cPart(2),1); 
-                y2 = w(cPart(2),3);
+                x2 = waypoints(cPart(2),1); 
+                y2 = waypoints(cPart(2),3);
                 %central point
                 x0W = cPart(4); 
                 y0W = cPart(6);
@@ -77,17 +77,17 @@ function generateMapVisual(gridMap,displayInGridCoordinates)
             for t = 1 : length(trans)
                 position = zeros(2,2); %preallocate start and goal point
                 %get both points and plot a line in between
-                position(1,:) = [w(trans(t,1),1) ,w(trans(t,1),3)];
-                position(2,:) = [w(trans(t,2),1) ,w(trans(t,2),3)];
+                position(1,:) = [waypoints(trans(t,1),1) ,waypoints(trans(t,1),3)];
+                position(2,:) = [waypoints(trans(t,2),1) ,waypoints(trans(t,2),3)];
                 plot(position(:,1),position(:,2),'color',[0 1 0],'LineWidth',2);
                 %plot number next to edge
                 textPos = (position(2,:) + position(1,:))/2;                
                 text(textPos(1)+5,textPos(2)-15,num2str(t+c),'color',[0 0.5 0]);
             end
             %% plot nodes with numbers
-            for n = 1 : length(w)
+            for n = 1 : length(waypoints)
                 %get position
-                pos = [w(n,1),w(n,3)];
+                pos = [waypoints(n,1),waypoints(n,3)];
                 %plot dot and number in a dark blue
                 plot(pos(1),pos(2),'Marker','o','MarkerFaceColor',[0 0.2 0.5],'color',[0 0.2 0.5]);
                 text(pos(1)-5,pos(2)-15,num2str(n),'color',[0 0.2 0.5]);%TODO make it appear automatically under dot
