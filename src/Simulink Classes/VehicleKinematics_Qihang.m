@@ -73,8 +73,8 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             figure(2)
             WP = plot(reference_waypoints(:,1),reference_waypoints(:,2),'.','color','blue');
             pos = plot(obj.vehicle.dynamics.position(1),-obj.vehicle.dynamics.position(3),'.','color','red');
-            xlim([-110 190]);
-            ylim([200 500]);           
+            xlim([obj.vehicle.dynamics.position(1)-200 obj.vehicle.dynamics.position(1)+200]);
+            ylim([-obj.vehicle.dynamics.position(3)-200 -obj.vehicle.dynamics.position(3)+200]);           
         end
         %% Helper functions
         function currentRoute = setCurrentRoute(~,car)
@@ -169,7 +169,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
                 if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
                     obj.rotate_left(car, rotation_point,rotation_angle,P_final);
                 elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
-                    obj.rotate_right(car,speed, rotation_point,rotation_angle,P_final);
+                    obj.rotate_right(car, rotation_point,rotation_angle,P_final);
                 end
                 
                 
@@ -363,16 +363,101 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
              local_plubm_vector = [cos(local_r_angle+pi/2) 0 sin(local_r_angle+pi/2)]*local_plumb_length;
              local_rotation_center = local_rotation_start_point + local_displacement_vector*norm(Destination.*[1 1 -1]-local_rotation_start_point)/2 + local_plubm_vector;
              
-             l = norm(local_position - local_rotation_center);
+             l = local_position - local_rotation_center;
              d = norm(cross(local_rotation_start_point-local_rotation_center,local_position-local_rotation_center))/norm(local_rotation_start_point-local_rotation_center);
              
               for i = 1:1:length(car.dynamics.reference_waypoints)
-                  target_point_P = [r,min(asin(d/l)+step_angle*(i-1)*30,local_rotation_angle)];
+                  target_point_P = [r,min(acos(dot(l,[1 0 0])/norm(l))+step_angle*(i-1)*30,local_rotation_angle+acos(dot(local_rotation_start_point-local_rotation_center,[1 0 0])/norm(local_rotation_start_point-local_rotation_center)))];
                   target_point_C = local_rotation_center+[r*cos(target_point_P(2)) 0 r*sin(target_point_P(2))];
                   car.dynamics.reference_waypoints(i,:) = target_point_C;
               end
         end
-        end 
+        
+        function rotate_right(obj,car,rotation_point,rotation_angle,Destination)
+            
+            %% WP generation
+            if ~car.dynamics.has_local_trajectory
+            obj.generate_right_rotation_WPs(car,rotation_point,rotation_angle,Destination);
+            end
+            %%
+            if car.pathInfo.routeCompleted == true
+                DisplacementVector = Destination- car.dynamics.position;
+%                 ThetaRadian = atan(DisplacementVector(1)/DisplacementVector(3));
+%                 car.dynamics.orientation(4) = mod(v_pos(3),2*pi)-0.5*pi;
+                car.dynamics.directionVector = DisplacementVector;
+                car.pathInfo.routeCompleted = false;
+            end
+            
+            if  norm(car.dynamics.position-Destination)<2
+%                 car.dynamics.position = Destination; %Because of the rounding errors may be modified later
+                car.pathInfo.routeCompleted=true;
+                car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
+                
+                %% TODO - check if it works in all situations
+                idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
+                if idx+1<=length(car.pathInfo.path)
+                    car.pathInfo.currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+                end
+            end
+%              position = car.dynamics.position;
+%              local_position = [position(1) 0 -position(3)];
+%              step_length = v_pos(4)*0.01*10;
+%              local_rotation_angle = pi/2;
+%              local_rotation_start_point = car.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:);
+%              r = sqrt((norm(Destination-local_rotation_start_point))^2/(1-cos(local_rotation_angle))/2);
+%              step_angle = step_length/r; 
+%              rotation_center=[rotation_point(1) -rotation_point(3)];
+%              
+%              l = norm(local_position - [rotation_center(1) 0 rotation_center(2)]);
+%              a = local_position(3)-rotation_center(2);
+%              
+%                 local_position_P=[l,asin(a/l)];
+%                 target_point_P = [r,asin(a/l)+step_angle];
+%                 target_point_C = rotation_center+[r*cos(target_point_P(2)),r*sin(target_point_P(2))];
+%            
+%             if  (asin(a/l)+step_angle)>local_rotation_angle
+%                 car.dynamics.position = Destination;
+%                 car.pathInfo.routeCompleted = true;
+%                  car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
+%                 %% TODO - check if it works in all situations
+%                 idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
+%                 if idx+1<=length(car.pathInfo.path)
+%                     car.pathInfo.currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+%                 end
+            end
+        function generate_right_rotation_WPs(obj, car, rotation_point,rotation_angle,Destination)
+
+%              position = car.dynamics.position;
+%              localWPlist = [position(1) -position(3) -car.dynamics.orientation(4)];
+             local_position = car.dynamics.position.*[1 1 -1];
+%              speed = car.dynamics.speed;
+             step_length = car.dynamics.speed*0.01;
+             %10 is look ahead faktor
+             local_rotation_angle = car.pathInfo.currentTrajectory(3,1);
+             %rotation angle of the whole curved road
+             local_rotation_start_point = car.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:).*[1 1 -1];
+%              local_rotation_start_point = local_rotation_start_point*[1,1,-1];
+             r = sqrt((norm(Destination.*[1 1 -1]-local_rotation_start_point))^2/(1-cos(local_rotation_angle))/2);
+             step_angle = step_length/r; 
+             local_displacement_vector = (Destination.*[1 1 -1]-local_rotation_start_point)/norm(Destination.*[1 1 -1]-local_rotation_start_point);
+             local_r_angle = acos(dot(local_displacement_vector,[1 0 0]));
+             if (local_displacement_vector(3)<0)
+                 local_r_angle=2*pi-local_r_angle;
+             end
+             local_plumb_length = cos(local_rotation_angle/2)*r;
+             local_plubm_vector = [cos(local_r_angle+pi/2) 0 sin(local_r_angle-pi/2)]*local_plumb_length;
+             local_rotation_center = local_rotation_start_point + local_displacement_vector*norm(Destination.*[1 1 -1]-local_rotation_start_point)/2 + local_plubm_vector;
+             
+             l = local_position - local_rotation_center;
+             d = norm(cross(local_rotation_start_point-local_rotation_center,local_position-local_rotation_center))/norm(local_rotation_start_point-local_rotation_center);
+             
+              for i = 1:1:length(car.dynamics.reference_waypoints)
+                  target_point_P = [r,min(acos(dot(l,[1 0 0])/norm(l))+step_angle*(i-1)*30,local_rotation_angle+acos(dot(local_rotation_start_point-local_rotation_center,[1 0 0])/norm(local_rotation_start_point-local_rotation_center)))];
+                  target_point_C = local_rotation_center+[r*cos(target_point_P(2)) 0 r*sin(target_point_P(2))];
+                  car.dynamics.reference_waypoints(i,:) = target_point_C;
+              end
+        end
+    end
     
     
     
