@@ -64,39 +64,39 @@ function [bogMap,xOff,yOff] = generateBOGrid(map)
                 signDy = sign(delatY); % direction
                 %determine which direction to go
                 if absDx > absDy
-                    % x is shorter
-                    pdx = signDx;
-                    pdy = 0;        %p is parallel
-                    ddx = signDx;
-                    ddy = signDy; % d is diagonal
-                    deltaLongDirection  = absDy;
-                    deltaShortDirection  = absDx;
-                else
                     % y is shorter
-                    pdx = 0;
-                    pdy = signDy; % p is parallel
-                    ddx = signDx;
-                    ddy = signDy; % d is diagonal
-                    deltaLongDirection  = absDx;
+                    pdx = signDx;   %what to add for a parallel step
+                    pdy = 0;        %p is parallel
+                    ddx = signDx;   %what to add for a diagonal step
+                    ddy = signDy;   % d is diagonal
                     deltaShortDirection  = absDy;
+                    deltaLongDirection  = absDx;
+                else
+                    % x is shorter
+                    pdx = 0;        %what to add for a parallel step
+                    pdy = signDy;   % p is parallel
+                    ddx = signDx;   %what to add for a diagonal step
+                    ddy = signDy;   % d is diagonal
+                    deltaShortDirection  = absDx;
+                    deltaLongDirection  = absDy;
                 end
                 %start at node 1
                 x = p1(1);
                 y = p1(2);
                 pixelArray = append(num2str(x), ",", num2str(y));                
-                error = deltaShortDirection/2;                
+                error = deltaLongDirection/2;                
                 %% now set the pixel
-                for i= 1:deltaShortDirection          
+                for i= 1:deltaLongDirection          
                     %% for each pixel
                     % update error
-                    error = error - deltaLongDirection;
+                    error = error - deltaShortDirection;
                     if error < 0
-                        error = error + deltaShortDirection; % error is never < 0
-                        % go in long direction
+                        error = error + deltaLongDirection; % error is never < 0
+                        % go in long and short  direction
                         x = x + ddx;
                         y = y + ddy; % diagonal                        
                     else
-                        % go in short direction
+                        % go in long direction
                         x = x + pdx;
                         y = y + pdy; % parallel
                     end                    
