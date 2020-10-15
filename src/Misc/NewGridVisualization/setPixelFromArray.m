@@ -64,6 +64,7 @@ function bogMap = setPixelFromArray(map,bogMap,dist,pixelArray,speedLimit,startN
     %assign properties
     newGL = newGL.assignDistance(dist);
     newGL.speedLimit = speedLimit;
+    curGL.speedLimit = speedLimit;
     %assign succ and pred
     curGL = curGL.addTransSucc(newKey,startNodeNR);
     newGL = newGL.addTransPred(curKey,endNodeNR);

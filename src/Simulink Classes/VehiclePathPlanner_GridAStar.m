@@ -1,4 +1,4 @@
-classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.mixin.Propagates ...
+classdef VehiclePathPlanner_GridAStar< matlab.System & handle & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
     % This Path Planner Block uses A* algorithm to find routes to reach the destination node according to the shared data from the other vehicles.
     %
@@ -310,7 +310,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
             %we want to know how long it takes to reach succGL
             currentFutureData = futureData(futureData(:,2) == curGL.coordinates(1) & futureData(:,3) == curGL.coordinates(2),:);
             if ~isempty(currentFutureData)
-                curGL.timeVector(carID) = travelTime + curGL.gValue;
+                curGL.timeVector(carID) = travelTime + curGL.gValue;                
                 %we now need to calculate probability
                 %for that we use pdf
                 for j = 1 : size(currentFutureData,1)
@@ -480,7 +480,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                     % route is divided in acceleration phase (t1)
                     % and constant speed phase (t2)
                     t1 = (1/ obj.simSpeed) * (-currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*(accelerationDistance - currentTotalDistance)/averageAcceleration));
-                    t2 =  (1/ obj.simSpeed) * (currentTotalDistance+ distance - accelerationDistance)/ currentGL.speedLimit;
+                    t2 =  (1/ obj.simSpeed) * (currentTotalDistance+ distance - accelerationDistance)/ currentGL.speedLimit(obj.vehicle.id);
                     timeToReach = t1+t2;
                     nextSpeed = obj.accelerationPhase(3);
                     obj.accelerationPhase = zeros(1,5); %set acceleration phase to zero
