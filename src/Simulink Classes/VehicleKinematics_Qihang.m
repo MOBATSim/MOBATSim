@@ -303,7 +303,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
                 car.pathInfo.routeCompleted = false;
             end
             
-            if  norm(car.dynamics.position-Destination)<2
+            if  norm(car.dynamics.position-Destination)<4
 %                 car.dynamics.position = Destination; %Because of the rounding errors may be modified later
                 car.pathInfo.routeCompleted=true;
                 car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
@@ -388,7 +388,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
                 car.pathInfo.routeCompleted = false;
             end
             
-            if  norm(car.dynamics.position-Destination)<2
+            if  norm(car.dynamics.position-Destination)<4
 %                 car.dynamics.position = Destination; %Because of the rounding errors may be modified later
                 car.pathInfo.routeCompleted=true;
                 car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
@@ -450,12 +450,12 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
              
              l = local_position - local_rotation_center;
              d = norm(cross(local_rotation_start_point-local_rotation_center,local_position-local_rotation_center))/norm(local_rotation_start_point-local_rotation_center);
-             l_angle = acos(dot(l,[1 0 0])/norm(l));
-             if(l(3)<0)
-                 l_angle = -l_angle;
+             l_angle = -acos(dot(l,[1 0 0])/norm(l));
+             if(l(3)>=0)
+                 l_angle = l_angle-2*(pi+l_angle);
              end
               for i = 1:1:length(car.dynamics.reference_waypoints)
-                  target_point_P = [r,max(l_angle-step_angle*(i-1)*30,local_rotation_angle-acos(dot(local_rotation_start_point-local_rotation_center,[1 0 0])/norm(local_rotation_start_point-local_rotation_center)))];
+                  target_point_P = [r,max(mod(l_angle-step_angle*(i-1)*30,-2*pi),local_rotation_angle-acos(dot(local_rotation_start_point-local_rotation_center,[1 0 0])/norm(local_rotation_start_point-local_rotation_center)))];
                   target_point_C = local_rotation_center+[r*cos(target_point_P(2)) 0 r*sin(target_point_P(2))];
                   car.dynamics.reference_waypoints(i,:) = target_point_C;
               end
