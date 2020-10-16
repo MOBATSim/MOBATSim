@@ -1,6 +1,6 @@
 %% Init file for MOBATSim
 hold off
-clc;
+clc;% clear Command Window
 if exist('Map','var') 
 clear all; %TODO: needs to be off in order not to delete the variables assigned from the GUI
 close all; %to avoid some problems with the deleted handles
