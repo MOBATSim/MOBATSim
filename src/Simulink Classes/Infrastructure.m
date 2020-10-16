@@ -8,7 +8,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         map = evalin('base','Map');
         modelName = evalin('base','modelName');
-        CollisionPredictor = evalin('base','CollisionPredictor');  % enable to turn the CollisionPredictor on
+        CollisionPredictor = evalin('base','CollisionPredictor2');  % enable to turn the CollisionPredictor on,CollisionPredicotr1 is predictor before feature selection, CollisionPredictor2 is predictor after feature selection
     end
     
     properties(DiscreteState)
