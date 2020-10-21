@@ -6,11 +6,16 @@ switch scenarioName
 %         startingPoints =    [8  46 61 18 54 52 64 6 15 63];
 %         destinationPoints = [26 59 60 1  3  27 42 25 76 46];
 %         maxSpeeds = [20 20 10 10 20 20 10 12 10 10];
+
+        %% temp goal test
+%         startingPoints =    [23 28 30 58 19 18 17 53 51 78];
+%         destinationPoints = [36 36 29 57 18 17 16 52 78 77];
+%         maxSpeeds =         [20 20 10 10 20 20 10 12 10 10];
         
         %% Collision scenario    
-        %startingPoints =    [51 47 48 4 55 53 6 7 15 49]; 
-        %destinationPoints = [11 15 18 33 34 15 18 20 16 19];
-        %maxSpeeds = [13 12.4 11 8.4 13 13 9.2 13.2 9 13];
+        startingPoints =    [51 47 48 4 55 53 6 7 15 49]; 
+        destinationPoints = [11 15 18 33 34 15 18 20 16 19];
+        maxSpeeds = [13 12.4 11 8.4 13 13 9.2 13.2 9 13];
         
         %% SC1
         %short driving scenario
@@ -33,9 +38,9 @@ switch scenarioName
         
         %% SC2b edge cost test
         %Long driving to see if other cars change the chosen route
-        startingPoints =    [28  41 20  7 48 72 56 57 78 51];
-        destinationPoints = [ 2  35 74 27 47 71 70 56 77 78];
-        maxSpeeds =         [18   8 19 20 20 20 20 20 20 20];
+%         startingPoints =    [28  41 20  7 48 72 56 57 78 51];
+%         destinationPoints = [ 2  35 74 27 47 71 70 56 77 78];
+%         maxSpeeds =         [18   8 19 20 20 20 20 20 20 20];
         
         %% SC3 test temporary goal
         %V1 should redirect the path before the crashed vehicles V2 and V3
@@ -51,9 +56,11 @@ switch scenarioName
         
         %% SC3a use temporary goal
         %V2 should drive to node 11
-        %         startingPoints =    [23  22 19  7 48 72 56 57 78 51];
-        %         destinationPoints = [11  11 15 27 47 71 70 56 77 78];
-        %         maxSpeeds =         [20  20 20 20 20 20 20 20 20 20];
+        %TODO: Error with D*EL
+        %Output argument "currentRoute" (and maybe others) not assigned during call to "VehicleKinematics/setCurrentRoute"
+%                 startingPoints =    [23  22 19  7 48 72 56 57 78 51];
+%                 destinationPoints = [11  11 15 27 47 71 70 56 77 78];
+%                 maxSpeeds =         [20  20 20 20 20 20 20 20 20 20];
         
         
         SimTimeOut= '20';

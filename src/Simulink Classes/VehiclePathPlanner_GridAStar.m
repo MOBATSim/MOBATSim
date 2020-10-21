@@ -1,4 +1,4 @@
-classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.mixin.Propagates ...
+classdef VehiclePathPlanner_GridAStar< matlab.System & handle & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
     % This Path Planner Block uses A* algorithm to find routes to reach the destination node according to the shared data from the other vehicles.
     %
@@ -39,10 +39,10 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
         % 3 -> intersectionZone
         
         %variables for gridA*
-        tempGoalNode;
-        
+        tempGoalNode;               % temporary goal node     
+        parentMap;                  % Input: current key, Output: parent key
         %variables for visualization
-        pathPlot;
+        pathPlot;                   % plot object to display the path
     end
     
     methods
@@ -96,10 +96,10 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                     
                     %Build the future plan by deriving the next routes and building the path
                     %Output 1: Future plan of the vehicle
-                    
+                    obj.vehicle.setStopStatus(false);
                     %FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
                     FuturePlan = obj.gridAStar(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-                    obj.vehicle.setStopStatus(false);
+                    
                     waypointReached =1;
                 else
                     % If the vehicle is still on its route then the future data stays the same
@@ -128,7 +128,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
         function newFutureData = gridAStar(obj, globalTime,futureData)
             %this function performs a A* search with the grid location
             %objects from obj.Map.gridLocationMap
-            %futureData = [carID, coordinates of GL x, y, speed, time, deviation]
+            %futureData = [carID, coordinates of GridLocation x, y, speed, time, deviation]
             %globalTime is the current time of the simulation
             %newFutureData is the newly created FD from this vehicle
             
@@ -188,7 +188,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                         curKey = k{1,1};
                     end
                 end
-                %now remove the gl from the open list
+                %now remove the GridLocation from the open list
                 openList.remove(curKey);
                 % calculate time over curGL
                 [nextSpeed,travelTime] = obj.checkACCOnGrid(curGL,curGL.speedVector(carID));
@@ -213,13 +213,13 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                     if strcmp(succKey , goalKey)
                         %we found the goal node
                         %set parent
-                        succGL.parent = curKey;
+                        obj.parentMap(succKey) = curKey;
                         %mark as blocked
                         succGL.deviation = succGL.deviation * -1;
                         %push it to closed list
                         closedList(succKey) = succGL;
                         %build path
-                        [newFutureData,newPath] = obj.gridBuildPath(carID, closedList, goalKey, startKey);
+                        [newFutureData,newPath] = obj.gridBuildPath(closedList, goalKey, startKey);
                         obj.vehicle.pathInfo.path = newPath;
                         
                         return;
@@ -231,7 +231,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                         continue;
                     else
                         %set parent
-                        succGL.parent = curKey;
+                        obj.parentMap(succKey) = curKey;
                         %set start of edge
                         succGL.edgeStart = lastNodeNR;
                         %add to open list
@@ -258,14 +258,15 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
         function initializeGrid(obj)
             %set up everything to perform a search inside the grid
             obj.tempGoalNode = obj.vehicle.pathInfo.destinationPoint;
+            obj.parentMap = containers.Map();
         end
-        function [newFD,newPath] = gridBuildPath(~, carID, closedList, goalKey, startKey)
+        function [newFD,newPath] = gridBuildPath(obj, closedList, goalKey, startKey)
             curGL = closedList(goalKey);
             curKey = goalKey;
             newPath = [];
             newFD = [];
             while ~strcmp(curKey,startKey)
-                if curGL.parent == 0
+                if strcmp(curKey,"")
                     %if we searched and there was no parent assigned, we
                     %made a mistake somewhere
                     disp(append("Error in pathbuilding with vehicle ", num2str(carID)) )
@@ -280,9 +281,9 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                 end
                 %build future data
                 %FD [carID, coordinates of GL x, y, speed, time, deviation]
-                newFD = [newFD; [carID, curGL.coordinates, curGL.speedVector(carID), curGL.gValue, curGL.deviation]];
+                newFD = [newFD; [obj.vehicle.id, curGL.coordinates, curGL.speedVector(obj.vehicle.id), curGL.gValue, curGL.deviation]];
                 %got to the parent
-                curKey = curGL.parent;
+                curKey = obj.parentMap(curKey);
                 curGL = closedList(curKey);                
             end
             %we have built FD and path now
@@ -309,7 +310,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
             %we want to know how long it takes to reach succGL
             currentFutureData = futureData(futureData(:,2) == curGL.coordinates(1) & futureData(:,3) == curGL.coordinates(2),:);
             if ~isempty(currentFutureData)
-                curGL.timeVector(carID) = travelTime + curGL.gValue;
+                curGL.timeVector(carID) = travelTime + curGL.gValue;                
                 %we now need to calculate probability
                 %for that we use pdf
                 for j = 1 : size(currentFutureData,1)
@@ -479,7 +480,7 @@ classdef VehiclePathPlanner_GridAStar < matlab.System & handle & matlab.system.m
                     % route is divided in acceleration phase (t1)
                     % and constant speed phase (t2)
                     t1 = (1/ obj.simSpeed) * (-currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*(accelerationDistance - currentTotalDistance)/averageAcceleration));
-                    t2 =  (1/ obj.simSpeed) * (currentTotalDistance+ distance - accelerationDistance)/ currentGL.speedLimit;
+                    t2 =  (1/ obj.simSpeed) * (currentTotalDistance+ distance - accelerationDistance)/ currentGL.speedLimit(obj.vehicle.id);
                     timeToReach = t1+t2;
                     nextSpeed = obj.accelerationPhase(3);
                     obj.accelerationPhase = zeros(1,5); %set acceleration phase to zero

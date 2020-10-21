@@ -89,17 +89,15 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
             obj.simSpeed = evalin('base','simSpeed');
             obj.breakingFlag = 0;
             obj.inCrossroad = [0 0];
+            
+            initialize(obj);
         end
         
         function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
             %This block shouldn't run if the vehicle has reached its
             %destination
             
-            %% create new path
-            if( isempty(obj.nodesKey) )
-                %only init once during first turn
-                initialize(obj);
-            end
+            %% create new path            
             if obj.vehicle.pathInfo.destinationReached %check if already reached goal
                 FuturePlan = obj.vehicle.decisionUnit.futureData;
                 waypointReached=1;
@@ -111,13 +109,13 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                     obj.crossroadCheck(obj.vehicle);
                     % Time Stamps are logged when waypoints are reached
                     obj.vehicle.dataLog.timeStamps = [obj.vehicle.dataLog.timeStamps;[obj.vehicle.pathInfo.lastWaypoint get_param(obj.modelName,'SimulationTime')]];
-                    
+                    obj.vehicle.setStopStatus(false);
                     % Build the future plan by deriving the next routes and building the path
                     %Output 1: Future plan of the vehicle
                     FuturePlan = obj.dStarExtraLite(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
                     %FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
                     %check acc in pathbuilding!
-                    obj.vehicle.setStopStatus(false);
+                    
                     waypointReached =1;
                 else
                     % If the vehicle is still on its route then the future data stays the same
@@ -163,7 +161,10 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
             %futureData = deleteCollidedFutureData(obj,futureData);
             %%vectorized, but slower for now
             futureData = deleteCollidedFutureDataForLoop(obj,futureData);
-            
+            if globalTime ~= 0
+                %in the first round all vehicles have stop status, so only do it later
+                obj.detectBlockingCarsForLoop();
+            end
             whichEdgecostsChangedForLoop(obj,futureData);%TODO vectorize
             %obj.haveCostsChanged = false; Just to test performance without reinit
                         
@@ -699,22 +700,13 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
             otherCars = getNrOfAllOtherCars(obj); 
             vehicles = obj.vehicle.map.Vehicles;
             for car = otherCars
-                if vehicles(car).pathInfo.destinationReached
+                %check for stop
+                if vehicles(car).status.stop
                     obj.nodesBlocked(vehicles(car).pathInfo.lastWaypoint)=1;
                 end
             end
         end        
-        function detectBlockingCars(obj)
-            %blocks every goal node of a finished car
-            %this includes stopped cars by accident and destination
-            otherCars = obj.getNrOfAllOtherCars();
-            vehicles = obj.vehicle.map.Vehicles(otherCars);
-            pathInfo = [vehicles.pathInfo];
-            reached = [pathInfo.destinationReached];
-            otherCars = otherCars(reached);
-            destinationPoints = [pathInfo(otherCars).lastWaypointt];
-            obj.nodesBlocked(destinationPoints) = 1;            
-        end
+        
         function blocked = checkIfBlocked(obj,otherCars, curEdge)
             %if a car will stop after current edge, it will block the node
             %if a car has stopped there, it is already blocked
@@ -756,6 +748,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
             obj.changedEdges = [];%reset
             obj.haveCostsChanged = false;
             for car = otherCars
+                %check for collision
                 if vehicles(car).status.collided
                     %remove every entry with the collided car from FD
                     futureData = futureData(futureData(:,1)~=car,:);
@@ -765,7 +758,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                     obj.nodesBlocked(area(2))=1;
                     obj.changedEdges = [obj.changedEdges, obj.getEdge(area(1),area(2))];
                     obj.haveCostsChanged = true;
-                end                
+                end                  
             end
             
             
