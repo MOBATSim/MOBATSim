@@ -70,11 +70,11 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             rotation= obj.vehicle.dynamics.orientation;
             %Output 3: Reference waypoints for pure pursuit controller
             reference_waypoints = obj.vehicle.dynamics.reference_waypoints(:,[1 3]);
-            figure(2)
-            WP = plot(reference_waypoints(:,1),reference_waypoints(:,2),'.','color','blue');
-            pos = plot(obj.vehicle.dynamics.position(1),-obj.vehicle.dynamics.position(3),'.','color','red');
-            xlim([obj.vehicle.dynamics.position(1)-200 obj.vehicle.dynamics.position(1)+200]);
-            ylim([-obj.vehicle.dynamics.position(3)-200 -obj.vehicle.dynamics.position(3)+200]);           
+%             figure(2)
+%             WP = plot(reference_waypoints(:,1),reference_waypoints(:,2),'.','color','blue');
+%             pos = plot(obj.vehicle.dynamics.position(1),-obj.vehicle.dynamics.position(3),'.','color','red');
+%             xlim([obj.vehicle.dynamics.position(1)-200 obj.vehicle.dynamics.position(1)+200]);
+%             ylim([-obj.vehicle.dynamics.position(3)-200 -obj.vehicle.dynamics.position(3)+200]);           
         end
         %% Helper functions
         function currentRoute = setCurrentRoute(~,car)

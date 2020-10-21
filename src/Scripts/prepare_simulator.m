@@ -73,8 +73,8 @@ SafeDistance =18;
 
 %% figure for viewing WPlist results
 
-figure('Name','waypoints');
-hold on
+% figure('Name','waypoints');
+% hold on
 
 %% define vehicle2's starting position
 v2_Xi = Map.waypoints(Vehicle2.pathInfo.startingPoint,1);
