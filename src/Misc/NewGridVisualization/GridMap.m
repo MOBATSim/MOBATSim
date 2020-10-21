@@ -14,7 +14,7 @@ classdef GridMap < handle
         crossroads
         %grid related varibles
         bogMap;                 %binary occupancy grid object
-        gridResolution = 0.5;         %number of cells per 1 length unit on the map
+        gridResolution = 0.25;         %number of cells per 1 length unit on the map
         gridLocationMap;        %container object to store and load all GridLocation objects
         xOffset;                %Offset to transform visualization into bog coordinates if necessary
         yOffset; 

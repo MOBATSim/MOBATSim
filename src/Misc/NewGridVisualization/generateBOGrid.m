@@ -32,7 +32,7 @@ function [bogMap,xOff,yOff] = generateBOGrid(map)
             %create binary occupancy map object
             bogMap = binaryOccupancyMap(xSize,ySize,gRes);
             %mark everything as blocked
-            occ = ones(ySize*gRes,xSize*gRes);
+            occ = ones(round(ySize*gRes,0),round(xSize*gRes,0));
             setOccupancy(bogMap,[0,0],occ);%lower left corner to set values
             
             %import map details
