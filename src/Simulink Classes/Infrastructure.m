@@ -64,6 +64,12 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             obj.map.dynamicTrafficPlot();
             %obj.map.dynamicRouteHighlighting(); % enable for dynamic route highlighting - disable for performance
 
+            %% Ped walking
+            for i=1:length(obj.map.peds)
+                newpos(i,1)=obj.map.peds(i).walk
+                
+            end
+            obj.map.plots.Pedestrians.YData = newpos;
             %% Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 for vehicle = obj.map.Vehicles

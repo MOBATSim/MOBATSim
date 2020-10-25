@@ -79,4 +79,4 @@ SafeDistance =18;
 
 %sim(modelName); % Uncomment this line for a single button execution
 
-runPedestrians();
+createPedestrians();

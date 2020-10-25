@@ -91,7 +91,22 @@ classdef GridMapPed < handle
             grayimage = rgb2gray(image);
             bwimage = ~(grayimage < 200 & grayimage >87);
             grid1 = binaryOccupancyMap(bwimage,2);
-%             redmap=binaryOccupancyMap(grid(100:200,100:200),2)
+            % introducing pedetrian area
+            pedarea=zeros(180,40);
+            setOccupancy(grid1,[665 340],pedarea,"local")
+            curb=ones(1,13);
+            setOccupancy(grid1,[665 355],curb,"local")
+            setOccupancy(grid1,[665 365],curb,"local")
+            setOccupancy(grid1,[678.5 355],curb,"local")
+            setOccupancy(grid1,[678.5 365],curb,"local")
+            
+            setOccupancy(grid1,[665 406],curb,"local")
+            setOccupancy(grid1,[665 415.5],curb,"local")
+            setOccupancy(grid1,[678.5 406],curb,"local")
+            setOccupancy(grid1,[678.5 415.5],curb,"local")
+
+
+
             show(grid1)
             obj.occFig=gcf
             obj.occFig.WindowState ='maximized';

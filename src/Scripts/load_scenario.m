@@ -3,9 +3,9 @@ startingTimes = [0 0 0 0 0 0 0 0 0 0];
 switch scenarioName
     case 'Urban City Traffic'
         %% Complex crossroad scenario
-        startingPoints =    [8  46 61 18 54 52 64 6 15 63];
-        destinationPoints = [26 59 60 1  3  27 42 25 76 46];
-        maxSpeeds = [20 20 10 10 20 20 10 12 10 10];
+%         startingPoints =    [8  46 61 18 54 52 64 6 15 63];
+%         destinationPoints = [26 59 60 1  3  27 42 25 76 46];
+%         maxSpeeds = [20 20 10 10 20 20 10 12 10 10];
         
         %% Collision scenario    
         %startingPoints =    [51 47 48 4 55 53 6 7 15 49]; 
@@ -31,6 +31,10 @@ switch scenarioName
         %         startingPoints =    [23  22 19  7 48 72 56 57 78 51];
         %         destinationPoints = [10  11 15 27 47 71 70 56 77 78];
         %         maxSpeeds = [ 20 11  20 20 20 20 20 20 20 20];
+           %% Scenario for Ped crossing
+        startingPoints =    [3  4 6 9 14 39 40 22 23 25];
+        destinationPoints = [41 22 23 2 25 74  10 11 12 36];
+        maxSpeeds = [30 30 30 30 30 30 30 30 30 30];
         
         
         SimTimeOut= '20';

@@ -20,6 +20,7 @@ classdef Map < handle
         map2
         map3 
         fig2
+        peds
     end
     
     methods
@@ -273,10 +274,18 @@ classdef Map < handle
 %                 A((i-1)*10+1:10*i,1)=(allVehiclePositions(i,1)-5:allVehiclePositions(i,1)+5)'
 %                 A((i-1)*10+1:10*i,2)=(-allVehiclePositions(i,3)-5:-allVehiclePositions(i,3)+5)'
 %             setOccupancy(obj.map3,[A(:,1)+600 A(:,2)+500], ones(100,1))
-            block=ones(17,17);
-            
+
+            allPedestrianPosition(:,1)=obj.plots.Pedestrians.XData;
+            allPedestrianPosition(:,2)=obj.plots.Pedestrians.YData;
+
+            blockVeh=ones(17,17);
+            blockPed=ones(2,2);
             for i=1:10
-            setOccupancy(obj.map3, [allVehiclePositions(i,1)-4+600 -allVehiclePositions(i,3)-4+500], block, "local");
+                setOccupancy(obj.map3, [allVehiclePositions(i,1)-4+600 -allVehiclePositions(i,3)-4+500], blockVeh, "local");
+            end
+            
+            for i=1:3
+                setOccupancy(obj.map3, [allPedestrianPosition(i,1)+600 allPedestrianPosition(i,2)+500], blockPed, "local");
             end
 %             show(obj.map2)
             hold off
