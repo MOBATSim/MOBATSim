@@ -66,10 +66,12 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
 
             %% Ped walking
             for i=1:length(obj.map.peds)
-                newpos(i,1)=obj.map.peds(i).walk
+                newpos(i,1:2)=obj.map.peds(i).walk
                 
             end
-            obj.map.plots.Pedestrians.YData = newpos;
+            obj.map.plots.Pedestrians.XData = newpos(:,1);
+            obj.map.plots.Pedestrians.YData = newpos(:,2);
+            
             %% Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 for vehicle = obj.map.Vehicles
