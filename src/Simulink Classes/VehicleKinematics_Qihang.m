@@ -152,6 +152,12 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
                 return;
             end
             
+            if car.status.lane_switching == 1
+                local_target_point = obj.generate_target_point(car);
+                obj.switch_lane(car,local_target_point);
+                return;
+            end
+            
             P_init = refRoute(1,:);
             P_final = refRoute(2,:);
             
@@ -174,6 +180,14 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
                 
                 
             end
+        end
+        
+        function local_target_point = generate_target_point(obj,car)
+            local_target_point=car.dynamics.position.*[1 1 -1]+[0 0 10];
+        end
+        
+        function switch_lane(obj,car,target_point)
+            
         end
         
        function moveto(obj ,car,Destination)

@@ -108,8 +108,9 @@ classdef VehicleDrivingMode_Qihang < matlab.System & matlab.system.mixin.Propaga
             if(~isempty(obj.vehicle.pathInfo.currentTrajectory))
             if(obj.vehicle.pathInfo.currentTrajectory(3,1)==0)
                 %straight lane
-                if(obj.vehicle.dynamics.speed - LeaderSpeed)>0
+                if(obj.vehicle.dynamics.speed > LeaderSpeed)&&(LeaderDistance<40)
                     switch_flag = 1;
+                    obj.vehicle.status.lane_switching = 1;
                 end
             end
             end

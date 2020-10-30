@@ -29,6 +29,7 @@ classdef Vehicle < handle
         %         emergencyCase
         %         stop
         %         collided
+        %         lane switching
         pathInfo
         %         startingTime
         %         currentRoute
@@ -90,6 +91,7 @@ classdef Vehicle < handle
             obj.status.emergencyCase = 0;
             obj.setStopStatus(true);
             obj.status.collided = 0;
+            obj.status.lane_switching = 0;
             
             obj.pathInfo.startingTime = startingTime;
             obj.pathInfo.currentTrajectory = [];
