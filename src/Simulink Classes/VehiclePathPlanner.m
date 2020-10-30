@@ -61,16 +61,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             obj.breakingFlag = 0;
             obj.inCrossroad = [0 0];
         end
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+           
         function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
             %This block shouldn't run if the vehicle has reached its
             %destination
@@ -118,19 +109,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 obj.pathPlot = plotPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
             end
         end
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+            
         function manuallyChangeRoute(~,car)
             % Some experiment done for NecSys, could be reused in future if necessary
             
@@ -184,8 +163,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             end
             
         end
-        
-        
+            
         function FuturePlan = findNextRoute(obj, car, starting_point, ending_point, global_timesteps,futureData)
             
             [path,newFutureData] = obj.findShortestPath(car, starting_point, ending_point, global_timesteps, futureData);

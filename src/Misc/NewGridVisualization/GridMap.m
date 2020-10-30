@@ -12,11 +12,12 @@ classdef GridMap < handle
         plots
         crossroadUnits
         crossroads
-        %grid related varibles
-        bogMap;                 %binary occupancy grid object
-        gridResolution = 0.25;         %number of cells per 1 length unit on the map
-        gridLocationMap;        %container object to store and load all GridLocation objects
-        xOffset;                %Offset to transform visualization into bog coordinates if necessary
+
+        % Grid related properties
+        bogMap;                        % Binary occupancy grid object
+        gridResolution = 0.25;         % Number of cells per 1 length unit on the map
+        gridLocationMap;               % Container object to store and load all GridLocation objects
+        xOffset;                       % Offset to transform visualization into bog coordinates if necessary
         yOffset; 
     end
     
@@ -32,32 +33,30 @@ classdef GridMap < handle
             obj.connections.translation = connections_translation;
             
             
-            %calculate distances of connections
-            
+            %% Calculate curved distances (Lengths of circular routes)
+            distancesCircle = ones(1,size(connections_circle,1)); % memory preallocation
             for i = 1:size(connections_circle,1)
                 connection = connections_circle(i,:);
                 radius = norm(connection(4:6) - waypoints(connection(1),:));
                 distancesCircle(i) = radius * abs(connection(3));
             end
             
-            
-            
+            %% Calculate translation distances (Lengths of straight routes)
+            distancesTranslation = ones(1,size(connections_translation,1)); % memory preallocation
             for i = 1:size(connections_translation,1)
                 connection = connections_translation(i,:);
                 distancesTranslation(i) = norm(waypoints(connection(1),:)-waypoints(connection(2),:));
             end
-            
+            %%
+            % Concatenate all distances 
             obj.connections.distances = [distancesCircle';distancesTranslation'];
             
-            %create direct graph with related weights
-            
-            obj.direct_graph = sparse(obj.connections.all(:,1),obj.connections.all(:,2),[  obj.connections.distances']);
-            
-            %h = view(biograph(direct_graph,[],'ShowWeights','on'));
+            % Create direct graph with related weights         
+            obj.direct_graph = sparse(obj.connections.all(:,1),obj.connections.all(:,2),[obj.connections.distances']);
                         
             % Plot the map on the figure
             generateMapVisual(obj,false);
-            %bog will be created in the prepare_simulator script, to include all vehicle data
+            % BOG will be created in the prepare_simulator script, to include all vehicle data
             
             %create bog container map object
             obj.gridLocationMap = containers.Map();
@@ -76,7 +75,7 @@ classdef GridMap < handle
             obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles            
             hold off
             %push vehicles on top of the plot
-            obj.plots.Vehicles.ZData = 0.1 .* ones(1,10);
+            %obj.plots.Vehicles.ZData = 0.1 .* ones(1,10); % Warning: This causes a bug and the map cannot be zoomed.
                         
             obj.crossroads.startingNodes = startingNodes;
             obj.crossroads.breakingNodes = breakingNodes;
