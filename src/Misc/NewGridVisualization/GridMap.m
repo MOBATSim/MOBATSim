@@ -18,7 +18,8 @@ classdef GridMap < handle
         gridResolution = 0.25;         % Number of cells per 1 length unit on the map
         gridLocationMap;               % Container object to store and load all GridLocation objects
         xOffset;                       % Offset to transform visualization into bog coordinates if necessary
-        yOffset; 
+        yOffset;
+        colourMatrix;
     end
     
     methods
@@ -31,6 +32,19 @@ classdef GridMap < handle
             obj.connections.maxSpeeds = [connections_circle(:,end); connections_translation(:,end)];
             obj.connections.circle = connections_circle;
             obj.connections.translation = connections_translation;
+            obj.plots.trajectories = [];
+            
+            obj.colourMatrix = [1 0 0;      %1  red
+                1 1 0 ;                     %2	yellow
+                0 1 1 ;                     %3  light blue
+                0 0.2470 0.5410;            %4  dark blue
+                0.8500 0.3250 0.0980;       %5  orange
+                1 0 1;                      %6  magenta
+                0 0.4470 0.7410;            %7  blue
+                0.6350 0.0780 0.1840;       %8  dark red
+                0.3 0.3 0.3;                %9  grey
+                0.4940 0.1840 0.5560;       %10 violet
+                ];
             
             
             %% Calculate curved distances (Lengths of circular routes)
@@ -75,7 +89,7 @@ classdef GridMap < handle
             obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles            
             hold off
             %push vehicles on top of the plot
-            %obj.plots.Vehicles.ZData = 0.1 .* ones(1,10); % Warning: This causes a bug and the map cannot be zoomed.
+            obj.plots.Vehicles.ZData = 0.1 .* ones(1,10); % Warning: This causes a bug and the map cannot be zoomed.
                         
             obj.crossroads.startingNodes = startingNodes;
             obj.crossroads.breakingNodes = breakingNodes;
@@ -268,7 +282,16 @@ classdef GridMap < handle
             
         end
         
-        
+        function gridPathHighlighting(obj)
+            
+            delete(obj.plots.trajectories)
+            hold on
+            for vehicle = obj.Vehicles % Changing sizes of BOGPath makes it hard to vectorize
+                obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',obj.colourMatrix(vehicle.id,:),'LineWidth',2);
+            end
+            hold off
+            
+        end
         
         
     end

@@ -108,12 +108,11 @@ classdef VehiclePathPlanner_GridAStar< matlab.System & handle & matlab.system.mi
                     waypointReached =0;
                 end
             end
-            %% visualization
+            %% Grid path generation
             %comment this in if you want the visualization of the cars
-            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0 
+            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
                 %plotting can decrease performance, so dont update to often
-                delete(obj.pathPlot)
-                obj.pathPlot = plotPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
+                obj.vehicle.pathInfo.BOGPath = generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
             end
         end        
         

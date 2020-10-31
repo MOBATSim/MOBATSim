@@ -23,7 +23,7 @@ classdef Map < handle
             obj.connections.maxSpeeds = [connections_circle(:,end); connections_translation(:,end)];
             obj.connections.circle = connections_circle;
             obj.connections.translation = connections_translation;
-            
+            obj.plots.trajectories = [];
             
             %calculate distances of connections
             
