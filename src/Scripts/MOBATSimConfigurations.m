@@ -1,9 +1,6 @@
 classdef MOBATSimConfigurations
     %MOBATSimConfigurations Summary of this class goes here
     %   Detailed explanation goes here
-%     enumeration
-%         GridMap, DigraphMap
-%     end
     properties
         modelName
         simSpeed
@@ -19,10 +16,6 @@ classdef MOBATSimConfigurations
             obj.MapType = MapType;
             
         end
-      
-      function tf = isGridMap(obj)
-         tf = strcmp(obj.MapType,'GridMap');
-      end
         
     end
 end

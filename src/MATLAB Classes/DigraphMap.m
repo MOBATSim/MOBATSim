@@ -20,6 +20,7 @@ classdef DigraphMap < Map
             end
             
             % Plot the map on the figure
+            hold off
             obj.plots.graph = plot(obj.digraph_visualization,'XData',obj.waypoints(:,1),'YData',-obj.waypoints(:,3),'EdgeLabel',graphConnectionsLabel');
             
             obj.PlotMap();

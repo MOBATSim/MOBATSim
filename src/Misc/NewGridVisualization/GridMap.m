@@ -46,7 +46,7 @@ classdef GridMap < Map
             %Input: XML Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
 
             %% prepare everything
-            hold on            
+            hold off            
             waypoints = obj.waypoints;
             circ = obj.connections.circle; %curves
             trans = obj.connections.translation; %straight roads
@@ -109,6 +109,12 @@ classdef GridMap < Map
                 phi1(end) = phiGoal;
                 %create the points to plot from angle and radius
                 points = [(radius .* cos(phi1)+x0W)',(radius .* sin(phi1))'+y0W];
+                
+                if c ==1
+                    hold off                    
+                else
+                    hold on
+                end
                 %plot it
                 plot(points(:,1),points(:,2),'color',[0 1 0],'LineWidth',2);
                 %plot number next to edge

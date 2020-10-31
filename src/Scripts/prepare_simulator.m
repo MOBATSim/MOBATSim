@@ -6,6 +6,7 @@ warning off
 if exist('Map','var') 
 clear all; %TODO: needs to be off in order not to delete the variables assigned from the GUI
 close all; %to avoid some problems with the deleted handles
+MapType = MapTypes.GridMap;
 end
 
 %% MOBATSim Configurations
@@ -14,7 +15,7 @@ modelName = 'MOBATSim';
 simSpeed = 4; % For scaling the simulation speed
 Sim_Ts = 0.01; % Sample time of the simulation (may not be stable if changed)
 
-configs = MOBATSimConfigurations(modelName,simSpeed,Sim_Ts,'GridMap'); % MapType: 'GridMap' or 'DigraphMap'
+configs = MOBATSimConfigurations(modelName,simSpeed,Sim_Ts,MapType); % MapType: 'GridMap' or 'DigraphMap'
 
 
 %% GUI Scenario Config Defaults
@@ -39,7 +40,7 @@ switch mapSelection
 end
 
 %% Generate the 2D Map and the instance from the Map class
-if configs.isGridMap
+if configs.MapType == MapTypes.GridMap
     Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
 else
     Map = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
@@ -61,7 +62,7 @@ load_vehicles(); % default on - for Monte Carlo experiments comment out
 Map.Vehicles = Vehicles;
 Map.initCarDescriptionPlot();
 
-if configs.isGridMap
+if configs.MapType == MapTypes.GridMap
     %create BOG
     [Map.bogMap,Map.xOffset,Map.yOffset] = generateBOGrid(Map);
 end
