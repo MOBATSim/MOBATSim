@@ -1,14 +1,13 @@
 classdef Map < handle
-    %UNTITLED Summary of this class goes here
+    %Map Superclass for all maps.
     %   Detailed explanation goes here
     
     properties
         mapName
-        waypoints
-        connections
+        waypoints               %all nodes: line = nr, [X,Y]
+        connections             %struct, .all = all edges, .circles = all curves, .translations = all straight roads
         direct_graph
-        digraph_visualization
-        Vehicles
+        Vehicles                %vector of all vehicles: line = nr
         plots
         crossroadUnits
         crossroads
@@ -25,57 +24,6 @@ classdef Map < handle
             obj.connections.translation = connections_translation;
             obj.plots.trajectories = [];
             
-            %calculate distances of connections
-            
-            for i = 1:size(connections_circle,1)
-                connection = connections_circle(i,:);
-                radius = norm(connection(4:6) - waypoints(connection(1),:));
-                distancesCircle(i) = radius * abs(connection(3));
-            end
-            
-            
-            
-            for i = 1:size(connections_translation,1)
-                connection = connections_translation(i,:);
-                distancesTranslation(i) = norm(waypoints(connection(1),:)-waypoints(connection(2),:));
-            end
-            
-            obj.connections.distances = [distancesCircle';distancesTranslation'];
-            
-            %create direct graph with related weights
-            
-            obj.direct_graph = sparse(obj.connections.all(:,1),obj.connections.all(:,2),[  obj.connections.distances']);
-            
-            %h = view(biograph(direct_graph,[],'ShowWeights','on'));
-            
-            obj.digraph_visualization = digraph( [obj.connections.circle(:,1)' obj.connections.translation(:,1)'],[obj.connections.circle(:,2)' obj.connections.translation(:,2)'],[ obj.connections.distances']);
-            for i=1:length(obj.connections.all)
-                
-                graphConnectionsLabel(i) = find(obj.connections.all(:,1) == obj.digraph_visualization.Edges.EndNodes(i,1)&obj.connections.all(:,2) == obj.digraph_visualization.Edges.EndNodes(i,2));
-                
-            end
-            
-            % Plot the map on the figure
-            obj.plots.graph = plot(obj.digraph_visualization,'XData',obj.waypoints(:,1),'YData',-obj.waypoints(:,3),'EdgeLabel',graphConnectionsLabel');
-            
-            % Turn off useless properties for performance optimization
-            MapFig = gcf;
-            MapFig.WindowState ='maximized';
-            %MapFig.WindowState ='fullscreen';
-            MapFig.Name = obj.mapName;
-            MapFig.NumberTitle = 'off';
-            ax = gca;
-            ax.Toolbar = [];
-            ax.Interactions = [];
-            view(2)
-            hold on
-            obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles
-            hold off
-            
-            
-            obj.initialGraphHighlighting();
-            obj.plots.graph.LineWidth = 2;
-            
             obj.crossroads.startingNodes = startingNodes;
             obj.crossroads.breakingNodes = breakingNodes;
             obj.crossroads.stoppingNodes = stoppingNodes;
@@ -85,10 +33,30 @@ classdef Map < handle
                 
                 obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i,startingNodes(i,:),breakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
             end
+            %% Calculate curved distances (Lengths of circular routes)
+            distancesCircle = ones(1,size(connections_circle,1)); % memory preallocation
+            for i = 1:size(connections_circle,1)
+                connection = connections_circle(i,:);
+                radius = norm(connection(4:6) - waypoints(connection(1),:));
+                distancesCircle(i) = radius * abs(connection(3));
+            end
+            
+            %% Calculate translation distances (Lengths of straight routes)
+            distancesTranslation = ones(1,size(connections_translation,1)); % memory preallocation
+            for i = 1:size(connections_translation,1)
+                connection = connections_translation(i,:);
+                distancesTranslation(i) = norm(waypoints(connection(1),:)-waypoints(connection(2),:));
+            end
+            %%
+            % Concatenate all distances 
+            obj.connections.distances = [distancesCircle';distancesTranslation'];
+
+            %create direct graph with related weights
+            obj.direct_graph = sparse(obj.connections.all(:,1),obj.connections.all(:,2),[  obj.connections.distances']);
             
         end %Constructor
         
-        function  distance = get_distance_of_shortest_path(obj, starting_point, ending_point)
+        function distance = get_distance_of_shortest_path(obj, starting_point, ending_point)
             
             [distance,path] = graphshortestpath(obj.direct_graph,starting_point,ending_point);
             
@@ -248,27 +216,31 @@ classdef Map < handle
             
         end
         
-        function dynamicRouteHighlighting(obj)
-            
-            if(isempty(findobj('type','figure')))
-                
-            else
-                obj.initialGraphHighlighting();
-                for vehicle = obj.Vehicles
-                    if length(vehicle.pathInfo.path) > 1
-                        if vehicle.dynamics.speed < 27.7
-                            routeColor = obj.getRouteColorFromSpeed(vehicle.dynamics.speed*3.6);
-                            highlight(obj.plots.graph,vehicle.pathInfo.path(1),vehicle.pathInfo.path(2),'EdgeColor', routeColor)
-                        end
-                    end
-                end
-            end
-            
-        end
+%         function dynamicRouteHighlighting(obj)
+%             
+%             if(isempty(findobj('type','figure')))
+%                 
+%             else
+%                 obj.initialGraphHighlighting();
+%                 for vehicle = obj.Vehicles
+%                     if length(vehicle.pathInfo.path) > 1
+%                         if vehicle.dynamics.speed < 27.7
+%                             routeColor = obj.getRouteColorFromSpeed(vehicle.dynamics.speed*3.6);
+%                             highlight(obj.plots.graph,vehicle.pathInfo.path(1),vehicle.pathInfo.path(2),'EdgeColor', routeColor)
+%                         end
+%                     end
+%                 end
+%             end
+%             
+%         end
         
         
         
         
+    end
+    
+    methods (Abstract)
+    dynamicRouteHighlighting(obj)
     end
     
 end
