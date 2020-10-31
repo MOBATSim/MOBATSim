@@ -23,7 +23,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
     end
     
     % Pre-computed constants
-    properties(Access = private)
+    properties(Access = protected)
         vehicle
         Map = evalin('base','Map');
         accelerationPhase;

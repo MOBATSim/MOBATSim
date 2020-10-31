@@ -1,30 +1,29 @@
 %% Init file for MOBATSim
 hold off
+warning off
+
 
 if exist('Map','var') 
 clear all; %TODO: needs to be off in order not to delete the variables assigned from the GUI
 close all; %to avoid some problems with the deleted handles
 end
 
-warning off
-
-%%
+%% MOBATSim Configurations
 modelName = 'MOBATSim';
 
 simSpeed = 4; % For scaling the simulation speed
 Sim_Ts = 0.01; % Sample time of the simulation (may not be stable if changed)
 
+configs = MOBATSimConfigurations(modelName,simSpeed,Sim_Ts,'GridMap'); % MapType: 'GridMap' or 'DigraphMap'
+
+
+%% GUI Scenario Config Defaults
 if ~exist('mapSelection','var')
     mapSelection = 'Mobatkent'; % Default map selection
 end
-%% new
 if ~exist('scenarioSelection','var')&&~exist('CustomScenarioGenerated','var')&&(~exist('RandomScenarioGenerated','var'))
     scenarioSelection = 'Urban City Traffic'; % Default scenario selection
 end
-%% Replacement
-% if ~exist('scenarioSelection','var')
-%     scenarioSelection = 'Urban City Traffic'; % Default scenario selection
-% end
 
 %% Load the Map
 switch mapSelection  
@@ -39,9 +38,12 @@ switch mapSelection
         load_Crossmap();             
 end
 
-% Generate the 2D Map and the instance from the Map class
-Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
-%Map = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+%% Generate the 2D Map and the instance from the Map class
+if configs.isGridMap
+    Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+else
+    Map = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+end
 
 %% Load Scenario and Vehicles
 if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % new
@@ -59,9 +61,10 @@ load_vehicles(); % default on - for Monte Carlo experiments comment out
 Map.Vehicles = Vehicles;
 Map.initCarDescriptionPlot();
 
-%create BOG
-%[Map.bogMap,Map.xOffset,Map.yOffset] = generateBOGrid(Map);
-            
+if configs.isGridMap
+    %create BOG
+    [Map.bogMap,Map.xOffset,Map.yOffset] = generateBOGrid(Map);
+end
 % Clear the initializing variables
 clear_init_variables();
 
