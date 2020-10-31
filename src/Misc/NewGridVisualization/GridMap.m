@@ -36,29 +36,10 @@ classdef GridMap < Map
             %create bog container map object
             obj.gridLocationMap = containers.Map();
             
-            % Turn off useless properties for performance optimization
-            MapFig = gcf;
-            MapFig.WindowState ='maximized';
-            %MapFig.WindowState ='fullscreen';
-            MapFig.Name = obj.mapName;
-            MapFig.NumberTitle = 'off';
-            ax = gca;
-            ax.Toolbar = [];
-            ax.Interactions = [];
-            view(2)
-            hold on
-            obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles            
-            hold off
-                    
-            obj.plots.Vehicles.ZData = 0.1 .* ones(1,10); % Warning: This causes a bug and the map cannot be zoomed.
-            
-            obj.initialGraphHighlighting();
-            obj.plots.graph.LineWidth = 2;
+            obj.PlotMap();
        
         end %Constructor
-        
-        %% utility functions
-        
+                
         function generateMapVisual(obj,displayInGridCoordinates)
             %This function plots any XML Map of MOBATSim. Keep in mind that you have to
             %do a coordinate transformation between normal coordinates and grid / mobatsim

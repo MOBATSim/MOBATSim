@@ -64,9 +64,9 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             %% 2D Traffic Plot
             obj.map.dynamicTrafficPlot();
             
-            %% Grid Path Dynamic Highlight
+            %% Path Dynamic Highlight
             if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
-                %obj.map.dynamicRouteHighlighting();
+                obj.map.dynamicRouteHighlighting();
             end
             %% Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0

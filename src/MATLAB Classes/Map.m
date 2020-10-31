@@ -169,6 +169,25 @@ classdef Map < handle
             
         end
         
+        function PlotMap(obj)
+        % Turn off useless properties for performance optimization
+            MapFig = gcf;
+            MapFig.WindowState ='maximized';
+            %MapFig.WindowState ='fullscreen';
+            MapFig.Name = obj.mapName;
+            MapFig.NumberTitle = 'off';
+            ax = gca;
+            ax.Toolbar = [];
+            ax.Interactions = [];
+            view(2)
+            hold on
+            obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles            
+            hold off
+                    
+            obj.plots.Vehicles.ZData = 0.1 .* ones(1,10); % Warning: This may sometimes cause a bug and disable the figure zoom for map.
+
+        end
+        
         function initCarDescriptionPlot(obj)
             % Prepares the Vehicle tags
             obj.plots.carDescription=text(zeros(1,10),zeros(1,10),{obj.Vehicles.name},'FontWeight','Bold','FontSize',9);
@@ -207,7 +226,7 @@ classdef Map < handle
             
             
             % Vehicles' Annotation Position
-            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-10, -allVehiclePositions(1:length(obj.Vehicles),3)+12, zeros(1,10)'];
+            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-8, -allVehiclePositions(1:length(obj.Vehicles),3)+8, 0.11.*ones(1,10)'];
             allTextPositions = mat2cell(allVehiclePositions,ones(1,10),3); % Matrix to Cell for the handle format
             
             %set the position and string handles
@@ -216,25 +235,7 @@ classdef Map < handle
             
         end
         
-%         function dynamicRouteHighlighting(obj)
-%             
-%             if(isempty(findobj('type','figure')))
-%                 
-%             else
-%                 obj.initialGraphHighlighting();
-%                 for vehicle = obj.Vehicles
-%                     if length(vehicle.pathInfo.path) > 1
-%                         if vehicle.dynamics.speed < 27.7
-%                             routeColor = obj.getRouteColorFromSpeed(vehicle.dynamics.speed*3.6);
-%                             highlight(obj.plots.graph,vehicle.pathInfo.path(1),vehicle.pathInfo.path(2),'EdgeColor', routeColor)
-%                         end
-%                     end
-%                 end
-%             end
-%             
-%         end
-        
-        
+
         
         
     end
