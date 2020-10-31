@@ -41,7 +41,7 @@ end
 
 % Generate the 2D Map and the instance from the Map class
 Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
-%Map = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
+%Map = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
 
 %% Load Scenario and Vehicles
 if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % new
@@ -59,6 +59,9 @@ load_vehicles(); % default on - for Monte Carlo experiments comment out
 Map.Vehicles = Vehicles;
 Map.initCarDescriptionPlot();
 
+%create BOG
+%[Map.bogMap,Map.xOffset,Map.yOffset] = generateBOGrid(Map);
+            
 % Clear the initializing variables
 clear_init_variables();
 

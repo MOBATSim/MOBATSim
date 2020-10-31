@@ -38,6 +38,7 @@ classdef Vehicle < handle
         %         referencePath
         %         routeCompleted
         %         path
+        %         BOGPath
         dataLog
         %         timeStamps
         %         totalTravelTime
@@ -98,6 +99,7 @@ classdef Vehicle < handle
             obj.pathInfo.referencePath = [];
             obj.pathInfo.routeCompleted = true;
             obj.pathInfo.path = 0;
+            obj.pathInfo.BOGPath = [];
             
             obj.dataLog.timeStamps =[];
             obj.dataLog.totalTravelTime = 0;

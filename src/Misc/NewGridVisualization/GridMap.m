@@ -1,262 +1,154 @@
-classdef GridMap < handle
-    %UNTITLED Summary of this class goes here
+classdef GridMap < Map
+    %A MOBATSim map object with a XML-graph and a binary occupancy grid object
     %   Detailed explanation goes here
     
     properties
-        mapName
-        waypoints
-        connections
-        direct_graph
-        digraph_visualization
-        Vehicles
-        plots
-        crossroadUnits
-        crossroads
+        bogMap;                        % Binary occupancy grid object
+        gridResolution = 0.25;         % Number of cells per 1 length unit on the map
+        gridLocationMap;               % Container object to store and load all GridLocation objects
+        xOffset;                       % Offset to transform visualization into bog coordinates if necessary
+        yOffset;
+        colourMatrix;
     end
     
     methods
+        %% constructor and visualization creation
         function obj = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes)
-            obj.mapName = mapName;
-            obj.waypoints = waypoints;
-            obj.Vehicles = [];
-            obj.connections.all = [connections_circle(:,1:2);connections_translation(:,1:2)];
-            obj.connections.maxSpeeds = [connections_circle(:,end); connections_translation(:,end)];
-            obj.connections.circle = connections_circle;
-            obj.connections.translation = connections_translation;
+            obj = obj@Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes);
             
+            obj.colourMatrix = [1 0 0;      %1  red
+                1 1 0 ;                     %2	yellow
+                0 1 1 ;                     %3  light blue
+                0 0.2470 0.5410;            %4  dark blue
+                0.8500 0.3250 0.0980;       %5  orange
+                1 0 1;                      %6  magenta
+                0 0.4470 0.7410;            %7  blue
+                0.6350 0.0780 0.1840;       %8  dark red
+                0.3 0.3 0.3;                %9  grey
+                0.4940 0.1840 0.5560;       %10 violet
+                ];
             
-            %calculate distances of connections
-            
-            for i = 1:size(connections_circle,1)
-                connection = connections_circle(i,:);
-                radius = norm(connection(4:6) - waypoints(connection(1),:));
-                distancesCircle(i) = radius * abs(connection(3));
-            end
-            
-            
-            
-            for i = 1:size(connections_translation,1)
-                connection = connections_translation(i,:);
-                distancesTranslation(i) = norm(waypoints(connection(1),:)-waypoints(connection(2),:));
-            end
-            
-            obj.connections.distances = [distancesCircle';distancesTranslation'];
-            
-            %create direct graph with related weights
-            
-            obj.direct_graph = sparse(obj.connections.all(:,1),obj.connections.all(:,2),[  obj.connections.distances']);
-            
-            %h = view(biograph(direct_graph,[],'ShowWeights','on'));
                         
             % Plot the map on the figure
             generateMapVisual(obj,false);
+            % BOG will be created in the prepare_simulator script, to include all vehicle data
             
-            % Turn off useless properties for performance optimization
-            MapFig = gcf;
-            MapFig.WindowState ='maximized';
-            %MapFig.WindowState ='fullscreen';
-            MapFig.Name = obj.mapName;
-            MapFig.NumberTitle = 'off';
-            ax = gca;
-            ax.Toolbar = [];
-            ax.Interactions = [];
-            view(2)
-            hold on
-            obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles
-            hold off
-                        
-            obj.crossroads.startingNodes = startingNodes;
-            obj.crossroads.breakingNodes = breakingNodes;
-            obj.crossroads.stoppingNodes = stoppingNodes;
-            obj.crossroads.leavingNodes = leavingNodes;
+            %create bog container map object
+            obj.gridLocationMap = containers.Map();
             
-            for i = 1:  size(startingNodes,1)
-                
-                obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i,startingNodes(i,:),breakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
-            end
-            
+            obj.PlotMap();
+       
         end %Constructor
-        
-        function  distance = get_distance_of_shortest_path(obj, starting_point, ending_point)
-            
-            [distance,path] = graphshortestpath(obj.direct_graph,starting_point,ending_point);
-            
-        end
-        
-        function path_in_waypoints = find_shortest_path_as_waypoints(obj, starting_point, ending_point )
-            
-            [distance,path] = graphshortestpath(obj.direct_graph,starting_point,ending_point);
-            path_in_waypoints = obj.waypoints(path,:);
-            
-        end
-        
-        function waypoint = get_waypoint_from_coordinates (obj,coordinates)
-            
-            [~,waypoint] = ismember(coordinates, obj.waypoints, 'rows');
-            
-        end
-        
-        function coordinates = get_coordinates_from_waypoint (obj,waypoint)
-            
-            coordinates = obj.waypoints(waypoint,:);
-            
-        end
-        
-        function costs = getCosts(obj, point1, point2)
-            index = find(([obj.connections.translation(:,1);obj.connections.circle(:,1)] ==point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2));
-            costs_vector = [obj.connections.costs.translation obj.connections.costs.circle] ;
-            costs = costs_vector(index);
-        end
-        
-        function index = getRouteIDfromPath(obj, path)
-            point1 = path(1);
-            point2 = path(2);
-            index = find(obj.connections.all(:,1) ==point1&obj.connections.all(:,2) ==point2);
-            
-        end
-        
-        function speed = get_speed (obj, route, maxSpeed)
-            point1 = get_waypoint_from_coordinates (obj,route(1,:));
-            point2 = get_waypoint_from_coordinates (obj,route(2,:));
-            
-            index = find(([obj.connections.translation(:,1);obj.connections.circle(:,1)] == point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2));
-            if index > length(obj.connections.translation)
-                speed = obj.connections.circle(index -  length(obj.connections.translation),end);
-            else
-                speed = obj.connections.translation(index,end);
-            end
-            
-            if maxSpeed < speed
-                speed = maxSpeed;
-            end
-            
-        end %unused function
-        
-        
-        function stopCollidingVehicles(obj, car)
-            if car.status.emergencyCase == 3 % Collision
-                % Inform the map and/or the Decision Unit about what happened
-                car.dynamics.speed = 0;
-                car.setStopStatus(true);
-            end
-            
-        end
-        
-        function neighbourRoutes = getForwardNeighbourRoutes(obj, route)
-            connections = obj.connections.all;
-            connection = connections(route,:);
-            neighbourRoutes =find(connections(:,1)==connection(2));
-            
-        end
-        
-        function neighbourRoutes = getBackwardNeighbourRoutes(obj, route)
-            connections = obj.connections.all;
-            connection = connections(route,:);
-            neighbourRoutes =find(connections(:,2)==connection(1));
-            
-        end
-        
-        function closestWaypoint = getClosestWaypoint(obj, waypoint)
-            cellWaypoints = num2cell(obj.waypoints,2);
-            x = cellfun(@(x) norm(x-obj.waypoints(waypoint,:)), cellWaypoints);
-            closestWaypoint = find(x==(min(x(x>0))));
-        end
-        
-        function formattedRoute = getRouteDefinitionfromRouteID(obj, routeID)
-            
-            
-            if routeID>length(obj.connections.circle)
-                formattedRoute = [obj.waypoints(obj.connections.translation(routeID,1),:);
-                    obj.waypoints(obj.connections.translation(routeID,2),:);
-                    zeros(1,3);
-                    zeros(1,3)];
-            elseif routeID<=length(obj.connections.circle)
-                formattedRoute = [obj.waypoints(obj.connections.circle(routeID,1),:);
-                    obj.waypoints(obj.connections.circle(routeID,2),:);
-                    abs(obj.connections.circle(routeID,3)),obj.connections.circle(routeID,4),obj.connections.circle(routeID,6);
-                    -sign(obj.connections.circle(routeID,3))*ones(1,3)];
                 
+        function generateMapVisual(obj,displayInGridCoordinates)
+            %This function plots any XML Map of MOBATSim. Keep in mind that you have to
+            %do a coordinate transformation between normal coordinates and grid / mobatsim
+            %Input: XML Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
+
+            %% prepare everything
+            hold on            
+            waypoints = obj.waypoints;
+            circ = obj.connections.circle; %curves
+            trans = obj.connections.translation; %straight roads
+            %coordinate transformation
+            waypoints(:,3) = -1.*waypoints(:,3);    %MOBATSim stores the negative y, so we have to transform it
+            circ(:,6) = -1.*circ(:,6);
+            %maybe it is necessary to display everything in the coordinate system of the binary occupancy grid object
+            %if so, we have to shift everything here and set the input true
+            if displayInGridCoordinates
+                xOff = min(waypoints(:,1))-50;
+                yOff = min(waypoints(:,3))-50;
+                
+                waypoints(:,3) = waypoints(:,3)-yOff;
+                waypoints(:,1) = waypoints(:,1)-xOff;                
+                
+                circ(:,4) = circ(:,4)-xOff;
+                circ(:,6) = circ(:,6)-yOff;
             end
-            
-            
-        end
-        
-        function routeColor = getRouteColorFromSpeed(obj, speed)
-            if speed > 50
-                routeColor = [1-(speed-50)/62.5 0.8 0];
-            else
-                routeColor = [0.8 speed/62.5  0];
+            %% Generate a usable plot
+            %% generate curves
+            for c = 1 : length(circ)
+                cPart = circ(c,:); %load information on the current curve
+                %starting point
+                x1 = waypoints(cPart(1),1); 
+                y1 = waypoints(cPart(1),3);   
+                %goal point
+                x2 = waypoints(cPart(2),1); 
+                y2 = waypoints(cPart(2),3);
+                %central point
+                x0W = cPart(4); 
+                y0W = cPart(6);
+                %radius
+                radius = norm( [x2,y2]-[x0W,y0W] );
+                %angles of start and goal
+                phiStart = angle(complex((x1-x0W) , (y1-y0W)));
+                phiGoal = angle(complex((x2-x0W) , (y2-y0W)));
+                %direction
+                direction = sign(cPart(3));
+                %% make angle allways usable
+                %we have to make every angle positive and also big eneough,
+                %that an angle of a point is allways between start and goal
+                if phiStart <0
+                    phiStart = phiStart + 2*3.1415;
+                end
+                if phiGoal <0
+                    phiGoal = phiGoal + 2*3.1415;
+                end
+                %make turns through 0° possible
+                if (direction == -1 && phiStart < phiGoal)
+                    phiStart = phiStart + 2*3.1415;
+                end
+                if (direction == 1 && phiStart > phiGoal)
+                    phiGoal = phiGoal + 2*3.1415;
+                end
+                %create an array with all angles between start and goal
+                phi1 = phiStart : direction*0.01 : phiGoal;
+                %set first and last, to make shure there are no gaps in the
+                %plot because of rounding errors
+                phi1(1) = phiStart;
+                phi1(end) = phiGoal;
+                %create the points to plot from angle and radius
+                points = [(radius .* cos(phi1)+x0W)',(radius .* sin(phi1))'+y0W];
+                %plot it
+                plot(points(:,1),points(:,2),'color',[0 1 0],'LineWidth',2);
+                %plot number next to edge
+                textPos = points(round(length(points)/2,0),:);                
+                description = text(textPos(1)-10,textPos(2)-15,num2str(c),'color',[0 0.5 0]);
             end
-            
+            %% generate straight lines
+            for t = 1 : length(trans)
+                position = zeros(2,2); %preallocate start and goal point
+                %get both points and plot a line in between
+                position(1,:) = [waypoints(trans(t,1),1) ,waypoints(trans(t,1),3)];
+                position(2,:) = [waypoints(trans(t,2),1) ,waypoints(trans(t,2),3)];
+                plot(position(:,1),position(:,2),'color',[0 1 0],'LineWidth',2);
+                %plot number next to edge
+                textPos = (position(2,:) + position(1,:))/2;                
+                text(textPos(1)+5,textPos(2)-15,num2str(t+c),'color',[0 0.5 0]);
+            end
+            %% plot nodes with numbers
+            for n = 1 : length(waypoints)
+                %get position
+                pos = [waypoints(n,1),waypoints(n,3)];
+                %plot dot and number in a dark blue
+                plot(pos(1),pos(2),'Marker','o','MarkerFaceColor',[0 0.2 0.5],'color',[0 0.2 0.5]);
+                text(pos(1)-5,pos(2)-15,num2str(n),'color',[0 0.2 0.5]);%TODO make it appear automatically under dot
+                %maybe there is a way to let it not collide with other text?
+            end
+            hold off
         end
-        
-        function initCarDescriptionPlot(obj)
-            % Prepares the Vehicle tags
-            obj.plots.carDescription=text(zeros(1,10),zeros(1,10),{obj.Vehicles.name},'FontWeight','Bold','FontSize',9);
-        end
-        
-        function initialGraphHighlighting(obj)
-            obj.plots.graph.EdgeColor = 'g';
-        end
-        
-        function dynamicTrafficPlot(obj)
-            
-            allVehiclePositions = cat(1,cat(1,obj.Vehicles(1:length(obj.Vehicles)).dynamics).position);
-            
-            % Vehicles' 2D scatter plot circle positions
-            obj.plots.Vehicles.XData = allVehiclePositions(:,1);
-            obj.plots.Vehicles.YData = -allVehiclePositions(:,3);
-            
-            % Vehicles' Annotation String
-            speedArray = compose('%4.1f', [cat(1,cat(1,obj.Vehicles(1:length(obj.Vehicles))).dynamics).speed]);
-            nameArray={obj.Vehicles(1:length(obj.Vehicles)).name};
-            
-            %requiredArrayHandle= get(obj.plots.carDescription,{'String'}); % The required format for the handles
-            % TODO: If the number of vehicles on the map are not known, use the for loop below, but the performance is
-            % 10 times better with the long line of code that comes after. Need to find a solution to the conversion of
-            % cell arrays.
-            %             textDescArray = cell(length(obj.Vehicles),1);
-            %             for k=1:length(obj.Vehicles)
-            %                 textDescArray(k) = {{nameshow{k};speedshow{k}}};
-            %             end
-            
-            %This code gives the best performance but needs to be flexible later on.
-            textDescArray = {{nameArray{1};speedArray{1}};{nameArray{2};speedArray{2}};{nameArray{3};speedArray{3}};...
-                {nameArray{4};speedArray{4}};{nameArray{5};speedArray{5}};{nameArray{6};speedArray{6}};{nameArray{7};speedArray{7}};...
-                {nameArray{8};speedArray{8}};{nameArray{9};speedArray{9}};{nameArray{10};speedArray{10}}};
-            
-            
-            
-            % Vehicles' Annotation Position
-            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-10, -allVehiclePositions(1:length(obj.Vehicles),3)+12, zeros(1,10)'];
-            allTextPositions = mat2cell(allVehiclePositions,ones(1,10),3); % Matrix to Cell for the handle format
-            
-            %set the position and string handles
-            set(obj.plots.carDescription,{'Position'},allTextPositions);
-            set(obj.plots.carDescription,{'String'},textDescArray);
-            
-        end
-        
+                
         function dynamicRouteHighlighting(obj)
             
-            if(isempty(findobj('type','figure')))
-                
-            else
-                obj.initialGraphHighlighting();
-                for vehicle = obj.Vehicles
-                    if length(vehicle.pathInfo.path) > 1
-                        if vehicle.dynamics.speed < 27.7
-                            routeColor = obj.getRouteColorFromSpeed(vehicle.dynamics.speed*3.6);
-                            highlight(obj.plots.graph,vehicle.pathInfo.path(1),vehicle.pathInfo.path(2),'EdgeColor', routeColor)
-                        end
-                    end
-                end
+            delete(obj.plots.trajectories)
+            hold on
+            for vehicle = obj.Vehicles % Changing sizes of BOGPath makes it hard to vectorize
+                obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',obj.colourMatrix(vehicle.id,:),'LineWidth',2);
             end
+            hold off
             
         end
-        
-        
-        
+
         
     end
     

@@ -25,6 +25,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             for vehicle = obj.map.Vehicles
                 vehicle.initVehicle();
             end
+            
         end
 
         function icon = getIconImpl(~)
@@ -59,11 +60,14 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                 mergedBrakingFlagArrays =  [mergedBrakingFlagArrays; obj.map.crossroadUnits(i).breakingFlagArray]; %#ok<AGROW>
             end
             
-            
+
             %% 2D Traffic Plot
             obj.map.dynamicTrafficPlot();
-            %obj.map.dynamicRouteHighlighting(); % enable for dynamic route highlighting - disable for performance
-
+            
+            %% Path Dynamic Highlight
+            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
+                obj.map.dynamicRouteHighlighting();
+            end
             %% Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 for vehicle = obj.map.Vehicles

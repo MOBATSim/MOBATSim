@@ -12,10 +12,9 @@ classdef GridLocation
         nodeNR;                 % 0 = no node, NR of a node in graph
         edgeNR;                 % 0 = no edge, NR of edge it belongs
         distance=0;             %distance to get over the GL
-        parent;                 %GL that came before this one on our path
         edgeStart;              %node nr of the start of the current edge
         totalDistance;          %distance travelled so far
-        speedLimit = 0;             %maximum speed on this GL
+        speedLimit = [];        %maximum speed on this GL
         deviation = 0;          %standard deviation
         blocked;                %true = blocked
         
@@ -33,7 +32,6 @@ classdef GridLocation
             obj.edgeNR = edge;
             obj.transMapSucc = containers.Map();
             obj.transMapPred = containers.Map();
-            obj.parent = 0;
             obj.totalDistance = 0;
             obj.blocked = false;
             
