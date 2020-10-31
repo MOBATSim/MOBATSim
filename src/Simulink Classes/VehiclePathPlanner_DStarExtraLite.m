@@ -74,7 +74,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             %This block shouldn't run if the vehicle has reached its
             %destination
             
-            %% create new path            
+            %% create new path
             if obj.vehicle.pathInfo.destinationReached %check if already reached goal
                 FuturePlan = obj.vehicle.decisionUnit.futureData;
                 waypointReached=1;
@@ -106,6 +106,50 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 %plotting can decrease performance, so dont update to often
                 obj.vehicle.pathInfo.BOGPath = generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
             end
+        end
+        
+        function initialize(obj)
+            %initialize whole map
+            nMap = length(obj.Map.waypoints);
+            obj.nrOfNodes = nMap;
+            %nodes
+            obj.nodesKey = zeros(nMap,2);
+            obj.nodesOpen = zeros(nMap,1);
+            obj.nodesParent = zeros(nMap,1);
+            obj.nodesVisited = zeros(nMap,1);
+            obj.nodesGlobalDistance = zeros(nMap,1);
+            obj.nodesG = ones(nMap,1)*2000000000;%intmax
+            obj.nodesBlocked = zeros(nMap,1);
+            %edges
+            eMap = length(obj.Map.connections.all);
+            obj.nrOfEdges = eMap;
+            obj.edgesSpeed = zeros(eMap,1);
+            obj.edgesEntry = zeros(eMap,1);
+            obj.edgesExit = zeros(eMap,1);
+            obj.seeds = zeros(eMap,1);%if you change the init, change other code too (reinitialize)!
+            
+            %INIT Cost
+            
+            maxSpeed = obj.vehicle.dynamics.maxSpeed ;
+            speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
+            speedRoutes(speedRoutes>maxSpeed)= maxSpeed; %possible speed for every route
+            obj.maxEdgeSpeed = speedRoutes;
+            distances = obj.Map.connections.distances;
+            %calculate costs
+            obj.edgesCost = (1/ obj.simSpeed) .* distances .* (1./ speedRoutes);
+            
+            %rest
+            %visited(sgoal)=true
+            sgoal = obj.vehicle.pathInfo.destinationPoint;
+            obj.nodesVisited(sgoal) = 1;
+            %g(sgoal)=0
+            obj.nodesG(sgoal) = 0;
+            pushOpen(obj,sgoal,calculateKey(obj,sgoal));
+            obj.vehicle.pathInfo.path = [];
+            obj.slast = obj.vehicle.pathInfo.lastWaypoint;
+            %set up backup goal node
+            obj.tempGoalNode = sgoal;
+            
         end
         
         
@@ -181,49 +225,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             end
             
         end        
-        function initialize(obj)
-            %initialize whole map
-            nMap = length(obj.Map.waypoints);
-            obj.nrOfNodes = nMap;
-            %nodes
-            obj.nodesKey = zeros(nMap,2);
-            obj.nodesOpen = zeros(nMap,1);
-            obj.nodesParent = zeros(nMap,1);
-            obj.nodesVisited = zeros(nMap,1);
-            obj.nodesGlobalDistance = zeros(nMap,1);
-            obj.nodesG = ones(nMap,1)*2000000000;%intmax
-            obj.nodesBlocked = zeros(nMap,1);
-            %edges
-            eMap = length(obj.Map.connections.all);
-            obj.nrOfEdges = eMap;
-            obj.edgesSpeed = zeros(eMap,1);
-            obj.edgesEntry = zeros(eMap,1);
-            obj.edgesExit = zeros(eMap,1);
-            obj.seeds = zeros(eMap,1);%if you change the init, change other code too (reinitialize)!           
-            
-            %INIT Cost
-            
-            maxSpeed = obj.vehicle.dynamics.maxSpeed ;
-            speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
-            speedRoutes(speedRoutes>maxSpeed)= maxSpeed; %possible speed for every route
-            obj.maxEdgeSpeed = speedRoutes;
-            distances = obj.Map.connections.distances;
-            %calculate costs
-            obj.edgesCost = (1/ obj.simSpeed) .* distances .* (1./ speedRoutes);
-                        
-            %rest
-            %visited(sgoal)=true
-            sgoal = obj.vehicle.pathInfo.destinationPoint;
-            obj.nodesVisited(sgoal) = 1;
-            %g(sgoal)=0
-            obj.nodesG(sgoal) = 0;
-            pushOpen(obj,sgoal,calculateKey(obj,sgoal));
-            obj.vehicle.pathInfo.path = [];            
-            obj.slast = obj.vehicle.pathInfo.lastWaypoint;
-            %set up backup goal node
-            obj.tempGoalNode = sgoal;            
-            
-        end   
+
         
         %% vehicle commands
         function stopVehicle(obj)
@@ -820,7 +822,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 if obj.nodesBlocked(path(i))
                     %now set new goal
                     if i-1 > 2
-                        %to safe memory we use i and return
+                        %to save memory we use i and return
                         i = i-1;
                     else 
                         tempFD = [];
@@ -899,96 +901,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             end
         end
                
-        
-        %% Standard Simulink Output functions
-        function resetImpl(obj)
-            % Initialize / reset discrete-state properties
-        end
-        
-        function s = saveObjectImpl(obj)
-            % Set properties in structure s to values in object obj
-            
-            % Set public properties and states
-            s = saveObjectImpl@matlab.System(obj);
-            
-            % Set private and protected properties
-            %s.myproperty = obj.myproperty;
-        end
-        
-        function loadObjectImpl(obj,s,wasLocked)
-            % Set properties in object obj to values in structure s
-            
-            % Set private and protected properties
-            % obj.myproperty = s.myproperty;
-            
-            % Set public properties and states
-            loadObjectImpl@matlab.System(obj,s,wasLocked);
-        end
-        
-        function ds = getDiscreteStateImpl(obj)
-            % Return structure of properties with DiscreteState attribute
-            ds = struct([]);
-        end
-        
-        function flag = isInputSizeLockedImpl(obj,index)
-            % Return true if input size is not allowed to change while
-            % system is running
-            flag = false;
-        end
-        
-        function [out,out2] = getOutputSizeImpl(obj)
-            % Return size for each output port
-            out = [50 5];
-            out2 = [1 1];
-            
-            % Example: inherit size from first input port
-            % out = propagatedInputSize(obj,1);
-        end
-        
-        function [out,out2] = getOutputDataTypeImpl(obj)
-            % Return data type for each output port
-            out = 'double';
-            out2 = 'double';
-            
-            % Example: inherit data type from first input port
-            % out = propagatedInputDataType(obj,1);
-        end
-        
-        function [out,out2] = isOutputComplexImpl(obj)
-            % Return true for each output port with complex data
-            out = false;
-            out2 = false;
-            
-            % Example: inherit complexity from first input port
-            % out = propagatedInputComplexity(obj,1);
-        end
-        
-        function [out,out2] = isOutputFixedSizeImpl(obj)
-            % Return true for each output port with fixed size
-            out = false;
-            out2 = true;
-            
-            % Example: inherit fixed-size status from first input port
-            % out = propagatedInputFixedSize(obj,1);
-        end
-        
-        function icon = getIconImpl(obj)
-            % Return text as string or cell array of strings for the System
-            % block icon
-            icon = mfilename('class'); % Use class name
-        end
+ 
     end
     
-    methods(Static, Access = protected)
-        %% Simulink customization functions
-        function header = getHeaderImpl
-            % Define header panel for System block dialog
-            header = matlab.system.display.Header(mfilename('class'));
-        end
-        
-        function group = getPropertyGroupsImpl
-            % Define property section(s) for System block dialog
-            group = matlab.system.display.Section(mfilename('class'));
-        end
-    end
 end

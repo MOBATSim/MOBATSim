@@ -108,59 +108,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             end
         end
             
-        function manuallyChangeRoute(~,car)
-            % Some experiment done for NecSys, could be reused in future if necessary
-            
-            if car.id ==3
-                if car.pathInfo.lastWaypoint == 9
-                    car.pathInfo.destinationPoint = 11;
-                end
-                
-                if car.pathInfo.lastWaypoint == 10
-                    %Fault injection
-                    p = rand();
-                    if p >0.5
-                        %V3 - Route 51 / 1-p(example: for p>0.2 this %80)
-                        car.pathInfo.destinationPoint = 33;
-                        
-                    else
-                        %V3 - Route 5 / p
-                        car.pathInfo.destinationPoint = 35;
-                        
-                    end
-                    
-                end
-                
-                if car.pathInfo.lastWaypoint == 13
-                    car.pathInfo.destinationPoint = 31;
-                elseif car.pathInfo.lastWaypoint == 32
-                    car.pathInfo.destinationPoint = 31;
-                end
-            end
-            
-            if car.id == 1
-                % Decision R5
-                %                 if car.pathInfo.lastWaypoint == 9
-                %                     car.pathInfo.destinationPoint = 13;
-                %                 end
-                %
-                %                 if car.pathInfo.lastWaypoint == 12
-                %                     car.pathInfo.destinationPoint = 26;
-                %                 end
-                
-                
-                %                 % Decision R51
-                %                 if car.pathInfo.lastWaypoint == 9
-                %                     car.pathInfo.destinationPoint = 33;
-                %                 end
-                %
-                %                 if car.pathInfo.lastWaypoint == 32
-                %                     car.pathInfo.destinationPoint = 26;
-                %                 end
-                
-            end
-            
-        end
+       
             
         function FuturePlan = findNextRoute(obj, car, starting_point, ending_point, global_timesteps,futureData)
             
@@ -445,8 +393,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         
         
  %% Standard Simulink Output functions
-
-
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj
             
