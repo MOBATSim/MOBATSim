@@ -19,6 +19,12 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
         map = evalin('base','Map'); 
         simSpeed = evalin('base','simSpeed');
         modelName = evalin('base','modelName');
+        T=2;%time duration of the whole lane-switch procss
+        Lane_width = 10;
+        local_route_direction = [];
+        local_LeftAdjacentLane_direction = [];
+        local_RightAdjacentLane_direction = [];
+        LaneSwitch_stratrPoint = [];
     end
     
     methods(Access = protected)
@@ -153,8 +159,11 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             end
             
             if car.status.lane_switching == 1
-                local_target_point = obj.generate_target_point(car);
-                obj.switch_lane(car,local_target_point);
+                if isempty(car.dynamics.LaneSwitch_targetPoint)
+                    obj.generate_target_point(car);
+                    obj.SwitchLane_trajectory_generator(car);
+                end
+                obj.take_SwitchLane(car);
                 return;
             end
             
@@ -182,14 +191,41 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             end
         end
         
-        function local_target_point = generate_target_point(obj,car)
-            local_target_point=car.dynamics.position.*[1 1 -1]+[0 0 10];
+        function generate_target_point(obj,car) 
+            obj.local_route_direction = (car.pathInfo.currentTrajectory(2,:)-car.pathInfo.currentTrajectory(1,:)).*[1 1 -1]/norm(car.pathInfo.currentTrajectory(2,:)-car.pathInfo.currentTrajectory(1,:));
+            obj.local_LeftAdjacentLane_direction = cross(obj.local_route_direction,[0 1 0]);
+            obj.local_RightAdjacentLane_direction = cross([0 1 0],obj.local_route_direction);
+            obj.vehicle.dynamics.LaneSwitch_targetPoint=car.dynamics.position.*[1 1 -1]+obj.T*car.dynamics.speed*obj.local_route_direction+obj.local_RightAdjacentLane_direction*obj.Lane_width;
         end
         
-        function switch_lane(obj,car,target_point)
+        function SwitchLane_trajectory_generator(obj,car)
+            local_current_point = car.dynamics.position.*[1 1 -1];
+            local_target_point = car.dynamics.LaneSwitch_targetPoint;
+            a0=car.dynamics.position.*[1 1 -1].*abs(obj.local_RightAdjacentLane_direction);
+            a0=a0(3);
+            a1=0;
+            a2=0;
             
+            x_f = car.dynamics.LaneSwitch_targetPoint(1); % Final x coordinate
+            y_f = car.dynamics.LaneSwitch_targetPoint(3); % Final y coordinate
+
+            %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
+           
+            syms a3 a4 a5;
+            [a3,a4,a5]=solve([a0+a1*obj.T+a2*obj.T^2+a3*obj.T^3+a4*obj.T^4+a5*obj.T^5==y_f, ... % Boundary condition for lateral displacement
+                a1+2*a2*obj.T+3*a3*obj.T^2+4*a4*obj.T^3+5*a5*obj.T^4==0, ...              % Boundary condition for lateral speed
+                2*a2+6*a3*obj.T+12*a4*obj.T^2+20*a5*obj.T^3==0,],[a3,a4,a5]);    % Boundary condition for lateral acceleration
+            
+            % Solving for coefficients and conversion to double precision
+            a3=double(a3);
+            a4=double(a4);
+            a5=double(a5);
+            obj.vehicle.dynamics.LaneSwitch_trajectory = [a0 a1 a2 a3 a4 a5];
         end
-        
+       
+        function take_SwitchLane(obj,car)
+            f='a0+a1*t+a2*t.^2+a3*t.^3+a4*t.^4+a5*t.^5';
+        end
        function moveto(obj ,car,Destination)
             %% Waypoint generation
             if ~car.dynamics.has_local_trajectory

@@ -19,6 +19,8 @@ classdef Vehicle < handle
         %         directionVector
         %         cornering
         %         has_local_trajectory
+        %         LaneSwitch_targetPoint
+        %         LaneSwitch_trajectory 
         %         minDeceleration
         sensors
         %         frontSensorRange
@@ -81,6 +83,8 @@ classdef Vehicle < handle
             obj.dynamics.cornering.iterator = 1;
             obj.dynamics.orientation = [0 1 0 0];
             obj.dynamics.has_local_trajectory = 0;
+            obj.dynamics.LaneSwitch_targetPoint = [];
+            obj.dynamics.LaneSwitch_trajectory = [];
             obj.dynamics.minDeceleration = minDeceleration;
             
             obj.sensors.frontSensorRange= frontSensorRange;
