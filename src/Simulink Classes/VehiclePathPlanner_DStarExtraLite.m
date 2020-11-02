@@ -457,7 +457,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                         obj.seeds(v) = 1;
                     elseif (cold<cnew)%if costs increased we will mark edge as unvisited (cut from expl. branch)
                         %if we moved over the changed edge, values of all nodes in this branch are wrong                        
-                            cutBranch(obj,v);                      
+                            cutBranch(obj,u);                      
                     end
                 end
             end
