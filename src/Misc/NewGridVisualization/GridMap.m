@@ -149,7 +149,11 @@ classdef GridMap < Map
             delete(obj.plots.trajectories)
             hold on
             for vehicle = obj.Vehicles % Changing sizes of BOGPath makes it hard to vectorize
-                obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',obj.colourMatrix(vehicle.id,:),'LineWidth',2);
+                try
+                    obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',obj.colourMatrix(vehicle.id,:),'LineWidth',2);
+                catch ME
+                    disp('D* Intersection error'); % TODO solve the issue with V5 D*extralite and Complex Intersection scenario
+                end
             end
             hold off
             

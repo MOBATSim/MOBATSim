@@ -2,14 +2,15 @@
 hold off
 warning off
 
-
-if exist('Map','var')
+%% Needs to be removed later to make sure that simulations can be repeated without "clear all"
+if exist('Map','var') 
     clear all; %TODO: needs to be off in order not to delete the variables assigned from the GUI
     close all; %to avoid some problems with the deleted handles
     MapType = MapTypes.GridMap;
 elseif ~exist('MapType','var')
     MapType = MapTypes.GridMap;
 end
+
 
 %% MOBATSim Configurations
 modelName = 'MOBATSim';

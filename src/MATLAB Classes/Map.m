@@ -184,7 +184,7 @@ classdef Map < handle
             obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles            
             hold off
                     
-            obj.plots.Vehicles.ZData = 0.1 .* ones(1,10); % Warning: This may sometimes cause a bug and disable the figure zoom for map.
+            obj.plots.Vehicles.ZData = 0.01 .* ones(1,10); % Warning: This may sometimes cause a bug and disable the figure zoom for map.
 
         end
         
@@ -226,7 +226,7 @@ classdef Map < handle
             
             
             % Vehicles' Annotation Position
-            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-8, -allVehiclePositions(1:length(obj.Vehicles),3)+8, 0.11.*ones(1,10)'];
+            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-8, -allVehiclePositions(1:length(obj.Vehicles),3)+8, 0.011.*ones(1,10)'];
             allTextPositions = mat2cell(allVehiclePositions,ones(1,10),3); % Matrix to Cell for the handle format
             
             %set the position and string handles
