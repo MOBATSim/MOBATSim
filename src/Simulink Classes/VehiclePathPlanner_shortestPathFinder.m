@@ -40,11 +40,14 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
             setupImpl@VehiclePathPlanner(obj); % Inherit the setupImpl function of the Superclass @VehiclePathPlanner
         end
         
-        function FuturePlan = findPath(obj,OtherVehiclesFutureData)
+        function FuturePlan = findPath(obj,~)
             Path = obj.vehicle.map.get_shortest_path(obj.vehicle.pathInfo.lastWaypoint, ...
             obj.vehicle.pathInfo.destinationPoint);
            
             obj.vehicle.pathInfo.path = Path;
+            % FuturePlan Format of Shortest PathPlanner: nx5 -> [id wp 0 0 0]
+            % wp: waypoints(path from top down) 
+            %The last three columns are to fit the data according to other PathPlanner FutureDatas
             FuturePlan = [(ones(1,size(Path,2)).*obj.vehicle.id)' Path' zeros(size(Path,2),3)];
             
         end
