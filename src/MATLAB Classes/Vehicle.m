@@ -338,6 +338,10 @@ classdef Vehicle < handle
         function setStopStatus(car, binary)
             car.status.stop = binary;   
         end
+        
+        function setCurrentRoute(car, RouteID)
+            car.pathInfo.currentRoute = RouteID;
+        end
     end
 end
 

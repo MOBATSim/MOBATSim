@@ -830,7 +830,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
         function [nextSpeed,timeToReach] = checkForAccelerationInPathbuilding(obj,currentRoute,currentNode,currentSpeed)
             %nextSpeed = speed on end of edge, timeToReach = exit time of edge
             
-            obj.vehicle.pathInfo.currentRoute = currentRoute;%setUp calculation 
+            obj.vehicle.setCurrentRoute(currentRoute);%setUp calculation 
             distance = obj.Map.connections.distances(currentRoute);
             
             currentMaxSpeedRoutes = obj.maxEdgeSpeed;

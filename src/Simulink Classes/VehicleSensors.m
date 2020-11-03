@@ -84,7 +84,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             i = 1:length(Vehicles);
             i(car.id)=[]; % Remove the car with the same id
                         
-            VehiclesOnSameRoute=Vehicles(car.pathInfo.currentRoute == [cat(1,Vehicles([i]).pathInfo).currentRoute]);
+            VehiclesOnSameRoute=Vehicles(i(car.pathInfo.currentRoute == [cat(1,Vehicles([i]).pathInfo).currentRoute]));
             
             if ~isempty(VehiclesOnSameRoute)
                 %If there is a vehicle on the same route,
