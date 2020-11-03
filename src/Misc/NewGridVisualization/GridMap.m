@@ -145,14 +145,18 @@ classdef GridMap < Map
         end
                 
         function dynamicRouteHighlighting(obj)
+            try
+                delete(obj.plots.trajectories)
+            catch ME
+                 disp('Problem deleting trajectories.'); % TODO: remove try-catch after making sure it works fine
+            end
             
-            delete(obj.plots.trajectories)
             hold on
             for vehicle = obj.Vehicles % Changing sizes of BOGPath makes it hard to vectorize
                 try
                     obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',obj.colourMatrix(vehicle.id,:),'LineWidth',2);
                 catch ME
-                    disp('D* Intersection error'); % TODO solve the issue with V5 D*extralite and Complex Intersection scenario
+                    disp('Problem creating trajectories'); % TODO: remove try-catch after making sure it works fine
                 end
             end
             hold off

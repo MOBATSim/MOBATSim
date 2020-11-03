@@ -209,15 +209,15 @@ classdef Map < handle
         end
         
         
-        function distance = get_distance_of_shortest_path(obj, starting_point, ending_point)
+        function path = get_shortest_path(obj, starting_point, ending_point)
             
-            [distance,path] = shortestpath(obj.directedGraph,starting_point,ending_point);
+            [path,distance] = shortestpath(obj.directedGraph,starting_point,ending_point);
             
         end
         
         function path_in_waypoints = find_shortest_path_as_waypoints(obj, starting_point, ending_point )
             
-            [distance,path] = shortestpath(obj.directedGraph,starting_point,ending_point);
+            [path,distance] = shortestpath(obj.directedGraph,starting_point,ending_point);
             path_in_waypoints = obj.waypoints(path,:);
             
         end

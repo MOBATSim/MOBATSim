@@ -83,8 +83,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     
                     % Build the future plan by deriving the next routes and building the path
                     %Output 1: Future plan of the vehicle
-                    %FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-                    FuturePlan = findPath(obj,OtherVehiclesFutureData);
+                    FuturePlan = findPath(obj,OtherVehiclesFutureData); % This is an abstract that is implemented separately in each subclass
                     
 
                 else
@@ -107,7 +106,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             %% Grid path generation
             if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
                 % Plotting can decrease performance, so dont update to often (update at every 0.2 seconds)
-                obj.vehicle.pathInfo.BOGPath = generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
+                obj.vehicle.pathInfo.BOGPath = generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
             end
         end
         
