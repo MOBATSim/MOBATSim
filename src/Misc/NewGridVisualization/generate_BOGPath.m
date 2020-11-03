@@ -1,4 +1,4 @@
-function bogPath = generate_BOGPath(map,path,carID)
+function bogPath = generate_BOGPath(map,path,carID,oldBOGPath)
     %This is helper function that plots the current position and path of all Vehicles on the map
     %Input: map is the XML map object,
     %displayInGridCoordinates is a boolean: true = display grid, false = display normal plot
@@ -76,5 +76,10 @@ function bogPath = generate_BOGPath(map,path,carID)
             bogPath = [bogPath;points];
         end
 
+    end
+    %% If BOGPath can't be generated because the vehicle is blocked, 
+    % then it should keep the oldBOGPath to make sure that it doesn't return an empty array
+    if isempty(bogPath)
+        bogPath = oldBOGPath;
     end
 end

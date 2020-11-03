@@ -1,5 +1,4 @@
-classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.system.mixin.Propagates ...
-        & matlab.system.mixin.CustomIcon
+classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
     % Path Planner Plans paths.         
     %
     % NOTE: When renaming the class name Untitled, the file name
@@ -10,7 +9,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
     
     % Public, tunable properties
     properties
-        Vehicle_id
+        
     end
     
     % Public, non-tunable properties
@@ -24,20 +23,6 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
     
     % Pre-computed constants
     properties(Access = private)
-        vehicle
-        Map = evalin('base','Map');
-        accelerationPhase;
-        simSpeed = evalin('base','simSpeed');
-        modelName = evalin('base','modelName');
-        initialFutureData;
-        futureData;
-        breakingFlag;
-        inCrossroad; % [crossroadId crossroadZone]
-        % crossroadZone:
-        % 1 -> arrivingZone
-        % 2 -> stoppingZone
-        % 3 -> intersectionZone
-        
         %variables for D Star Extra Lite
         
         km =0; %biased value for D*ELite
@@ -65,13 +50,12 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
         changedEdges = [];      % edges with new future data entries
         
         %end of D Star Extra Light variables
-        pathPlot;
         tempGoalNode;
     end
     
     methods
         % Constructor
-        function obj = Untitled(varargin)
+        function obj = VehiclePathPlanner_DStarExtraLite(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:});
         end
@@ -82,59 +66,53 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
         
         %% Common functions
         function setupImpl(obj)
-            % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
+            setupImpl@VehiclePathPlanner(obj); % Inherit the setupImpl function of the Superclass @VehiclePathPlanner
+            %initialize whole map
+            nodesMap = length(obj.Map.waypoints);
+            obj.nrOfNodes = nodesMap;
+            %nodes
+            obj.nodesKey = zeros(nodesMap,2);
+            obj.nodesOpen = zeros(nodesMap,1);
+            obj.nodesParent = zeros(nodesMap,1);
+            obj.nodesVisited = zeros(nodesMap,1);
+            obj.nodesGlobalDistance = zeros(nodesMap,1);
+            obj.nodesG = ones(nodesMap,1)*2000000000;%intmax
+            obj.nodesBlocked = zeros(nodesMap,1);
+            %edges
+            edgesMap = length(obj.Map.connections.all);
+            obj.nrOfEdges = edgesMap;
+            obj.edgesSpeed = zeros(edgesMap,1);
+            obj.edgesEntry = zeros(edgesMap,1);
+            obj.edgesExit = zeros(edgesMap,1);
+            obj.seeds = zeros(edgesMap,1);%if you change the init, change other code too (reinitialize)!
             
-            obj.accelerationPhase =  zeros(1,5);
-            obj.simSpeed = evalin('base','simSpeed');
-            obj.breakingFlag = 0;
-            obj.inCrossroad = [0 0];
+            %INIT Cost
             
-            initialize(obj);
+            maxSpeed = obj.vehicle.dynamics.maxSpeed ;
+            speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
+            speedRoutes(speedRoutes>maxSpeed)= maxSpeed; %possible speed for every route
+            obj.maxEdgeSpeed = speedRoutes;
+            distances = obj.Map.connections.distances;
+            %calculate costs
+            obj.edgesCost = (1/ obj.simSpeed) .* distances .* (1./ speedRoutes);
+            
+            %rest
+            %visited(sgoal)=true
+            sgoal = obj.vehicle.pathInfo.destinationPoint;
+            obj.nodesVisited(sgoal) = 1;
+            %g(sgoal)=0
+            obj.nodesG(sgoal) = 0;
+            pushOpen(obj,sgoal,calculateKey(obj,sgoal));
+            obj.vehicle.pathInfo.path = [];
+            obj.slast = obj.vehicle.pathInfo.lastWaypoint;
+            %set up backup goal node
+            obj.tempGoalNode = sgoal;
         end
         
-        function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
-            %This block shouldn't run if the vehicle has reached its
-            %destination
-            
-            %% create new path            
-            if obj.vehicle.pathInfo.destinationReached %check if already reached goal
-                FuturePlan = obj.vehicle.decisionUnit.futureData;
-                waypointReached=1;
-            else
-                % Firstly check if the vehicle has reached its destination so it stops.
-                % Then check if the vehicle has completed its route but still needs to reach its destination
-                if obj.vehicle.pathInfo.routeCompleted == 1 && ~obj.vehicle.checkifDestinationReached()
-                    % Check if crossroad
-                    obj.crossroadCheck(obj.vehicle);
-                    % Time Stamps are logged when waypoints are reached
-                    obj.vehicle.dataLog.timeStamps = [obj.vehicle.dataLog.timeStamps;[obj.vehicle.pathInfo.lastWaypoint get_param(obj.modelName,'SimulationTime')]];
-                    obj.vehicle.setStopStatus(false);
-                    % Build the future plan by deriving the next routes and building the path
-                    %Output 1: Future plan of the vehicle
-                    FuturePlan = obj.dStarExtraLite(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-                    %FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-                    %check acc in pathbuilding!
-                    
-                    waypointReached =1;
-                else
-                    % If the vehicle is still on its route then the future data stays the same
-                    %Output 1: Future plan of the vehicle
-                    FuturePlan = obj.vehicle.decisionUnit.futureData;
-                    waypointReached =0;
-                end
-            end
-            %% Grid path generation
-            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
-                %plotting can decrease performance, so dont update to often
-                obj.vehicle.pathInfo.BOGPath = generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
-            end
-        end
-        
-        
-        
-        
-               
+        %function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
+        % This part is defined in the SuperClass so don't uncomment it unless you want to override. 
+        %end
+           
         %% D* Extra Light
         function newFutureData = dStarExtraLite(obj, globalTime,futureData)
             %check https://doi.org/10.1515/amcs-2017-0020 for more details
@@ -156,7 +134,6 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                 %the path is still blocked
                 initializeGoal(obj,obj.tempGoalNode);
             end
-            %futureData = deleteCollidedFutureData(obj,futureData);
             %%vectorized, but slower for now
             futureData = deleteCollidedFutureDataForLoop(obj,futureData);
             if globalTime ~= 0
@@ -204,51 +181,9 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
             end
             
         end        
-        function initialize(obj)
-            %initialize whole map
-            nMap = length(obj.Map.waypoints);
-            obj.nrOfNodes = nMap;
-            %nodes
-            obj.nodesKey = zeros(nMap,2);
-            obj.nodesOpen = zeros(nMap,1);
-            obj.nodesParent = zeros(nMap,1);
-            obj.nodesVisited = zeros(nMap,1);
-            obj.nodesGlobalDistance = zeros(nMap,1);
-            obj.nodesG = ones(nMap,1)*2000000000;%intmax
-            obj.nodesBlocked = zeros(nMap,1);
-            %edges
-            eMap = length(obj.Map.connections.all);
-            obj.nrOfEdges = eMap;
-            obj.edgesSpeed = zeros(eMap,1);
-            obj.edgesEntry = zeros(eMap,1);
-            obj.edgesExit = zeros(eMap,1);
-            obj.seeds = zeros(eMap,1);%if you change the init, change other code too (reinitialize)!           
-            
-            %INIT Cost
-            
-            maxSpeed = obj.vehicle.dynamics.maxSpeed ;
-            speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
-            speedRoutes(speedRoutes>maxSpeed)= maxSpeed; %possible speed for every route
-            obj.maxEdgeSpeed = speedRoutes;
-            distances = obj.Map.connections.distances;
-            %calculate costs
-            obj.edgesCost = (1/ obj.simSpeed) .* distances .* (1./ speedRoutes);
-                        
-            %rest
-            %visited(sgoal)=true
-            sgoal = obj.vehicle.pathInfo.destinationPoint;
-            obj.nodesVisited(sgoal) = 1;
-            %g(sgoal)=0
-            obj.nodesG(sgoal) = 0;
-            pushOpen(obj,sgoal,calculateKey(obj,sgoal));
-            obj.vehicle.pathInfo.path = [];            
-            obj.slast = obj.vehicle.pathInfo.lastWaypoint;
-            %set up backup goal node
-            obj.tempGoalNode = sgoal;            
-            
-        end   
+
         
-        %% vehilce commands
+        %% vehicle commands
         function stopVehicle(obj)
             car = obj.vehicle;            
             %code from vehicle.checkifDestinationReached
@@ -478,7 +413,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                         obj.seeds(v) = 1;
                     elseif (cold<cnew)%if costs increased we will mark edge as unvisited (cut from expl. branch)
                         %if we moved over the changed edge, values of all nodes in this branch are wrong                        
-                            cutBranch(obj,v);                      
+                            cutBranch(obj,u);                      
                     end
                 end
             end
@@ -660,8 +595,11 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                 end
             end
         end
+        
         function u = fastUnique(~,A)
-            %returns an array with unique numbers from array A
+            % Returns an array with unique numbers from array A without sorting
+            % Equivalent to built-in << unique(A,'stable') >> but much faster.
+            
             u = zeros(length(A));
             x = 0;
             for i = 1:length(A)
@@ -678,7 +616,8 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                 end
             end
             u = u(1:x);
-        end        
+        end
+        
         function m = fastMember(~,test, A)
             %returns true if test is member of A
             m = false;
@@ -843,7 +782,7 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                 if obj.nodesBlocked(path(i))
                     %now set new goal
                     if i-1 > 2
-                        %to safe memory we use i and return
+                        %to save memory we use i and return
                         i = i-1;
                     else 
                         tempFD = [];
@@ -921,430 +860,10 @@ classdef VehiclePathPlanner_DStarExtraLite < matlab.System & handle & matlab.sys
                 nextSpeed = currentSpeed;
             end
         end
-        
-        %% Old Code
-        
-        function manuallyChangeRoute(~,car)
-            % Some experiment done for NecSys, could be reused in future if necessary
-            
-            if car.id ==3
-                if car.pathInfo.lastWaypoint == 9
-                    car.pathInfo.destinationPoint = 11;
-                end
-                
-                if car.pathInfo.lastWaypoint == 10
-                    %Fault injection
-                    p = rand();
-                    if p >0.5
-                        %V3 - Route 51 / 1-p(example: for p>0.2 this %80)
-                        car.pathInfo.destinationPoint = 33;
-                        
-                    else
-                        %V3 - Route 5 / p
-                        car.pathInfo.destinationPoint = 35;
-                        
-                    end
-                    
-                end
-                
-                if car.pathInfo.lastWaypoint == 13
-                    car.pathInfo.destinationPoint = 31;
-                elseif car.pathInfo.lastWaypoint == 32
-                    car.pathInfo.destinationPoint = 31;
-                end
-            end
-            
-            if car.id == 1
-                % Decision R5
-                %                 if car.pathInfo.lastWaypoint == 9
-                %                     car.pathInfo.destinationPoint = 13;
-                %                 end
-                %
-                %                 if car.pathInfo.lastWaypoint == 12
-                %                     car.pathInfo.destinationPoint = 26;
-                %                 end
-                
-                
-                %                 % Decision R51
-                %                 if car.pathInfo.lastWaypoint == 9
-                %                     car.pathInfo.destinationPoint = 33;
-                %                 end
-                %
-                %                 if car.pathInfo.lastWaypoint == 32
-                %                     car.pathInfo.destinationPoint = 26;
-                %                 end
-                
-            end
-            
-        end
-        
-        
-        function FuturePlan = findNextRoute(obj, car, starting_point, ending_point, global_timesteps,futureData)
-            %newFutureData = [carID edge speed entryTime exitTime]
-            [path,newFutureData] = obj.findShortestPath(car, starting_point, ending_point, global_timesteps, futureData);
-            
-            car.pathInfo.path = path;
-            
-            FuturePlan = newFutureData;
-            
-        end
-        
-        function crossroadCheck(~,car)
-            
-            crossroadId = car.decisionUnit.inCrossroad(1);
-            crossroadZone = car.decisionUnit.inCrossroad(2);
-            
-            if crossroadId ~=0
-                
-                %log speed and energydata for current crossroad
-                if crossroadZone > 1
-                    car.dataLog.speedInCrossroad = [car.dataLog.speedInCrossroad car.dynamics.speed];
-                end
-                
-                if crossroadZone > 0
-                    car.dataLog.speedInCrossroad2 = [car.dataLog.speedInCrossroad2 car.dynamics.speed];
-                end
-                
-                if car.map.crossroadUnits(crossroadId).params.conventionalTrafficLights == 1
-                    car.map.crossroadUnits(crossroadId).updateTrafficStateFromConventionalSystem(get_param(obj.modelName,'SimulationTime'));
-                end
-                
-                if crossroadZone == 2
-                    
-                    if car.decisionUnit.breakingFlag == 1
-                        car.pathInfo.stopAt = car.pathInfo.path(2);
-                    else
-                        car.pathInfo.stopAt = 0;
-                        car.setStopStatus(false);
-                    end
-                end
-            else
-                car.pathInfo.stopAt = 0;
-            end
-            
-            
-        end
-        
-        function [path, newFutureData]=findShortestPath(obj, car, startingPoint, endingPoint, global_timesteps, futureData)
-            %% Initialization
-            if isempty(futureData)
-                futureData = [0 0 0 0 0];
-            end
-            
-            waypoints =  zeros(length(obj.Map.waypoints),7);
-            
-            maxSpeed = car.dynamics.maxSpeed ;
-            currentSpeed = car.dynamics.speed ;
-            speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
-            maxSpeedRoutes = speedRoutes;
-            maxSpeedRoutes(speedRoutes>maxSpeed)= maxSpeed; %possible speed for every route
-            
-            connections = obj.Map.connections.all;
-            
-            distances = obj.Map.connections.distances;
-            
-            currentNode = startingPoint; %currentNode: current Node from where to expand neighbour Nodes
-            waypoints(startingPoint,5) = global_timesteps;
-            waypoints(startingPoint,4) = currentSpeed;
-            
-            %% check for acceleration phase
-            if abs(maxSpeed - currentSpeed) > 1
-                if obj.accelerationPhase(1) == 0
-                    
-                    % Neural Network is used to get average acceleration value
-                    averageAcceleration = obj.simSpeed^2 * NN_acceleration([currentSpeed; maxSpeed-currentSpeed]);     
-                    accelerationDistance = obj.getAccelerationDistance(averageAcceleration, currentSpeed, maxSpeed);
-                    obj.accelerationPhase = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
-                end
-            end
-                    
-            %% main loop
-            while (1)
-                waypoints(currentNode,1) = 2; %set state of waypoint to 2 -> waypoint in closed List
-                
-                %% find neighbours
-                routes2neighbourNode = find(connections(:,1) == currentNode); % route ID
-                neighbourNodes = connections(find(connections(:,1) == currentNode),2); % waypointID of neighbour
-                neighbourNodes_Routes = [neighbourNodes'; routes2neighbourNode'];
-                
-                
-                
-                %% loop over all neighbours
-                for neighbourNode_Route=neighbourNodes_Routes
-                    
-                    
-                    neighbourWP = waypoints(neighbourNode_Route(1),:); % waypointID of neighbour
-                    currentTime = waypoints(currentNode,5);
-                    currentTotalDistance = waypoints(currentNode,7);
-                    currentSpeed = waypoints(currentNode,4);
-                    currentRoute = neighbourNode_Route(2); % route ID
-                    car.pathInfo.currentRoute = currentRoute;
-                    
-                    currentMaxSpeedRoutes = maxSpeedRoutes;
-                    
-                    %% check for acceleration phase
-                    if obj.accelerationPhase(1) == 1
-                        accelerationDistance = obj.accelerationPhase(4);
-                        averageAcceleration = obj.accelerationPhase(5);
-                        if ((currentTotalDistance + distances(currentRoute) - accelerationDistance) < 0)
-                            % whole route in acceleration phase
-                            timeToReach = 1/ obj.simSpeed * obj.timeToReachNextWaypointInAccelerationPhase( currentSpeed, averageAcceleration, distances(currentRoute));
-                            nextSpeed = currentSpeed + averageAcceleration*timeToReach * obj.simSpeed;
-                        else
-                            % route is divided in acceleration phase (t1)
-                            % and constant speed phase (t2)
-                            t1 = 1/ obj.simSpeed * obj.timeToReachNextWaypointInAccelerationPhase(currentSpeed, averageAcceleration, accelerationDistance - currentTotalDistance);
-                            t2 =  1/ obj.simSpeed * (currentTotalDistance+ distances(currentRoute) - accelerationDistance)/ currentMaxSpeedRoutes(currentRoute);
-                            timeToReach = t1+t2;
-                            nextSpeed = obj.accelerationPhase(3);
-                            obj.accelerationPhase = zeros(1,5); %set acceleration phase to zero
-                            
-                        end
-                        
-                    else
-                        timeToReach =  1/ obj.simSpeed * distances(currentRoute)/ currentMaxSpeedRoutes(currentRoute); %timesteps to reach neighbour
-                        nextSpeed = currentSpeed;
-                    end
-                    
-                    
-                    %% check for other cars on same route (using merged future data)
-                    currentFutureData = futureData(futureData(:,2) == currentRoute,:);
-                    currentFutureData = currentFutureData(currentFutureData(:,4)<= currentTime & currentFutureData(:,5)>currentTime,:);
-                    if ~isempty(currentFutureData)
-                        
-                        %% disturbing car on same route
-                        index = find(max(currentFutureData(:,5)));
-                        timeToReachDisturbingVehicle = currentFutureData(index,5);
-                        speedDisturbingVehicle =  currentFutureData(index,3);
-                        timeDifference = (currentTime + timeToReach) - timeToReachDisturbingVehicle ;
-                        
-                        spacingTime = 6 * 1/obj.simSpeed;
-                        if (timeDifference < spacingTime)
-                            timeToReach = timeToReachDisturbingVehicle + spacingTime - currentTime;
-                            nextSpeed = speedDisturbingVehicle;
-                        end
-                        
-                        
-                    end
-                    
-                    %% calculate costs (costs = distance/speed)
-                    costs = timeToReach;
-                    
-                    %% calculate heuristic (Luftlinie)
-                    heuristicCosts = 1/ obj.simSpeed * 1/maxSpeed * norm(get_coordinates_from_waypoint(obj.Map, neighbourNode_Route(1))-get_coordinates_from_waypoint(obj.Map, endingPoint));
-                    
-                    
-                    %% update waypoints array
-                    if neighbourWP(1) == 0
-                        neighbourWP(2) = currentNode;
-                        
-                        neighbourWP(5) = waypoints(currentNode,5) + costs;
-                        neighbourWP(1) = 1;
-                        neighbourWP(3) = currentRoute;
-                        neighbourWP(4) = nextSpeed;
-                        neighbourWP(6) = waypoints(currentNode,5) + costs + heuristicCosts;
-                        neighbourWP(7) = waypoints(currentNode,7) + distances(currentRoute) ;
-                        
-                    elseif  neighbourWP(1) == 1
-                        
-                        %% replace costs if smaller
-                        if  (waypoints(currentNode,5)+ costs < neighbourWP(5))
-                            
-                            neighbourWP(2) = currentNode;
-                            neighbourWP(5) = waypoints(currentNode,5) + costs;
-                            neighbourWP(3) = currentRoute;
-                            neighbourWP(4) = nextSpeed;
-                            neighbourWP(6) = waypoints(currentNode,5 )+ costs + heuristicCosts;
-                            neighbourWP(7) = waypoints(currentNode,7) + distances(currentRoute);
-                            
-                        end
-                    end
-                    waypoints(neighbourNode_Route(1),:) = neighbourWP;
-                end
-                
-                
-                %% loop exit conditions
-                if ismember(1,waypoints(:,1)) % Check if there is any node with state 1 (open and touched)
-                    minCosts = min(waypoints(waypoints(:,1) == 1,6)); % get waypoint with min costs
-                else
-                    break
-                end
-                
-                if waypoints(endingPoint,1) ~= 0 % check if waypoint state is 1 or 2
-                    if minCosts >  waypoints(endingPoint)
-                        break
-                    end
-                end
-                
-                %% get new waypoint to analyze -> next iteration in loop
-                currentNode =  find(waypoints(:,6) == minCosts& waypoints(:,1)==1);
-                currentNode = currentNode(1);
-                
-            end     
-            
-            % Compose the path by using the analyzed waypoints array
-            path = obj.composePath(waypoints, startingPoint, endingPoint);
-            
-            %% updateFuture Date of this vehicle
-            newFutureData = [];
-            for i = 1: (length(path)-1)
-                
-                newFutureData =  [newFutureData; [car.id waypoints(path(i+1),3) waypoints(path(i+1),4) waypoints(path(i),5)  waypoints(path(i+1),5)]];
-                
-            end
-            
-            if global_timesteps == 0 % save the future data at the beginning of the simulation for validation after simulation
-                car.decisionUnit.initialFutureData = newFutureData;
-            end
-            
-            
-        end
-        
-        function path = composePath(~,waypoints, startingPoint, endingPoint)
-            %% define path from waypoints array
-            predecessor = waypoints(endingPoint,2);
-            i = 2;
-            path = 0;
-            path(1) = endingPoint;
-            try
-                while (predecessor ~= startingPoint)
-                    path(i)= predecessor; % TODO memory allocation
-                    i = i + 1;
-                    predecessor = waypoints(predecessor,2);
-                    
-                end
-            catch
-                disp('Path not found error')
-            end
-            path(i) = startingPoint;
-            path = fliplr(path);
-            
-        end
-        
-        % Equation 5 & 8 in NecSys Paper
-        function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
-            delta_v = speedTo-currentSpeed;
-            accelerationDistance = delta_v^2/(2*averageAcceleration)+currentSpeed*delta_v/averageAcceleration;
-        end
-        % Eigenvalues of Equation 8 in NecSys Paper
-        function timeToReach = timeToReachNextWaypointInAccelerationPhase(~, currentSpeed, averageAcceleration, distance)
-            timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
-        end
-        
-        function checkCrossroadActions(obj,car,starting_point,global_timesteps)
-            %% check for crossroad actions
-            if find(any(obj.Map.crossroads.startingNodes==starting_point,2)) % car reaches crossroad
-                crossroadId = find(any(obj.Map.crossroads.startingNodes==starting_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 1];
-                car.V2I.carReachesCrossroadV2I(car,starting_point,global_timesteps,crossroadId);
-                
-            elseif find(any(obj.Map.crossroads.breakingNodes==starting_point,2)) % car reaches Breaking Point
-                crossroadId = find(any(obj.Map.crossroads.breakingNodes==starting_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 2];
-                car.V2I.carReachesBreakingPointV2I(car,starting_point,global_timesteps,crossroadId);
-                
-            elseif find(any(obj.Map.crossroads.stoppingNodes==starting_point,2)) % car reaches Stopping Point
-                crossroadId = find(any(obj.Map.crossroads.stoppingNodes==starting_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 3];
-                
-            elseif find(any(obj.Map.crossroads.leavingNodes==starting_point,2)) % car leaves crossroad
-                crossroadId = find(any(obj.Map.crossroads.leavingNodes==starting_point,2));
-                car.V2I.carLeavesCrossroadV2I(car,global_timesteps,crossroadId);
-                car.decisionUnit.inCrossroad = [0 0];
-                
-            end
-        end
-        
-        
-        %% Standard Simulink Output functions
-        function resetImpl(obj)
-            % Initialize / reset discrete-state properties
-        end
-        
-        function s = saveObjectImpl(obj)
-            % Set properties in structure s to values in object obj
-            
-            % Set public properties and states
-            s = saveObjectImpl@matlab.System(obj);
-            
-            % Set private and protected properties
-            %s.myproperty = obj.myproperty;
-        end
-        
-        function loadObjectImpl(obj,s,wasLocked)
-            % Set properties in object obj to values in structure s
-            
-            % Set private and protected properties
-            % obj.myproperty = s.myproperty;
-            
-            % Set public properties and states
-            loadObjectImpl@matlab.System(obj,s,wasLocked);
-        end
-        
-        function ds = getDiscreteStateImpl(obj)
-            % Return structure of properties with DiscreteState attribute
-            ds = struct([]);
-        end
-        
-        function flag = isInputSizeLockedImpl(obj,index)
-            % Return true if input size is not allowed to change while
-            % system is running
-            flag = false;
-        end
-        
-        function [out,out2] = getOutputSizeImpl(obj)
-            % Return size for each output port
-            out = [50 5];
-            out2 = [1 1];
-            
-            % Example: inherit size from first input port
-            % out = propagatedInputSize(obj,1);
-        end
-        
-        function [out,out2] = getOutputDataTypeImpl(obj)
-            % Return data type for each output port
-            out = 'double';
-            out2 = 'double';
-            
-            % Example: inherit data type from first input port
-            % out = propagatedInputDataType(obj,1);
-        end
-        
-        function [out,out2] = isOutputComplexImpl(obj)
-            % Return true for each output port with complex data
-            out = false;
-            out2 = false;
-            
-            % Example: inherit complexity from first input port
-            % out = propagatedInputComplexity(obj,1);
-        end
-        
-        function [out,out2] = isOutputFixedSizeImpl(obj)
-            % Return true for each output port with fixed size
-            out = false;
-            out2 = true;
-            
-            % Example: inherit fixed-size status from first input port
-            % out = propagatedInputFixedSize(obj,1);
-        end
-        
-        function icon = getIconImpl(obj)
-            % Return text as string or cell array of strings for the System
-            % block icon
-            icon = mfilename('class'); % Use class name
+               
+        function FuturePlan = findPath(obj,OtherVehiclesFutureData)
+            FuturePlan = obj.dStarExtraLite(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
         end
     end
     
-    methods(Static, Access = protected)
-        %% Simulink customization functions
-        function header = getHeaderImpl
-            % Define header panel for System block dialog
-            header = matlab.system.display.Header(mfilename('class'));
-        end
-        
-        function group = getPropertyGroupsImpl
-            % Define property section(s) for System block dialog
-            group = matlab.system.display.Section(mfilename('class'));
-        end
-    end
 end
