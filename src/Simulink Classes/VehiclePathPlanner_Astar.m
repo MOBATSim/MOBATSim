@@ -37,7 +37,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
         end
         
         %function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
-        % This part is defined in the SuperClass so don't edit it unless you want to override. 
+        % This part is defined in the SuperClass so don't uncomment it unless you want to override. 
         %end
         
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
