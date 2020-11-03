@@ -6,7 +6,7 @@ classdef Map < handle
         mapName
         waypoints               %all nodes: line = nr, [X,Y]
         connections             %struct, .all = all edges, .circles = all curves, .translations = all straight roads
-        direct_graph
+        directedGraph
         Vehicles                %vector of all vehicles: line = nr
         plots
         crossroadUnits
@@ -52,22 +52,9 @@ classdef Map < handle
             obj.connections.distances = [distancesCircle';distancesTranslation'];
 
             %create direct graph with related weights
-            obj.direct_graph = sparse(obj.connections.all(:,1),obj.connections.all(:,2),[  obj.connections.distances']);
+            obj.directedGraph = digraph( [obj.connections.circle(:,1)' obj.connections.translation(:,1)'],[obj.connections.circle(:,2)' obj.connections.translation(:,2)'],[ obj.connections.distances']);
             
         end %Constructor
-        
-        function distance = get_distance_of_shortest_path(obj, starting_point, ending_point)
-            
-            [distance,path] = graphshortestpath(obj.direct_graph,starting_point,ending_point);
-            
-        end
-        
-        function path_in_waypoints = find_shortest_path_as_waypoints(obj, starting_point, ending_point )
-            
-            [distance,path] = graphshortestpath(obj.direct_graph,starting_point,ending_point);
-            path_in_waypoints = obj.waypoints(path,:);
-            
-        end
         
         function waypoint = get_waypoint_from_coordinates (obj,coordinates)
             
@@ -81,38 +68,14 @@ classdef Map < handle
             
         end
         
-        function costs = getCosts(obj, point1, point2)
-            index = find(([obj.connections.translation(:,1);obj.connections.circle(:,1)] ==point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2));
-            costs_vector = [obj.connections.costs.translation obj.connections.costs.circle] ;
-            costs = costs_vector(index);
-        end
-        
         function index = getRouteIDfromPath(obj, path)
             point1 = path(1);
             point2 = path(2);
             index = find(obj.connections.all(:,1) ==point1&obj.connections.all(:,2) ==point2);
             
-        end
+        end        
         
-        function speed = get_speed (obj, route, maxSpeed)
-            point1 = get_waypoint_from_coordinates (obj,route(1,:));
-            point2 = get_waypoint_from_coordinates (obj,route(2,:));
-            
-            index = find(([obj.connections.translation(:,1);obj.connections.circle(:,1)] == point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2));
-            if index > length(obj.connections.translation)
-                speed = obj.connections.circle(index -  length(obj.connections.translation),end);
-            else
-                speed = obj.connections.translation(index,end);
-            end
-            
-            if maxSpeed < speed
-                speed = maxSpeed;
-            end
-            
-        end %unused function
-        
-        
-        function stopCollidingVehicles(obj, car)
+        function stopCollidingVehicles(~, car)
             if car.status.emergencyCase == 3 % Collision
                 % Inform the map and/or the Decision Unit about what happened
                 car.dynamics.speed = 0;
@@ -160,7 +123,8 @@ classdef Map < handle
             
         end
         
-        function routeColor = getRouteColorFromSpeed(obj, speed)
+        %% Plotting related functions       
+        function routeColor = getRouteColorFromSpeed(~, speed)
             if speed > 50
                 routeColor = [1-(speed-50)/62.5 0.8 0];
             else
@@ -237,12 +201,50 @@ classdef Map < handle
         
 
         
+        %% For debugging and analysis - not implemented
+        function costs = getCosts(obj, point1, point2)
+            index = find(([obj.connections.translation(:,1);obj.connections.circle(:,1)] ==point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2));
+            costs_vector = [obj.connections.costs.translation obj.connections.costs.circle] ;
+            costs = costs_vector(index);
+        end
         
+        
+        function distance = get_distance_of_shortest_path(obj, starting_point, ending_point)
+            
+            [distance,path] = shortestpath(obj.directedGraph,starting_point,ending_point);
+            
+        end
+        
+        function path_in_waypoints = find_shortest_path_as_waypoints(obj, starting_point, ending_point )
+            
+            [distance,path] = shortestpath(obj.directedGraph,starting_point,ending_point);
+            path_in_waypoints = obj.waypoints(path,:);
+            
+        end
+        
+        function speed = get_speed (obj, route, maxSpeed)
+            point1 = get_waypoint_from_coordinates (obj,route(1,:));
+            point2 = get_waypoint_from_coordinates (obj,route(2,:));
+            
+            index = find(([obj.connections.translation(:,1);obj.connections.circle(:,1)] == point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2));
+            if index > length(obj.connections.translation)
+                speed = obj.connections.circle(index -  length(obj.connections.translation),end);
+            else
+                speed = obj.connections.translation(index,end);
+            end
+            
+            if maxSpeed < speed
+                speed = maxSpeed;
+            end
+            
+        end
     end
     
     methods (Abstract)
     dynamicRouteHighlighting(obj)
     end
+    
+  
     
 end
 

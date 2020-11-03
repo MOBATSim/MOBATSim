@@ -67,32 +67,24 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
         %% Common functions
         function setupImpl(obj)
             setupImpl@VehiclePathPlanner(obj); % Inherit the setupImpl function of the Superclass @VehiclePathPlanner
-            initialize(obj);
-        end
-        
-        %function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
-        % This part is defined in the SuperClass so don't uncomment it unless you want to override. 
-        %end
-        
-        function initialize(obj)
             %initialize whole map
-            nMap = length(obj.Map.waypoints);
-            obj.nrOfNodes = nMap;
+            nodesMap = length(obj.Map.waypoints);
+            obj.nrOfNodes = nodesMap;
             %nodes
-            obj.nodesKey = zeros(nMap,2);
-            obj.nodesOpen = zeros(nMap,1);
-            obj.nodesParent = zeros(nMap,1);
-            obj.nodesVisited = zeros(nMap,1);
-            obj.nodesGlobalDistance = zeros(nMap,1);
-            obj.nodesG = ones(nMap,1)*2000000000;%intmax
-            obj.nodesBlocked = zeros(nMap,1);
+            obj.nodesKey = zeros(nodesMap,2);
+            obj.nodesOpen = zeros(nodesMap,1);
+            obj.nodesParent = zeros(nodesMap,1);
+            obj.nodesVisited = zeros(nodesMap,1);
+            obj.nodesGlobalDistance = zeros(nodesMap,1);
+            obj.nodesG = ones(nodesMap,1)*2000000000;%intmax
+            obj.nodesBlocked = zeros(nodesMap,1);
             %edges
-            eMap = length(obj.Map.connections.all);
-            obj.nrOfEdges = eMap;
-            obj.edgesSpeed = zeros(eMap,1);
-            obj.edgesEntry = zeros(eMap,1);
-            obj.edgesExit = zeros(eMap,1);
-            obj.seeds = zeros(eMap,1);%if you change the init, change other code too (reinitialize)!
+            edgesMap = length(obj.Map.connections.all);
+            obj.nrOfEdges = edgesMap;
+            obj.edgesSpeed = zeros(edgesMap,1);
+            obj.edgesEntry = zeros(edgesMap,1);
+            obj.edgesExit = zeros(edgesMap,1);
+            obj.seeds = zeros(edgesMap,1);%if you change the init, change other code too (reinitialize)!
             
             %INIT Cost
             
@@ -115,13 +107,12 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             obj.slast = obj.vehicle.pathInfo.lastWaypoint;
             %set up backup goal node
             obj.tempGoalNode = sgoal;
-            
         end
         
-        
-        
-        
-               
+        %function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
+        % This part is defined in the SuperClass so don't uncomment it unless you want to override. 
+        %end
+           
         %% D* Extra Light
         function newFutureData = dStarExtraLite(obj, globalTime,futureData)
             %check https://doi.org/10.1515/amcs-2017-0020 for more details
@@ -143,7 +134,6 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 %the path is still blocked
                 initializeGoal(obj,obj.tempGoalNode);
             end
-            %futureData = deleteCollidedFutureData(obj,futureData);
             %%vectorized, but slower for now
             futureData = deleteCollidedFutureDataForLoop(obj,futureData);
             if globalTime ~= 0
