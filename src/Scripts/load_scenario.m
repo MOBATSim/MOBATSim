@@ -8,9 +8,9 @@ switch scenarioName
 %         maxSpeeds = [20 20 10 10 20 20 10 12 10 10];
 
         %% temp goal test
-%         startingPoints =    [23 28 30 58 19 18 17 53 51 78];
-%         destinationPoints = [36 36 29 57 18 17 16 52 78 77];
-%         maxSpeeds =         [20 20 10 10 20 20 10 12 10 10];
+        startingPoints =    [23 28 30 58 19 18 17 53 51 78];
+        destinationPoints = [36 36 29 57 18 17 16 52 78 77];
+        maxSpeeds =         [20 20 10 10 20 20 10 12 10 10];
         
         %% Collision scenario    
 %         startingPoints =    [51 47 22 4 55 53 6 7 15 49]; 
@@ -25,9 +25,9 @@ switch scenarioName
 
         %% SC2
         %V2 should be detected by V1, even if it only drives a short time
-        startingPoints =    [28  41 19  7 48 72 56 57 78 51];
-        destinationPoints = [11  40 15 27 47 71 70 56 77 78];
-        maxSpeeds =         [18  20 20 20 20 20 20 20 20 20];
+%         startingPoints =    [28  41 19  7 48 72 56 57 78 51];
+%         destinationPoints = [11  40 15 27 47 71 70 56 77 78];
+%         maxSpeeds =         [18  20 20 20 20 20 20 20 20 20];
         
         %% SC2a edge cost test
         %V1 and V2 should take the left route, because the slow V3 takes
