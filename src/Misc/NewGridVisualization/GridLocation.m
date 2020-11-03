@@ -46,11 +46,13 @@ classdef GridLocation
                 obj.successors = [obj.successors,succ];
             end
         end
+
         function obj = addPred(obj,pred)
             if isempty(obj.predecessors) || ~ismember(pred,obj.predecessors)
                 obj.predecessors = [obj.predecessors,pred];
             end
         end
+
         function obj = addTransSucc(obj,succ,startNodeNR)
             if obj.nodeNR ~= 0
                 %if we are a node
@@ -67,6 +69,7 @@ classdef GridLocation
                 end
             end
         end
+
         function obj = addTransPred(obj,pred,endNodeNR)
             if obj.nodeNR ~= 0
                 %if we are a node
@@ -83,6 +86,7 @@ classdef GridLocation
                 end
             end
         end
+
         function obj = assignDistance(obj,newDistance)
             if obj.distance == 0
                 obj.distance = newDistance;

@@ -70,43 +70,9 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             initialize(obj);
         end
         
-        function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
-            %This block shouldn't run if the vehicle has reached its
-            %destination
-            
-            %% create new path
-            if obj.vehicle.pathInfo.destinationReached %check if already reached goal
-                FuturePlan = obj.vehicle.decisionUnit.futureData;
-                waypointReached=1;
-            else
-                % Firstly check if the vehicle has reached its destination so it stops.
-                % Then check if the vehicle has completed its route but still needs to reach its destination
-                if obj.vehicle.pathInfo.routeCompleted == 1 && ~obj.vehicle.checkifDestinationReached()
-                    % Check if crossroad
-                    obj.crossroadCheck(obj.vehicle);
-                    % Time Stamps are logged when waypoints are reached
-                    obj.vehicle.dataLog.timeStamps = [obj.vehicle.dataLog.timeStamps;[obj.vehicle.pathInfo.lastWaypoint get_param(obj.modelName,'SimulationTime')]];
-                    obj.vehicle.setStopStatus(false);
-                    % Build the future plan by deriving the next routes and building the path
-                    %Output 1: Future plan of the vehicle
-                    FuturePlan = obj.dStarExtraLite(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-                    %FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-                    %check acc in pathbuilding!
-                    
-                    waypointReached =1;
-                else
-                    % If the vehicle is still on its route then the future data stays the same
-                    %Output 1: Future plan of the vehicle
-                    FuturePlan = obj.vehicle.decisionUnit.futureData;
-                    waypointReached =0;
-                end
-            end
-            %% Grid path generation
-            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
-                %plotting can decrease performance, so dont update to often
-                obj.vehicle.pathInfo.BOGPath = generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
-            end
-        end
+        %function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
+        % This part is defined in the SuperClass so don't edit it unless you want to override. 
+        %end
         
         function initialize(obj)
             %initialize whole map
@@ -639,8 +605,11 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 end
             end
         end
+        
         function u = fastUnique(~,A)
-            %returns an array with unique numbers from array A
+            % Returns an array with unique numbers from array A without sorting
+            % Equivalent to built-in << unique(A,'stable') >> but much faster.
+            
             u = zeros(length(A));
             x = 0;
             for i = 1:length(A)
@@ -657,7 +626,8 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 end
             end
             u = u(1:x);
-        end        
+        end
+        
         function m = fastMember(~,test, A)
             %returns true if test is member of A
             m = false;
@@ -901,7 +871,9 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             end
         end
                
- 
+        function FuturePlan = findPath(obj,OtherVehiclesFutureData)
+            FuturePlan = obj.dStarExtraLite(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+        end
     end
     
 end

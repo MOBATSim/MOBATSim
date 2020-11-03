@@ -90,7 +90,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         
         function V2Idata = checkCrossroadActions(obj,car,current_point)
             % check for crossroad actions
-            if find(any(obj.Map.crossroads.startingNodes==current_point,2)) % car reaches crossroad
+            if nnz(obj.Map.crossroads.startingNodes==current_point)>0
                 crossroadId = find(any(obj.Map.crossroads.startingNodes==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 1];
                                 
@@ -103,7 +103,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                     end
                 end
                 
-            elseif find(any(obj.Map.crossroads.breakingNodes==current_point,2)) % car reaches Breaking Point
+            elseif nnz(obj.Map.crossroads.breakingNodes==current_point)>0 % car reaches Breaking Point 
                 crossroadId = find(any(obj.Map.crossroads.breakingNodes==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 2];
                 
@@ -129,12 +129,12 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                     end  
                 end
                 
-            elseif find(any(obj.Map.crossroads.stoppingNodes==current_point,2)) % car reaches Stopping Point
+            elseif nnz(obj.Map.crossroads.stoppingNodes==current_point)>0 % car reaches Stopping Point
                 crossroadId = find(any(obj.Map.crossroads.stoppingNodes==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 3];
                 V2Idata = [crossroadId 3];
                 
-            elseif find(any(obj.Map.crossroads.leavingNodes==current_point,2)) % car leaves crossroad
+            elseif nnz(obj.Map.crossroads.leavingNodes==current_point)>0 % car leaves crossroad
                 crossroadId = find(any(obj.Map.crossroads.leavingNodes==current_point,2));
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 4];

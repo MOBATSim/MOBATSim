@@ -36,7 +36,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         % crossroadZone:
         % 1 -> arrivingZone
         % 2 -> stoppingZone
-        % 3 -> intersectionZone        
+        % 3 -> intersectionZone
         
         %variables for visualization
         pathPlot;
@@ -61,36 +61,39 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             obj.breakingFlag = 0;
             obj.inCrossroad = [0 0];
         end
-           
+        
         function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
-            %This block shouldn't run if the vehicle has reached its
-            %destination
-            
-            %% choose path
+            %% Check if destination is already reached
             if obj.vehicle.pathInfo.destinationReached
                 FuturePlan = obj.vehicle.decisionUnit.futureData;
-                waypointReached=1;               
+                waypointReached=1;
             else
-                % Firstly check if the vehicle has reached its destination so it stops.
+                %% Check if destination is reached now
+                % If the vehicle has reached its destination it should stop
                 obj.vehicle.checkifDestinationReached();
                 
-                % Then check if the vehicle has completed its route but still needs to reach its destination
+                %% Check if the vehicle has completed its route but still did not reach its destination
                 if obj.vehicle.pathInfo.routeCompleted == 1 && obj.vehicle.pathInfo.destinationReached == 0
                     
                     % Time Stamps are logged when waypoints are reached
                     obj.vehicle.dataLog.timeStamps = [obj.vehicle.dataLog.timeStamps;[obj.vehicle.pathInfo.lastWaypoint get_param(obj.modelName,'SimulationTime')]];
+                                      
+                    % Vehicle continues
+                    obj.vehicle.setStopStatus(false);
                     
                     % Build the future plan by deriving the next routes and building the path
                     %Output 1: Future plan of the vehicle
-                    FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-                    obj.vehicle.setStopStatus(false);
+                    %FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+                    FuturePlan = findPath(obj,OtherVehiclesFutureData);
+                    
+
                 else
-                    % If the vehicle is still on its route then the future data stays the same
+                    %% If the vehicle is still on its route -> the Future Plan stays the same
                     %Output 1: Future plan of the vehicle
                     FuturePlan = obj.vehicle.decisionUnit.futureData;
                 end
                 
-                % Check if crossroad
+                %% Check if crossroad
                 obj.crossroadCheck(obj.vehicle);
                 
                 
@@ -98,23 +101,23 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 if obj.vehicle.pathInfo.routeCompleted
                     waypointReached =1;
                 else
-                    waypointReached =0; 
+                    waypointReached =0;
                 end
             end
             %% Grid path generation
-            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0 
-                %plotting can decrease performance, so dont update to often
+            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
+                % Plotting can decrease performance, so dont update to often (update at every 0.2 seconds)
                 obj.vehicle.pathInfo.BOGPath = generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
             end
         end
-            
-       
-            
+        
+        
+        
         function FuturePlan = findNextRoute(obj, car, starting_point, ending_point, global_timesteps,futureData)
             
             [path,newFutureData] = obj.findShortestPath(car, starting_point, ending_point, global_timesteps, futureData);
             
-            car.pathInfo.path = path;           
+            car.pathInfo.path = path;
             
             FuturePlan = newFutureData;
             
@@ -166,7 +169,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             if isempty(futureData)
                 futureData = [0 0 0 0 0];
             end
-
+            
             % TODO: Explanation of the code
             waypoints =  zeros(length(obj.Map.waypoints),7);
             %get maximum speed for every edge
@@ -189,7 +192,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 if obj.accelerationPhase(1) == 0
                     
                     % Neural Network is used to get average acceleration value
-                    averageAcceleration = obj.simSpeed^2 * NN_acceleration([currentSpeed; maxSpeed-currentSpeed]);     
+                    averageAcceleration = obj.simSpeed^2 * NN_acceleration([currentSpeed; maxSpeed-currentSpeed]);
                     accelerationDistance = obj.getAccelerationDistance(averageAcceleration, currentSpeed, maxSpeed);
                     obj.accelerationPhase = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
                 end
@@ -208,7 +211,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     currentTime = waypoints(currentNode,5); % time the car will reach the node
                     currentTotalDistance = waypoints(currentNode,7); %distance travveled unto this node
                     currentSpeed = waypoints(currentNode,4); % the speed of the car when entering the node
-                    currentRoute = neighbourNode_Route(2); % route ID 
+                    currentRoute = neighbourNode_Route(2); % route ID
                     
                     currentMaxSpeedRoutes = maxSpeedRoutes;
                     
@@ -241,7 +244,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     %relevant data has to contain an arrival time before
                     %current car and an exit time after that car
                     currentFutureData = currentFutureData(currentFutureData(:,4)<= currentTime & currentFutureData(:,5)>currentTime,:);
-                    if ~isempty(currentFutureData)                        
+                    if ~isempty(currentFutureData)
                         %% disturbing car on same route
                         %search for the highest exit time, that will slow
                         %us down the most
@@ -317,14 +320,14 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 currentNode =  find(waypoints(:,6) == minCosts& waypoints(:,1)==1);
                 currentNode = currentNode(1);
                 
-            end     
+            end
             
             % Compose the path by using the analyzed waypoints array
             path = obj.composePath(waypoints, startingPoint, endingPoint);
             
             %% updateFuture Date of this vehicle
             newFutureData = zeros((length(path)-1),5); %Matrix Preallocation
-            for i = 1: (length(path)-1)                
+            for i = 1: (length(path)-1)
                 newFutureData(i,:) = [car.id waypoints(path(i+1),3) waypoints(path(i+1),4) waypoints(path(i),5)  waypoints(path(i+1),5)];
             end
             
@@ -342,14 +345,14 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             path = zeros(1,15); % Memory preallocation limit of 15 can be edited
             path(1) = endingPoint;
             try
-            while (predecessor ~= startingPoint)
-                path(i)= predecessor;
-                i = i + 1;
-                predecessor = waypoints(predecessor,2);
-                
-            end
+                while (predecessor ~= startingPoint)
+                    path(i)= predecessor;
+                    i = i + 1;
+                    predecessor = waypoints(predecessor,2);
+                    
+                end
             catch
-            disp('Path not found error')    
+                disp('Path not found error')
             end
             path(path==0)=[]; %remove the extra cells created by memory allocation
             path(i) = startingPoint;
@@ -367,32 +370,9 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
         end
         
-        function checkCrossroadActions(obj,car,starting_point,global_timesteps)    
-            %% check for crossroad actions
-            if find(any(obj.Map.crossroads.startingNodes==starting_point,2)) % car reaches crossroad
-                crossroadId = find(any(obj.Map.crossroads.startingNodes==starting_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 1];
-                car.V2I.carReachesCrossroadV2I(car,starting_point,global_timesteps,crossroadId);
-                                     
-            elseif find(any(obj.Map.crossroads.breakingNodes==starting_point,2)) % car reaches Breaking Point
-                crossroadId = find(any(obj.Map.crossroads.breakingNodes==starting_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 2];
-                car.V2I.carReachesBreakingPointV2I(car,starting_point,global_timesteps,crossroadId);
-                
-            elseif find(any(obj.Map.crossroads.stoppingNodes==starting_point,2)) % car reaches Stopping Point  
-                crossroadId = find(any(obj.Map.crossroads.stoppingNodes==starting_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 3];
-                
-            elseif find(any(obj.Map.crossroads.leavingNodes==starting_point,2)) % car leaves crossroad
-                crossroadId = find(any(obj.Map.crossroads.leavingNodes==starting_point,2));
-                car.V2I.carLeavesCrossroadV2I(car,global_timesteps,crossroadId);
-                car.decisionUnit.inCrossroad = [0 0];
-                
-            end
-        end
         
         
- %% Standard Simulink Output functions
+        %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj
             
@@ -402,7 +382,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             % Set private and protected properties
             %s.myproperty = obj.myproperty;
         end
-
+        
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("PathPlanner.png");
@@ -417,10 +397,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             % Set public properties and states
             loadObjectImpl@matlab.System(obj,s,wasLocked);
         end
-
-
         
-
     end
     
     methods(Static, Access = protected)
@@ -434,11 +411,11 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             % Define property section(s) for System block dialog
             group = matlab.system.display.Section(mfilename('class'));
         end
-
+        
         function resetImpl(~)
             % Initialize / reset discrete-state properties
         end
-
+        
         function ds = getDiscreteStateImpl(~)
             % Return structure of properties with DiscreteState attribute
             ds = struct([]);
@@ -485,6 +462,10 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
         end
-
+        
+    end
+    
+    methods (Abstract, Access = protected)
+        FuturePlan = findPath(obj,OtherVehiclesFutureData)
     end
 end
