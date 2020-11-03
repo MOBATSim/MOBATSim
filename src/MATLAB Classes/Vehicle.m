@@ -334,13 +334,18 @@ classdef Vehicle < handle
             timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
         end
         
-        % To control the change in the status because it happens in so many different places
+        %% To control the change in the status because it happens in so many different places
+
         function setStopStatus(car, binary)
             car.status.stop = binary;   
         end
         
         function setCurrentRoute(car, RouteID)
             car.pathInfo.currentRoute = RouteID;
+        end
+        
+        function setPath(car, newPath)
+            car.pathInfo.path = newPath;
         end
     end
 end

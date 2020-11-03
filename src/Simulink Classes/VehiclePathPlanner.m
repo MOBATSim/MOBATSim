@@ -114,9 +114,9 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         
         function FuturePlan = findNextRoute(obj, car, starting_point, ending_point, global_timesteps,futureData)
             
-            [path,newFutureData] = obj.findShortestPath(car, starting_point, ending_point, global_timesteps, futureData);
+            [Path,newFutureData] = obj.findShortestPath(car, starting_point, ending_point, global_timesteps, futureData);
             
-            car.pathInfo.path = path;
+            car.setPath(Path);
             
             FuturePlan = newFutureData;
             

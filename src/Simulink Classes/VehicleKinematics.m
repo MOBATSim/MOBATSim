@@ -74,12 +74,13 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
         
         %% Helper functions
         function currentRoute = setCurrentRoute(~,car)
-            %% TODO - check if it works in all situations
+            %% TODO - check if it works in all situations            
             idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
             if idx+1<=length(car.pathInfo.path)
+                currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);              
+            elseif ~(car.pathInfo.path==car.pathInfo.destinationPoint) % TODO in D* (don't delete or overwrite the original path)
+                car.setPath([car.pathInfo.path car.pathInfo.destinationPoint]);
                 currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
-            else
-                currentRoute = car.pathInfo.currentRoute;
             end
         end
         

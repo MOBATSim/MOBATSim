@@ -52,10 +52,10 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
             % We need the RouteIDs so we derive it from the Path 
             % Waypoints(Nodes) are always one more than Routes(Edges) so "i" until length(Path)-1
             for i = 1:(length(Path)-1) 
-                RouteID = [RouteID obj.vehicle.map.getRouteIDfromPath([obj.vehicle.pathInfo.path(i)  obj.vehicle.pathInfo.path(i+1)])];
+                RouteID = [RouteID; obj.vehicle.map.getRouteIDfromPath([obj.vehicle.pathInfo.path(i)  obj.vehicle.pathInfo.path(i+1)])];
             end
             %The last three columns are to fit the data according to other PathPlanner FutureDatas
-            FuturePlan = [(ones(1,size(Path,2)-1).*obj.vehicle.id)' Path' zeros(size(Path,2)-1,3)];
+            FuturePlan = [(ones(1,size(Path,2)-1).*obj.vehicle.id)' RouteID zeros(size(Path,2)-1,3)];
             
         end
     end
