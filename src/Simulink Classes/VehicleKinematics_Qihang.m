@@ -198,7 +198,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
             obj.vehicle.dynamics.LaneSwitch_targetPoint=car.dynamics.position.*[1 1 -1]+obj.T*car.dynamics.speed*obj.local_route_direction+obj.local_RightAdjacentLane_direction*obj.Lane_width;
         end
         
-        function SwitchLane_trajectory_generator(obj,car)
+        function SwitchLane_trajectory_generator(obj,car) %generates trajectory for lane change
             local_current_point = car.dynamics.position.*[1 1 -1];
             local_target_point = car.dynamics.LaneSwitch_targetPoint;
             a0=car.dynamics.position.*[1 1 -1].*abs(obj.local_RightAdjacentLane_direction);
