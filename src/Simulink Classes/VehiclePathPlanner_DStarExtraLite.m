@@ -158,8 +158,8 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                     newFutureData = newGoalNode(obj);
                     if isempty(newFutureData)
                         %we cant reach any node from now
-                        disp(['No possible path was found from vehicle ' num2str(obj.vehicle.id)])
-                        stopVehicle(obj);
+                        disp(['No possible path was found for Vehicle ' num2str(obj.vehicle.id)])
+                        stopVehicle(obj); % TODO: This should be removed and vehicle path should not be pruned!!!
                         return;
                     end
                 else                   
