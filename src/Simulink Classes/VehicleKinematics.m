@@ -50,7 +50,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             if ~obj.vehicle.pathInfo.destinationReached || obj.vehicle.status.collided
                 obj.vehicle.dynamics.speed = speed;
                 if obj.vehicle.pathInfo.routeCompleted && obj.vehicle.status.stop ==0
-                    obj.vehicle.pathInfo.currentRoute = obj.setCurrentRoute(obj.vehicle);
+                    obj.vehicle.setCurrentRoute(obj.setCurrentRoute(obj.vehicle)); % Try obj.setCurrentRoute(obj.vehicle)
                     obj.vehicle.pathInfo.currentTrajectory = obj.generateTrajectory(obj.vehicle);
                 end
                 % TODO Check the kinematic equations
@@ -74,9 +74,12 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
         
         %% Helper functions
         function currentRoute = setCurrentRoute(~,car)
-            %% TODO - check if it works in all situations
+            %% TODO - check if it works in all situations            
             idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
             if idx+1<=length(car.pathInfo.path)
+                currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);              
+            elseif ~(car.pathInfo.path==car.pathInfo.destinationPoint) % TODO in D* (don't delete or overwrite the original path)
+                car.setPath([car.pathInfo.path car.pathInfo.destinationPoint]);
                 currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
             end
         end
@@ -167,7 +170,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
                 %% TODO - check if it works in all situations
                 idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
                 if idx+1<=length(car.pathInfo.path)
-                    car.pathInfo.currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+                    car.setCurrentRoute(car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]));
                 end
             end
             
@@ -209,7 +212,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
                 %% TODO - check if it works in all situations
                 idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
                 if idx+1<=length(car.pathInfo.path)
-                    car.pathInfo.currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+                    car.setCurrentRoute(car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]));
                 end
                 %%
                 car.dynamics.cornering.angles = 0;
@@ -258,7 +261,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
                 %% TODO - check if it works in all situations
                 idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
                 if idx+1<=length(car.pathInfo.path)
-                    car.pathInfo.currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+                    car.setCurrentRoute(car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]));
                 end
                 %%
                 

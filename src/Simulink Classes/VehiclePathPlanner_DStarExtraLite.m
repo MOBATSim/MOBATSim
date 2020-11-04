@@ -103,7 +103,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             %g(sgoal)=0
             obj.nodesG(sgoal) = 0;
             pushOpen(obj,sgoal,calculateKey(obj,sgoal));
-            obj.vehicle.pathInfo.path = [];
+            obj.vehicle.setPath([]);
             obj.slast = obj.vehicle.pathInfo.lastWaypoint;
             %set up backup goal node
             obj.tempGoalNode = sgoal;
@@ -158,8 +158,8 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                     newFutureData = newGoalNode(obj);
                     if isempty(newFutureData)
                         %we cant reach any node from now
-                        disp(['No possible path was found from vehicle ' num2str(obj.vehicle.id)])
-                        stopVehicle(obj);
+                        disp(['No possible path was found for Vehicle ' num2str(obj.vehicle.id)])
+                        stopVehicle(obj); % TODO: This should be removed and vehicle path should not be pruned!!!
                         return;
                     end
                 else                   
@@ -177,7 +177,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 %if we dont have to calculate we need to adjust path and new FD
                 
                 newFutureData = obj.vehicle.decisionUnit.futureData;%new = old FD
-                obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:end);%delete old node in path
+                obj.vehicle.setPath(obj.vehicle.pathInfo.path(2:end));%delete old node in path
             end
             
         end        
@@ -187,7 +187,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
         function stopVehicle(obj)
             car = obj.vehicle;            
             %code from vehicle.checkifDestinationReached
-            car.pathInfo.path = [];
+            car.setPath([]);
             car.pathInfo.destinationReached = true;
             car.setStopStatus(true);
             car.pathInfo.routeCompleted = true;
@@ -280,7 +280,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 i = i + 1;
             end
             newpath(i) = sstart; %sgoal
-            obj.vehicle.pathInfo.path = newpath(1:i);%cut preallocated vector
+            obj.vehicle.setPath(newpath(1:i));%cut preallocated vector
             newFutureData = newFutureData(1:i-1,:);
         end
         function nextNode = actionSelection(obj,sstart)
@@ -766,7 +766,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             else
                 %just return the old data
                 newFutureData = obj.vehicle.decisionUnit.futureData;%new = old FD
-                obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:end);%delete old node in path
+                obj.vehicle.setPath(obj.vehicle.pathInfo.path(2:end));%delete old node in path
             end
         end        
         
@@ -791,7 +791,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                     temp = path(i);
                     obj.tempGoalNode = temp;
                     %adjust path and FutureData
-                    obj.vehicle.pathInfo.path = obj.vehicle.pathInfo.path(2:i);
+                    obj.vehicle.setPath(obj.vehicle.pathInfo.path(2:i));
                     tempFD = obj.vehicle.decisionUnit.futureData(1:i,:);
                     %push to open list                    
                     %reinit again like in initilaize()                    
@@ -830,7 +830,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
         function [nextSpeed,timeToReach] = checkForAccelerationInPathbuilding(obj,currentRoute,currentNode,currentSpeed)
             %nextSpeed = speed on end of edge, timeToReach = exit time of edge
             
-            obj.vehicle.pathInfo.currentRoute = currentRoute;%setUp calculation 
+            obj.vehicle.setCurrentRoute(currentRoute);%setUp calculation 
             distance = obj.Map.connections.distances(currentRoute);
             
             currentMaxSpeedRoutes = obj.maxEdgeSpeed;
