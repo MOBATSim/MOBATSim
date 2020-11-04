@@ -224,6 +224,9 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
         end
        
         function take_SwitchLane(obj,car)
+            for i=0:5
+                eval(['a',num2str(i),'=','car.dynamics.LaneSwitch_trajectory(i+1)',';']);
+            end
             f='a0+a1*t+a2*t.^2+a3*t.^3+a4*t.^4+a5*t.^5';
         end
        function moveto(obj ,car,Destination)
