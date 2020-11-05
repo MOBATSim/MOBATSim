@@ -74,16 +74,17 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 
                 %% Check if the vehicle has completed its route but still did not reach its destination
                 if obj.vehicle.pathInfo.routeCompleted == 1 && obj.vehicle.pathInfo.destinationReached == 0
-                    
                     % Time Stamps are logged when waypoints are reached
                     obj.vehicle.dataLog.timeStamps = [obj.vehicle.dataLog.timeStamps;[obj.vehicle.pathInfo.lastWaypoint get_param(obj.modelName,'SimulationTime')]];
-                                      
-                    % Vehicle continues
+
+                    % Vehicle continues to move so the Stop is set to false
                     obj.vehicle.setStopStatus(false);
                     
                     % Build the future plan by deriving the next routes and building the path
-                    %Output 1: Future plan of the vehicle
+                    %Output 1: Future plan of the vehicle   
                     FuturePlan = findPath(obj,OtherVehiclesFutureData); % This is an abstract that is implemented separately in each subclass
+                    % ---------------------------------FuturePlan Structure-----------------------------------------
+                    % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
                     
 
                 else
@@ -114,7 +115,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         
         function FuturePlan = findNextRoute(obj, car, starting_point, ending_point, global_timesteps,futureData)
             
-            [Path,newFutureData] = obj.findShortestPath(car, starting_point, ending_point, global_timesteps, futureData);
+            [Path,newFutureData] = obj.findFastestPath(car, starting_point, ending_point, global_timesteps, futureData);
             
             car.setPath(Path);
             
@@ -158,15 +159,13 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
         end
         
-        function [path, newFutureData]=findShortestPath(obj, car, startingPoint, endingPoint, global_timesteps, futureData)
-            %This function performs a normal A* search inside the XML
-            %graph.
-            %OUTPUT:
-            %newFutureData = [car id, edge number, speed, entry time, exit time]
+        function [path, newFutureData] = findFastestPath(obj, car, startingPoint, endingPoint, global_timesteps, futureData)
+            %This function performs a normal A* search inside the Digraph.
+            %OUTPUT: newFutureData = | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
             %path = [nr of nodes from start to finish]
             %% Initialization
             if isempty(futureData)
-                futureData = [0 0 0 0 0];
+                futureData = [0 0 0 0 0]; % 1x5 to fit the output size
             end
             
             % TODO: Explanation of the code
@@ -311,6 +310,8 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 
                 if waypoints(endingPoint,1) ~= 0 % check if waypoint state is 1 or 2
                     if minCosts >  waypoints(endingPoint)
+                        % Uncomment the code below to convert the waypoints into table to analyze
+                        % array2table(waypoints,'VariableNames',{'State of Waypoint','Current Node','Current Route','Current Speed','Time Costs','Time + Heuristic Costs','Total distance'})
                         break
                     end
                 end
@@ -465,6 +466,9 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
     end
     
     methods (Abstract, Access = protected)
+        % ---------------------------------FuturePlan Structure-----------------------------------------
+        % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
         FuturePlan = findPath(obj,OtherVehiclesFutureData)
+
     end
 end

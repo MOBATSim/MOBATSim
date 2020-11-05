@@ -242,13 +242,12 @@ classdef Vehicle < handle
             reached = false;
             if car.dataLog.totalTravelTime ==0 % The vehicle hasn't reached before so it is equal to zero
                 if car.pathInfo.lastWaypoint == car.pathInfo.destinationPoint
-                    car.pathInfo.destinationReached = true;
-                    reached = true;
+                    % Vehicle has reached its destination
+                    reached = car.setDestinationReached(true);
+                    % Stop the vehicle
                     car.setStopStatus(true);
-                    car.pathInfo.routeCompleted = true;
-                    car.dynamics.speed = 0;
-                    car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
-                    car.V2VdataLink(car.V2VdataLink==1) =0;                    
+                    % Close the V2V connection
+                    car.V2VdataLink(car.V2VdataLink==1) =0;
                 end
             end            
         end
@@ -334,10 +333,14 @@ classdef Vehicle < handle
             timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
         end
         
-        %% To control the change in the status because it happens in so many different places
+        %% SET/GET Functions to control the changes in the properties
 
-        function setStopStatus(car, binary)
-            car.status.stop = binary;   
+        function setStopStatus(car, bool)
+            car.status.stop = bool;
+            if bool % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
+                car.dynamics.speed = 0;               
+            end
+            
         end
         
         function setCurrentRoute(car, RouteID)
@@ -346,6 +349,17 @@ classdef Vehicle < handle
         
         function setPath(car, newPath)
             car.pathInfo.path = newPath;
+        end
+        
+        function bool = setDestinationReached(car,bool)
+            car.pathInfo.destinationReached = bool;
+            car.pathInfo.routeCompleted = bool;
+            if bool
+                car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
+            else
+                car.dataLog.totalTravelTime = 0;
+            end
+            
         end
     end
 end
