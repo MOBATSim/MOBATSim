@@ -83,7 +83,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     % Build the future plan by deriving the next routes and building the path
                     %Output 1: Future plan of the vehicle   
                     FuturePlan = findPath(obj,OtherVehiclesFutureData); % This is an abstract that is implemented separately in each subclass
-                    % ---------------------------------FuturePlan Structure-----------------------------------------
+                    % --------------------------------FuturePlan Structure----nx5-----------------------------------
                     % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
                     
 
@@ -168,8 +168,11 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 futureData = [0 0 0 0 0]; % 1x5 to fit the output size
             end
             
-            % TODO: Explanation of the code
-            waypoints =  zeros(length(obj.Map.waypoints),7);
+            % Create a table for all the waypoints (nodes) where each row index is an identifier for a waypoint
+            waypoints =  zeros(length(obj.Map.waypoints),7); % initialize with zeros (later could be turned into table but might lead to overhead)
+            % --------------------------------------------Waypoints Structure----nx7-----------------------------------------------------
+            % | State of Waypoint | Current Node | Current Route | Current Speed | Time Costs | Time + Heuristic Costs | Total distance |
+            
             %get maximum speed for every edge
             maxSpeed = car.dynamics.maxSpeed ;
             currentSpeed = car.dynamics.speed ;
@@ -466,7 +469,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
     end
     
     methods (Abstract, Access = protected)
-        % ---------------------------------FuturePlan Structure-----------------------------------------
+        % --------------------------------FuturePlan Structure----nx5-----------------------------------
         % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
         FuturePlan = findPath(obj,OtherVehiclesFutureData)
 
