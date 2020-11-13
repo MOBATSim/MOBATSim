@@ -158,7 +158,7 @@ classdef VehicleKinematics_Qihang < matlab.System & handle & matlab.system.mixin
                 return;
             end
             
-            if car.status.lane_switching == 1
+            if car.status.lane_switching == 1 %start lane-switching process
                 if isempty(car.dynamics.LaneSwitch_targetPoint)
                     obj.generate_target_point(car);
                     obj.SwitchLane_trajectory_generator(car);
