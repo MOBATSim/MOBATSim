@@ -67,7 +67,7 @@ Map.initCarDescriptionPlot();
 
 if configs.MapType == MapTypes.GridMap
     %create BOG
-    [Map.bogMap,Map.xOffset,Map.yOffset] = generateBOGrid(Map);
+    [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
 end
 % Clear the initializing variables
 clear_init_variables();
