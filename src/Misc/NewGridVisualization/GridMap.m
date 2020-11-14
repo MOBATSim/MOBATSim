@@ -327,7 +327,7 @@ classdef GridMap < Map
             %load or create GridLocation for starting node
             pStart = str2num(pixelArray(1));
             if ~map.gridLocationMap.isKey(curKey)
-                curGL = GridLocation(pStart,nrOfCars,startNodeNR,0);
+                curGL = Grid(pStart,nrOfCars,startNodeNR,0);
             else
                 curGL = map.gridLocationMap(curKey);
             end
@@ -347,7 +347,7 @@ classdef GridMap < Map
                 setOccupancy(bogMap,p,0,"grid");
                 %create new GL
                 if ~map.gridLocationMap.isKey(newKey)
-                    newGL = GridLocation(p,nrOfCars,0,edgeNumber);
+                    newGL = Grid(p,nrOfCars,0,edgeNumber);
                 else
                     %or load old one
                     newGL = map.gridLocationMap(newKey);
@@ -371,7 +371,7 @@ classdef GridMap < Map
             if ~map.gridLocationMap.isKey(newKey)
                 %create new
                 p = str2num(newKey);
-                newGL = GridLocation(p,nrOfCars,endNodeNR,0);
+                newGL = Grid(p,nrOfCars,endNodeNR,0);
             else
                 %load from map
                 newGL = map.gridLocationMap(newKey);
