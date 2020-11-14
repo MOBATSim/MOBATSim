@@ -107,7 +107,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             %% Grid path generation
             if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
                 % Plotting can decrease performance, so dont update to often (update at every 0.2 seconds)
-                obj.vehicle.pathInfo.BOGPath = generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
+                obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
             end
         end
         

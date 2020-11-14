@@ -1,5 +1,4 @@
-classdef VehiclePathPlanner_GridAStar< matlab.System & handle & matlab.system.mixin.Propagates ...
-        & matlab.system.mixin.CustomIcon
+classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
     % This Path Planner Block uses A* algorithm to find routes to reach the destination node according to the shared data from the other vehicles.
     %
     % NOTE: When renaming the class name Untitled, the file name
@@ -47,7 +46,7 @@ classdef VehiclePathPlanner_GridAStar< matlab.System & handle & matlab.system.mi
     
     methods
         % Constructor
-        function obj = VehiclePathPlanner(varargin)
+        function obj = VehiclePathPlanner_GridAStar(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:});
         end
