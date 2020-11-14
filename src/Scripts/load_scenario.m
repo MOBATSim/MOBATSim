@@ -14,7 +14,7 @@ switch scenarioName
         
         %% Collision scenario    
         startingPoints =    [51 47 22 4 55 53 6 7 15 49]; 
-        destinationPoints = [10 15 11 33 34 15 18 20 16 19];
+        destinationPoints = [10 15 11 32 34 15 18 20 16 19];
         maxSpeeds = [13 12.4 11 8.4 13 13 9.2 13.2 9 13];
         
         %% SC1

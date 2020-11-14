@@ -9,7 +9,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
     
     % Public, tunable properties
     properties
-        Vehicle_id
+        
     end
     
     % Public, non-tunable properties
@@ -23,25 +23,9 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
     
     % Pre-computed constants
     properties(Access = private)
-        vehicle
-        Map = evalin('base','Map');
-        accelerationPhase;
-        simSpeed = evalin('base','simSpeed');
-        modelName = evalin('base','modelName');
-        initialFutureData
-        futureData
-        breakingFlag
-        inCrossroad % [crossroadId crossroadZone]
-        % crossroadZone:
-        % 1 -> arrivingZone
-        % 2 -> stoppingZone
-        % 3 -> intersectionZone
-        
         %variables for gridA*
         tempGoalNode;               % temporary goal node     
         parentMap;                  % Input: current key, Output: parent key
-        %variables for visualization
-        pathPlot;                   % plot object to display the path
     end
     
     methods
@@ -78,7 +62,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
         function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
             %This block shouldn't run if the vehicle has reached its
             %destination 
-                       
             %% choose path
             if obj.vehicle.pathInfo.destinationReached %check if already reached goal
                 FuturePlan = obj.vehicle.decisionUnit.futureData;
@@ -97,7 +80,11 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                     %Output 1: Future plan of the vehicle
                     obj.vehicle.setStopStatus(false);
                     %FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-                    FuturePlan = obj.gridAStar(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+                    %% Try
+                    OtherVehiclesFutureData = []; % TODO - remove later, just for testing
+                    % TODO - Convert other vehicle future data to Grid if their size is not compatible
+                    
+                    FuturePlan = obj.findPath(OtherVehiclesFutureData);
                     
                     waypointReached =1;
                 else
@@ -111,8 +98,11 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             %comment this in if you want the visualization of the cars
             if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
                 %plotting can decrease performance, so dont update to often
-                obj.vehicle.pathInfo.BOGPath = generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
+                obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
             end
+            
+            FuturePlan = zeros(1,5);
+            FuturePlan(1) = obj.vehicle.id;
         end        
         
         
@@ -493,60 +483,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
         
         
         %% Normal A* Code
-        function manuallyChangeRoute(~,car)
-            % Some experiment done for NecSys, could be reused in future if necessary
-            
-            if car.id ==3
-                if car.pathInfo.lastWaypoint == 9
-                    car.pathInfo.destinationPoint = 11;
-                end
-                
-                if car.pathInfo.lastWaypoint == 10
-                    %Fault injection
-                    p = rand();
-                    if p >0.5
-                        %V3 - Route 51 / 1-p(example: for p>0.2 this %80)
-                        car.pathInfo.destinationPoint = 33;
-                        
-                    else
-                        %V3 - Route 5 / p
-                        car.pathInfo.destinationPoint = 35;
-                        
-                    end
-                    
-                end
-                
-                if car.pathInfo.lastWaypoint == 13
-                    car.pathInfo.destinationPoint = 31;
-                elseif car.pathInfo.lastWaypoint == 32
-                    car.pathInfo.destinationPoint = 31;
-                end
-            end
-            
-            if car.id == 1
-                % Decision R5
-                %                 if car.pathInfo.lastWaypoint == 9
-                %                     car.pathInfo.destinationPoint = 13;
-                %                 end
-                %
-                %                 if car.pathInfo.lastWaypoint == 12
-                %                     car.pathInfo.destinationPoint = 26;
-                %                 end
-                
-                
-                %                 % Decision R51
-                %                 if car.pathInfo.lastWaypoint == 9
-                %                     car.pathInfo.destinationPoint = 33;
-                %                 end
-                %
-                %                 if car.pathInfo.lastWaypoint == 32
-                %                     car.pathInfo.destinationPoint = 26;
-                %                 end
-                
-            end
-            
-        end
-        
         
         function FuturePlan = findNextRoute(obj, car, starting_point, ending_point, global_timesteps,futureData)
             
@@ -555,42 +491,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             car.pathInfo.path = path;           
             
             FuturePlan = newFutureData;
-            
-        end
-        
-        function crossroadCheck(~,car)
-            
-            crossroadId = car.decisionUnit.inCrossroad(1);
-            crossroadZone = car.decisionUnit.inCrossroad(2);
-            
-            if crossroadId ~=0
-                
-                %log speed and energydata for current crossroad
-                if crossroadZone > 1
-                    car.dataLog.speedInCrossroad = [car.dataLog.speedInCrossroad car.dynamics.speed];
-                end
-                
-                if crossroadZone > 0
-                    car.dataLog.speedInCrossroad2 = [car.dataLog.speedInCrossroad2 car.dynamics.speed];
-                end
-                
-                if car.map.crossroadUnits(crossroadId).params.conventionalTrafficLights == 1
-                    car.map.crossroadUnits(crossroadId).updateTrafficStateFromConventionalSystem(get_param(obj.modelName,'SimulationTime'));
-                end
-                
-                if crossroadZone == 2
-                    
-                    if car.decisionUnit.breakingFlag == 1
-                        car.pathInfo.stopAt = car.pathInfo.path(2);
-                    else
-                        car.pathInfo.stopAt = 0;
-                        car.setStopStatus(false);
-                    end
-                end
-            else
-                car.pathInfo.stopAt = 0;
-            end
-            
             
         end
         
@@ -792,137 +692,14 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             path = fliplr(path);
             
         end
-        
-        % Equation 5 & 8 in NecSys Paper
-        function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
-            delta_v = speedTo-currentSpeed;
-            accelerationDistance = delta_v^2/(2*averageAcceleration)+currentSpeed*delta_v/averageAcceleration;
-        end
-        % Eigenvalues of Equation 8 in NecSys Paper
-        function timeToReach = timeToReachNextWaypointInAccelerationPhase(~, currentSpeed, averageAcceleration, distance)
-            timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
-        end
-        
-        function checkCrossroadActions(obj,car,starting_point,global_timesteps)    
-            %% check for crossroad actions
-            if find(any(obj.Map.crossroads.startingNodes==starting_point,2)) % car reaches crossroad
-                crossroadId = find(any(obj.Map.crossroads.startingNodes==starting_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 1];
-                car.V2I.carReachesCrossroadV2I(car,starting_point,global_timesteps,crossroadId);
-                                     
-            elseif find(any(obj.Map.crossroads.breakingNodes==starting_point,2)) % car reaches Breaking Point
-                crossroadId = find(any(obj.Map.crossroads.breakingNodes==starting_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 2];
-                car.V2I.carReachesBreakingPointV2I(car,starting_point,global_timesteps,crossroadId);
-                
-            elseif find(any(obj.Map.crossroads.stoppingNodes==starting_point,2)) % car reaches Stopping Point  
-                crossroadId = find(any(obj.Map.crossroads.stoppingNodes==starting_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 3];
-                
-            elseif find(any(obj.Map.crossroads.leavingNodes==starting_point,2)) % car leaves crossroad
-                crossroadId = find(any(obj.Map.crossroads.leavingNodes==starting_point,2));
-                car.V2I.carLeavesCrossroadV2I(car,global_timesteps,crossroadId);
-                car.decisionUnit.inCrossroad = [0 0];
-                
-            end
-        end
-        
-        
- %% Standard Simulink Output functions
 
 
-        function s = saveObjectImpl(obj)
-            % Set properties in structure s to values in object obj
-            
-            % Set public properties and states
-            s = saveObjectImpl@matlab.System(obj);
-            
-            % Set private and protected properties
-            %s.myproperty = obj.myproperty;
+        function FuturePlan = findPath(obj,OtherVehiclesFutureData)
+            FuturePlan = obj.gridAStar(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
         end
-
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("PathPlanner.png");
-        end
-        
-        function loadObjectImpl(obj,s,wasLocked)
-            % Set properties in object obj to values in structure s
-            
-            % Set private and protected properties
-            % obj.myproperty = s.myproperty;
-            
-            % Set public properties and states
-            loadObjectImpl@matlab.System(obj,s,wasLocked);
-        end
-
-
         
 
     end
     
-    methods(Static, Access = protected)
-        %% Simulink customization functions
-        function header = getHeaderImpl
-            % Define header panel for System block dialog
-            header = matlab.system.display.Header(mfilename('class'));
-        end
-        
-        function group = getPropertyGroupsImpl
-            % Define property section(s) for System block dialog
-            group = matlab.system.display.Section(mfilename('class'));
-        end
-
-        function resetImpl(~)
-            % Initialize / reset discrete-state properties
-        end
-
-        function ds = getDiscreteStateImpl(~)
-            % Return structure of properties with DiscreteState attribute
-            ds = struct([]);
-        end
-        
-        function flag = isInputSizeLockedImpl(~,~)
-            % Return true if input size is not allowed to change while
-            % system is running
-            flag = false;
-        end
-        
-        function [out,out2] = getOutputSizeImpl(~)
-            % Return size for each output port
-            out = [2000 6];
-            out2 = [1 1];
-            
-            % Example: inherit size from first input port
-            % out = propagatedInputSize(obj,1);
-        end
-        
-        function [out,out2] = getOutputDataTypeImpl(~)
-            % Return data type for each output port
-            out = 'double';
-            out2 = 'double';
-            
-            % Example: inherit data type from first input port
-            % out = propagatedInputDataType(obj,1);
-        end
-        
-        function [out,out2] = isOutputComplexImpl(~)
-            % Return true for each output port with complex data
-            out = false;
-            out2 = false;
-            
-            % Example: inherit complexity from first input port
-            % out = propagatedInputComplexity(obj,1);
-        end
-        
-        function [out,out2] = isOutputFixedSizeImpl(~)
-            % Return true for each output port with fixed size
-            out = false;
-            out2 = true;
-            
-            % Example: inherit fixed-size status from first input port
-            % out = propagatedInputFixedSize(obj,1);
-        end
-
-    end
+    
 end
