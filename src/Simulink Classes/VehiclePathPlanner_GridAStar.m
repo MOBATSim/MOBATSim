@@ -101,6 +101,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                 obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
             end
             
+            % TODO - Convert the Grid back to Digraph for other vehicle future data
             FuturePlan = zeros(1,5);
             FuturePlan(1) = obj.vehicle.id;
         end        
@@ -158,7 +159,9 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             goalCoordinates = str2num(goalKey); %#ok<*ST2NM>
             
             %check acceleration
-            obj.checkForAccelerationPhase();
+            if obj.checkforAccelerationPhase(obj.vehicle.dynamics.speed,obj.vehicle.dynamics.maxSpeed)
+                obj.accelerationPhase = setAccelerationPhase(obj,obj.vehicle.dynamics.speed,obj.vehicle.dynamics.maxSpeed);
+            end
             
             %% start searching
             while ~isempty(openList.keys)
@@ -411,14 +414,15 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
         end
         function futureData = detectBlockingCarsGridForLoop(obj,futureData)
             %if a car without future data blocks a node, we set the node blocked
-            otherCars = 1:10;
-            otherCars = otherCars(otherCars ~= obj.vehicle.id);
-            vehicles = obj.Map.Vehicles;
-            for car = otherCars
-                if vehicles(car).pathInfo.destinationReached                    
-                    coords = obj.Map.waypoints(vehicles(car).pathInfo.lastWaypoint,:);
+            allCars = 1:length(obj.Map.Vehicles);
+            otherCars = allCars(allCars ~= obj.vehicle.id);
+            
+            % TODO: needs to be vectorized like: [cat(1,obj.Map.Vehicles(otherCars).pathInfo).destinationReached] == 1
+            for carId = otherCars
+                if obj.Map.Vehicles(carId).pathInfo.destinationReached                    
+                    coords = obj.Map.waypoints(obj.Map.Vehicles(carId).pathInfo.lastWaypoint,:);
                     coords = obj.Map.bogMap.world2grid([coords(1)-obj.Map.xOffset,-coords(3)-obj.Map.yOffset]);
-                    futureData = [futureData;[car , coords , 0, 0, -1]];
+                    futureData = [futureData;[carId , coords , 0, 0, -1]];
                 end
             end
         end
@@ -434,21 +438,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             car.V2VdataLink(car.V2VdataLink==1) =0;
         end
         
-        %% acceleration estimation related
-        function checkForAccelerationPhase(obj)
-            %used to calculate acceleration for future data estimation
-            car = obj.vehicle;
-            maxSpeed = car.dynamics.maxSpeed ;
-            currentSpeed = obj.vehicle.dynamics.speed ;
-            if abs(maxSpeed - currentSpeed) > 1
-                if obj.accelerationPhase(1) == 0
-                    % Neural Network is used to get average acceleration value
-                    averageAcceleration = obj.simSpeed^2 * NN_acceleration([currentSpeed; maxSpeed-currentSpeed]);
-                    accelerationDistance = obj.getAccelerationDistance(averageAcceleration, currentSpeed, maxSpeed);
-                    obj.accelerationPhase = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
-                end
-            end
-        end                
+        %% acceleration estimation related             
         function [nextSpeed,timeToReach] = checkACCOnGrid(obj,currentGL,currentSpeed)
             %nextSpeed = speed on end of edge, timeToReach = exit time of edge            
             

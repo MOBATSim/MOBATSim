@@ -176,7 +176,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             else
                 bool = false;
             end
-            
         end
         
         

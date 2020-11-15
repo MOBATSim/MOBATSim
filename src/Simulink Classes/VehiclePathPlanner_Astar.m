@@ -103,23 +103,22 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                     
                     currentMaxSpeedRoutes = maxSpeedRoutes;
                     
-                    %% check for acceleration phase
+                    %% If the vehicle is still in the acceleration phase
                     if obj.accelerationPhase(1) == 1
                         accelerationDistance = obj.accelerationPhase(4);
                         averageAcceleration = obj.accelerationPhase(5);
                         if ((currentTotalDistance + distances(currentRoute) - accelerationDistance) < 0)
-                            % whole route in acceleration phase
+                            % Whole route in acceleration phase
                             timeToReach = 1/ obj.simSpeed * obj.timeToReachNextWaypointInAccelerationPhase( currentSpeed, averageAcceleration, distances(currentRoute));
                             nextSpeed = currentSpeed + averageAcceleration*timeToReach * obj.simSpeed;
                         else
-                            % route is divided in acceleration phase (t1)
-                            % and constant speed phase (t2)
+                            % The route is divided in two phases: First acceleration phase (t1)
+                            % and the second: Constant speed phase (t2)
                             t1 = 1/ obj.simSpeed * obj.timeToReachNextWaypointInAccelerationPhase(currentSpeed, averageAcceleration, accelerationDistance - currentTotalDistance);
                             t2 =  1/ obj.simSpeed * (currentTotalDistance+ distances(currentRoute) - accelerationDistance)/ currentMaxSpeedRoutes(currentRoute);
                             timeToReach = t1+t2;
                             nextSpeed = obj.accelerationPhase(3);
-                            obj.accelerationPhase = zeros(1,5); %set acceleration phase to zero
-                            
+                            obj.accelerationPhase = zeros(1,5); % Set acceleration phase data to zero
                         end
                         
                     else
