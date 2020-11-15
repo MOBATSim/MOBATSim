@@ -37,7 +37,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
     end
     
     methods(Access = protected)
-        %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
@@ -50,69 +49,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             obj.initializeGrid();
         end
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
-            %This block shouldn't run if the vehicle has reached its
-            %destination 
-            %% choose path
-            if obj.vehicle.pathInfo.destinationReached %check if already reached goal
-                FuturePlan = obj.vehicle.decisionUnit.futureData;
-                %FuturePlan = [];
-                waypointReached=1;
-            else
-                % Firstly check if the vehicle has reached its destination so it stops.
-                % Then check if the vehicle has completed its route but still needs to reach its destination
-                if obj.vehicle.pathInfo.routeCompleted == 1 && ~obj.vehicle.checkifDestinationReached()
-                    % Check if crossroad
-                    obj.crossroadCheck(obj.vehicle);
-                    % Time Stamps are logged when waypoints are reached
-                    obj.vehicle.dataLog.timeStamps = [obj.vehicle.dataLog.timeStamps;[obj.vehicle.pathInfo.lastWaypoint get_param(obj.modelName,'SimulationTime')]];
-                    
-                    %Build the future plan by deriving the next routes and building the path
-                    %Output 1: Future plan of the vehicle
-                    obj.vehicle.setStopStatus(false);
-                    %FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-                    %% Try
-                    OtherVehiclesFutureData = []; % TODO - remove later, just for testing
-                    % TODO - Convert other vehicle future data to Grid if their size is not compatible
-                    
-                    FuturePlan = obj.findPath(OtherVehiclesFutureData);
-                    
-                    waypointReached =1;
-                else
-                    % If the vehicle is still on its route then the future data stays the same
-                    %Output 1: Future plan of the vehicle
-                    FuturePlan = obj.vehicle.decisionUnit.futureData;
-                    waypointReached =0;
-                end
-            end
-            %% Grid path generation
-            %comment this in if you want the visualization of the cars
-            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
-                %plotting can decrease performance, so dont update to often
-                obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id);
-            end
-            
-            % TODO - Convert the Grid back to Digraph for other vehicle future data
-            FuturePlan = zeros(1,5);
-            FuturePlan(1) = obj.vehicle.id;
-        end        
-        
-        
-        
-        
-        
-        
-        
-
         %% Grid A* Code
         function newFutureData = gridAStar(obj, globalTime,futureData)
             %this function performs a A* search with the grid location
@@ -142,8 +78,8 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             openList = containers.Map();
             closedList = containers.Map();
             %add your location to the open list
-            curPos = obj.vehicle.pathInfo.lastWaypoint;
-            curPos = obj.Map.waypoints(curPos,:);
+            currentWaypoint = obj.vehicle.pathInfo.lastWaypoint;
+            curPos = obj.Map.get_coordinates_from_waypoint(currentWaypoint);
             curGridPos = obj.Map.bogMap.world2grid([curPos(1)-obj.Map.xOffset,-curPos(3)-obj.Map.yOffset]);
             curKey = append( num2str(curGridPos(1)),",",num2str(curGridPos(2)) );
             startKey = curKey;
@@ -474,16 +410,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
         
         %% Normal A* Code
         
-        function FuturePlan = findNextRoute(obj, car, starting_point, ending_point, global_timesteps,futureData)
-            
-            [path,newFutureData] = obj.findShortestPath(car, starting_point, ending_point, global_timesteps, futureData);
-            
-            car.pathInfo.path = path;           
-            
-            FuturePlan = newFutureData;
-            
-        end
-        
         function [path, newFutureData]=findShortestPath(obj, car, startingPoint, endingPoint, global_timesteps, futureData)
             %% Initialization
             if isempty(futureData)
@@ -685,7 +611,11 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
 
 
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
+            OtherVehiclesFutureData = []; % TODO - remove later, just for testing
             FuturePlan = obj.gridAStar(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+            % TODO - Convert the Grid back to Digraph for other vehicle future data
+            FuturePlan = zeros(1,5);
+            FuturePlan(1) = obj.vehicle.id;
         end
         
 

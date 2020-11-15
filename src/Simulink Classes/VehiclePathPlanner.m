@@ -51,7 +51,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
     end
     
     methods(Access = protected)
-        %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
@@ -64,31 +63,30 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         
         function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
             %% Check if destination is already reached
-            if obj.vehicle.pathInfo.destinationReached
-                FuturePlan = obj.vehicle.decisionUnit.futureData;
-                waypointReached=1;
+            if obj.vehicle.pathInfo.destinationReached           
+                FuturePlan = obj.vehicle.decisionUnit.futureData;   %Output 1: Future plan of the vehicle
+                waypointReached=1;                                  %Output 2: Waypoint Reached enabler
             else
                 %% Check if destination is reached now
-                % If the vehicle has reached its destination it should stop
-                obj.vehicle.checkifDestinationReached();
+                obj.vehicle.checkifDestinationReached(); % If true vehicle should stop
                 
-                %% Check if the vehicle has completed its route but still did not reach its destination
+                %% Check if the vehicle has completed its route but still did not reach its destination (Reached a waypoint)
                 if obj.vehicle.pathInfo.routeCompleted == 1 && obj.vehicle.pathInfo.destinationReached == 0
                     % Time Stamps are logged when waypoints are reached
                     obj.vehicle.dataLog.timeStamps = [obj.vehicle.dataLog.timeStamps;[obj.vehicle.pathInfo.lastWaypoint get_param(obj.modelName,'SimulationTime')]];
-
+                    
                     % Vehicle continues to move so the Stop is set to false
                     obj.vehicle.setStopStatus(false);
                     
+
+                    %% This is an abstract that is implemented separately in each subclass
+                    FuturePlan = obj.findPath(OtherVehiclesFutureData);
                     % Build the future plan by deriving the next routes and building the path
-                    %Output 1: Future plan of the vehicle   
-                    FuturePlan = findPath(obj,OtherVehiclesFutureData); % This is an abstract that is implemented separately in each subclass
+                    % Output 1: Future plan of the vehicle
                     % --------------------------------FuturePlan Structure----nx5-----------------------------------
                     % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
-                    
-
                 else
-                    %% If the vehicle is still on its route -> the Future Plan stays the same
+                    %% If the Vehicle is still on Route -> Vehicle's future plan stays the same
                     %Output 1: Future plan of the vehicle
                     FuturePlan = obj.vehicle.decisionUnit.futureData;
                 end
@@ -105,13 +103,11 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 end
             end
             %% Grid path generation
-            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
-                % Plotting can decrease performance, so dont update to often (update at every 0.2 seconds)
+            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0 % Plotting can decrease performance (update at every 0.2 seconds)     
                 obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
             end
         end
         
-         
         function crossroadCheck(~,car)
             
             crossroadId = car.decisionUnit.inCrossroad(1);
@@ -147,7 +143,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
             
         end
-
+        
         function path = composePath(~,waypoints, startingPoint, endingPoint)
             %% define path from waypoints array
             predecessor = waypoints(endingPoint,2);
@@ -171,13 +167,12 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         end
         
         function bool = checkforAccelerationPhase(obj,currentSpeed,maxSpeed)
-            if abs(maxSpeed - currentSpeed) > 1 && obj.accelerationPhase(1) == 0     
+            if abs(maxSpeed - currentSpeed) > 1 && obj.accelerationPhase(1) == 0
                 bool = true;
             else
                 bool = false;
             end
         end
-        
         
         function accelerationPhaseData = setAccelerationPhase(obj,currentSpeed,maxSpeed)
             
@@ -188,7 +183,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
         end
         
-        
         % Equation 5 & 8 in NecSys Paper
         function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
             delta_v = speedTo-currentSpeed;
@@ -198,8 +192,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         function timeToReach = timeToReachNextWaypointInAccelerationPhase(~, currentSpeed, averageAcceleration, distance)
             timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
         end
-        
-        
         
         %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
@@ -298,6 +290,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         % --------------------------------FuturePlan Structure----nx5-----------------------------------
         % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
         FuturePlan = findPath(obj,OtherVehiclesFutureData)
-
+        
     end
 end

@@ -30,6 +30,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             setProperties(obj,nargin,varargin{:});
         end
     end
+    
     methods (Access = protected)
         
         function setupImpl(obj)
@@ -37,21 +38,18 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
         end
         
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
-            FuturePlan = obj.findNextRoute(obj.vehicle, obj.vehicle.pathInfo.lastWaypoint, ...
-                obj.vehicle.pathInfo.destinationPoint,get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+            
+            starting_point = obj.vehicle.pathInfo.lastWaypoint;
+            ending_point = obj.vehicle.pathInfo.destinationPoint;
+            
+            [Path,newFutureData] = obj.AStarPathfinder(obj.vehicle, starting_point, ending_point, get_param(obj.modelName,'SimulationTime'), OtherVehiclesFutureData);
+            
+            obj.vehicle.setPath(Path);
+            FuturePlan = newFutureData; 
         end
         
-        function FuturePlan = findNextRoute(obj, car, starting_point, ending_point, global_timesteps,futureData)
-            
-            [Path,newFutureData] = obj.findFastestPath(car, starting_point, ending_point, global_timesteps, futureData);
-            
-            car.setPath(Path);
-            
-            FuturePlan = newFutureData;
-            
-        end
         
-        function [path, newFutureData] = findFastestPath(obj, car, startingPoint, endingPoint, global_timesteps, futureData)
+        function [path, newFutureData] = AStarPathfinder(obj, car, startingPoint, endingPoint, global_timesteps, futureData)
             %This function performs a normal A* search inside the Digraph.
             %OUTPUT: newFutureData = | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
             %path = [nr of nodes from start to finish]
