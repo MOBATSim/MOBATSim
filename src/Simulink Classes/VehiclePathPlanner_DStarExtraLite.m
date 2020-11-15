@@ -109,14 +109,11 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             obj.tempGoalNode = sgoal;
         end
         
-        %function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
-        % This part is defined in the SuperClass so don't uncomment it unless you want to override. 
-        %end
            
         %% D* Extra Light
         function newFutureData = dStarExtraLite(obj, globalTime,futureData)
-            %check https://doi.org/10.1515/amcs-2017-0020 for more details
-            %algorithm from  D* Extra Lite: A Dynamic A* With Search–Tree Cutting and Frontier–Gap Repairing by Maciej Przybylski
+            %% Check https://doi.org/10.1515/amcs-2017-0020 for more details
+            % Algorithm from  D* Extra Lite: A Dynamic A* With Search–Tree Cutting and Frontier–Gap Repairing by Maciej Przybylski
             %
             %newFutureData: [carID edgeNr speed enterTime exitTime]
             %obj: this
@@ -125,26 +122,22 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             %futureData: futureData of other vehicles
             
             %% Initialization
-            if obj.tempGoalNode == obj.vehicle.pathInfo.lastWaypoint
-                %if we are at our temp goal
-                
-                %we need to update oour goal
-                obj.tempGoalNode = obj.vehicle.pathInfo.destinationPoint;
-                %we have to repush our goal to the open list to search if
-                %the path is still blocked
-                initializeGoal(obj,obj.tempGoalNode);
+            if obj.checkTempGoalReached()
+                obj.setTempGoaltoDestination();
             end
+                       
             %%vectorized, but slower for now
             futureData = deleteCollidedFutureDataForLoop(obj,futureData);
-            if globalTime ~= 0
-                %in the first round all vehicles have stop status, so only do it later
-                obj.detectBlockingCarsForLoop();
-            end
+            
+            %in the first round all vehicles have stop status, so only do it later
+            obj.detectBlockingCarsForLoop(globalTime);
+            
             whichEdgecostsChangedForLoop(obj,futureData);%TODO vectorize
-            %obj.haveCostsChanged = false; Just to test performance without reinit
-                        
+            
             %% check for acceleration phase
-            checkForAccelerationPhase(obj);
+            if obj.checkforAccelerationPhase(obj.vehicle.dynamics.speed,obj.vehicle.dynamics.maxSpeed)
+                obj.accelerationPhase = setAccelerationPhase(obj,obj.vehicle.dynamics.speed,obj.vehicle.dynamics.maxSpeed);
+            end
             
             %% Only Update if anything changed or first time
             if obj.haveCostsChanged || isempty(obj.vehicle.pathInfo.path)
@@ -630,19 +623,21 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
         end
         
         %% blocking nodes
-        function detectBlockingCarsForLoop(obj)
-            %if a car without future data blocks a node, we set the node blocked
-            
-            %get all other cars
-            otherCars = getNrOfAllOtherCars(obj); 
-            vehicles = obj.vehicle.map.Vehicles;
-            for car = otherCars
-                %check for stop
-                if vehicles(car).status.stop
-                    obj.nodesBlocked(vehicles(car).pathInfo.lastWaypoint)=1;
+        function detectBlockingCarsForLoop(obj,globalTime)
+            if globalTime ~= 0
+                %if a car without future data blocks a node, we set the node blocked
+                
+                %get all other cars
+                otherCars = getNrOfAllOtherCars(obj);
+                vehicles = obj.vehicle.map.Vehicles;
+                for car = otherCars
+                    %check for stop
+                    if vehicles(car).status.stop
+                        obj.nodesBlocked(vehicles(car).pathInfo.lastWaypoint)=1;
+                    end
                 end
             end
-        end        
+        end
         
         function blocked = checkIfBlocked(obj,otherCars, curEdge)
             %if a car will stop after current edge, it will block the node
@@ -812,21 +807,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             pushOpen(obj,s,calculateKey(obj,s));
         end
         
-        %% acceleration estimation related
-        function checkForAccelerationPhase(obj)
-            %used to calculate acceleration for future data estimation
-            car = obj.vehicle;
-            maxSpeed = car.dynamics.maxSpeed ;
-            currentSpeed = obj.vehicle.dynamics.speed ;
-            if abs(maxSpeed - currentSpeed) > 1
-                if obj.accelerationPhase(1) == 0
-                    % Neural Network is used to get average acceleration value
-                    averageAcceleration = obj.simSpeed^2 * NN_acceleration([currentSpeed; maxSpeed-currentSpeed]);
-                    accelerationDistance = obj.getAccelerationDistance(averageAcceleration, currentSpeed, maxSpeed);
-                    obj.accelerationPhase = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
-                end
-            end
-        end        
+        %% acceleration estimation related 
         function [nextSpeed,timeToReach] = checkForAccelerationInPathbuilding(obj,currentRoute,currentNode,currentSpeed)
             %nextSpeed = speed on end of edge, timeToReach = exit time of edge
             
@@ -859,6 +840,19 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 timeToReach =  (1/ obj.simSpeed) * distance* (1/ currentMaxSpeedRoutes(currentRoute)); %timesteps to reach neighbour
                 nextSpeed = currentSpeed;
             end
+        end
+        
+        function  bool = checkTempGoalReached(obj)
+            bool = obj.tempGoalNode == obj.vehicle.pathInfo.lastWaypoint;
+            % True if TempGoal reached
+        end
+        
+        function setTempGoaltoDestination(obj)                  
+                %we need to update oour goal
+                obj.tempGoalNode = obj.vehicle.pathInfo.destinationPoint;
+                %we have to repush our goal to the open list to search if
+                %the path is still blocked
+                initializeGoal(obj,obj.tempGoalNode); 
         end
                
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
