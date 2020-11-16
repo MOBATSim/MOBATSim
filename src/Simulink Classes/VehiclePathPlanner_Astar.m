@@ -40,6 +40,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
             
             OtherVehiclesFutureData = obj.getOnlyDigraphFutureData(OtherVehiclesFutureData); % TODO - remove later, just for testing
+            OtherVehiclesFutureData = deleteCollidedVehicleFutureData(obj,OtherVehiclesFutureData);
             
             starting_point = obj.vehicle.pathInfo.lastWaypoint;
             ending_point = obj.vehicle.pathInfo.destinationPoint;
@@ -227,6 +228,16 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             
         end
         
+        function OtherVehiclesFutureData = deleteCollidedVehicleFutureData(obj,OtherVehiclesFutureData)
+            otherCars = unique(OtherVehiclesFutureData(:,1))'; % OtherCars which have the same FutureData
+            vehicles = obj.Map.Vehicles;
+            for carID = otherCars
+                if vehicles(carID).status.collided
+                    %remove every entry with the collided car from FD
+                    OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,1)~=carID,:);
+                end
+            end
+        end
         
     end
     

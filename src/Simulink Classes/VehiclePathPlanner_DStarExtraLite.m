@@ -127,7 +127,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             end
                        
             %%vectorized, but slower for now
-            futureData = deleteCollidedFutureDataForLoop(obj,futureData);
+            futureData = deleteCollidedVehicleFutureData(obj,futureData);
             
             %in the first round all vehicles have stop status, so only do it later
             obj.detectBlockingCarsForLoop(globalTime);
@@ -673,7 +673,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
         end 
         
         %% edit and evaluate FutureData        
-        function futureData = deleteCollidedFutureDataForLoop(obj,futureData)
+        function futureData = deleteCollidedVehicleFutureData(obj,futureData)
             %deletes future data of vehicles that will not move because of collision
             otherCars = getNrOfAllOtherCars(obj); 
             vehicles = obj.vehicle.map.Vehicles;

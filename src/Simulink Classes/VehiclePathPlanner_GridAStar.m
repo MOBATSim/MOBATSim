@@ -61,7 +61,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             if isempty(futureData)
                 futureData = [0 0 0 0 0 0];
             else
-                futureData = deleteCollidedFutureDataonGridForLoop(obj,futureData);
+                futureData = deleteCollidedVehicleFutureData(obj,futureData);
             end
             futureData = obj.detectBlockingCarsGridForLoop(futureData);
             %% Update temp goal if we reached our temporary goal
@@ -260,6 +260,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                 curGL.speedVector(carID) = nextSpeed;
             end
         end
+        
         function succGL = getGLCosts(~,carID,nextSpeed,travelTime,simSpeed,maxSpeed,curG,curTotalDistance,curDistance,succGL,goalCoordinates)
             %this function calculates the cost to get through curGL to succGL            
             %% now calculate the g and f values
@@ -274,6 +275,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
 %             succGL.deviation = travelTime * power(x,2);
             succGL.deviation = 0.01*succGL.gValue;
         end
+        
         function blocked = isSuccBlocked(~,succKey,futureData,arrivalTime)
             %this function returns true, if the node is blocked
             %FD [carID, coordinates of GL x, y, speed, time, deviation]
@@ -299,10 +301,12 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             end
             blocked = false;
         end
-        function futureData = deleteCollidedFutureDataonGridForLoop(obj,futureData)
+        
+        function futureData = deleteCollidedVehicleFutureData(obj,futureData)
             %deletes future data of vehicles that will not move because of collision
             %FD [carID, coordinates of GL x, y, speed, time, deviation]
             otherCars = unique(futureData(:,1))'; % OtherCars which have the same FutureData
+            otherCars(otherCars==0) = []; % If zero comes as index, make it empty
             vehicles = obj.Map.Vehicles;
             for carID = otherCars
                 if vehicles(carID).status.collided

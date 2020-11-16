@@ -78,6 +78,9 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     % Vehicle continues to move so the Stop is set to false
                     obj.vehicle.setStopStatus(false);
                     
+                    if isempty(OtherVehiclesFutureData)
+                        OtherVehiclesFutureData = [0 0 0 0 0 0];
+                    end
 
                     %% This is an abstract that is implemented separately in each subclass
                     FuturePlan = obj.findPath(OtherVehiclesFutureData);
@@ -306,6 +309,9 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         % --------------------------------FuturePlan Structure----nx6-----------------------------------
         % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | -1 for Digraph
         FuturePlan = findPath(obj,OtherVehiclesFutureData)
+        
+        % Every Path Planner should delete the collided Vehicle Future Data in their own way
+        OtherVehiclesFutureData = deleteCollidedVehicleFutureData(obj,OtherVehiclesFutureData)
         
     end
 end

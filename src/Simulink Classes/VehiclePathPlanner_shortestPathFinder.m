@@ -58,6 +58,10 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
             FuturePlan = [(ones(1,size(Path,2)-1).*obj.vehicle.id)' RouteID zeros(size(Path,2)-1,3) (ones(1,size(Path,2)-1)*-3)'];
             
         end
+        
+        function futureData = deleteCollidedVehicleFutureData(~,futureData)
+            % TODO: fix the architecture for this abstract method later
+        end
     end
     
 end
