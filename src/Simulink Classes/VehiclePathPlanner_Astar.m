@@ -4,25 +4,6 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
     % This template includes the minimum set of functions required
     % to define a System object with discrete state.
     
-    % Public, tunable properties
-    properties
-        
-    end
-    
-    % Public, non-tunable properties
-    properties(Nontunable)
-        
-    end
-    
-    properties(DiscreteState)
-        
-    end
-    
-    % Pre-computed constants
-    properties(Access = private)
-        
-    end
-    
     methods
         % Constructor
         function obj = VehiclePathPlanner_Astar(varargin)

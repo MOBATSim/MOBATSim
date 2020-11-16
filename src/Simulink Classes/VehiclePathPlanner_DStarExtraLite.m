@@ -7,20 +7,6 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
     % This template includes most, but not all, possible properties, attributes,
     % and methods that you can implement for a System object in Simulink.
     
-    % Public, tunable properties
-    properties
-        
-    end
-    
-    % Public, non-tunable properties
-    properties(Nontunable)
-        
-    end
-    
-    properties(DiscreteState)
-        
-    end
-    
     % Pre-computed constants
     properties(Access = private)
         %variables for D Star Extra Lite

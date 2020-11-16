@@ -7,20 +7,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
     % This template includes most, but not all, possible properties, attributes,
     % and methods that you can implement for a System object in Simulink.
     
-    % Public, tunable properties
-    properties
-        
-    end
-    
-    % Public, non-tunable properties
-    properties(Nontunable)
-        
-    end
-    
-    properties(DiscreteState)
-        
-    end
-    
     % Pre-computed constants
     properties(Access = private)
         %variables for gridA*
@@ -38,13 +24,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
     
     methods(Access = protected)
         function setupImpl(obj)
-            % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
-            
-            obj.accelerationPhase =  zeros(1,5);
-            obj.simSpeed = evalin('base','simSpeed');
-            obj.breakingFlag = 0;
-            obj.inCrossroad = [0 0];
+            setupImpl@VehiclePathPlanner(obj); % Inherit the setupImpl function of the Superclass @VehiclePathPlanner
             
             obj.initializeGrid();
         end
@@ -183,6 +163,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             obj.tempGoalNode = obj.vehicle.pathInfo.destinationPoint;
             obj.parentMap = containers.Map();
         end
+        
         function [newFD,newPath] = gridBuildPath(obj, closedList, goalKey, startKey)
             curGL = closedList(goalKey);
             curKey = goalKey;
@@ -213,6 +194,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             %we need to flip path to be in order from start to goal
             newPath = fliplr([newPath, closedList(startKey).nodeNR]);
         end
+        
         function [successors,lastNodeNR] = getSuccessors(~,curGL,startNodeNR)
             %returns the successors of the grid location curGL
             if curGL.nodeNR ~= 0
@@ -225,6 +207,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                     lastNodeNR = curGL.edgeStart;
             end
         end
+        
         function curGL = correctTimeWithFD(~,carID,nextSpeed,simSpeed,travelTime,curGL,futureData)
             %to know how long we actually took, we need to keep future data
             %in mind
@@ -323,6 +306,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                 end                
             end
         end
+        
         function possible = newGoalNodeGrid(obj,futureData)
             %try to update obj.tempGoalNode to a node that is not blocked
             %FD [carID, coordinates of GL x, y, speed, time, deviation]
@@ -347,6 +331,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             end
             possible = false;
         end
+        
         function futureData = detectBlockingCarsGridForLoop(obj,futureData)
             %if a car without future data blocks a node, we set the node blocked
             allCars = 1:length(obj.Map.Vehicles);
@@ -361,6 +346,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                 end
             end
         end
+        
         function stopVehicle(obj)
             car = obj.vehicle;            
             %code from vehicle.checkifDestinationReached
@@ -372,9 +358,9 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
             car.V2VdataLink(car.V2VdataLink==1) =0;
         end
-        
-        %% acceleration estimation related             
+      
         function [nextSpeed,timeToReach] = checkACCOnGrid(obj,currentGL,currentSpeed)
+            % acceleration estimation related  
             %nextSpeed = speed on end of edge, timeToReach = exit time of edge            
             
             distance = currentGL.distance;
@@ -406,209 +392,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             end
         end
         
-        
-        %% Normal A* Code
-        
-        function [path, newFutureData]=findShortestPath(obj, car, startingPoint, endingPoint, global_timesteps, futureData)
-            %% Initialization
-            if isempty(futureData)
-                futureData = [0 0 0 0 0];
-            end
-
-            % TODO: Explanation of the code
-            waypoints =  zeros(length(obj.Map.waypoints),7);
-            
-            maxSpeed = car.dynamics.maxSpeed ;
-            currentSpeed = car.dynamics.speed ;
-            speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
-            maxSpeedRoutes = speedRoutes;
-            maxSpeedRoutes(speedRoutes>maxSpeed)= maxSpeed; %possible speed for every route
-            
-            connections = obj.Map.connections.all;
-            
-            distances = obj.Map.connections.distances;
-            
-            currentNode = startingPoint; %currentNode: current Node from where to expand neighbour Nodes
-            waypoints(startingPoint,5) = global_timesteps;
-            waypoints(startingPoint,4) = currentSpeed;
-            
-            %% check for acceleration phase
-            if abs(maxSpeed - currentSpeed) > 1
-                if obj.accelerationPhase(1) == 0
-                    
-                    % Neural Network is used to get average acceleration value
-                    averageAcceleration = obj.simSpeed^2 * NN_acceleration([currentSpeed; maxSpeed-currentSpeed]);     
-                    accelerationDistance = obj.getAccelerationDistance(averageAcceleration, currentSpeed, maxSpeed);
-                    obj.accelerationPhase = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
-                end
-            end
-            
-            
-            
-            
-            
-            %% main loop
-            while (1)
-                waypoints(currentNode,1) = 2; %set state of waypoint to 2 -> waypoint in closed List
-                
-                %% find neighbours
-                routes2neighbourNode = find(connections(:,1) == currentNode); % route ID
-                neighbourNodes = connections(connections(:,1) == currentNode,2); % waypointID of neighbour
-                neighbourNodes_Routes = [neighbourNodes'; routes2neighbourNode'];
-                
-                
-                
-                %% loop over all neighbours
-                for neighbourNode_Route=neighbourNodes_Routes
-                    
-                    
-                    neighbourWP = waypoints(neighbourNode_Route(1),:); % waypointID of neighbour
-                    currentTime = waypoints(currentNode,5);
-                    currentTotalDistance = waypoints(currentNode,7);
-                    currentSpeed = waypoints(currentNode,4);
-                    currentRoute = neighbourNode_Route(2); % route ID 
-                    
-                    currentMaxSpeedRoutes = maxSpeedRoutes;
-                    
-                    %% check for acceleration phase
-                    if obj.accelerationPhase(1) == 1
-                        accelerationDistance = obj.accelerationPhase(4);
-                        averageAcceleration = obj.accelerationPhase(5);
-                        if ((currentTotalDistance + distances(currentRoute) - accelerationDistance) < 0)
-                            % whole route in acceleration phase
-                            timeToReach = 1/ obj.simSpeed * obj.timeToReachNextWaypointInAccelerationPhase( currentSpeed, averageAcceleration, distances(currentRoute));
-                            nextSpeed = currentSpeed + averageAcceleration*timeToReach * obj.simSpeed;
-                        else
-                            % route is divided in acceleration phase (t1)
-                            % and constant speed phase (t2)
-                            t1 = 1/ obj.simSpeed * obj.timeToReachNextWaypointInAccelerationPhase(currentSpeed, averageAcceleration, accelerationDistance - currentTotalDistance);
-                            t2 =  1/ obj.simSpeed * (currentTotalDistance+ distances(currentRoute) - accelerationDistance)/ currentMaxSpeedRoutes(currentRoute);
-                            timeToReach = t1+t2;
-                            nextSpeed = obj.accelerationPhase(3);
-                            obj.accelerationPhase = zeros(1,5); %set acceleration phase to zero
-                            
-                        end
-                        
-                    else
-                        timeToReach =  1/ obj.simSpeed * distances(currentRoute)/ currentMaxSpeedRoutes(currentRoute); %timesteps to reach neighbour
-                        nextSpeed = currentSpeed;
-                    end
-                    
-                    
-                    %% check for other cars on same route (using merged future data)
-                    currentFutureData = futureData(futureData(:,2) == currentRoute,:);
-                    currentFutureData = currentFutureData(currentFutureData(:,4)<= currentTime & currentFutureData(:,5)>currentTime,:);
-                    if ~isempty(currentFutureData)
-                        
-                        %% disturbing car on same route
-                        index = find(max(currentFutureData(:,5)));
-                        timeToReachDisturbingVehicle = currentFutureData(index,5);
-                        speedDisturbingVehicle =  currentFutureData(index,3);
-                        timeDifference = (currentTime + timeToReach) - timeToReachDisturbingVehicle ;
-                        
-                        spacingTime = 6 * 1/obj.simSpeed;
-                        if (timeDifference < spacingTime)
-                            timeToReach = timeToReachDisturbingVehicle + spacingTime - currentTime;
-                            nextSpeed = speedDisturbingVehicle;
-                        end
-                        
-                        
-                    end
-                    
-                    %% calculate costs (costs = distance/speed)
-                    costs = timeToReach;
-                    
-                    %% calculate heuristic (Luftlinie)
-                    heuristicCosts = 1/ obj.simSpeed * 1/maxSpeed * norm(get_coordinates_from_waypoint(obj.Map, neighbourNode_Route(1))-get_coordinates_from_waypoint(obj.Map, endingPoint));
-                    
-                    
-                    %% update waypoints array
-                    if neighbourWP(1) == 0
-                        neighbourWP(2) = currentNode;
-                        
-                        neighbourWP(5) = waypoints(currentNode,5) + costs;
-                        neighbourWP(1) = 1;
-                        neighbourWP(3) = currentRoute;
-                        neighbourWP(4) = nextSpeed;
-                        neighbourWP(6) = waypoints(currentNode,5) + costs + heuristicCosts;
-                        neighbourWP(7) = waypoints(currentNode,7) + distances(currentRoute) ;
-                        
-                    elseif  neighbourWP(1) == 1
-                        
-                        %% replace costs if smaller
-                        if  (waypoints(currentNode,5)+ costs < neighbourWP(5))
-                            
-                            neighbourWP(2) = currentNode;
-                            neighbourWP(5) = waypoints(currentNode,5) + costs;
-                            neighbourWP(3) = currentRoute;
-                            neighbourWP(4) = nextSpeed;
-                            neighbourWP(6) = waypoints(currentNode,5 )+ costs + heuristicCosts;
-                            neighbourWP(7) = waypoints(currentNode,7) + distances(currentRoute);
-                            
-                        end
-                    end
-                    waypoints(neighbourNode_Route(1),:) = neighbourWP;
-                end
-                
-                
-                %% loop exit conditions
-                if ismember(1,waypoints(:,1)) % Check if there is any node with state 1 (open and touched)
-                    minCosts = min(waypoints(waypoints(:,1) == 1,6)); % get waypoint with min costs
-                else
-                    break
-                end
-                
-                if waypoints(endingPoint,1) ~= 0 % check if waypoint state is 1 or 2
-                    if minCosts >  waypoints(endingPoint)
-                        break
-                    end
-                end
-                
-                %% get new waypoint to analyze -> next iteration in loop
-                currentNode =  find(waypoints(:,6) == minCosts& waypoints(:,1)==1);
-                currentNode = currentNode(1);
-                
-            end     
-            
-            % Compose the path by using the analyzed waypoints array
-            path = obj.composePath(waypoints, startingPoint, endingPoint);
-            
-            %% updateFuture Date of this vehicle
-            newFutureData = zeros((length(path)-1),5); %Matrix Preallocation
-            for i = 1: (length(path)-1)                
-                newFutureData(i,:) = [car.id waypoints(path(i+1),3) waypoints(path(i+1),4) waypoints(path(i),5)  waypoints(path(i+1),5)];
-            end
-            
-            if global_timesteps == 0 % save the future data at the beginning of the simulation for validation after simulation
-                car.decisionUnit.initialFutureData = newFutureData;
-            end
-            
-            
-        end
-        
-        function path = composePath(~,waypoints, startingPoint, endingPoint)
-            %% define path from waypoints array
-            predecessor = waypoints(endingPoint,2);
-            i = 2;
-            path = zeros(1,15); % Memory preallocation limit of 15 can be edited
-            path(1) = endingPoint;
-            try
-            while (predecessor ~= startingPoint)
-                path(i)= predecessor;
-                i = i + 1;
-                predecessor = waypoints(predecessor,2);
-                
-            end
-            catch
-            disp('Path not found error')    
-            end
-            path(path==0)=[]; %remove the extra cells created by memory allocation
-            path(i) = startingPoint;
-            path = fliplr(path);
-            
-        end
-
-
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
             OtherVehiclesFutureData = obj.getOnlyGridFutureData(OtherVehiclesFutureData); % TODO - remove later, just for testing
             FuturePlan = obj.gridAStar(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
