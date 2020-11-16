@@ -39,6 +39,8 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
         
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
             
+            OtherVehiclesFutureData = obj.getOnlyDigraphFutureData(OtherVehiclesFutureData); % TODO - remove later, just for testing
+            
             starting_point = obj.vehicle.pathInfo.lastWaypoint;
             ending_point = obj.vehicle.pathInfo.destinationPoint;
             
@@ -55,7 +57,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             %path = [nr of nodes from start to finish]
             %% Initialization
             if isempty(futureData)
-                futureData = [0 0 0 0 0]; % 1x5 to fit the output size
+                futureData = [0 0 0 0 0 -1]; % 1x6 to fit the output size
             end
             
             % Create a table for all the waypoints (nodes) where each row index is an identifier for a waypoint
@@ -213,9 +215,9 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             path = obj.composePath(waypoints, startingPoint, endingPoint);
             
             %% updateFuture Date of this vehicle
-            newFutureData = zeros((length(path)-1),5); %Matrix Preallocation
+            newFutureData = zeros((length(path)-1),6); %Matrix Preallocation
             for i = 1: (length(path)-1)
-                newFutureData(i,:) = [car.id waypoints(path(i+1),3) waypoints(path(i+1),4) waypoints(path(i),5)  waypoints(path(i+1),5)];
+                newFutureData(i,:) = [car.id waypoints(path(i+1),3) waypoints(path(i+1),4) waypoints(path(i),5)  waypoints(path(i+1),5) -1];
             end
             
             if global_timesteps == 0 % save the future data at the beginning of the simulation for validation after simulation

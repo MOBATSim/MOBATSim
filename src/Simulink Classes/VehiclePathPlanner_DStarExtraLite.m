@@ -856,8 +856,17 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
         end
                
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
+            OtherVehiclesFutureData = obj.getOnlyDigraphFutureData(OtherVehiclesFutureData); % TODO - remove later, just for testing
+            
+            
             FuturePlan = obj.dStarExtraLite(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+            
+            if size(FuturePlan,2) < 6 % Check if the "-2" tag has already been added
+                FuturePlan = [FuturePlan ones(size(FuturePlan,1),1)*-2]; % TODO: to make it nx6 for now
+            end
+            
         end
+        
     end
     
 end

@@ -2,7 +2,7 @@ function load_scenario(scenarioName)
 startingTimes = [0 0 0 0 0 0 0 0 0 0];
 switch scenarioName
     case 'Urban City Traffic'
-        %% Complex crossroad scenario
+        % Complex crossroad scenario
         startingPoints =    [8  46 61 18 54 52 64 6 15 63];
         destinationPoints = [26 59 60 1  3  27 42 25 76 46];
         maxSpeeds = [20 20 10 10 20 20 10 12 10 10];

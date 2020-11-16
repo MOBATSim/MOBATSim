@@ -83,8 +83,8 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     FuturePlan = obj.findPath(OtherVehiclesFutureData);
                     % Build the future plan by deriving the next routes and building the path
                     % Output 1: Future plan of the vehicle
-                    % --------------------------------FuturePlan Structure----nx5-----------------------------------
-                    % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
+                    % --------------------------------FuturePlan Structure----nx6-----------------------------------
+                    % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | -1 for Digraph
                 else
                     %% If the Vehicle is still on Route -> Vehicle's future plan stays the same
                     %Output 1: Future plan of the vehicle
@@ -183,6 +183,22 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
         end
         
+        function FuturePlan = getOnlyDigraphFutureData(~, OtherVehiclesFutureData)
+            if ~isempty(OtherVehiclesFutureData)
+                FuturePlan = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)<0,:); % Just take the negative indices to clear the grid
+            else
+                FuturePlan = OtherVehiclesFutureData;
+            end
+        end
+        
+        function FuturePlan = getOnlyGridFutureData(~, OtherVehiclesFutureData)
+            if ~isempty(OtherVehiclesFutureData)
+                FuturePlan = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)>=0,:);
+            else
+                FuturePlan = OtherVehiclesFutureData;
+            end
+        end
+        
         % Equation 5 & 8 in NecSys Paper
         function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
             delta_v = speedTo-currentSpeed;
@@ -250,7 +266,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         
         function [out,out2] = getOutputSizeImpl(~)
             % Return size for each output port
-            out = [50 5];
+            out = [4999 6]; % nx6 FutureData
             out2 = [1 1];
             
             % Example: inherit size from first input port
@@ -287,8 +303,8 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
     end
     
     methods (Abstract, Access = protected)
-        % --------------------------------FuturePlan Structure----nx5-----------------------------------
-        % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
+        % --------------------------------FuturePlan Structure----nx6-----------------------------------
+        % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | -1 for Digraph
         FuturePlan = findPath(obj,OtherVehiclesFutureData)
         
     end

@@ -45,7 +45,7 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
             obj.vehicle.pathInfo.destinationPoint);
            
             obj.vehicle.pathInfo.path = Path;
-            % FuturePlan Format of Shortest PathPlanner: nx5 -> [id RouteID 0 0 0] 
+            % FuturePlan Format of Shortest PathPlanner: nx6 -> [id RouteID 0 0 0 -1] 
             %We don't have the timing information so we set zeros to the last three columns
 
             RouteID = [];
@@ -55,7 +55,7 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
                 RouteID = [RouteID; obj.vehicle.map.getRouteIDfromPath([obj.vehicle.pathInfo.path(i)  obj.vehicle.pathInfo.path(i+1)])];
             end
             %The last three columns are to fit the data according to other PathPlanner FutureDatas
-            FuturePlan = [(ones(1,size(Path,2)-1).*obj.vehicle.id)' RouteID zeros(size(Path,2)-1,3)];
+            FuturePlan = [(ones(1,size(Path,2)-1).*obj.vehicle.id)' RouteID zeros(size(Path,2)-1,3) (ones(1,size(Path,2)-1)*-3)'];
             
         end
     end

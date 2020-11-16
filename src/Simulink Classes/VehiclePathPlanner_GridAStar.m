@@ -53,22 +53,19 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
         function newFutureData = gridAStar(obj, globalTime,futureData)
             %this function performs a A* search with the grid location
             %objects from obj.Map.gridLocationMap
-            %futureData = [carID, coordinates of GridLocation x, y, speed, time, deviation]
+            %futureData = [carID, Grid x value, Grid y value, speed, time, deviation]
             %globalTime is the current time of the simulation
             %newFutureData is the newly created FD from this vehicle
             
             %% prepare the search
             if isempty(futureData)
-                futureData = [0 0 0 0 0 0];  
+                futureData = [0 0 0 0 0 0];
             else
                 futureData = deleteCollidedFutureDataonGridForLoop(obj,futureData);
             end
             futureData = obj.detectBlockingCarsGridForLoop(futureData);
-            %update temp goal if necessary
+            %% Update temp goal if we reached our temporary goal
             if obj.tempGoalNode == obj.vehicle.pathInfo.lastWaypoint
-                %if we are at our temp goal
-                
-                %we need to update oour goal
                 obj.tempGoalNode = obj.vehicle.pathInfo.destinationPoint;
                 %we have to repush our goal to the open list to search if
                 %the path is still blocked
@@ -78,20 +75,19 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             openList = containers.Map();
             closedList = containers.Map();
             %add your location to the open list
-            currentWaypoint = obj.vehicle.pathInfo.lastWaypoint;
-            curPos = obj.Map.get_coordinates_from_waypoint(currentWaypoint);
-            curGridPos = obj.Map.bogMap.world2grid([curPos(1)-obj.Map.xOffset,-curPos(3)-obj.Map.yOffset]);
-            curKey = append( num2str(curGridPos(1)),",",num2str(curGridPos(2)) );
-            startKey = curKey;
-            curGL = obj.Map.gridLocationMap(curKey);
-            curGL.gValue = globalTime;
-            curGL.speedVector(carID) = obj.vehicle.dynamics.speed;
-            openList(curKey) = curGL;
+            currentPosition = obj.Map.get_coordinates_from_waypoint(obj.vehicle.pathInfo.lastWaypoint);
+            currentGridPosition = obj.Map.bogMap.world2grid([currentPosition(1)-obj.Map.xOffset,-currentPosition(3)-obj.Map.yOffset]);
+            currentKey = append( num2str(currentGridPosition(1)),",",num2str(currentGridPosition(2)) );
+            startKey = currentKey;
+            currentGrid = obj.Map.gridLocationMap(currentKey);
+            currentGrid.gValue = globalTime;
+            currentGrid.speedVector(carID) = obj.vehicle.dynamics.speed;
+            openList(currentKey) = currentGrid;
             
             %get key of goal node
-            curPos = obj.Map.waypoints(obj.tempGoalNode,:);
-            goalPos = obj.Map.bogMap.world2grid([curPos(1)-obj.Map.xOffset,-curPos(3)-obj.Map.yOffset]);
-            goalKey = append( num2str(goalPos(1)),",",num2str(goalPos(2)) );
+            currentPosition = obj.Map.get_coordinates_from_waypoint(obj.tempGoalNode);
+            goalPosition = obj.Map.bogMap.world2grid([currentPosition(1)-obj.Map.xOffset,-currentPosition(3)-obj.Map.yOffset]);
+            goalKey = append( num2str(goalPosition(1)),",",num2str(goalPosition(2)) );
             goalCoordinates = str2num(goalKey); %#ok<*ST2NM>
             
             %check acceleration
@@ -104,47 +100,47 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                 %as long as open list is not empty
                 %search for min f in open list
                 
-                olKeys = openList.keys;
-                curKey = olKeys{1};
-                curGL = openList(curKey); %preassign first entry
-                olKeys = olKeys(1,2:end);
-                for k = olKeys
-                    newGL = openList(k{1,1});
-                    if newGL.fValue < curGL.fValue
-                        curGL = newGL;
-                        curKey = k{1,1};
+                openListKeys = openList.keys;
+                currentKey = openListKeys{1};
+                currentGrid = openList(currentKey); %preassign first entry
+                openListKeys = openListKeys(1,2:end);
+                for k = openListKeys
+                    newGrid = openList(k{1,1});
+                    if newGrid.fValue < currentGrid.fValue
+                        currentGrid = newGrid;
+                        currentKey = k{1,1};
                     end
                 end
-                %now remove the GridLocation from the open list
-                openList.remove(curKey);
-                % calculate time over curGL
-                [nextSpeed,travelTime] = obj.checkACCOnGrid(curGL,curGL.speedVector(carID));
-                curGL = obj.correctTimeWithFD(carID,nextSpeed,obj.simSpeed,travelTime,curGL,futureData);
-                %now we can push the current grid location to the closed list
-                closedList(curKey) = curGL;  
+                %now remove the Grid from the open list
+                openList.remove(currentKey);
+                % calculate time over currentGrid
+                [nextSpeed,travelTime] = obj.checkACCOnGrid(currentGrid,currentGrid.speedVector(carID));
+                currentGrid = obj.correctTimeWithFD(carID,nextSpeed,obj.simSpeed,travelTime,currentGrid,futureData);
+                %now we can push the currentGrid  to the closed list
+                closedList(currentKey) = currentGrid;  
                 %% for every successor
-                [successors,lastNodeNR] = obj.getSuccessors(curGL,curGL.edgeStart);
+                [successors,lastNodeNR] = obj.getSuccessors(currentGrid,currentGrid.edgeStart);
                 %now check every successor
-                for succKey = successors    
+                for successorKey = successors    
                     %test for block or closed list
-                    if closedList.isKey(succKey) || obj.isSuccBlocked(succKey,futureData,curGL.gValue + travelTime)
+                    if closedList.isKey(successorKey) || obj.isSuccBlocked(successorKey,futureData,currentGrid.gValue + travelTime)
                         %if the successor is already in the closed list or
                         %blocked we can ignore it
                         continue;
                     end 
-                    succGL = obj.Map.gridLocationMap(succKey);
+                    successorGrid = obj.Map.gridLocationMap(successorKey);
                     %% regular search step
-                    %if we have yet to rech the goal, we continue the search
-                    succGL = obj.getGLCosts(carID,curGL.speedVector(carID),curGL.timeVector(carID),obj.simSpeed,obj.vehicle.dynamics.maxSpeed,curGL.gValue,curGL.totalDistance,curGL.distance,succGL,goalCoordinates);
+                    %if we have yet to reach the goal, we continue the search
+                    successorGrid = obj.getGLCosts(carID,currentGrid.speedVector(carID),currentGrid.timeVector(carID),obj.simSpeed,obj.vehicle.dynamics.maxSpeed,currentGrid.gValue,currentGrid.totalDistance,currentGrid.distance,successorGrid,goalCoordinates);
                     %% if we found the goal
-                    if strcmp(succKey , goalKey)
+                    if strcmp(successorKey , goalKey)
                         %we found the goal node
                         %set parent
-                        obj.parentMap(succKey) = curKey;
+                        obj.parentMap(successorKey) = currentKey;
                         %mark as blocked
-                        succGL.deviation = succGL.deviation * -1;
+                        successorGrid.deviation = successorGrid.deviation * -1;
                         %push it to closed list
-                        closedList(succKey) = succGL;
+                        closedList(successorKey) = successorGrid;
                         %build path
                         [newFutureData,newPath] = obj.gridBuildPath(closedList, goalKey, startKey);
                         obj.vehicle.pathInfo.path = newPath;
@@ -152,17 +148,17 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                         return;
                     end
                     %% test the rest                    
-                    if openList.isKey(succKey) && openList(succKey).fValue <= succGL.fValue
+                    if openList.isKey(successorKey) && openList(successorKey).fValue <= successorGrid.fValue
                         %if we already have a shorter way to go on succGL,
                         %we dont need to push
                         continue;
                     else
                         %set parent
-                        obj.parentMap(succKey) = curKey;
+                        obj.parentMap(successorKey) = currentKey;
                         %set start of edge
-                        succGL.edgeStart = lastNodeNR;
+                        successorGrid.edgeStart = lastNodeNR;
                         %add to open list
-                        openList(succKey) = succGL;
+                        openList(successorKey) = successorGrid;
                     end                    
                 end                              
             end
@@ -306,21 +302,20 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
         function futureData = deleteCollidedFutureDataonGridForLoop(obj,futureData)
             %deletes future data of vehicles that will not move because of collision
             %FD [carID, coordinates of GL x, y, speed, time, deviation]
-            otherCars = 1:10;
-            otherCars = otherCars(otherCars ~= obj.vehicle.id);
+            otherCars = unique(futureData(:,1))'; % OtherCars which have the same FutureData
             vehicles = obj.Map.Vehicles;
-            for car = otherCars
-                if vehicles(car).status.collided
+            for carID = otherCars
+                if vehicles(carID).status.collided
                     %remove every entry with the collided car from FD
-                    futureData = futureData(futureData(:,1)~=car,:);
+                    futureData = futureData(futureData(:,1)~=carID,:);
                     %% block the start node of the crash
-                    coords = obj.Map.waypoints(vehicles(car).pathInfo.lastWaypoint,:);
+                    coords = obj.Map.waypoints(vehicles(carID).pathInfo.lastWaypoint,:);
                     coords = obj.Map.bogMap.world2grid([coords(1)-obj.Map.xOffset,-coords(3)-obj.Map.yOffset]);                    
-                    futureData = [futureData;[car , coords , 0, 0, -1]];
+                    futureData = [futureData;[carID , coords , 0, 0, -1]];
                     %% block the future node of the crash
-                    coords = obj.Map.waypoints(vehicles(car).pathInfo.path(2),:);
+                    coords = obj.Map.waypoints(vehicles(carID).pathInfo.path(2),:);
                     coords = obj.Map.bogMap.world2grid([coords(1)-obj.Map.xOffset,-coords(3)-obj.Map.yOffset]);
-                    futureData = [futureData;[car , coords , 0, 0, -1]];
+                    futureData = [futureData;[carID , coords , 0, 0, -1]];
                 end                
             end
         end
@@ -611,12 +606,15 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
 
 
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
-            OtherVehiclesFutureData = []; % TODO - remove later, just for testing
+            OtherVehiclesFutureData = obj.getOnlyGridFutureData(OtherVehiclesFutureData); % TODO - remove later, just for testing
             FuturePlan = obj.gridAStar(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
-            % TODO - Convert the Grid back to Digraph for other vehicle future data
-            FuturePlan = zeros(1,5);
-            FuturePlan(1) = obj.vehicle.id;
+            
+            FuturePlan(1,6) = -FuturePlan(1,6);% TODO - find the source of the problem rather than this work around
+
         end
+        
+
+        
         
 
     end
