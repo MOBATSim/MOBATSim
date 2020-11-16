@@ -29,7 +29,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         accelerationPhase;
         simSpeed = evalin('base','simSpeed');
         modelName = evalin('base','modelName');
-        initialFutureData
         futureData
         breakingFlag
         inCrossroad % [crossroadId crossroadZone]
@@ -62,48 +61,36 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         end
         
         function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
-            %% Check if destination is already reached
-            if obj.vehicle.pathInfo.destinationReached           
+            %% Check if destination is reached
+            if obj.vehicle.checkifDestinationReached() % If true vehicle stops
                 FuturePlan = obj.vehicle.decisionUnit.futureData;   %Output 1: Future plan of the vehicle
                 waypointReached=1;                                  %Output 2: Waypoint Reached enabler
             else
-                %% Check if destination is reached now
-                obj.vehicle.checkifDestinationReached(); % If true vehicle should stop
-                
-                %% Check if the vehicle has completed its route but still did not reach its destination (Reached a waypoint)
-                if obj.vehicle.pathInfo.routeCompleted == 1 && obj.vehicle.pathInfo.destinationReached == 0
-                    % Time Stamps are logged when waypoints are reached
-                    obj.vehicle.dataLog.timeStamps = [obj.vehicle.dataLog.timeStamps;[obj.vehicle.pathInfo.lastWaypoint get_param(obj.modelName,'SimulationTime')]];
-                    
-                    % Vehicle continues to move so the Stop is set to false
-                    obj.vehicle.setStopStatus(false);
-                    
-                    if isempty(OtherVehiclesFutureData)
-                        OtherVehiclesFutureData = [0 0 0 0 0 0];
-                    end
+                %% Check if the vehicle has reached a waypoint / Then it should reupdate its plan
+                if obj.vehicle.pathInfo.routeCompleted == 1 
 
-                    %% This is an abstract that is implemented separately in each subclass
-                    FuturePlan = obj.findPath(OtherVehiclesFutureData);
+                    obj.vehicle.logWaypointArrivalTimeStamps(get_param(obj.modelName,'SimulationTime')); % Log Time Stamps
+
+                    obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false
+                    
+                    OtherVehiclesFutureData = obj.checkEmptyFutureData(OtherVehiclesFutureData); % Replace empty by zeros of nx6
+                    %% This is an abstract method that is implemented separately in each subclass
                     % Build the future plan by deriving the next routes and building the path
-                    % Output 1: Future plan of the vehicle
-                    % --------------------------------FuturePlan Structure----nx6-----------------------------------
-                    % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | -1 for Digraph
+                    FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
+                    waypointReached =1;                                 %Output 2: Waypoint Reached enabler
+                    
+                    %% ------------------------------ FuturePlan Structure ------------------------------ nx6 --------------- 
+                    % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | PlannerType
+                    % PlannerType: DigraphA*= -1, D*ExtraLite= -2, Shortest= -3, GridA*= non negative value
                 else
                     %% If the Vehicle is still on Route -> Vehicle's future plan stays the same
                     %Output 1: Future plan of the vehicle
-                    FuturePlan = obj.vehicle.decisionUnit.futureData;
+                    FuturePlan = obj.vehicle.decisionUnit.futureData; %Output 1: Future plan of the vehicle
+                    waypointReached =0;                               %Output 2: Waypoint Reached enabler
                 end
                 
                 %% Check if crossroad
                 obj.crossroadCheck(obj.vehicle);
-                
-                
-                %Output 2: Waypoint Reached enabler
-                if obj.vehicle.pathInfo.routeCompleted
-                    waypointReached =1;
-                else
-                    waypointReached =0;
-                end
             end
             %% Grid path generation
             if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0 % Plotting can decrease performance (update at every 0.2 seconds)     
@@ -145,6 +132,12 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             end
             
             
+        end
+        
+        function OtherVehiclesFutureData = checkEmptyFutureData(~,OtherVehiclesFutureData)
+            if isempty(OtherVehiclesFutureData)
+                OtherVehiclesFutureData = [0 0 0 0 0 0]; % Default nx6 Structure to avoid any size errors
+            end
         end
         
         function path = composePath(~,waypoints, startingPoint, endingPoint)

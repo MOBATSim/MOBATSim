@@ -249,7 +249,17 @@ classdef Vehicle < handle
                     % Close the V2V connection
                     car.V2VdataLink(car.V2VdataLink==1) =0;
                 end
+            else
+                if car.pathInfo.destinationReached
+                    reached = true;
+                else
+                    reached = false; %This case should never happen
+                end   
             end            
+        end
+        
+        function logWaypointArrivalTimeStamps(car,TimeStamp)
+            car.dataLog.timeStamps = [car.dataLog.timeStamps;[car.pathInfo.lastWaypoint TimeStamp]];
         end
         
         %% Estimator of the vehicle to calculate the ETA at the crossroad
