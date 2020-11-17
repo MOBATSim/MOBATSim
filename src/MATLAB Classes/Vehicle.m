@@ -350,12 +350,19 @@ classdef Vehicle < handle
             if bool % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
                 car.dynamics.speed = 0;               
             end
-            
+        end
+        
+        function logInitialFuturePlan(car,newFutureData,global_timesteps)
+            if global_timesteps == 0 % save the future data at the beginning of the simulation for validation after simulation
+                car.decisionUnit.initialFutureData = newFutureData;
+            end            
         end
         
         function setCurrentRoute(car, RouteID)
             car.pathInfo.currentRoute = RouteID;
         end
+        
+        
         
         function setPath(car, newPath)
             car.pathInfo.path = newPath;

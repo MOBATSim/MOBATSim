@@ -1,11 +1,5 @@
 classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
-    % Path Planner Plans paths.         
-    %
-    % NOTE: When renaming the class name Untitled, the file name
-    % and constructor name must be updated to use the class name.
-    %
-    % This template includes most, but not all, possible properties, attributes,
-    % and methods that you can implement for a System object in Simulink.
+    % Path Planner - D*ExtraLite: Plans paths.         
     
     % Pre-computed constants
     properties(Access = private)
@@ -32,7 +26,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
         seeds;                  % seeds are nodes to reopen later in search()
         slast;                  % node to calculate new km
         haveCostsChanged = false;   % is there different future data than before
-        oldFutureData =[0 0 0 0 0]; % to compare with new to get difference
+        oldFutureData = zeros(1,6); % nx6 to compare with new to get difference
         changedEdges = [];      % edges with new future data entries
         
         %end of D Star Extra Light variables
@@ -48,9 +42,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
     end
     
     methods(Access = protected)
-        
-        
-        %% Common functions
+   
         function setupImpl(obj)
             setupImpl@VehiclePathPlanner(obj); % Inherit the setupImpl function of the Superclass @VehiclePathPlanner
             %initialize whole map
@@ -112,11 +104,10 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 obj.setTempGoaltoDestination();
             end
                        
-            %%vectorized, but slower for now
-            futureData = deleteCollidedVehicleFutureData(obj,futureData);
+            futureData = deleteCollidedVehicleFutureData(obj,futureData); % Delete collided Vehicles' Future Data
             
             %in the first round all vehicles have stop status, so only do it later
-            obj.detectBlockingCarsForLoop(globalTime);
+            obj.detectBlockingCarsForLoop(globalTime); % Detect Blocking Cars
             
             whichEdgecostsChangedForLoop(obj,futureData);%TODO vectorize
             
@@ -148,10 +139,10 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                     newFutureData = calculateNewPath(obj,globalTime);
                                         
                 end
-                                
-                if globalTime == 0 % save the future data at the beginning of the simulation for validation after simulation
-                    obj.vehicle.decisionUnit.initialFutureData = newFutureData;
-                end
+                
+                
+                obj.vehicle.logInitialFuturePlan(newFutureData,globalTime);
+
             else
                 %if we dont have to calculate we need to adjust path and new FD
                 
@@ -241,21 +232,21 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 %sstart = actionSelectionForLoop(obj,sstart);
                 
                 %get edge between old and new               
-                curEdge = getEdge(obj,oldstart,sstart);
+                currentEdge = getEdge(obj,oldstart,sstart);
                 
                 %calculate times
-                obj.edgesEntry(curEdge) = time;                
-                [nextSpeed,timeToReach] = checkForAccelerationInPathbuilding(obj,curEdge,oldstart, currentSpeed);
-                obj.edgesSpeed(curEdge) = nextSpeed;
+                obj.edgesEntry(currentEdge) = time;                
+                [nextSpeed,timeToReach] = checkForAccelerationInPathbuilding(obj,currentEdge,oldstart, currentSpeed);
+                obj.edgesSpeed(currentEdge) = nextSpeed;
                 currentSpeed = nextSpeed;
                 time1 = time;
                 time = time + timeToReach;
-                obj.edgesExit(curEdge) = time;
+                obj.edgesExit(currentEdge) = time;
                 
                 %distance = old + new
-                obj.nodesGlobalDistance(sstart) = obj.nodesGlobalDistance(oldstart)+ obj.Map.connections.distances(curEdge);
+                obj.nodesGlobalDistance(sstart) = obj.nodesGlobalDistance(oldstart)+ obj.Map.connections.distances(currentEdge);
                 %create FD entry
-                newFutureData(i,:) =  [id curEdge nextSpeed time1 time];
+                newFutureData(i,:) =  [id currentEdge nextSpeed time1 time];
                 i = i + 1;
             end
             newpath(i) = sstart; %sgoal
@@ -679,10 +670,8 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 end                  
             end
             
-            
-            if isempty(futureData)%workaround for first turn
-                futureData = [0 0 0 0 0];
-            end
+            futureData= obj.checkEmptyFutureData(futureData);
+
         end
         
         function whichEdgecostsChangedForLoop(obj,futureData)

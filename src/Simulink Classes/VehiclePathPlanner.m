@@ -1,25 +1,10 @@
 classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
     % This Path Planner Block uses A* algorithm to find routes to reach the destination node according to the shared data from the other vehicles.
-    %
-    % NOTE: When renaming the class name Untitled, the file name
-    % and constructor name must be updated to use the class name.
-    %
-    % This template includes most, but not all, possible properties, attributes,
-    % and methods that you can implement for a System object in Simulink.
-    
+
     % Public, tunable properties
     properties
         Vehicle_id
-    end
-    
-    % Public, non-tunable properties
-    properties(Nontunable)
-        
-    end
-    
-    properties(DiscreteState)
-        
     end
     
     % Pre-computed constants
@@ -139,7 +124,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 OtherVehiclesFutureData = [0 0 0 0 0 0]; % Default nx6 Structure to avoid any size errors
             end
         end
-        
+          
         function path = composePath(~,waypoints, startingPoint, endingPoint)
             %% define path from waypoints array
             predecessor = waypoints(endingPoint,2);
