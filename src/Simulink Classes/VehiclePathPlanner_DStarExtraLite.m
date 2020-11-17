@@ -1,5 +1,9 @@
 classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
-    % Path Planner - D*ExtraLite: Plans paths.         
+    % Path Planner - D*ExtraLite: Plans paths.    
+    
+    %% Check https://doi.org/10.1515/amcs-2017-0020 for more details
+    % Algorithm from  D* Extra Lite: A Dynamic A* With Search–Tree Cutting and Frontier–Gap Repairing by Maciej Przybylski
+    %
     
     % Pre-computed constants
     properties(Access = private)
@@ -90,9 +94,6 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
            
         %% D* Extra Light
         function newFutureData = dStarExtraLite(obj, globalTime,futureData)
-            %% Check https://doi.org/10.1515/amcs-2017-0020 for more details
-            % Algorithm from  D* Extra Lite: A Dynamic A* With Search–Tree Cutting and Frontier–Gap Repairing by Maciej Przybylski
-            %
             %newFutureData: [carID edgeNr speed enterTime exitTime]
             %obj: this
             %car: the car that uses this method to get new instructions            
@@ -103,9 +104,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             if obj.checkTempGoalReached()
                 obj.setTempGoaltoDestination();
             end
-                       
-            futureData = deleteCollidedVehicleFutureData(obj,futureData); % Delete collided Vehicles' Future Data
-            
+
             %in the first round all vehicles have stop status, so only do it later
             obj.detectBlockingCarsForLoop(globalTime); % Detect Blocking Cars
             
@@ -129,7 +128,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                     if isempty(newFutureData)
                         %we cant reach any node from now
                         disp(['No possible path was found for Vehicle ' num2str(obj.vehicle.id)])
-                        stopVehicle(obj); % TODO: This should be removed and vehicle path should not be pruned!!!
+                        stopVehicle(obj.vehicle); % TODO: This should be removed and vehicle path should not be pruned!!!
                         return;
                     end
                 else                   
@@ -154,8 +153,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
 
         
         %% vehicle commands
-        function stopVehicle(obj)
-            car = obj.vehicle;            
+        function stopVehicle(car)    
             %code from vehicle.checkifDestinationReached
             car.setPath([]);
             car.pathInfo.destinationReached = true;
@@ -725,7 +723,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 if ( ~searchForGoalNode(obj)) %Search for optimal path and alter lists accordingly
                     disp('Path not found error ')
                     disp(obj.vehicle.id)
-                    stopVehicle(obj);
+                    stopVehicle(obj.vehicle);
                     newFutureData = [];
                     return;
                 else
@@ -830,9 +828,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 initializeGoal(obj,obj.tempGoalNode); 
         end
                
-        function FuturePlan = findPath(obj,OtherVehiclesFutureData)
-            OtherVehiclesFutureData = obj.getOnlyDigraphFutureData(OtherVehiclesFutureData); % TODO - remove later, just for testing
-            
+        function FuturePlan = findPath(obj,OtherVehiclesFutureData)            
             
             FuturePlan = obj.dStarExtraLite(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
             

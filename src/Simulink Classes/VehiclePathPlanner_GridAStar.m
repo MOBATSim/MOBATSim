@@ -38,11 +38,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             %newFutureData is the newly created FD from this vehicle
             
             %% prepare the search
-            if isempty(futureData)
-                futureData = [0 0 0 0 0 0];
-            else
-                futureData = deleteCollidedVehicleFutureData(obj,futureData);
-            end
             futureData = obj.detectBlockingCarsGridForLoop(futureData);
             %% Update temp goal if we reached our temporary goal
             if obj.tempGoalNode == obj.vehicle.pathInfo.lastWaypoint
@@ -393,7 +388,6 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
         end
         
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
-            OtherVehiclesFutureData = obj.getOnlyGridFutureData(OtherVehiclesFutureData); % TODO - remove later, just for testing
             FuturePlan = obj.gridAStar(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
             
             FuturePlan(1,6) = -FuturePlan(1,6);% TODO - find the source of the problem rather than this work around

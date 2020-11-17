@@ -57,8 +57,11 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     obj.vehicle.logWaypointArrivalTimeStamps(get_param(obj.modelName,'SimulationTime')); % Log Time Stamps
 
                     obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false
-                    
+                    %% OtherVehiclesFutureData Processing
                     OtherVehiclesFutureData = obj.checkEmptyFutureData(OtherVehiclesFutureData); % Replace empty by zeros of nx6
+                    OtherVehiclesFutureData = obj.getSameTypeOfOtherVehicleFutureData(OtherVehiclesFutureData); % Discard incompatible Future Data
+                    OtherVehiclesFutureData = obj.deleteCollidedVehicleFutureData(OtherVehiclesFutureData); % Delete collided Vehicles' Future Data
+                    
                     %% This is an abstract method that is implemented separately in each subclass
                     % Build the future plan by deriving the next routes and building the path
                     FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
@@ -124,7 +127,18 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 OtherVehiclesFutureData = [0 0 0 0 0 0]; % Default nx6 Structure to avoid any size errors
             end
         end
-          
+                    
+        function OtherVehiclesFutureData = getSameTypeOfOtherVehicleFutureData(obj,OtherVehiclesFutureData)
+            if ~isempty(OtherVehiclesFutureData)
+                switch class(obj)
+                    case 'VehiclePathPlanner_GridAStar'
+                        OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)<0,:); % Just take the negative indices to clear the grid
+                    otherwise
+                        OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)>=0,:);
+                end
+            end
+        end
+                
         function path = composePath(~,waypoints, startingPoint, endingPoint)
             %% define path from waypoints array
             predecessor = waypoints(endingPoint,2);
@@ -163,23 +177,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             accelerationPhaseData = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
             
         end
-        
-        function FuturePlan = getOnlyDigraphFutureData(~, OtherVehiclesFutureData)
-            if ~isempty(OtherVehiclesFutureData)
-                FuturePlan = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)<0,:); % Just take the negative indices to clear the grid
-            else
-                FuturePlan = OtherVehiclesFutureData;
-            end
-        end
-        
-        function FuturePlan = getOnlyGridFutureData(~, OtherVehiclesFutureData)
-            if ~isempty(OtherVehiclesFutureData)
-                FuturePlan = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)>=0,:);
-            else
-                FuturePlan = OtherVehiclesFutureData;
-            end
-        end
-        
+
         % Equation 5 & 8 in NecSys Paper
         function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
             delta_v = speedTo-currentSpeed;

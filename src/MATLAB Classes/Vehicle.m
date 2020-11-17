@@ -159,28 +159,27 @@ classdef Vehicle < handle
                     Box2 = getHitbox(Vehicles(i));
                     hasCollided = checkIntersection(car,Box1,Box2);  
                     if hasCollided == true
-                        % Collision occurs
-                        car.status.emergencyCase = 3;
-                        car.status.collided = 1;
-                        car.setStopStatus(true);
-                        car.dynamics.speed = 0;
-                        
-                        Vehicles(i).status.emergencyCase =3;
-                        Vehicles(i).status.collided =1;
-                        Vehicles(i).setStopStatus(true);
-                        Vehicles(i).dynamics.speed = 0;
+                        % Collision occurs                      
+                        car.vehiclesCollide(Vehicles(i));
                     end
-                    
-                    
                 end
-                
-                
-                % here we need to use car.main.translation values, not the information of the Decision Unit. In a
-                % fault-free simulation both data would be the same.
-                
-                % if collision happens, car.status.emergencyCase is set to "3"
+
             end
             
+            
+        end
+        
+        function vehiclesCollide(car1,car2)
+            % if collision happens, car.status.emergencyCase is set to "3"
+            car1.status.emergencyCase = 3;
+            car1.status.collided = 1;
+            car1.setStopStatus(true);
+            car1.dynamics.speed = 0;
+            
+            car2.status.emergencyCase =3;
+            car2.status.collided =1;
+            car2.setStopStatus(true);
+            car2.dynamics.speed = 0;
             
         end
         
@@ -361,9 +360,7 @@ classdef Vehicle < handle
         function setCurrentRoute(car, RouteID)
             car.pathInfo.currentRoute = RouteID;
         end
-        
-        
-        
+            
         function setPath(car, newPath)
             car.pathInfo.path = newPath;
         end
