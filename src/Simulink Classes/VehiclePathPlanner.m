@@ -127,14 +127,14 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 OtherVehiclesFutureData = [0 0 0 0 0 0]; % Default nx6 Structure to avoid any size errors
             end
         end
-                    
+        
         function OtherVehiclesFutureData = getSameTypeOfOtherVehicleFutureData(obj,OtherVehiclesFutureData)
             if ~isempty(OtherVehiclesFutureData)
                 switch class(obj)
                     case 'VehiclePathPlanner_GridAStar'
+                        OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)>=0,:);% Just take the grid
+                    otherwise                     
                         OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)<0,:); % Just take the negative indices to clear the grid
-                    otherwise
-                        OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)>=0,:);
                 end
             end
         end
