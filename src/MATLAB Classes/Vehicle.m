@@ -370,6 +370,10 @@ classdef Vehicle < handle
             car.sensors.frontDistance = ObjectinFront;
         end
         
+        function setEmergencyCase(car, EmergencyCase)
+            car.status.emergencyCase = EmergencyCase;         
+        end
+        
         function bool = setDestinationReached(car,bool)
             car.pathInfo.destinationReached = bool;
             car.pathInfo.routeCompleted = bool;

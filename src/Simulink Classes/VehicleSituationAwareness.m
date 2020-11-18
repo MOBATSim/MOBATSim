@@ -2,24 +2,10 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
         & matlab.system.mixin.CustomIcon
     % The Situation awareness component processes the perceived data in order to assess the emergency case of the vehicle and its relative situation according to the other vehicles around.
     %
-    % NOTE: When renaming the class name Untitled, the file name
-    % and constructor name must be updated to use the class name.
-    %
-    % This template includes most, but not all, possible properties, attributes,
-    % and methods that you can implement for a System object in Simulink.
     
     % Public, tunable properties
     properties
         Vehicle_id
-    end
-    
-    % Public, non-tunable properties
-    properties(Nontunable)
-        
-    end
-    
-    properties(DiscreteState)
-        
     end
     
     % Pre-computed constants
@@ -36,21 +22,10 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
     end
     
     methods(Access = protected)
-        %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
         end
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         function [leaderDistance,emergencyCase] = stepImpl(obj, FrontSensorData)
             %This block shouldn't run if the vehicle has reached its
@@ -63,56 +38,35 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
                 leaderDistance = FrontSensorData;
                 
                 % Output 2: Emergency case signal
-                try
-                    emergencyCase=obj.determineEmergencyCase(obj.vehicle,FrontSensorData);
-                catch
-                    emergencyCase=obj.determineEmergencyCase(obj.vehicle,FrontSensorData);
-                end
+                emergencyCase=obj.determineEmergencyCase(obj.vehicle,FrontSensorData);
+                obj.vehicle.setEmergencyCase(emergencyCase);
             end
         end
         
-        
-        
-        
-        
-        
-        
-        
         function emergencyCase = determineEmergencyCase(~, car, frontDistance)
             if car.status.emergencyCase == 3
-                %If collision happens Emergency Case stays as 3
-                car.status.emergencyCase = 3;
+                %If vehicle has collided -> Emergency Case stays as 3
                 emergencyCase=3;
                 
             elseif frontDistance > car.sensors.frontSensorRange
-                
                 % Level 0 = Safe
-                car.status.emergencyCase = 0;
                 emergencyCase =0;
                 
             elseif frontDistance >80
-                
-                % Level 1 = Car far in front
-                car.status.emergencyCase = 1;
+                % Level 1 = Vehicle far ahead
                 emergencyCase=1;
                 
             elseif frontDistance > car.sensors.AEBdistance
-                
-                % Level 2 = Car close infront
-                car.status.emergencyCase = 1;
+                % Level 2 = Vehicle close infront
                 emergencyCase=1;
                 
-            elseif frontDistance >0
-                
-                % Level 2 = emergency brake
-                car.status.emergencyCase = 2;
+            elseif frontDistance >0     
+                % Level 2 = Emergency Brake
                 emergencyCase=2;
                 
             elseif frontDistance <0
-                % Level BUG
-                car.status.emergencyCase = 2;
+                % TODO: Check if this happens Level BUG
                 emergencyCase=2;
-                
             end
         end
         
@@ -144,9 +98,8 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
         
         
     end
-    
     methods(Static, Access = protected)
-        %% Simulink customization functions
+        
         function header = getHeaderImpl
             % Define header panel for System block dialog
             header = matlab.system.display.Header(mfilename('class'));
@@ -204,7 +157,6 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
         end
-        
         
         function resetImpl(~)
             % Initialize / reset discrete-state properties

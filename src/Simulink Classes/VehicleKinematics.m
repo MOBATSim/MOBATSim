@@ -1,16 +1,10 @@
 classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propagates & matlab.system.mixin.SampleTime & matlab.system.mixin.CustomIcon
     % This blocks converts the speed of the vehicle to relevant position and rotation angles to generate the pose value.
     %
-    % This template includes the minimum set of functions required
-    % to define a System object with discrete state.
-    
+ 
     % Public, tunable properties
     properties
         Vehicle_id
-    end
-    
-    properties(DiscreteState)
-        
     end
     
     % Pre-computed constants
@@ -22,54 +16,37 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
     end
     
     methods(Access = protected)
-        
-        %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
         end
-
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("Vehicle.png");
-        end
         
-        
-        %% Loop function
         function [position, rotation] = stepImpl(obj,speed)
-            %This block shouldn't run if the vehicle has reached its
-            %destination
-            if obj.vehicle.status.collided
-                %Output 1: Position of the vehicle
-                position= obj.vehicle.dynamics.position;
-                %Output 2: Rotation angle of the vehicle
-                rotation= obj.vehicle.dynamics.orientation;
+            %This block shouldn't run if the vehicle has reached its destination or collided
+            if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
+                
+                position= obj.vehicle.dynamics.position; %Output 1: Position of the vehicle
+                rotation= obj.vehicle.dynamics.orientation; %Output 2: Rotation angle of the vehicle
                 return;
-            end
-            
-            if ~obj.vehicle.pathInfo.destinationReached || obj.vehicle.status.collided
+                
+            elseif ~obj.vehicle.pathInfo.destinationReached
+                
                 obj.vehicle.dynamics.speed = speed;
                 if obj.vehicle.pathInfo.routeCompleted && obj.vehicle.status.stop ==0
                     obj.vehicle.setCurrentRoute(obj.setCurrentRoute(obj.vehicle)); % Try obj.setCurrentRoute(obj.vehicle)
                     obj.vehicle.pathInfo.currentTrajectory = obj.generateTrajectory(obj.vehicle);
                 end
                 % TODO Check the kinematic equations
-                speedAccordingtoSimulation = speed*0.01*obj.simSpeed; 
+                speedAccordingtoSimulation = speed*0.01*obj.simSpeed;
                 %0.01 is the sample time but it needs to be automatically detected without a big overhead
                 %obj.getSampleTime.SampleTime creates a huge overhead
                 obj.nextMove(obj.vehicle,speedAccordingtoSimulation);
+                
+                position= obj.vehicle.dynamics.position; %Output 1: Position of the vehicle
+                rotation= obj.vehicle.dynamics.orientation; %Output 2: Rotation angle of the vehicle
             end
             
-            %Output 1: Position of the vehicle
-            position= obj.vehicle.dynamics.position;
-            %Output 2: Rotation angle of the vehicle
-            rotation= obj.vehicle.dynamics.orientation;
         end
-        
-        
-        
-        
-        
         
         
         %% Helper functions
@@ -357,6 +334,11 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
     
     %% Standard Simulink Output functions
     methods(Static,Access = protected)
+        
+        function icon = getIconImpl(~)
+            % Define icon for System block
+            icon = matlab.system.display.Icon("Vehicle.png");
+        end
         function resetImpl(~)
             % Initialize / reset discrete-state properties
         end

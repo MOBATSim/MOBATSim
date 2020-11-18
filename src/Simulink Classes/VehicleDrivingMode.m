@@ -2,24 +2,10 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
     % Behavioral Planner - Vehicle determines its driving mode.
     %
-    % NOTE: When renaming the class name Untitled2, the file name
-    % and constructor name must be updated to use the class name.
-    %
-    % This template includes most, but not all, possible properties, attributes,
-    % and methods that you can implement for a System object in Simulink.
-    
+
     % Public, tunable properties
     properties
         Vehicle_id
-    end
-    
-    % Public, non-tunable properties
-    properties(Nontunable)
-        
-    end
-    
-    properties(DiscreteState)
-        
     end
     
     % Pre-computed constants
@@ -36,21 +22,13 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
     end
     
     methods(Access = protected)
-        %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
         end
-        
-        
-        
-        
-        
-        
-        
+               
         function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
-            %This block shouldn't run if the vehicle has reached its
-            %destination
+            %This block shouldn't run if the vehicle has reached its destination
             if obj.vehicle.pathInfo.destinationReached
                 SpeedReference=0;
                 DistanceReference =-1;
@@ -102,8 +80,6 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
         end
         
         %% Standard Simulink Output functions
-        
-        
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj
             
@@ -127,18 +103,9 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             
             % Set public properties and states
             loadObjectImpl@matlab.System(obj,s,wasLocked);
-        end
-        
-        
-        
-        
-        
-        
-        
-    end
-    
+        end 
+    end   
     methods(Static, Access = protected)
-        %% Simulink customization functions
         function header = getHeaderImpl
             % Define header panel for System block dialog
             header = matlab.system.display.Header(mfilename('class'));
@@ -152,6 +119,7 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
         function resetImpl(~)
             % Initialize / reset discrete-state properties
         end
+        
         function ds = getDiscreteStateImpl(~)
             % Return structure of properties with DiscreteState attribute
             ds = struct([]);
