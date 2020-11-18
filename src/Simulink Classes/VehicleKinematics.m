@@ -79,8 +79,11 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             if idx+1<=length(car.pathInfo.path)
                 currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);              
             elseif ~(car.pathInfo.path==car.pathInfo.destinationPoint) % TODO in D* (don't delete or overwrite the original path)
-                car.setPath([car.pathInfo.path car.pathInfo.destinationPoint]);
-                currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+                % TODO: remove this workaround later
+                car.setPath(car.map.get_shortest_path(car.pathInfo.lastWaypoint,car.pathInfo.destinationPoint));                
+                currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(1) car.pathInfo.path(2)]);
+            else
+                disp('Current Route error');
             end
         end
         

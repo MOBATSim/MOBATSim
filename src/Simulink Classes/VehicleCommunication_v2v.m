@@ -2,24 +2,10 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
         & matlab.system.mixin.CustomIcon
     % This module gets the futureData(other vehicles' predictions) which has a V2V connection with this vehicle.
     %
-    % NOTE: When renaming the class name Untitled, the file name
-    % and constructor name must be updated to use the class name.
-    %
-    % This template includes most, but not all, possible properties, attributes,
-    % and methods that you can implement for a System object in Simulink.
 
     % Public, tunable properties
     properties
         Vehicle_id
-    end
-
-    % Public, non-tunable properties
-    properties(Nontunable)
-
-    end
-
-    properties(DiscreteState)
-
     end
 
     % Pre-computed constants
@@ -44,18 +30,6 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
             obj.Vehicles = evalin('base','Vehicles');
         end
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         function [OtherVehiclesFutureData,LeaderSpeed] = stepImpl(obj,CommunicationID)
             %This block shouldn't run if the vehicle has reached its
             %destination
@@ -74,19 +48,9 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
             end
         end
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         function futureData = CollectFutureData(~,car, Vehicles)
             i = 1:length(Vehicles);
+            
             i = i(car.V2VdataLink==1); % Remove the vehicles that don't have V2V connection to the car
             i(car.id)=[]; % Remove the car with the same id
 
@@ -96,14 +60,14 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
         
         function LeaderSpeed = getLeaderSpeedifExists(~, Vehicles,CommunicationID)
             
-            if CommunicationID~=0
+            if CommunicationID>0
                 LeaderSpeed = Vehicles(CommunicationID).dynamics.speed;
             else
                 LeaderSpeed = 0;
             end
         end
         
-%% Standard Simulink Output functions
+    %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj
 
@@ -129,13 +93,9 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
             loadObjectImpl@matlab.System(obj,s,wasLocked);
         end
 
-
-
-
     end
 
     methods(Static, Access = protected)
-        %% Simulink customization functions
         function header = getHeaderImpl
             % Define header panel for System block dialog
             header = matlab.system.display.Header(mfilename('class'));

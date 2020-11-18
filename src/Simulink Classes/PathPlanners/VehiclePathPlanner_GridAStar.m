@@ -145,7 +145,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                 return;
             else
                 %we cant reach any node from now
-                disp(["No possible path was found from vehicle " num2str(carID)])
+                disp(strcat("No possible path was found for Vehicle ",num2str(carID)))
                 obj.stopVehicle();
                 newFutureData = [];
                 return;
@@ -390,7 +390,8 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
             FuturePlan = obj.gridAStar(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
             
-            FuturePlan(1,6) = -FuturePlan(1,6);% TODO - find the source of the problem rather than this work around
+            FuturePlan = obj.checkEmptyFutureData(FuturePlan); % TODO: A rare bug occurs when GridA* vehicle arrives last
+            FuturePlan(1,6) = -FuturePlan(1,6);% TODO: find the source of the problem rather than this work around
 
         end
         

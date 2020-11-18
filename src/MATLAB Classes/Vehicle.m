@@ -365,6 +365,11 @@ classdef Vehicle < handle
             car.pathInfo.path = newPath;
         end
         
+        function setVehicleFrontSensor(car,V2VcommIDs, ObjectinFront)
+            car.sensors.vehicleInFrontId = V2VcommIDs; 
+            car.sensors.frontDistance = ObjectinFront;
+        end
+        
         function bool = setDestinationReached(car,bool)
             car.pathInfo.destinationReached = bool;
             car.pathInfo.routeCompleted = bool;
