@@ -382,9 +382,14 @@ classdef Vehicle < handle
             car.dynamics.speed = speed;
         end
         
+        function bool = setRouteCompleted(car,bool)
+            car.pathInfo.routeCompleted = bool;
+        end
+        
         function bool = setDestinationReached(car,bool)
             car.pathInfo.destinationReached = bool;
-            car.pathInfo.routeCompleted = bool;
+            car.setRouteCompleted(bool);
+            
             if bool
                 car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
             else

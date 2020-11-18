@@ -30,15 +30,16 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
                 return;
                 
             elseif ~obj.vehicle.pathInfo.destinationReached
+                % The Vehicle hasn't reached its destination yet
+                obj.vehicle.updateActualSpeed(speed); % Vehicle - Set Functions
                 
-                obj.vehicle.updateActualSpeed(speed);
-                
-                if obj.vehicle.pathInfo.routeCompleted && obj.vehicle.status.stop ==0
-                    obj.vehicle.setCurrentRoute(obj.generateCurrentRoute(obj.vehicle));
-                    
+                if obj.vehicle.pathInfo.routeCompleted && obj.vehicle.status.stop ==false
+                    % The Vehicle has completed its Route
+                    nextRoute = obj.generateCurrentRoute(obj.vehicle,obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);                 
                     currentTrajectory = obj.generateTrajectoryFromPath(obj.vehicle,obj.vehicle.pathInfo.path);
                     
-                    obj.vehicle.setCurrentTrajectory(currentTrajectory)
+                    obj.vehicle.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
+                    obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
                 end
                 % TODO Check the kinematic equations
                 speedAccordingtoSimulation = speed*0.01*obj.simSpeed;
@@ -52,19 +53,18 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             
         end
         
-        function currentRoute = generateCurrentRoute(~,car)
+        function currentRoute = generateCurrentRoute(~,car, path, lastWaypoint)
             %% TODO - check if it works in all situations
-            idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
-            if idx+1<=length(car.pathInfo.path)
-                currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+            idx = find(path==lastWaypoint);
+            if idx+1<=length(path)
+                currentRoute = car.map.getRouteIDfromPath([path(idx) path(idx+1)]);
             else
                 disp('Current Route error');
             end
         end
         
         function currentTrajectory = generateTrajectoryFromPath(~,car,path)
-            
-            % format of route for vehicle dynamics (translation)
+            % Format of route for vehicle dynamics (translation)
             if (isempty(find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)), 1 )) == false)
                 index = find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)) );
                 currentTrajectory = [car.map.waypoints(car.map.connections.translation(index,1),:);
@@ -72,7 +72,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
                     zeros(1,3);
                     zeros(1,3)];
             end
-            % format of route for vehicle dynamics (curves)
+            % Format of route for vehicle dynamics (curves)
             if (isempty(find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)), 1 )) == false)
                 index = find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)) );
                 currentTrajectory = [car.map.waypoints(car.map.connections.circle(index,1),:);
@@ -82,23 +82,20 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             end
         end
         
-        function takeRoute(obj,car,speed,refRoute)
-            if car.status.stop ==1
-                return;
-            end
-            
+        function takeRoute(obj,car,speed,refRoute)         
             %P_init = refRoute(1,:);
             P_final = refRoute(2,:);
             
             RotationVector = refRoute(3,:);
-            rotation_angle = RotationVector(1);
-            rotation_point = [RotationVector(2) 0 RotationVector(3)];
-            
-            
+
             if RotationVector(1) == 0 %Straight motion
                 obj.moveto(car,speed,refRoute(2,:));
                 
             else %Rotational motion
+                
+                rotation_angle = RotationVector(1);
+                rotation_point = [RotationVector(2) 0 RotationVector(3)];
+                
                 
                 %Determine rotation direction: left or right
                 if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
@@ -112,41 +109,9 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
         end
         
         function nextMove(obj, car, speed)
-            % Examining 3 different states of the car
-            % car.status.stop
-            % car.pathInfo.destinationReached
-            % car.pathInfo.routeCompleted
-            if car.status.stop == true
-                if car.pathInfo.destinationReached == true
-                    %Car has finished its movement and stays still
-                    car.pathInfo.routeCompleted = true;
-                    car.updateActualSpeed(0);
-                    return;
-                end
-                
-            elseif car.status.stop == false
-                if car.pathInfo.destinationReached == true
-                    % Car has just arrived so it has to stop
-                    car.pathInfo.routeCompleted = true;
-                    car.setStopStatus(true);
-                    return;
-                    
-                elseif car.pathInfo.destinationReached == false
-                    if car.pathInfo.routeCompleted == true
-                        % Car has finished its current route
-                        % check if car reached the destination
-                        car.checkifDestinationReached();
-                        if car.pathInfo.destinationReached == true
-                            return;
-                        else
-                            % Car has to start the next route
-                            obj.takeRoute(car,speed,car.pathInfo.currentTrajectory);
-                        end
-                    elseif car.pathInfo.routeCompleted == false
-                        % Car has to keep on going on its current route
-                        obj.takeRoute(car,speed,car.pathInfo.currentTrajectory);
-                    end
-                end
+
+            if car.status.stop == false
+            obj.takeRoute(car,speed,car.pathInfo.currentTrajectory);             
             end
             
         end
