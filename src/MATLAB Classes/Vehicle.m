@@ -347,7 +347,7 @@ classdef Vehicle < handle
         function setStopStatus(car, bool)
             car.status.stop = bool;
             if bool % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
-                car.dynamics.speed = 0;               
+                car.updateActualSpeed(0);               
             end
         end
         
@@ -372,6 +372,14 @@ classdef Vehicle < handle
         
         function setEmergencyCase(car, EmergencyCase)
             car.status.emergencyCase = EmergencyCase;         
+        end
+        
+        function setCurrentTrajectory(car, currentTrajectory)
+            car.pathInfo.currentTrajectory = currentTrajectory;
+        end
+        
+        function updateActualSpeed(car,speed)
+            car.dynamics.speed = speed;
         end
         
         function bool = setDestinationReached(car,bool)

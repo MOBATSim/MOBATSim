@@ -1,6 +1,5 @@
 classdef GridMap < Map
-    %A MOBATSim map object with a XML-graph and a binary occupancy grid object
-    %   Detailed explanation goes here
+    % Grid-based Map object inherited from Map Class
     
     properties
         bogMap;                        % Binary occupancy grid object
@@ -153,11 +152,11 @@ classdef GridMap < Map
             
             hold on
             for vehicle = obj.Vehicles % Changing sizes of BOGPath makes it hard to vectorize
-                try
-                    obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',obj.colourMatrix(vehicle.id,:),'LineWidth',2);
-                catch ME
-                    disp('Problem creating trajectories'); % TODO: remove try-catch after making sure it works fine
-                end
+                    try
+                        obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',obj.colourMatrix(vehicle.id,:),'LineWidth',2);
+                    catch ME
+                        disp('Problem creating trajectories'); % TODO: remove try-catch after making sure it works fine
+                    end
             end
             hold off
             

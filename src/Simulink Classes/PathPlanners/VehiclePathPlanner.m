@@ -62,7 +62,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     OtherVehiclesFutureData = obj.getSameTypeOfOtherVehicleFutureData(OtherVehiclesFutureData); % Discard incompatible Future Data
                     OtherVehiclesFutureData = obj.deleteCollidedVehicleFutureData(OtherVehiclesFutureData); % Delete collided Vehicles' Future Data
                     
-                    %% This is an abstract method that is implemented separately in each subclass
+                    %% This is an abstract method that is implemented separately in each PathPlanner subclass
                     % Build the future plan by deriving the next routes and building the path
                     FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
                     waypointReached =1;                                 %Output 2: Waypoint Reached enabler
@@ -81,9 +81,12 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 obj.crossroadCheck(obj.vehicle);
             end
             %% Grid path generation
-            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0 % Plotting can decrease performance (update at every 0.2 seconds)     
-                obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
+            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0 % Plotting can decrease performance (update at every 0.2 seconds)
+                if isa(obj.Map,'GridMap') % BOGPath is only generated if the Map type is GridMap
+                    obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
+                end
             end
+            
         end
         
         function crossroadCheck(~,car)
@@ -183,6 +186,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             delta_v = speedTo-currentSpeed;
             accelerationDistance = delta_v^2/(2*averageAcceleration)+currentSpeed*delta_v/averageAcceleration;
         end
+        
         % Eigenvalues of Equation 8 in NecSys Paper
         function timeToReach = timeToReachNextWaypointInAccelerationPhase(~, currentSpeed, averageAcceleration, distance)
             timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
@@ -281,6 +285,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         
     end
     
+    %% Abstract Methods / Must be implemented by Subclasses
     methods (Abstract, Access = protected)
         % --------------------------------FuturePlan Structure----nx6-----------------------------------
         % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | -1 for Digraph

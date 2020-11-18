@@ -1,18 +1,13 @@
 classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagates & matlab.system.mixin.CustomIcon
     % This block initializes the vehicles on the map, draws and updates their positions on the 2D plot. When a collision happens, the MAP instance detects it and stops the colliding vehicles. Apart from that, it contains an AIM (Autonomous Intersection Manager) to avoid conflictions on intersections. The decisions are sent to the vehicles as stop, wait, and go.
     %
-    % This template includes the minimum set of functions required
-    % to define a System object with discrete state.
-    
+
     % Public, tunable properties
     properties(Access = private)
         map = evalin('base','Map');
         modelName = evalin('base','modelName');
     end
     
-    properties(DiscreteState)
-        
-    end
     
     % Pre-computed constants
     properties(Access = private)
@@ -28,10 +23,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             
         end
 
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("logo_small.png");
-        end
+
         
         function mergedBrakingFlagArrays = stepImpl(obj, V2Idata)
             % Implement algorithm. Calculate y as a function of input u and
@@ -85,18 +77,20 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             mergedBrakingFlagArrays = false;
         end
     end
-
-
-
+    
     methods(Static,Access = protected)
         function resetImpl(~)
             % Initialize / reset discrete-state properties
-            
         end
+        
+        function icon = getIconImpl(~)
+            % Define icon for System block
+            icon = matlab.system.display.Icon("logo_small.png");
+        end
+        
         function mergedBrakingFlagArrays = getOutputSizeImpl(~)
             % Maximum length of the output
             mergedBrakingFlagArrays = [10 20];
-            
         end
         
         function mergedBrakingFlagArrays = getOutputDataTypeImpl(~)

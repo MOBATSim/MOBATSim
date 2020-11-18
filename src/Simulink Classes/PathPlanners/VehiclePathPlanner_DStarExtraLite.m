@@ -153,13 +153,13 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
 
         
         %% vehicle commands
-        function stopVehicle(~, car)    
+        function stopVehicle(~, car)    % TODO - Remove this from here, if needed, add a function in Vehicle class
             %code from vehicle.checkifDestinationReached
             car.setPath([]);
             car.pathInfo.destinationReached = true;
             car.setStopStatus(true);
             car.pathInfo.routeCompleted = true;
-            car.dynamics.speed = 0;
+            car.updateActualSpeed(0);
             car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
             car.V2VdataLink(car.V2VdataLink==1) =0;
         end
