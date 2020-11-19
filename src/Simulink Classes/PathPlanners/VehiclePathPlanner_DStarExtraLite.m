@@ -158,7 +158,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             car.setPath([]);
             car.pathInfo.destinationReached = true;
             car.setStopStatus(true);
-            car.pathInfo.routeCompleted = true;
+            car.setRouteCompleted(true);
             car.updateActualSpeed(0);
             car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
             car.V2VdataLink(car.V2VdataLink==1) =0;

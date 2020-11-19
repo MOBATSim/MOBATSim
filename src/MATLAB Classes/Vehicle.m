@@ -382,6 +382,10 @@ classdef Vehicle < handle
             car.dynamics.speed = speed;
         end
         
+        function setLastWaypoint(car,lastWaypoint)
+            car.pathInfo.lastWaypoint = lastWaypoint;
+        end
+        
         function bool = setRouteCompleted(car,bool)
             car.pathInfo.routeCompleted = bool;
         end

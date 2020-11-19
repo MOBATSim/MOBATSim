@@ -348,7 +348,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             car.pathInfo.path = [];
             car.pathInfo.destinationReached = true;
             car.setStopStatus(true);
-            car.pathInfo.routeCompleted = true;
+            % car.setRouteCompleted(true); % TODO - needs to be removed, keeping it for now just in case
             car.updateActualSpeed(0);
             car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
             car.V2VdataLink(car.V2VdataLink==1) =0;
