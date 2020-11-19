@@ -1,16 +1,10 @@
 classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propagates & matlab.system.mixin.SampleTime & matlab.system.mixin.CustomIcon
     % This blocks converts the speed of the vehicle to relevant position and rotation angles to generate the pose value.
     %
-    % This template includes the minimum set of functions required
-    % to define a System object with discrete state.
-    
+ 
     % Public, tunable properties
     properties
         Vehicle_id
-    end
-    
-    properties(DiscreteState)
-        
     end
     
     % Pre-computed constants
@@ -22,81 +16,68 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
     end
     
     methods(Access = protected)
-        
-        %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
         end
-
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("Vehicle.png");
-        end
         
-        
-        %% Loop function
         function [position, rotation] = stepImpl(obj,speed)
-            %This block shouldn't run if the vehicle has reached its
-            %destination
-            if obj.vehicle.status.collided
-                %Output 1: Position of the vehicle
-                position= obj.vehicle.dynamics.position;
-                %Output 2: Rotation angle of the vehicle
-                rotation= obj.vehicle.dynamics.orientation;
+            %This block shouldn't run if the vehicle has reached its destination or collided
+            if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
+                
+                position= obj.vehicle.dynamics.position; %Output 1: Position of the vehicle
+                rotation= obj.vehicle.dynamics.orientation; %Output 2: Rotation angle of the vehicle
                 return;
-            end
-            
-            if ~obj.vehicle.pathInfo.destinationReached || obj.vehicle.status.collided
-                obj.vehicle.dynamics.speed = speed;
-                if obj.vehicle.pathInfo.routeCompleted && obj.vehicle.status.stop ==0
-                    obj.vehicle.setCurrentRoute(obj.setCurrentRoute(obj.vehicle)); % Try obj.setCurrentRoute(obj.vehicle)
-                    obj.vehicle.pathInfo.currentTrajectory = obj.generateTrajectory(obj.vehicle);
+                
+            elseif ~obj.vehicle.pathInfo.destinationReached
+                % The Vehicle hasn't reached its destination yet
+                obj.vehicle.updateActualSpeed(speed); % Vehicle - Set Functions
+                
+                if obj.vehicle.pathInfo.routeCompleted
+                    % The Vehicle has completed its Route
+                    nextRoute = obj.generateCurrentRoute(obj.vehicle,obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);                 
+                    currentTrajectory = obj.generateTrajectoryFromPath(obj.vehicle,obj.vehicle.pathInfo.path);
+                    
+                    obj.vehicle.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
+                    obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
                 end
-                % TODO Check the kinematic equations
-                speedAccordingtoSimulation = speed*0.01*obj.simSpeed; 
-                %0.01 is the sample time but it needs to be automatically detected without a big overhead
-                %obj.getSampleTime.SampleTime creates a huge overhead
-                obj.nextMove(obj.vehicle,speedAccordingtoSimulation);
+                
+                speedAccordingtoSimulation = speed*0.01*obj.simSpeed;
+                %0.01 is the sample time -> obj.getSampleTime.SampleTime creates a huge overhead
+                
+                [position, rotation] = obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory);
+                %Output 1: Position of the vehicle
+                %Output 2: Rotation angle of the vehicle
+                
+                obj.vehicle.setPosition(position); % Vehicle - Set Functions
+                obj.vehicle.setOrientation(rotation); % Vehicle - Set Functions
+                
             end
             
-            %Output 1: Position of the vehicle
-            position= obj.vehicle.dynamics.position;
-            %Output 2: Rotation angle of the vehicle
-            rotation= obj.vehicle.dynamics.orientation;
         end
         
-        
-        
-        
-        
-        
-        
-        %% Helper functions
-        function currentRoute = setCurrentRoute(~,car)
-            %% TODO - check if it works in all situations            
-            idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
-            if idx+1<=length(car.pathInfo.path)
-                currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);              
-            elseif ~(car.pathInfo.path==car.pathInfo.destinationPoint) % TODO in D* (don't delete or overwrite the original path)
-                car.setPath([car.pathInfo.path car.pathInfo.destinationPoint]);
-                currentRoute = car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]);
+        function currentRoute = generateCurrentRoute(~,car, path, lastWaypoint)
+            
+            idx = find(path==lastWaypoint);
+            if idx+1<=length(path) % Next Route
+                currentRoute = car.map.getRouteIDfromPath([path(idx) path(idx+1)]);
+            else % Destination Reached // CurrentRoute stays the same
+                currentRoute = car.pathInfo.currentRoute;
             end
         end
         
-        
-        function currentTrajectory = generateTrajectory(~,car)
-            % format of route for vehicle dynamics (translation)
-            if (isempty(find((car.map.connections.translation(:,1) == car.pathInfo.path(1) )&(car.map.connections.translation(:,2)== car.pathInfo.path(2)), 1 )) == false)
-                index = find((car.map.connections.translation(:,1) == car.pathInfo.path(1) )&(car.map.connections.translation(:,2)== car.pathInfo.path(2)) );
+        function currentTrajectory = generateTrajectoryFromPath(~,car,path)
+            % Format of route for vehicle dynamics (translation)
+            if (isempty(find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)), 1 )) == false)
+                index = find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)) );
                 currentTrajectory = [car.map.waypoints(car.map.connections.translation(index,1),:);
                     car.map.waypoints(car.map.connections.translation(index,2),:);
                     zeros(1,3);
                     zeros(1,3)];
             end
-            % format of route for vehicle dynamics (curves)
-            if (isempty(find((car.map.connections.circle(:,1) == car.pathInfo.path(1) )&(car.map.connections.circle(:,2)== car.pathInfo.path(2)), 1 )) == false)
-                index = find((car.map.connections.circle(:,1) == car.pathInfo.path(1) )&(car.map.connections.circle(:,2)== car.pathInfo.path(2)) );
+            % Format of route for vehicle dynamics (curves)
+            if (isempty(find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)), 1 )) == false)
+                index = find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)) );
                 currentTrajectory = [car.map.waypoints(car.map.connections.circle(index,1),:);
                     car.map.waypoints(car.map.connections.circle(index,2),:);
                     abs(car.map.connections.circle(index,3)),car.map.connections.circle(index,4),car.map.connections.circle(index,6);
@@ -104,14 +85,36 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             end
         end
         
-        function moveto(~,car,speed,Destination)
+        
+        function [position, orientation] = takeRoute(obj,car,speed,refRoute)         
+            RotationVector = refRoute(3,:);
+            
+            if RotationVector(1) == 0 %Straight motion
+                [position, orientation] = obj.move_straight(car,speed,refRoute(2,:));
+                
+            else %Rotational motion
+                rotation_angle = RotationVector(1);
+                rotation_point = [RotationVector(2) 0 RotationVector(3)];
+                P_final = refRoute(2,:);
+                %Determine rotation direction: left or right
+                if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
+                    [position, orientation] = obj.rotate_left(car,speed, rotation_point,rotation_angle,P_final);
+                elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
+                    [position, orientation] = obj.rotate_right(car,speed, rotation_point,rotation_angle,P_final);
+                end
+            end
+
+        end
+        
+
+        function [position, orientation] = move_straight(obj ,car,speed,Destination)
             %Displacement Vector and determination of its Angle
             if car.pathInfo.routeCompleted == true
                 DisplacementVector = Destination- car.dynamics.position;
                 ThetaRadian = atan(DisplacementVector(1)/DisplacementVector(3));
                 car.dynamics.orientation(4) = ThetaRadian;
                 car.dynamics.directionVector = DisplacementVector;
-                car.pathInfo.routeCompleted = false;
+                car.setRouteCompleted(false);
             end
             
             % For Intercardinal directions: Depending on the four quadrants, the problem the atan function is that it
@@ -156,44 +159,38 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             end
             
             
-            car.dynamics.orientation = [ 0 1 0 ThetaRadian];
-            
-            % TODO Check if we need to add the sample time of the simulation into this equation below
-            car.dynamics.position = car.dynamics.position + (car.dynamics.directionVector/norm(car.dynamics.directionVector))*(speed);
-            
             
             if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
-                car.dynamics.position = Destination; %Because of the rounding errors may be modified later
-                car.pathInfo.routeCompleted=true;
-                car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
+                car.setPosition(Destination); % Vehicle Set
+                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
                 
-                %% TODO - check if it works in all situations
-                idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
-                if idx+1<=length(car.pathInfo.path)
-                    car.setCurrentRoute(car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]));
-                end
+                car.setRouteCompleted(true); % Vehicle Set
+                car.setLastWaypoint(lastWaypoint); % Vehicle Set
+                
+                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
+                car.setCurrentRoute(nextRoute); % Vehicle Set
             end
             
-            
+            orientation = [ 0 1 0 ThetaRadian];
+            % Simple Straight Motion Equation
+            position = car.dynamics.position + (car.dynamics.directionVector/norm(car.dynamics.directionVector))*(speed);
         end
         
-        function rotate_left(~,car, speed, rotation_point,rotation_angle,Destination)
-            
-            r = norm(Destination-rotation_point);
+        function [position, orientation] = rotate_left(obj ,car, speed, rotation_point,rotation_angle,Destination)
             
             if car.pathInfo.routeCompleted == true
-                
-                car.dynamics.cornering.angles = pi;
-                car.pathInfo.routeCompleted = false;
+
+                car.dynamics.cornering.angles = pi; % Vehicle Set
+                car.setRouteCompleted(false); % Vehicle Set
                 
                 point_to_rotate= car.dynamics.position;
                 
                 car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
                 car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
                 car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
-                
             end
             
+            r = norm(Destination-rotation_point);
             vector_z=[0 0 1];
             
             a = car.dynamics.cornering.a;
@@ -201,49 +198,45 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             c = car.dynamics.cornering.c;
             
             step_length = speed/r;
-            car.dynamics.cornering.angles = car.dynamics.cornering.angles - step_length;
+            car.setRotationAngle(-step_length) % Vehicle Set
             t = car.dynamics.cornering.angles;
             
             if  pi-rotation_angle>t
-                car.dynamics.position = Destination;
-                car.pathInfo.routeCompleted = true;
-                car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
+                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
                 
-                %% TODO - check if it works in all situations
-                idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
-                if idx+1<=length(car.pathInfo.path)
-                    car.setCurrentRoute(car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]));
-                end
-                %%
+                car.setRouteCompleted(true);% Vehicle Set
+                car.setLastWaypoint(lastWaypoint); % Vehicle Set   
+                
+                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
+                car.setCurrentRoute(nextRoute); % Vehicle Set
+
                 car.dynamics.cornering.angles = 0;
+                
+                position = Destination;
+                orientation = car.dynamics.orientation;
             else
                 vector_velocity=[-a*sin(t)-cos(t)*c b a*cos(t)-c*sin(t)];
                 vector=cross(vector_velocity, vector_z);
                 vector=vector/norm(vector);
                 theta=acos(dot(vector_velocity, vector_z)/(norm(vector_velocity)*norm(vector_z)));
                 
-                car.dynamics.position = [rotation_point(1)-(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)-(a*sin(t)+c*cos(t))];
-                car.dynamics.orientation = [vector -theta];
+                
+                position = [rotation_point(1)-(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)-(a*sin(t)+c*cos(t))];
+                orientation = [vector -theta];
             end
             
         end
         
-        function rotate_right(~,car,speed, rotation_point,rotation_angle,Destination)
-            
-            r = norm(Destination-rotation_point);
+        function [position, orientation] = rotate_right(obj ,car,speed, rotation_point,rotation_angle,Destination)
             
             if car.pathInfo.routeCompleted == true
                 
-                car.dynamics.cornering.angles = 0;
-                car.pathInfo.routeCompleted = false;
+                car.setRouteCompleted(false);
                 
-                point_to_rotate= car.dynamics.position;
-                
-                car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
-                car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
-                car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
-                
+                car.setCorneringValues(car.dynamics.position, rotation_point)
             end
+            
+            r = norm(Destination-rotation_point);
             vector_z=[0 0 1];
             
             a = car.dynamics.cornering.a;
@@ -251,109 +244,46 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             c = car.dynamics.cornering.c;
             
             step_length = speed/r;
-            car.dynamics.cornering.angles = car.dynamics.cornering.angles + step_length;
+            car.setRotationAngle(step_length) % Vehicle Set
+            
             t = car.dynamics.cornering.angles;
             
             if  rotation_angle<t
-                car.dynamics.position = Destination;
-                car.pathInfo.routeCompleted = true;
-                car.pathInfo.lastWaypoint = car.map.get_waypoint_from_coordinates (Destination);
-                %% TODO - check if it works in all situations
-                idx = find(car.pathInfo.path==car.pathInfo.lastWaypoint);
-                if idx+1<=length(car.pathInfo.path)
-                    car.setCurrentRoute(car.map.getRouteIDfromPath([car.pathInfo.path(idx) car.pathInfo.path(idx+1)]));
-                end
-                %%
+                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
+                
+                car.setRouteCompleted(true);% Vehicle Set
+                car.setLastWaypoint(lastWaypoint); % Vehicle Set
+                
+                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
+                car.setCurrentRoute(nextRoute);
                 
                 car.dynamics.cornering.angles = 0;
+                
+                position = Destination;
+                orientation = car.dynamics.orientation;             
             else
                 vector_velocity=[-a*sin(t)-cos(t)*c b a*cos(t)-c*sin(t)];
                 vector=cross(vector_velocity, vector_z);
                 vector=vector/norm(vector);
                 theta=acos(dot(vector_velocity, vector_z)/(norm(vector_velocity)*norm(vector_z)));
                 
-                car.dynamics.position = [rotation_point(1)+(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)+(a*sin(t)+c*cos(t))];
-                car.dynamics.orientation =[vector -theta];
+                position = [rotation_point(1)+(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)+(a*sin(t)+c*cos(t))];
+                orientation =[vector -theta];
             end
             
             
         end
-        
-        
-        function takeRoute(obj,car,speed,refRoute)
-            if car.status.stop ==1
-                return;
-            end
-            
-            %P_init = refRoute(1,:);
-            P_final = refRoute(2,:);
-            
-            RotationVector = refRoute(3,:);
-            rotation_angle = RotationVector(1);
-            rotation_point = [RotationVector(2) 0 RotationVector(3)];
-            
-            
-            if RotationVector(1) == 0 %Straight motion
-                obj.moveto(car,speed,refRoute(2,:));
-                
-            else %Rotational motion
-                
-                %Determine rotation direction: left or right
-                if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
-                    obj.rotate_left(car,speed, rotation_point,rotation_angle,P_final);
-                elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
-                    obj.rotate_right(car,speed, rotation_point,rotation_angle,P_final);
-                end
-                
-                
-            end
-        end
-        
-        function nextMove(obj, car, speed)
-            % Examining 3 different states of the car
-            % car.status.stop
-            % car.pathInfo.destinationReached
-            % car.pathInfo.routeCompleted
-            if car.status.stop == true
-                if car.pathInfo.destinationReached == true
-                    %Car has finished its movement and stays still
-                    car.pathInfo.routeCompleted = true;
-                    car.dynamics.speed=0;
-                    return;
-                end
-                
-            elseif car.status.stop == false
-                if car.pathInfo.destinationReached == true
-                    % Car has just arrived so it has to stop
-                    car.pathInfo.routeCompleted = true;
-                    car.setStopStatus(true);
-                    car.dynamics.speed = 0;
-                    return;
-                    
-                elseif car.pathInfo.destinationReached == false
-                    if car.pathInfo.routeCompleted == true
-                        % Car has finished its current route
-                        % check if car reached the destination
-                        car.checkifDestinationReached();
-                        if car.pathInfo.destinationReached == true
-                            return;
-                        else
-                            % Car has to start the next route
-                            obj.takeRoute(car,speed,car.pathInfo.currentTrajectory);
-                        end
-                    elseif car.pathInfo.routeCompleted == false
-                        % Car has to keep on going on its current route
-                        obj.takeRoute(car,speed,car.pathInfo.currentTrajectory);
-                    end
-                end
-            end
-            
-        end
-        
+         
     end
     
     %% Standard Simulink Output functions
     methods(Static,Access = protected)
+        
+        function icon = getIconImpl(~)
+            % Define icon for System block
+            icon = matlab.system.display.Icon("Vehicle.png");
+        end
+        
         function resetImpl(~)
             % Initialize / reset discrete-state properties
         end

@@ -3,9 +3,9 @@ startingTimes = [0 0 0 0 0 0 0 0 0 0];
 switch scenarioName
     case 'Urban City Traffic'
         %% Complex crossroad scenario
-%         startingPoints =    [8  46 61 18 54 52 64 6 15 63];
-%         destinationPoints = [26 59 60 1  3  27 42 25 76 46];
-%         maxSpeeds = [20 20 10 10 20 20 10 12 10 10];
+        startingPoints =    [8  46 61 18 54 52 64 6 15 63];
+        destinationPoints = [26 59 60 1  3  27 42 25 76 46];
+        maxSpeeds = [20 20 10 10 20 20 10 12 10 10];
 
         %% temp goal test
 %         startingPoints =    [23 28 30 58 19 18 17 53 51 78];
@@ -13,10 +13,10 @@ switch scenarioName
 %         maxSpeeds =         [20 20 10 10 20 20 10 12 10 10];
         
         %% Collision scenario    
-        startingPoints =    [51 47 22 4 55 53 6 7 15 49]; 
-        destinationPoints = [10 15 11 33 34 15 18 20 16 19];
-        maxSpeeds = [13 12.4 11 8.4 13 13 9.2 13.2 9 13];
-        
+%         startingPoints =    [51 47 22 4 55 53 6 7 15 30]; 
+%         destinationPoints = [10 11 10 12 34 11 18 20 25 11];
+%         maxSpeeds = [13 12.4 11 8.4 13 13 9.2 13.2 9 13];  
+         
         %% SC1
         %short driving scenario
 %         startingPoints =    [30  41 18  7 48 72 56 57 78 51];

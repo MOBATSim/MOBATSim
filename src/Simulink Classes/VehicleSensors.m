@@ -2,34 +2,20 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         & matlab.system.mixin.CustomIcon & matlab.system.mixin.SampleTime
     % Vehicle Sensor Block: Ideal radar implementation in MOBATSim.
     %
-    % NOTE: When renaming the class name Untitled, the file name
-    % and constructor name must be updated to use the class name.
-    %
-    % This template includes most, but not all, possible properties, attributes,
-    % and methods that you can implement for a System object in Simulink.
-
+    
     % Public, tunable properties
     properties
         Vehicle_id
         Tsample = 0.01;
         OffsetTime =0;
     end
-
-    % Public, non-tunable properties
-    properties(Nontunable)
-
-    end
-
-    properties(DiscreteState)
-
-    end
-
+    
     % Pre-computed constants
     properties(Access = private)
         vehicle %Ego Vehicle
         Vehicles %Other Vehicles (Used to generate the distance value)
     end
-
+    
     methods
         % Constructor
         function obj = VehicleSensors(varargin)
@@ -37,13 +23,13 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             setProperties(obj,nargin,varargin{:});
         end
     end
-
+    
     methods(Access = protected)
         %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
-            obj.Vehicles = evalin('base','Vehicles');            
+            obj.Vehicles = evalin('base','Vehicles');
         end
         
         
@@ -54,18 +40,23 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 % 2 Outputs: Vehicle in front id, Distance to the vehicle in front
                 V2VcommIDs = -1;
                 ObjectinFront = -1;
-            
+                
             else
-                % Update the sensor data of the vehicle if it is not on halt
+                % Detect Vehicles around if the vehicle is not on halt
                 if obj.vehicle.status.stop ==0 && ~isempty(obj.vehicle.pathInfo.currentTrajectory)
-                    obj.updateSensorData(obj.vehicle,obj.Vehicles);
+                    [V2VcommIDs, ObjectinFront] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
+                else
+                    % No detection value if it is on halt
+                    V2VcommIDs = -1;
+                    ObjectinFront = -1;
                 end
                 
-                % 2 Outputs: Vehicle in front id, Distance to the vehicle in front
-                V2VcommIDs = obj.vehicle.sensors.vehicleInFrontId;
-                ObjectinFront = obj.vehicle.sensors.frontDistance;
             end
             
+            
+            % Output1 : V2VcommIDs      -> Vehicle in front id
+            % Output2 : ObjectinFront   -> Distance to the vehicle in front
+            obj.vehicle.setVehicleFrontSensor(V2VcommIDs,ObjectinFront)
         end
         
         
@@ -77,19 +68,19 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         
         
         
-        function updateSensorData(~,car, Vehicles)
-            
+        function [V2VcommIDs, ObjectinFront] = detectVehicles(~,car, Vehicles)
+            %% Sensor information about a vehicle nearby (on the same route)
             id_distance = [];
-             
+            
             i = 1:length(Vehicles);
             i(car.id)=[]; % Remove the car with the same id
-                        
+            
             VehiclesOnSameRoute=Vehicles(i(car.pathInfo.currentRoute == [cat(1,Vehicles([i]).pathInfo).currentRoute]));
             
             if ~isempty(VehiclesOnSameRoute)
                 %If there is a vehicle on the same route,
                 c_distancetoDestination = norm(car.dynamics.position-car.pathInfo.currentTrajectory(2,:));
-                                
+                
                 for vehicle_=VehiclesOnSameRoute
                     v_distancetoDestination = norm(vehicle_.dynamics.position-vehicle_.pathInfo.currentTrajectory(2,:));
                     
@@ -101,11 +92,9 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     end
                     
                 end
-            end               
-            
-            %check if it is ahead
+            end
+            %% Sensor information about a vehicle ahead (on the next route)
             if isempty(id_distance)
-                
                 i = 1:length(Vehicles);
                 idx = car.map.getForwardNeighbourRoutes(car.pathInfo.currentRoute) == cat(2,cat(2,Vehicles(i).pathInfo).currentRoute);
                 [~, idx] = find(idx,length(i), 'first');
@@ -122,117 +111,126 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             if ~isempty(id_distance)
                 % Front sensor perceives a vehicle in front if it is in range
                 if min(id_distance(:,2)) <= car.sensors.frontSensorRange
-                    car.sensors.frontDistance = min(id_distance(:,2));
-                    rowId = id_distance(:,2)==car.sensors.frontDistance;
-                    car.sensors.vehicleInFrontId = id_distance(rowId,1);
+                    
+                    rowId = id_distance(:,2)== min(id_distance(:,2));
+                    
+                    
+                    V2VcommIDs = id_distance(rowId,1);
+                    ObjectinFront = min(id_distance(:,2));
                     return;
                 else
-                    car.sensors.frontDistance = 1000; %we can also assign an arbitrary value
-                    car.sensors.vehicleInFrontId = 0;
+                    ObjectinFront = 1000; %we can also assign an arbitrary value
+                    V2VcommIDs = 0;
                 end
                 
             else
-                car.sensors.frontDistance = 1000; %we can also assign an arbitrary value
-                car.sensors.vehicleInFrontId = 0;
+                ObjectinFront = 1000; %we can also assign an arbitrary value
+                V2VcommIDs = 0;
                 return;
             end
         end
-
-%% Standard Simulink Output functions
-        function resetImpl(obj)
-            % Initialize / reset discrete-state properties
-        end
+        
+        %% Standard Simulink Output functions
+        
         
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj
-
+            
             % Set public properties and states
             s = saveObjectImpl@matlab.System(obj);
-
+            
             % Set private and protected properties
             %s.myproperty = obj.myproperty;
         end
-
+        
         function loadObjectImpl(obj,s,wasLocked)
             % Set properties in object obj to values in structure s
-
+            
             % Set private and protected properties
-            % obj.myproperty = s.myproperty; 
-
+            % obj.myproperty = s.myproperty;
+            
             % Set public properties and states
             loadObjectImpl@matlab.System(obj,s,wasLocked);
         end
-
-        function ds = getDiscreteStateImpl(obj)
-            % Return structure of properties with DiscreteState attribute
-            ds = struct([]);
-        end
-
-        function flag = isInputSizeLockedImpl(obj,index)
+        
+        
+        
+        function flag = isInputSizeLockedImpl(~,~)
             % Return true if input size is not allowed to change while
             % system is running
             flag = true;
         end
-
-        function [out,out2] = getOutputSizeImpl(obj)
-            % Return size for each output port
-            out = [1 1];
-            out2 = [1 1];
-
-            % Example: inherit size from first input port
-            % out = propagatedInputSize(obj,1);
-        end
-
-        function [out,out2] = getOutputDataTypeImpl(obj)
-            % Return data type for each output port
-            out = 'double';
-            out2 = 'double';
-
-            % Example: inherit data type from first input port
-            % out = propagatedInputDataType(obj,1);
-        end
-
-        function [out,out2] = isOutputComplexImpl(obj)
-            % Return true for each output port with complex data
-            out = false;
-            out2 = false;
-
-            % Example: inherit complexity from first input port
-            % out = propagatedInputComplexity(obj,1);
-        end
-
-        function [out,out2] = isOutputFixedSizeImpl(obj)
-            % Return true for each output port with fixed size
-            out = true;
-            out2 = true;
-
-            % Example: inherit fixed-size status from first input port
-            % out = propagatedInputFixedSize(obj,1);
-        end
-
+        
+        
+        
         function sts = getSampleTimeImpl(obj)
             % Define sample time type and parameters
             %sts = obj.createSampleTime("Type", "Inherited");
-
+            
             % Example: specify discrete sample time
             sts = createSampleTime(obj,'Type','Discrete',...
-                      'SampleTime',obj.Tsample, ...
-                      'OffsetTime',obj.OffsetTime);
+                'SampleTime',obj.Tsample, ...
+                'OffsetTime',obj.OffsetTime);
         end
-
+        
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("sensor.png");
         end
     end
-
+    
     methods(Static, Access = protected)
         %% Simulink customization functions
         function header = getHeaderImpl
             % Define header panel for System block dialog
             header = matlab.system.display.Header(mfilename('class'));
         end
-
+        
+        function resetImpl(~)
+            % Initialize / reset discrete-state properties
+        end
+        
+        function [out,out2] = getOutputSizeImpl(~)
+            % Return size for each output port
+            out = [1 1];
+            out2 = [1 1];
+            
+            % Example: inherit size from first input port
+            % out = propagatedInputSize(obj,1);
+        end
+        
+        function [out,out2] = getOutputDataTypeImpl(~)
+            % Return data type for each output port
+            out = 'double';
+            out2 = 'double';
+            
+            % Example: inherit data type from first input port
+            % out = propagatedInputDataType(obj,1);
+        end
+        
+        function [out,out2] = isOutputComplexImpl(~)
+            % Return true for each output port with complex data
+            out = false;
+            out2 = false;
+            
+            % Example: inherit complexity from first input port
+            % out = propagatedInputComplexity(obj,1);
+        end
+        
+        function [out,out2] = isOutputFixedSizeImpl(~)
+            % Return true for each output port with fixed size
+            out = true;
+            out2 = true;
+            
+            % Example: inherit fixed-size status from first input port
+            % out = propagatedInputFixedSize(obj,1);
+        end
+        
+        function ds = getDiscreteStateImpl(~)
+            % Return structure of properties with DiscreteState attribute
+            ds = struct([]);
+        end
+        
         function group = getPropertyGroupsImpl
             % Define property section(s) for System block dialog
             group = matlab.system.display.Section(mfilename('class'));

@@ -131,8 +131,6 @@ classdef Vehicle < handle
         
         function car = initVehicle(car)
             car.dynamics.position = car.map.get_coordinates_from_waypoint(car.pathInfo.lastWaypoint);
-            
-            
         end
         
         function car = setDestination(car, destination, global_timesteps)
@@ -159,28 +157,27 @@ classdef Vehicle < handle
                     Box2 = getHitbox(Vehicles(i));
                     hasCollided = checkIntersection(car,Box1,Box2);  
                     if hasCollided == true
-                        % Collision occurs
-                        car.status.emergencyCase = 3;
-                        car.status.collided = 1;
-                        car.setStopStatus(true);
-                        car.dynamics.speed = 0;
-                        
-                        Vehicles(i).status.emergencyCase =3;
-                        Vehicles(i).status.collided =1;
-                        Vehicles(i).setStopStatus(true);
-                        Vehicles(i).dynamics.speed = 0;
+                        % Collision occurs                      
+                        car.vehiclesCollide(Vehicles(i));
                     end
-                    
-                    
                 end
-                
-                
-                % here we need to use car.main.translation values, not the information of the Decision Unit. In a
-                % fault-free simulation both data would be the same.
-                
-                % if collision happens, car.status.emergencyCase is set to "3"
+
             end
             
+            
+        end
+        
+        function vehiclesCollide(car1,car2)
+            % if collision happens, car.status.emergencyCase is set to "3"
+            car1.status.emergencyCase = 3;
+            car1.status.collided = 1;
+            car1.setStopStatus(true);
+            car1.dynamics.speed = 0;
+            
+            car2.status.emergencyCase =3;
+            car2.status.collided =1;
+            car2.setStopStatus(true);
+            car2.dynamics.speed = 0;
             
         end
         
@@ -242,15 +239,24 @@ classdef Vehicle < handle
             reached = false;
             if car.dataLog.totalTravelTime ==0 % The vehicle hasn't reached before so it is equal to zero
                 if car.pathInfo.lastWaypoint == car.pathInfo.destinationPoint
-                    car.pathInfo.destinationReached = true;
-                    reached = true;
+                    % Vehicle has reached its destination
+                    reached = car.setDestinationReached(true);
+                    % Stop the vehicle
                     car.setStopStatus(true);
-                    car.pathInfo.routeCompleted = true;
-                    car.dynamics.speed = 0;
-                    car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
-                    car.V2VdataLink(car.V2VdataLink==1) =0;                    
+                    % Close the V2V connection
+                    car.V2VdataLink(car.V2VdataLink==1) =0;
                 end
+            else
+                if car.pathInfo.destinationReached
+                    reached = true;
+                else
+                    reached = false; %This case should never happen
+                end   
             end            
+        end
+        
+        function logWaypointArrivalTimeStamps(car,TimeStamp)
+            car.dataLog.timeStamps = [car.dataLog.timeStamps;[car.pathInfo.lastWaypoint TimeStamp]];
         end
         
         %% Estimator of the vehicle to calculate the ETA at the crossroad
@@ -334,19 +340,85 @@ classdef Vehicle < handle
             timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
         end
         
-        %% To control the change in the status because it happens in so many different places
+        %% SET/GET Functions to control the changes in the properties
 
-        function setStopStatus(car, binary)
-            car.status.stop = binary;   
+        function setStopStatus(car, bool)
+            car.status.stop = bool;
+            if bool % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
+                car.updateActualSpeed(0);               
+            end
+        end
+        
+        function logInitialFuturePlan(car,newFutureData,global_timesteps)
+            if global_timesteps == 0 % save the future data at the beginning of the simulation for validation after simulation
+                car.decisionUnit.initialFutureData = newFutureData;
+            end            
         end
         
         function setCurrentRoute(car, RouteID)
             car.pathInfo.currentRoute = RouteID;
         end
-        
+            
         function setPath(car, newPath)
             car.pathInfo.path = newPath;
         end
+        
+        function setVehicleFrontSensor(car,V2VcommIDs, ObjectinFront)
+            car.sensors.vehicleInFrontId = V2VcommIDs; 
+            car.sensors.frontDistance = ObjectinFront;
+        end
+        
+        function setEmergencyCase(car, EmergencyCase)
+            car.status.emergencyCase = EmergencyCase;         
+        end
+        
+        function setCurrentTrajectory(car, currentTrajectory)
+            car.pathInfo.currentTrajectory = currentTrajectory;
+        end
+        
+        function updateActualSpeed(car,speed)
+            car.dynamics.speed = speed;
+        end
+        
+        function setLastWaypoint(car,lastWaypoint)
+            car.pathInfo.lastWaypoint = lastWaypoint;
+        end
+        
+        function bool = setRouteCompleted(car,bool)
+            car.pathInfo.routeCompleted = bool;
+        end
+        
+        function bool = setDestinationReached(car,bool)
+            car.pathInfo.destinationReached = bool;
+            car.setRouteCompleted(bool);
+            
+            if bool
+                car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
+            else
+                car.dataLog.totalTravelTime = 0;
+            end
+            
+        end
+        
+        function setCorneringValues(car, point_to_rotate, rotation_point)
+            car.dynamics.cornering.angles = 0;
+            car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
+            car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
+            car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3); 
+        end
+        
+        function setRotationAngle(car, step_length)
+            car.dynamics.cornering.angles = car.dynamics.cornering.angles + step_length;
+        end
+        
+        function setOrientation(car,newOrientation)
+            car.dynamics.orientation = newOrientation;
+        end
+        
+        function setPosition(car,newPosition)
+            car.dynamics.position = newPosition;
+        end
+        
     end
 end
 

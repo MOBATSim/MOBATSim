@@ -28,7 +28,6 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         Map = evalin('base','Map');
         accelerationPhase;
         simSpeed = evalin('base','simSpeed');
-        initialFutureData
         futureData
         breakingFlag
         inCrossroad % [crossroadId crossroadZone]

@@ -1,6 +1,5 @@
 classdef DigraphMap < Map
-    %UNTITLED Summary of this class goes here
-    %   Detailed explanation goes here
+    % Digraph-based Map object inherited from Map Class
     
     properties
         

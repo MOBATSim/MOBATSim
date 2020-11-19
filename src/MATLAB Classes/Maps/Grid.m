@@ -1,4 +1,4 @@
-classdef GridLocation
+classdef Grid
     %Every grid location needs an object to store data
     
     properties
@@ -25,7 +25,7 @@ classdef GridLocation
     
     methods
         %% constructor
-        function obj = GridLocation(xy,nrOfCars,node,edge)
+        function obj = Grid(xy,nrOfCars,node,edge)
             %Construct an instance of this class
             obj.coordinates = xy;
             obj.nodeNR = node;
