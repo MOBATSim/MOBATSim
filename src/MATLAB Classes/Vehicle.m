@@ -131,8 +131,6 @@ classdef Vehicle < handle
         
         function car = initVehicle(car)
             car.dynamics.position = car.map.get_coordinates_from_waypoint(car.pathInfo.lastWaypoint);
-            
-            
         end
         
         function car = setDestination(car, destination, global_timesteps)
@@ -401,6 +399,26 @@ classdef Vehicle < handle
             end
             
         end
+        
+        function setCorneringValues(car, point_to_rotate, rotation_point)
+            car.dynamics.cornering.angles = 0;
+            car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
+            car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
+            car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3); 
+        end
+        
+        function setRotationAngle(car, step_length)
+            car.dynamics.cornering.angles = car.dynamics.cornering.angles + step_length;
+        end
+        
+        function setOrientation(car,newOrientation)
+            car.dynamics.orientation = newOrientation;
+        end
+        
+        function setPosition(car,newPosition)
+            car.dynamics.position = newPosition;
+        end
+        
     end
 end
 
