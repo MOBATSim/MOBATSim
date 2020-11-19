@@ -379,18 +379,26 @@ classdef GridMap < Map
                     if phiGoal <0
                         phiGoal = phiGoal + 2*pi;
                     end
-                    %make turns through 0° possible
-                    if (direction == -1 && phiStart < phiGoal)
-                        phiStart = phiStart + 2*pi;
+                    
+                    if abs(phiStart-phiGoal)<0.1
+                        points = [x2 y2];
+                        bogPath = [bogPath;points];
+                    else
+                        %make turns through 0° possible
+                        if (direction == -1 && phiStart < phiGoal)
+                            phiStart = phiStart + 2*pi;
+                        end
+                        if (direction == 1 && phiStart > phiGoal)
+                            phiGoal = phiGoal + 2*pi;
+                        end
+                        phi1 = phiStart : direction*0.1 : phiGoal;
+                        phi1(1) = phiStart;
+                        phi1(end) = phiGoal;
+                        points = [(radius .* cos(phi1)+x0W)',(radius .* sin(phi1))'+y0W];
+                        bogPath = [bogPath;points];
                     end
-                    if (direction == 1 && phiStart > phiGoal)
-                        phiGoal = phiGoal + 2*pi;
-                    end
-                    phi1 = phiStart : direction*0.1 : phiGoal;
-                    phi1(1) = phiStart;
-                    phi1(end) = phiGoal;
-                    points = [(radius .* cos(phi1)+x0W)',(radius .* sin(phi1))'+y0W];
-                    bogPath = [bogPath;points];
+                    
+                    
                 end
                 
             end
