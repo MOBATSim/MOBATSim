@@ -80,7 +80,4 @@ FI_distance = 0;
 FI_speed = 0;
 SafeDistance =18;
 
-%% Testing Pure Pursuit Controller + 3DOF Block
-plot_vehicle_purepursuit();
-
 %sim(modelName); % Uncomment this line for a single button execution

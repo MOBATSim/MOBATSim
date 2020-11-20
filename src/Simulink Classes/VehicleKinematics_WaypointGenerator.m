@@ -32,7 +32,7 @@ classdef VehicleKinematics_WaypointGenerator < VehicleKinematics
             %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
             obj.vehicle.dynamics.position = [pose(1) 0 -pose(2)];
             obj.vehicle.dynamics.orientation = [0 1 0 pose(3)-1.5*pi];
-            referenceWaypoints = obj.referenceWaypoints;
+            %referenceWaypoints = obj.referenceWaypoints;
             %%
             
             %This block shouldn't run if the vehicle has reached its destination or collided
@@ -63,18 +63,19 @@ classdef VehicleKinematics_WaypointGenerator < VehicleKinematics
                 %Output 1: Position of the vehicle
                 %Output 2: Rotation angle of the vehicle
                 
-                obj.vehicle.setPosition(position); % Vehicle - Set Functions
-                obj.vehicle.setOrientation(rotation); % Vehicle - Set Functions
+                %obj.vehicle.setPosition(position); % Vehicle - Set Functions
+                %obj.vehicle.setOrientation(rotation); % Vehicle - Set Functions
                 
             end
             
-            referenceWaypoints = obj.referenceWaypoints;
+            %referenceWaypoints = obj.referenceWaypoints;
             
-            figure(2)
-            WP = plot(obj.referenceWaypoints(:,1),obj.referenceWaypoints(:,2),'.','color','blue');
-            pos = plot(obj.vehicle.dynamics.position(1),-obj.vehicle.dynamics.position(3),'.','color','red');
-            xlim([obj.vehicle.dynamics.position(1)-200 obj.vehicle.dynamics.position(1)+200]);
-            ylim([-obj.vehicle.dynamics.position(3)-200 -obj.vehicle.dynamics.position(3)+200]);
+%             figure(2)
+%             WP = plot(obj.referenceWaypoints(:,1),obj.referenceWaypoints(:,2),'.','color','blue');
+%             pos = plot(obj.vehicle.dynamics.position(1),-obj.vehicle.dynamics.position(3),'.','color','red');
+%             xlim([obj.vehicle.dynamics.position(1)-200 obj.vehicle.dynamics.position(1)+200]);
+%             ylim([-obj.vehicle.dynamics.position(3)-200 -obj.vehicle.dynamics.position(3)+200]);
+            referenceWaypoints = obj.referenceWaypoints(:,[1 3]);
             
         end
         
@@ -284,25 +285,23 @@ classdef VehicleKinematics_WaypointGenerator < VehicleKinematics
             setoff_distance = dot(local_pos_Vector,local_route_Vector_i);
             local_WP_start_point = (setoff_distance*local_route_Vector_i+currentTrajectory(1,:).*[1 1 -1]);
             
-            SampleTime = 0.01;
             horizonSteps = 100;
             
             for i = 1:1:length(obj.referenceWaypoints)
-                obj.reference_waypoints(i,:) = local_WP_start_point+norm(i*(speed*SampleTime*horizonSteps))*local_route_Vector_i;
+                obj.referenceWaypoints(i,:) = local_WP_start_point+norm(i*(speed*horizonSteps))*local_route_Vector_i;
             end
         end
         
         function generateLeftRotationWaypoints(obj,vehiclePosition, speed, currentTrajectory, Destination)
-            local_position = vehiclePosition;
+            local_position = vehiclePosition.*[1 1 -1];
             
-            SampleTime = 0.01;
-            horizonSteps = 100;
-            
-            step_length = speed* SampleTime;
+            step_length = speed;
             
             local_rotation_angle = currentTrajectory(3,1);
             
-            local_rotation_start_point = obj.vehicle.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:).*[1 1 -1];
+            %local_rotation_start_point = obj.vehicle.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:).*[1 1 -1];
+            local_rotation_start_point = currentTrajectory(1,:).*[1 1 -1];
+            
             r = sqrt((norm(Destination.*[1 1 -1]-local_rotation_start_point))^2/(1-cos(local_rotation_angle))/2);
             
             step_angle = step_length/r;
@@ -316,8 +315,7 @@ classdef VehicleKinematics_WaypointGenerator < VehicleKinematics
             
             local_plumb_length = cos(local_rotation_angle/2)*r;
             local_plumb_vector = [cos(local_r_angle+pi/2) 0 sin(local_r_angle+pi/2)]*local_plumb_length;
-            local_rotation_center = local_rotation_start_point + local_displacement_vector*norm(Destination.*[1 1 -1]-local_rotation_start_point/2) + local_plumb_vector;
-            
+            local_rotation_center = local_rotation_start_point + local_displacement_vector*norm(Destination.*[1 1 -1]-local_rotation_start_point)/2 + local_plumb_vector;            
             l = local_position - local_rotation_center;
             local_start_angle = acos(dot(l,[1 0 0])/norm(l));
             if (l(3)<0)
@@ -331,13 +329,14 @@ classdef VehicleKinematics_WaypointGenerator < VehicleKinematics
         end
         
         function generateRightRotationWaypoints(obj,vehiclePosition, speed, currentTrajectory, Destination)
-            local_position = vehiclePosition;
+            local_position = vehiclePosition.*[1 1 -1];
             
-            step_length = speed*0.01;
+            step_length = speed;
             %10 is look ahead faktor
             local_rotation_angle = -currentTrajectory(3,1);
             %rotation angle of the whole curved road
-            local_rotation_start_point = obj.vehicle.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:).*[1 1 -1];
+            %local_rotation_start_point = obj.vehicle.map.waypoints(obj.vehicle.pathInfo.lastWaypoint,:).*[1 1 -1];
+            local_rotation_start_point = currentTrajectory(1,:).*[1 1 -1];
             %       local_rotation_start_point = local_rotation_start_point*[1,1,-1];
             r = sqrt((norm(Destination.*[1 1 -1]-local_rotation_start_point))^2/(1-cos(local_rotation_angle))/2);
             step_angle = step_length/r;
