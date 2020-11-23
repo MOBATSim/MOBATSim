@@ -1,7 +1,7 @@
 classdef VehicleKinematics_WaypointGenerator < VehicleKinematics
     % This blocks generates waypoints.
     %
-    %test git line-ending setting
+    
     % Pre-computed constants
     properties(Access = private)
         vehicle
