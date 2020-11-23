@@ -157,7 +157,7 @@ classdef VehicleKinematics_WaypointGenerator < VehicleKinematics
             
             %if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
             if norm(car.dynamics.position-Destination)< 2 % Error tolerance value TODO: check lower numbers
-%                 car.setPosition(Destination); % Vehicle Set
+                car.setPosition(Destination); % Vehicle Set
                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
                 
                 car.setRouteCompleted(true); % Vehicle Set
