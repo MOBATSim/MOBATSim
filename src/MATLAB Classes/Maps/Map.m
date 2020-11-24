@@ -238,6 +238,27 @@ classdef Map < handle
             end
             
         end
+        
+
+    end
+    methods (Static)
+        function coordinates2D = transform3DAnimTo2Dcoordinate(coordinates3D)
+            
+            coordinates2D = [coordinates3D(1) -coordinates3D(3)];
+            
+        end
+        
+        function coordinates3D = transform2DcoordinateTo3DAnim(coordinates2D)
+            
+            coordinates3D = [coordinates2D(1) 0 -coordinates2D(3)];
+            
+        end
+        
+        function coordinates3D = transformPoseTo3DAnim(pose)
+            
+            coordinates3D = [pose(1) 0 -pose(2)];
+            
+        end
     end
     
     methods (Abstract)

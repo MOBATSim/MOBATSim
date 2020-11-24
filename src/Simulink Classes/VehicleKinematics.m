@@ -161,7 +161,6 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             
             
             if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
-                car.setPosition(Destination); % Vehicle Set
                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
                 
                 car.setRouteCompleted(true); % Vehicle Set

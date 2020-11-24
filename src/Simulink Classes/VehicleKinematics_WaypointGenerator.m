@@ -30,7 +30,10 @@ classdef VehicleKinematics_WaypointGenerator < VehicleKinematics
         
         function [pose, referenceWaypoints] = stepImpl(obj,pose,speed,drivingMode)
             %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
-            obj.vehicle.dynamics.position = [pose(1) 0 -pose(2)];
+            
+            obj.vehicle.setPosition(obj.map.transformPoseTo3DAnim(pose));
+            
+            %obj.vehicle.dynamics.position = [pose(1) 0 -pose(2)];
             obj.vehicle.dynamics.orientation = [0 1 0 pose(3)-1.5*pi];
             %referenceWaypoints = obj.referenceWaypoints;
             %%
@@ -157,7 +160,6 @@ classdef VehicleKinematics_WaypointGenerator < VehicleKinematics
             
             %if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
             if norm(car.dynamics.position-Destination)< 2 % Error tolerance value TODO: check lower numbers
-                car.setPosition(Destination); % Vehicle Set
                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
                 
                 car.setRouteCompleted(true); % Vehicle Set
