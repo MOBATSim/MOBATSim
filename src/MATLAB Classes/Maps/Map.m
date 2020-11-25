@@ -154,7 +154,8 @@ classdef Map < handle
         
         function initCarDescriptionPlot(obj)
             % Prepares the Vehicle tags
-            obj.plots.carDescription=text(zeros(1,10),zeros(1,10),{obj.Vehicles.name},'FontWeight','Bold','FontSize',9);
+            allVehiclePositions = cat(1,cat(1,obj.Vehicles.dynamics).position);
+            obj.plots.carDescription=text(allVehiclePositions(:,1)',-allVehiclePositions(:,3)',{obj.Vehicles.name},'FontWeight','Bold','FontSize',9);
         end
         
         function initialGraphHighlighting(obj)
