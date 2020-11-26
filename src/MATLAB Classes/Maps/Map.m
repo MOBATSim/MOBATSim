@@ -155,7 +155,16 @@ classdef Map < handle
         function initCarDescriptionPlot(obj)
             % Prepares the Vehicle tags
             allVehiclePositions = cat(1,cat(1,obj.Vehicles.dynamics).position);
+
+            obj.plots.Vehicles.XData = allVehiclePositions(:,1);
+            obj.plots.Vehicles.YData = -allVehiclePositions(:,3);
             obj.plots.carDescription=text(allVehiclePositions(:,1)',-allVehiclePositions(:,3)',{obj.Vehicles.name},'FontWeight','Bold','FontSize',9);
+            
+            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-5, -allVehiclePositions(1:length(obj.Vehicles),3)+2, 0.011.*ones(1,10)'];
+            allTextPositions = mat2cell(allVehiclePositions,ones(1,10),3); % Matrix to Cell for the handle format
+            
+            % Set the position of the Text handles
+            set(obj.plots.carDescription,{'Position'},allTextPositions);
         end
         
         function initialGraphHighlighting(obj)
