@@ -15,7 +15,7 @@ end
 %% MOBATSim Configurations
 modelName = 'MOBATSim';
 
-simSpeed = 4; % For scaling the simulation speed
+simSpeed = 1; % For scaling the simulation speed
 Sim_Ts = 0.01; % Sample time of the simulation (may not be stable if changed)
 
 configs = MOBATSimConfigurations(modelName,simSpeed,Sim_Ts,MapType); % MapType: 'GridMap' or 'DigraphMap'
