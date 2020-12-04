@@ -76,7 +76,7 @@ function generateMapVisualPed(obj,displayInGridCoordinates)
                 position(1,:) = [w(trans(t,1),1) ,w(trans(t,1),3)];
                 position(2,:) = [w(trans(t,2),1) ,w(trans(t,2),3)];
                 plot(position(:,1),position(:,2),'color',[0 1 0],'LineWidth',4);
-                %plot number next to edge
+%                 plot number next to edge
 %                 textPos = (position(2,:) + position(1,:))/2;                
 %                 text(textPos(1)+5,textPos(2)-15,num2str(t+c),'color',[0 0.5 0]);
             end

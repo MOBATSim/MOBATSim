@@ -17,10 +17,12 @@ classdef Map < handle
 %         occMap
         MapFig    
  
-        map2
-        map3 
-        fig2
+        mapEmpty
+        mapFull 
+        figOcc
         peds
+        mapCrosswalkEmpty
+        mapCrosswalkFull
     end
     
     methods
@@ -116,9 +118,9 @@ classdef Map < handle
             obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles
             hold off
             
-            obj.map2 = evalin('base','mapOc');
-            obj.map3 = copy(obj.map2);
-            obj.fig2 = evalin('base','figOc');
+            obj.mapEmpty = evalin('base','mapOc');
+            obj.mapFull = copy(obj.mapEmpty);
+            obj.figOcc = evalin('base','figOc');
             
             
             obj.initialGraphHighlighting();
@@ -267,27 +269,33 @@ classdef Map < handle
             obj.plots.Vehicles.YData = -allVehiclePositions(:,3);
             
             hold off
-%             figure(obj.fig2)
+%             figure(obj.figOcc)
             hold on
-            syncWith(obj.map3,obj.map2)
+
 %             for i=1:10
 %                 A((i-1)*10+1:10*i,1)=(allVehiclePositions(i,1)-5:allVehiclePositions(i,1)+5)'
 %                 A((i-1)*10+1:10*i,2)=(-allVehiclePositions(i,3)-5:-allVehiclePositions(i,3)+5)'
-%             setOccupancy(obj.map3,[A(:,1)+600 A(:,2)+500], ones(100,1))
+%             setOccupancy(obj.mapFull,[A(:,1)+600 A(:,2)+500], ones(100,1))
 
             allPedestrianPosition(:,1)=obj.plots.Pedestrians.XData;
             allPedestrianPosition(:,2)=obj.plots.Pedestrians.YData;
 
+            syncWith(obj.mapFull,obj.mapEmpty)
+            syncWith(obj.mapCrosswalkFull,obj.mapCrosswalkEmpty)
             blockVeh=ones(17,17);
             blockPed=ones(2,2);
             for i=1:10
-                setOccupancy(obj.map3, [allVehiclePositions(i,1)-4+600 -allVehiclePositions(i,3)-4+500], blockVeh, "local");
+                setOccupancy(obj.mapFull, [allVehiclePositions(i,1)-4+600 -allVehiclePositions(i,3)-4+500], blockVeh, "local");
             end
             
-            for i=1:3
-                setOccupancy(obj.map3, [allPedestrianPosition(i,1)+600 allPedestrianPosition(i,2)+500], blockPed, "local");
+            for i=1:size(obj.peds,2)
+                setOccupancy(obj.mapFull, [allPedestrianPosition(i,1)+600 allPedestrianPosition(i,2)+500], blockPed, "local");
             end
-%             show(obj.map2)
+            
+            for i=1:size(obj.peds,2)    
+                setOccupancy(obj.mapCrosswalkFull,[obj.peds(i).positionLocal],[obj.peds(i).col],"local")
+            end
+%             show(obj.mapEmpty)
             hold off
             
             figure(obj.MapFig)

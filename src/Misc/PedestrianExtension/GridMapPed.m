@@ -55,26 +55,17 @@ classdef GridMapPed < handle
             
             figure('units','normalized','outerposition',[0 0 1 1])
             generateMapVisualPed(obj,false);
-            
-            
-            
+                                 
             % Turn off useless properties for performance optimization
             obj.MapFig = gcf;
             obj.MapFig.WindowState ='maximized';
-            %MapFig.WindowState ='fullscreen';
             obj.MapFig.Name = "preOcc";
             obj.MapFig.NumberTitle = 'off';
             ax = gca;
             ax.Toolbar = [];
             ax.Interactions = [];
-%             view(2)
-            
-%             
-%             obj.plots.graph2 = plot(obj.digraph_visualization,'XData',obj.waypoints(:,1),'YData',-obj.waypoints(:,3),'LineWidth',4,'NodeFontSize',0.5,'ArrowSize',1,'MarkerSize',2.5);
-%             set(gcf, 'Position', get(0, 'Screensize'))
             axis equal
             axis([-600 600 -500 500])
-%             axis off tight
             F=getframe(gca);
             f=frame2im(F);
             figure
@@ -82,16 +73,13 @@ classdef GridMapPed < handle
             
             g = gcf;
             exportgraphics(g,'graphMS.png','Resolution',362)
-%             F=getframe(gca);
-%             imwrite(F.cdata,'graphMS.png')
-%             saveas(gcf,'graphMS.png');
             image = imread('graphMS.png');
-            
-            
+                       
             grayimage = rgb2gray(image);
             bwimage = ~(grayimage < 200 & grayimage >87);
-            grid1 = binaryOccupancyMap(bwimage,2);
-            % introducing pedetrian area
+            grid1 = occupancyMap(bwimage,2);
+            
+            % introducing pedestrian area
             pedarea=zeros(180,40);
             setOccupancy(grid1,[665 340],pedarea,"local")
             curb=ones(1,13);
@@ -105,22 +93,16 @@ classdef GridMapPed < handle
             setOccupancy(grid1,[678.5 406],curb,"local")
             setOccupancy(grid1,[678.5 415.5],curb,"local")
 
-
-
             show(grid1)
+            
             obj.occFig=gcf
             obj.occFig.WindowState ='maximized';
-            %MapFig.WindowState ='fullscreen';
             obj.occFig.Name = "Occ";
             obj.occFig.NumberTitle = 'off';
             assignin('base','figOc',obj.occFig)
             obj.occMap=grid1;
-%             setOccupancy(grid1,[460 410],1,"local")          
-%             show(grid1)
             assignin('base','mapOc',grid1)
-%             hold on
-%             obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles
-%             hold off
+
                         
             obj.crossroads.startingNodes = startingNodes;
             obj.crossroads.breakingNodes = breakingNodes;

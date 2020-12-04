@@ -65,12 +65,39 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             %obj.map.dynamicRouteHighlighting(); % enable for dynamic route highlighting - disable for performance
 
             %% Ped walking
-            for i=1:length(obj.map.peds)
-                newpos(i,1:2)=obj.map.peds(i).walk
-                
+            for j=1:size(obj.map.peds,2)
+                info(j,:)=[obj.map.peds(j).positionLocal obj.map.peds(j).direction];    
             end
-            obj.map.plots.Pedestrians.XData = newpos(:,1);
-            obj.map.plots.Pedestrians.YData = newpos(:,2);
+            
+            for m=1:size(obj.map.peds,2)
+                desired(m,:)=obj.map.peds(m).findnewpos(obj.map.mapCrosswalkFull,info);
+            end
+            
+                ver=ones(1,size(desired,1));
+            for k=1:size(desired,1)-1
+                for l=k+1:size(desired,1)           
+                        if desired(k,:)==desired(l,:)
+                            if randn(1)>0.5
+                                ver(k)=0;
+                                ver(l)=1;
+                            else
+                                ver(k)=1;
+                                ver(l)=0;
+                            end
+                        end
+                end
+            end
+
+             for h=1:size(obj.map.peds,2)
+                update(h,:)=obj.map.peds(h).updatepos(ver(h));
+             end
+            
+%             for i=1:length(obj.map.peds)
+%                 newpos(i,1:2)=obj.map.peds(i).method1             
+%             end
+            
+            obj.map.plots.Pedestrians.XData = update(:,1);
+            obj.map.plots.Pedestrians.YData = update(:,2);
             
             %% Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
