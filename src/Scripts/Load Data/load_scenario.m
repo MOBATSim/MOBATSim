@@ -50,9 +50,9 @@ switch scenarioName
         
         %% SC3a dont block before you are there
         %V2 should reach node 10, even if node 11 is blocked
-        %         startingPoints =    [23  22 19  7 48 72 56 57 78 51];
-        %         destinationPoints = [10  11 15 27 47 71 70 56 77 78];
-        %         maxSpeeds =         [20  11 20 20 20 20 20 20 20 20];
+%                 startingPoints =    [23  22 19  7 48 72 56 57 78 51];
+%                 destinationPoints = [10  11 15 27 47 71 70 56 77 78];
+%                 maxSpeeds =         [20  11 20 20 20 20 20 20 20 20];
         
         %% SC3a use temporary goal
         %V2 should drive to node 11
