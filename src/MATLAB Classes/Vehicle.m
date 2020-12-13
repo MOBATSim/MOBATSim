@@ -126,7 +126,7 @@ classdef Vehicle < handle
             
             obj.modelName = evalin('base','modelName');
             
-            
+            obj.dynamics.position = obj.map.get_coordinates_from_waypoint(startingPoint);
         end %Constructor
         
         function car = initVehicle(car)

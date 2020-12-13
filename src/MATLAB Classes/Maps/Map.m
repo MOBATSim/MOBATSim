@@ -154,7 +154,17 @@ classdef Map < handle
         
         function initCarDescriptionPlot(obj)
             % Prepares the Vehicle tags
-            obj.plots.carDescription=text(zeros(1,10),zeros(1,10),{obj.Vehicles.name},'FontWeight','Bold','FontSize',9);
+            allVehiclePositions = cat(1,cat(1,obj.Vehicles.dynamics).position);
+
+            obj.plots.Vehicles.XData = allVehiclePositions(:,1);
+            obj.plots.Vehicles.YData = -allVehiclePositions(:,3);
+            obj.plots.carDescription=text(allVehiclePositions(:,1)',-allVehiclePositions(:,3)',{obj.Vehicles.name},'FontWeight','Bold','FontSize',9);
+            
+            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-5, -allVehiclePositions(1:length(obj.Vehicles),3)+2, 0.011.*ones(1,10)'];
+            allTextPositions = mat2cell(allVehiclePositions,ones(1,10),3); % Matrix to Cell for the handle format
+            
+            % Set the position of the Text handles
+            set(obj.plots.carDescription,{'Position'},allTextPositions);
         end
         
         function initialGraphHighlighting(obj)
@@ -236,6 +246,27 @@ classdef Map < handle
             if maxSpeed < speed
                 speed = maxSpeed;
             end
+            
+        end
+        
+
+    end
+    methods (Static)
+        function coordinates2D = transform3DAnimTo2Dcoordinate(coordinates3D)
+            
+            coordinates2D = [coordinates3D(1) -coordinates3D(3)];
+            
+        end
+        
+        function coordinates3D = transform2DcoordinateTo3DAnim(coordinates2D)
+            
+            coordinates3D = [coordinates2D(1) 0 -coordinates2D(3)];
+            
+        end
+        
+        function coordinates3D = transformPoseTo3DAnim(pose)
+            
+            coordinates3D = [pose(1) 0 -pose(2)];
             
         end
     end

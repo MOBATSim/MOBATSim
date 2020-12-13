@@ -3,9 +3,9 @@ startingTimes = [0 0 0 0 0 0 0 0 0 0];
 switch scenarioName
     case 'Urban City Traffic'
         %% Complex crossroad scenario
-        startingPoints =    [8  46 61 18 54 52 64 6 15 63];
-        destinationPoints = [26 59 60 1  3  27 42 25 76 46];
-        maxSpeeds = [20 20 10 10 20 20 10 12 10 10];
+        startingPoints =    [8  46 61 18 53 52 64 6 15 63];
+        destinationPoints = [26 78 60 1  3  27 42 25 76 46];
+        maxSpeeds = [20 15 10 10 14 20 10 12 10 10];
 
         %% temp goal test
 %         startingPoints =    [23 28 30 58 19 18 17 53 51 78];
@@ -50,9 +50,9 @@ switch scenarioName
         
         %% SC3a dont block before you are there
         %V2 should reach node 10, even if node 11 is blocked
-        %         startingPoints =    [23  22 19  7 48 72 56 57 78 51];
-        %         destinationPoints = [10  11 15 27 47 71 70 56 77 78];
-        %         maxSpeeds =         [20  11 20 20 20 20 20 20 20 20];
+%                 startingPoints =    [23  22 19  7 48 72 56 57 78 51];
+%                 destinationPoints = [10  11 15 27 47 71 70 56 77 78];
+%                 maxSpeeds =         [20  11 20 20 20 20 20 20 20 20];
         
         %% SC3a use temporary goal
         %V2 should drive to node 11
