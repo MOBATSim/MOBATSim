@@ -33,7 +33,7 @@ end
 switch mapSelection  
     case 'Mobatkent'
         load_Mobatkent();
-    
+        %load_Mobatkent_from_opendrive();
     case 'Highway'
         open_system('Platoon_Event')
         return
