@@ -16,13 +16,13 @@ End = data.RoadSpecifications(1,1).Centers(end,:);
 A = [Start;End];
 
 for i = 2:94
-    %A = [A; data.RoadSpecifications(1,i).Centers(1,:);data.RoadSpecifications(1,i).Centers(end,:)];
-    A = [A; data.RoadSpecifications(1,i).Centers];
+    A = [A; data.RoadSpecifications(1,i).Centers(1,:);data.RoadSpecifications(1,i).Centers(end,:)];
+    %A = [A; data.RoadSpecifications(1,i).Centers];
 end
 B1 = unique(A,'row','stable');
 
 %coordinate transformation(from drivingScenariodesigner coordimat to MOBatsim coordimate)
-% [y,-x]->[x,-y]
+% [y,-x,0]->[x,0,-y]
 Waypoints_new(:,1) = -B1(:,2);
 Waypoints_new(:,3) = -B1(:,1);
 %put the new waypoints in the same sequence as before
