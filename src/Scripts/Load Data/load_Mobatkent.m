@@ -2,7 +2,6 @@ mapName = 'Mobatkent';
 
 % x and z, 1st and 3rd column, are used as the directions to make it suitable for the 3D animation
 % +z direction is like -y in cartesian 2D plot
-% add a comment to test
 waypoints = [[0 0 0]
 [0      0 50]
 [-40    0 90]
