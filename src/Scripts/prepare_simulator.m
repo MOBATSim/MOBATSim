@@ -32,8 +32,8 @@ end
 %% Load the Map
 switch mapSelection  
     case 'Mobatkent'
-        load_Mobatkent();
-        %load_Mobatkent_from_opendrive();
+        %load_Mobatkent();
+        load_Mobatkent_from_opendrive();%load extended map
     case 'Highway'
         open_system('Platoon_Event')
         return

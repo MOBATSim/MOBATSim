@@ -1,6 +1,7 @@
 mapName = 'Mobatkent';
 %load the new mobatkent map from drivingScenarioDesigner
-run new_map_for_mobatsim.m
+%run new_map_for_mobatsim.m % this one test the transformation script
+run map_extend_v1.m 
 
 startingNodes = [56    72    73    65;
     51     0     0    44];
