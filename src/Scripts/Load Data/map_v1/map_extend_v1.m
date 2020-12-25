@@ -13,21 +13,22 @@ waypoints = [];
 
 %% waypoints
 % Get all the waypoints from drivingScenarioDesigner output file
-Start = data.RoadSpecifications(1,1).Centers(1,:);
-End = data.RoadSpecifications(1,1).Centers(end,:);
-A = [Start;End];
+Start = data.RoadSpecifications(1,1).Centers(1,:); % Start point of the first road section in drivingScenarioDesigner
+End = data.RoadSpecifications(1,1).Centers(end,:); % End point of the first road section in drivingScenarioDesigner
+A = [Start;End];% Start and end point of the  first road section in drivingScenarioDesigner
 
-for i = 2:103
+% From the second road section, put all the start and end points together
+for i = 2:size(data.RoadSpecifications,2)
     A = [A; data.RoadSpecifications(1,i).Centers(1,:);data.RoadSpecifications(1,i).Centers(end,:)];   
 end
-B1 = unique(A,'row','stable');
+B1 = unique(A,'row','stable'); % remove all the repeated points
 
-%%coordinate transformation
-%coordinate transformation(from drivingScenariodesigner coordimat to MOBatsim coordimate)
+%%Coordinate transformation
+% Coordinate transformation(from drivingScenariodesigner coordimat to MOBatsim coordimate)
 % [y,-x,0]->[x,0,-y]
 Waypoints_new(:,1) = -B1(:,2);
 Waypoints_new(:,3) = -B1(:,1);
-%put the new waypoints in the same sequence as before
+% Put the new waypoints in the same sequence as before
 waypoints =  Order_sequence(waypoints_origin,Waypoints_new);
 B2 = [];
 B2(:,1) = -waypoints(:,3);
@@ -36,10 +37,9 @@ B2(:,3) = 0;
 
 Circle = zeros(1,7);
 h = 1;
-
 %% connection_ransition
-for j = 1:103
-    if size(data.RoadSpecifications(1,j).Centers,1)==2
+for j = 1:size(data.RoadSpecifications,2)
+    if size(data.RoadSpecifications(1,j).Centers,1)==2 % if there are only 2 points in one road section, it is straight road
     a = ismember(B2, data.RoadSpecifications(1,j).Centers(1,:),'rows');
     m = find(a==1);
     b = ismember(B2, data.RoadSpecifications(1,j).Centers(2,:),'rows');
@@ -47,12 +47,12 @@ for j = 1:103
     connections_translation(h,:) = [n m 100];% find the sequence of translation connections
     h = h+1;
 %% connection_circle
-    elseif size(data.RoadSpecifications(1,j).Centers,1)>2
-    % find three points on tne arc
+    elseif size(data.RoadSpecifications(1,j).Centers,1)>2 % if there are more than 2 points in one road section, it is arc
+    % Find three points on tne arc
     C = data.RoadSpecifications(1,j).Centers(1,1:2);
     D = data.RoadSpecifications(1,j).Centers(2,1:2);
     E = data.RoadSpecifications(1,j).Centers(end,1:2);
-    % calculate the circle center 
+    % Calculate the circle center 
     [x0,y0] = Circle_center(C,D,E);
  
     F1 = data.RoadSpecifications(1,j).Centers(end,:);
@@ -62,7 +62,7 @@ for j = 1:103
     b = ismember(B2, F2,'rows');
     n = find(b==1);
         
-    %polar coordinate
+    % Polar coordinate
     F1 = F1(1:2);
     F2 = F2(1:2);
     G1 = F1-[x0,y0];
