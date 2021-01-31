@@ -2,10 +2,14 @@ function load_scenario(scenarioName)
 startingTimes = [0 0 0 0 0 0 0 0 0 0];
 switch scenarioName
     case 'Urban City Traffic'
+        %% test scenario Qihang
+        startingPoints =    [84 86 2 2 2 2 2 2 2 2];
+        destinationPoints = [83 83 1 1  1  1 1 1 1 1];
+        maxSpeeds = [7 20 8 10 14 20 10 12 10 10];
         %% Complex crossroad scenario
-        startingPoints =    [8  46 29 18 53 52 64 6 15 63];
-        destinationPoints = [26 47 51 1  3  27 42 25 76 46];
-        maxSpeeds = [20 15 10 10 14 20 10 12 10 10];
+%         startingPoints =    [8  46 29 18 53 52 64 6 15 63];
+%         destinationPoints = [26 47 51 1  3  27 42 25 76 46];
+%         maxSpeeds = [20 15 10 10 14 20 10 12 10 10];
 
         %% temp goal test
 %         startingPoints =    [23 28 30 58 19 18 17 53 51 78];
