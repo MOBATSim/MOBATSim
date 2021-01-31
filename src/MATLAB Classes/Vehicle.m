@@ -7,6 +7,7 @@ classdef Vehicle < handle
         id
         simSpeed
         name
+        drivingBehavior
         physics
         %         size
         %         mass
@@ -67,6 +68,8 @@ classdef Vehicle < handle
             obj.simSpeed = simSpeed;
             obj.name = car_name;
             
+            obj.drivingBehavior.safetyTime = 2;
+            
             obj.physics.size = size; %Should be edited according to the vehicle
             obj.physics.mass = mass; %kg Should be edited according to the vehicle
             
@@ -78,15 +81,26 @@ classdef Vehicle < handle
             obj.dynamics.cornering.iterator = 1;
             obj.dynamics.orientation = [0 1 0 0];
             obj.dynamics.minDeceleration = minDeceleration;
+%             obj.dynamics.laneSwitchTime = 3;
             
             obj.sensors.frontSensorRange= frontSensorRange;
             obj.sensors.AEBdistance = AEBdistance;
             obj.sensors.frontDistance = 1000;
             obj.sensors.vehicleInFrontId =0;
+            obj.sensors.leadingVehicle = [];
+            obj.sensors.behindVehicle = [];
+            obj.sensors.onDoubleLane = 0;
+            obj.sensors.ttc = 1000;
+            obj.sensors.time2surpass = 1000;
+            obj.sensors.behindVehicleDistance = 1000;
+            obj.sensors.behindVehicleSafetyMargin = 1000;
+            
             
             obj.status.emergencyCase = 0;
             obj.setStopStatus(true);
             obj.status.collided = 0;
+            obj.status.canLaneSwitch = 0;
+            obj.status.laneSwitchFinish = 0;
             
             obj.pathInfo.startingTime = startingTime;
             obj.pathInfo.currentTrajectory = [];
@@ -99,7 +113,11 @@ classdef Vehicle < handle
             obj.pathInfo.referencePath = [];
             obj.pathInfo.routeCompleted = true;
             obj.pathInfo.path = 0;
+            obj.pathInfo.staticPath = 0;
             obj.pathInfo.BOGPath = [];
+            obj.pathInfo.laneId = 0;
+            obj.pathInfo.s = 0;
+            obj.pathInfo.routeEndDistance = [];
             
             obj.dataLog.timeStamps =[];
             obj.dataLog.totalTravelTime = 0;
@@ -108,6 +126,21 @@ classdef Vehicle < handle
             obj.dataLog.speed = [];
             obj.dataLog.emergencyCase = [];
             obj.dataLog.platooning = [];
+            obj.dataLog.laneSwitchStartTime = [];
+            obj.dataLog.laneSwitchEndTime = [];
+            obj.dataLog.MinJerkTrajPolynom = {};
+%             obj.dataLog.MinJerkTrajPolynom_fast = {};
+%             obj.dataLog.MinJerkTrajPolynom_slow = {};
+%             obj.dataLog.costFunction_fastLaneChange=-1;
+%             obj.dataLog.costFunction_slowLaneChange=-1;
+%             obj.dataLog.costFunction_modLaneChange=-1;
+            obj.dataLog.costFunction1=-1;
+            obj.dataLog.costFunction2=-1;
+            obj.dataLog.costFunction2_1=-1;
+            obj.dataLog.costFunction3=-1;
+            obj.dataLog.costFunction3_1=-1;
+            obj.dataLog.costFunction4=-1;
+            obj.dataLog.costFunction5=-1;
             
             obj.map = evalin('base','Map');
             
@@ -119,6 +152,7 @@ classdef Vehicle < handle
             obj.decisionUnit.futureData = [];
             obj.decisionUnit.breakingFlag = 0;
             obj.decisionUnit.inCrossroad = [0 0];
+            obj.decisionUnit.LaneSwitchTime = 3;
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
