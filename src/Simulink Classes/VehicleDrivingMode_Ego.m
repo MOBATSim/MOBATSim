@@ -38,7 +38,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 Dist2Stop = -1;
             else
                 
-                switch_decision(obj,LeaderSpeed,LeaderDistance);
+                switch_decision(obj);
                 %Output 4: Driving mode
                 if(emergencyCase == 0)
                     DrivingMode = 1;
@@ -80,21 +80,16 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             end
         end
         %% helper function
-        function switch_decision(obj,LeaderSpeed,LeaderDistance)
-%             if obj.vehicle.status.laneSwitchFinish == 1
-%                 obj.laneSwitchFinishTime = get_param('MOBATSim','SimulationTime');
-%                 obj.vehicle.status.laneSwitchFinish = 0;
-%             end
-%             if get_param('MOBATSim','SimulationTime')-obj.laneSwitchFinishTime>1;
-                    if (obj.vehicle.pathInfo.laneId<=0)&&(obj.vehicle.sensors.ttc <1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0)
-                            obj.vehicle.status.canLaneSwitch = 1;
-                    end
-                    
-                    if (obj.vehicle.pathInfo.laneId>0)&&(obj.vehicle.sensors.behindVehicleSafetyMargin>2)&&(obj.vehicle.sensors.ttc>obj.vehicle.decisionUnit.LaneSwitchTime+0.5)
-                            obj.vehicle.status.canLaneSwitch = 2;
-                    end
-%                 end
-%             end
+        function switch_decision(obj)
+            
+            if (obj.vehicle.pathInfo.laneId<=0)&&(obj.vehicle.sensors.ttc <1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0)
+                obj.vehicle.status.canLaneSwitch = 1;
+            end
+            
+            if (obj.vehicle.pathInfo.laneId>0)&&(obj.vehicle.sensors.behindVehicleSafetyMargin>2)&&(obj.vehicle.sensors.ttc>obj.vehicle.decisionUnit.LaneSwitchTime+0.5)
+                obj.vehicle.status.canLaneSwitch = 2;
+            end
+            
         end
         
         %% Standard Simulink Output functions

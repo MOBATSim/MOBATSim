@@ -17,17 +17,16 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
         comfortGain = 0.05;
         laneSwitchTime = 3;
         latOffset = 0;
+        
         trajPolynom = {};
-        trajPolynom1 = {};
-        trajPolynom2 = {};
-        trajPolynom2_1 = {};
-        trajPolynom3_1 = {};
-        trajPolynom3 = {};
-        trajPolynom4 = {};
-        trajPolynom5 = {};
-        trajPolynom_mod = {};
-        trajPolynom_fast = {};
-        trajPolynom_slow = {};
+        trajPolynom05 = {};
+        trajPolynom075 = {};
+        trajPolynom09 = {};
+        trajPolynom10 = {};
+        trajPolynom11 = {};
+        trajPolynom125 = {};
+        trajPolynom15 = {};
+        
         int_error_d =0;
         velocityPolynom = {};
         accPolynom = {};
@@ -56,16 +55,14 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
         end
         
         
-        function [poseOut, referencePose,curvature,adaptive_gain] = stepImpl(obj,pose,speed,drivingMode)
+        function [poseOut, referencePose] = stepImpl(obj,pose,speed,drivingMode)
             %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
             pose(3)=pose(3)*180/pi;
             obj.drivingMode = drivingMode;
             
             obj.vehicle.setPosition(obj.map.transformPoseTo3DAnim(pose));
             
-            %obj.vehicle.dynamics.position = [pose(1) 0 -pose(2)];
             obj.vehicle.dynamics.orientation = [0 1 0 pose(3)-1.5*pi];
-            %referenceWaypoints = obj.referenceWaypoints;
             %%
             
             %This block shouldn't run if the vehicle has reached its destination or collided
@@ -75,9 +72,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 rotation= obj.vehicle.dynamics.orientation; %Output 2: Rotation angle of the vehicle
                 referencePose = obj.referencePose';
                 poseOut=pose';
-                curvature = 0;
                 obj.adaptive_gain = 2/(20*obj.curvature+1);
-                adaptive_gain=obj.adaptive_gain;
                 obj.vehicle.dynamics.maxSpeed = 0;
                 return;
                 
@@ -101,24 +96,12 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 [~, ~] = obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory);
                 %Output 1: Position of the vehicle
                 %Output 2: Rotation angle of the vehicle
-                
-                %obj.vehicle.setPosition(position); % Vehicle - Set Functions
-                %obj.vehicle.setOrientation(rotation); % Vehicle - Set Functions
-                
+                              
             end
             
-            %referenceWaypoints = obj.referenceWaypoints;
-            
-            %             figure(2)
-            %             WP = plot(obj.referenceWaypoints(:,1),obj.referenceWaypoints(:,2),'.','color','blue');
-            %             pos = plot(obj.vehicle.dynamics.position(1),-obj.vehicle.dynamics.position(3),'.','color','red');
-            %             xlim([obj.vehicle.dynamics.position(1)-200 obj.vehicle.dynamics.position(1)+200]);
-            %             ylim([-obj.vehicle.dynamics.position(3)-200 -obj.vehicle.dynamics.position(3)+200]);
             referencePose = obj.referencePose';
             poseOut=pose';
-            curvature = obj.curvature;
             obj.adaptive_gain = 2/(20*obj.curvature+1);
-            adaptive_gain=obj.adaptive_gain;
             obj.vehicle.dynamics.maxSpeed = sqrt(0.7*10/obj.curvature);
         end
         
@@ -126,28 +109,21 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             RotationVector = refRoute(3,:);
             if ~car.status.canLaneSwitch == 0 %lane switch
                 if isempty(obj.trajPolynom)
-%                     obj.generateMinJerkTrajectory_fastLaneChange(car);
-%                     obj.costFunction_fastLaneChange(car);
-%                     obj.generateMinJerkTrajectory_slowLaneChange(car);
-%                     obj.costFunction_slowLaneChange(car);
-%                     obj.generateMinJerkTrajectory(car);
-%                     obj.costFunction_modLaneChange(car);
-%                     obj.trajChoose(car);
-                        obj.generateMinJerkTrajectory1(car);
-                        obj.generateMinJerkTrajectory2(car);
-                        obj.generateMinJerkTrajectory2_1(car);
-                        obj.generateMinJerkTrajectory3(car);
-                        obj.generateMinJerkTrajectory3_1(car);
-                        obj.generateMinJerkTrajectory4(car);
-                        obj.generateMinJerkTrajectory5(car);
-                        obj.costFunction1(car);
-                        obj.costFunction2(car);
-                        obj.costFunction2_1(car);
-                        obj.costFunction3(car);
-                        obj.costFunction3_1(car);
-                        obj.costFunction4(car);
-                        obj.costFunction5(car);
-                        obj.trajChoose1(car);
+                        obj.generateMinJerkTrajectory05(car);
+                        obj.generateMinJerkTrajectory075(car);
+                        obj.generateMinJerkTrajectory09(car);
+                        obj.generateMinJerkTrajectory10(car);
+                        obj.generateMinJerkTrajectory11(car);
+                        obj.generateMinJerkTrajectory125(car);
+                        obj.generateMinJerkTrajectory15(car);
+                        obj.costFunction05(car);
+                        obj.costFunction075(car);
+                        obj.costFunction09(car);
+                        obj.costFunction10(car);
+                        obj.costFunction11(car);
+                        obj.costFunction125(car);
+                        obj.costFunction15(car);
+                        obj.trajChoose(car);
                 end
             end
             if (RotationVector(1) == 0) %Straight motion
@@ -167,11 +143,11 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             
         end
         
-        function generateMinJerkTrajectory1(obj,car)
+        function generateMinJerkTrajectory05(obj,car)
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
-            T = 2;
+            T = car.decisionUnit.LaneSwitchTime*0.5;
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
             if car.status.canLaneSwitch ==1
@@ -192,15 +168,15 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             a3=double(a3);
             a4=double(a4);
             a5=double(a5);
-            obj.trajPolynom1 = num2cell([a0 a1 a2 a3 a4 a5]);
+            obj.trajPolynom05 = num2cell([a0 a1 a2 a3 a4 a5]);
             
             
         end
-        function generateMinJerkTrajectory2(obj,car)
+        function generateMinJerkTrajectory075(obj,car)
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
-            T = 2.5;
+            T = car.decisionUnit.LaneSwitchTime*0.75;
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
             if car.status.canLaneSwitch ==1
@@ -221,15 +197,15 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             a3=double(a3);
             a4=double(a4);
             a5=double(a5);
-            obj.trajPolynom2 = num2cell([a0 a1 a2 a3 a4 a5]);
+            obj.trajPolynom075 = num2cell([a0 a1 a2 a3 a4 a5]);
             
             
         end
-        function generateMinJerkTrajectory2_1(obj,car)
+        function generateMinJerkTrajectory09(obj,car)
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
-            T = 2.75;
+            T = car.decisionUnit.LaneSwitchTime*0.9;
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
             if car.status.canLaneSwitch ==1
@@ -250,15 +226,15 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             a3=double(a3);
             a4=double(a4);
             a5=double(a5);
-            obj.trajPolynom2_1 = num2cell([a0 a1 a2 a3 a4 a5]);
+            obj.trajPolynom09 = num2cell([a0 a1 a2 a3 a4 a5]);
             
             
         end
-        function generateMinJerkTrajectory3(obj,car)
+        function generateMinJerkTrajectory10(obj,car)
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
-            T = 3;
+            T = car.decisionUnit.LaneSwitchTime*1;
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
             if car.status.canLaneSwitch ==1
@@ -279,15 +255,15 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             a3=double(a3);
             a4=double(a4);
             a5=double(a5);
-            obj.trajPolynom3 = num2cell([a0 a1 a2 a3 a4 a5]);
+            obj.trajPolynom10 = num2cell([a0 a1 a2 a3 a4 a5]);
             
             
         end
-        function generateMinJerkTrajectory3_1(obj,car)
+        function generateMinJerkTrajectory11(obj,car)
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
-            T = 3.25;
+            T = car.decisionUnit.LaneSwitchTime*1.1;
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
             if car.status.canLaneSwitch ==1
@@ -308,15 +284,15 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             a3=double(a3);
             a4=double(a4);
             a5=double(a5);
-            obj.trajPolynom3_1 = num2cell([a0 a1 a2 a3 a4 a5]);
+            obj.trajPolynom11 = num2cell([a0 a1 a2 a3 a4 a5]);
             
             
         end
-        function generateMinJerkTrajectory4(obj,car)
+        function generateMinJerkTrajectory125(obj,car)
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
-            T = 3.5;
+            T = car.decisionUnit.LaneSwitchTime*1.25;
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
             if car.status.canLaneSwitch ==1
@@ -337,15 +313,15 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             a3=double(a3);
             a4=double(a4);
             a5=double(a5);
-            obj.trajPolynom4 = num2cell([a0 a1 a2 a3 a4 a5]);
+            obj.trajPolynom125 = num2cell([a0 a1 a2 a3 a4 a5]);
             
             
         end
-        function generateMinJerkTrajectory5(obj,car)
+        function generateMinJerkTrajectory15(obj,car)
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
-            T = 4;
+            T = car.decisionUnit.LaneSwitchTime*1.5;
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
             if car.status.canLaneSwitch ==1
@@ -366,65 +342,72 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             a3=double(a3);
             a4=double(a4);
             a5=double(a5);
-            obj.trajPolynom5 = num2cell([a0 a1 a2 a3 a4 a5]);
+            obj.trajPolynom15 = num2cell([a0 a1 a2 a3 a4 a5]);
             
             
         end
-        function costFunction1(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom1{:});
-            t=0:0.01:2;
+        function costFunction05(obj,car)
+            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom05{:});
+            T = car.decisionUnit.LaneSwitchTime*0.5;
+            t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
             mean_y_dddot2=sum(y_dddot2*0.01)/2;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-2/2;
-            obj.vehicle.dataLog.costFunction1=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
+            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
+            obj.vehicle.dataLog.costFunction05=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
-        function costFunction2(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom2{:});
-            t=0:0.01:2.5;
+        function costFunction075(obj,car)
+            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom075{:});
+            T = car.decisionUnit.LaneSwitchTime*0.75;
+            t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/2.5;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-2.5/2;
-            obj.vehicle.dataLog.costFunction2=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
+            mean_y_dddot2=sum(y_dddot2*0.01)/T;
+            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
+            obj.vehicle.dataLog.costFunction075=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
-        function costFunction2_1(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom2_1{:});
-            t=0:0.01:2.75;
+        function costFunction09(obj,car)
+            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom09{:});
+            T = car.decisionUnit.LaneSwitchTime*0.9;
+            t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/2.75;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-2.75/2;
-            obj.vehicle.dataLog.costFunction2_1=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
+            mean_y_dddot2=sum(y_dddot2*0.01)/T;
+            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
+            obj.vehicle.dataLog.costFunction09=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
-        function costFunction3(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom3{:});
-            t=0:0.01:3;
+        function costFunction10(obj,car)
+            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom10{:});
+            T = car.decisionUnit.LaneSwitchTime*1;
+            t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/3;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-3/2;
-            obj.vehicle.dataLog.costFunction3=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
+            mean_y_dddot2=sum(y_dddot2*0.01)/T;
+            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
+            obj.vehicle.dataLog.costFunction10=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
-        function costFunction3_1(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom3_1{:});
-            t=0:0.01:3.25;
+        function costFunction11(obj,car)
+            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom11{:});
+            T = car.decisionUnit.LaneSwitchTime*1.1;
+            t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/3.25;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-3.25/2;
-            obj.vehicle.dataLog.costFunction3_1=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
+            mean_y_dddot2=sum(y_dddot2*0.01)/T;
+            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
+            obj.vehicle.dataLog.costFunction11=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
-        function costFunction4(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom4{:});
-            t=0:0.01:3.5;
+        function costFunction125(obj,car)
+            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom125{:});
+            T = car.decisionUnit.LaneSwitchTime*1.25;
+            t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/3.5;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-3.5/2;
-            obj.vehicle.dataLog.costFunction4=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
+            mean_y_dddot2=sum(y_dddot2*0.01)/T;
+            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
+            obj.vehicle.dataLog.costFunction125=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
-        function costFunction5(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom5{:});
-            t=0:0.01:4;
+        function costFunction15(obj,car)
+            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom15{:});
+            T = car.decisionUnit.LaneSwitchTime*1.5;
+            t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/4;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-4/2;
-            obj.vehicle.dataLog.costFunction5=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
+            mean_y_dddot2=sum(y_dddot2*0.01)/T;
+            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
+            obj.vehicle.dataLog.costFunction15=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
         function generateMinJerkTrajectory(obj,car)
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
@@ -465,155 +448,39 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             obj.laneSwitchWayPoints = [x' y'];
             
         end
-        function generateMinJerkTrajectory_fastLaneChange(obj,car)
-            obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
-            car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
-            obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
-            T = obj.vehicle.decisionUnit.LaneSwitchTime*0.5;
-            %% minimum jerk trajectory
-            x_f = T*car.dynamics.speed; % Final x coordinate
-            if car.status.canLaneSwitch ==1
-                y_f = obj.laneWidth; % Final y coordinate
-            elseif car.status.canLaneSwitch ==2
-                y_f = -obj.laneWidth;
-            end
-            obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
-            %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
-            a0=0;
-            a1=0;
-            a2=0;
-            syms a3 a4 a5;
-            [a3,a4,a5]=solve([a0+a3*T^3+a4*T^4+a5*T^5==y_f, ... % Boundary condition for lateral displacement
-                3*a3*T^2+4*a4*T^3+5*a5*T^4==0, ...              % Boundary condition for lateral speed
-                6*a3*T+12*a4*T^2+20*a5*T^3==0,],[a3,a4,a5]);    % Boundary condition for lateral acceleration
-            % Solving for coefficients and conversion to double precision
-            a3=double(a3);
-            a4=double(a4);
-            a5=double(a5);
-            obj.trajPolynom_fast = num2cell([a0 a1 a2 a3 a4 a5]);
-            car.dataLog.MinJerkTrajPolynom_fast = {car.dataLog.MinJerkTrajPolynom_fast;obj.trajPolynom};
-            %             obj.velocityPolynom = num2cell([a0 a1 2*a2 3*a3 4*a4 5*a5]);
-            %             obj.accPolynom = num2cell([a0 a1 2*a2 6*a3 12*a4 20*a5]);
-            %             obj.jerkPolynom = num2cell([a0 a1 a2 6*a3 24*a4 60*a5]);
-            %             t=0:0.01:obj.vehicle.decisionUnit.LaneSwitchTime;
-            %             x=car.dynamics.speed*t;
-            %             y=a0+a1*t+a2*t.^2+a3*t.^3+a4*t.^4+a5*t.^5;
-            %             %             y_dot=a1+2*a2*t+3*a3*t^2+4*a4*t^3+5*a5*t^4;
-            %             %             y_ddot=2*a2+6*a3*t+12*a4*t^2+20*a5*t^3;
-            %             %             y_dddot = 6*a3+24*a4*t+60*a5*t^2;
-            %             obj.laneSwitchWayPoints = [x' y'];
             
-        end
-        function generateMinJerkTrajectory_slowLaneChange(obj,car)
-            obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
-            car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
-            obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
-            T = obj.vehicle.decisionUnit.LaneSwitchTime*2;
-            %% minimum jerk trajectory
-            x_f = T*car.dynamics.speed; % Final x coordinate
-            if car.status.canLaneSwitch ==1
-                y_f = obj.laneWidth; % Final y coordinate
-            elseif car.status.canLaneSwitch ==2
-                y_f = -obj.laneWidth;
-            end
-            obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
-            %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
-            a0=0;
-            a1=0;
-            a2=0;
-            syms a3 a4 a5;
-            [a3,a4,a5]=solve([a0+a3*T^3+a4*T^4+a5*T^5==y_f, ... % Boundary condition for lateral displacement
-                3*a3*T^2+4*a4*T^3+5*a5*T^4==0, ...              % Boundary condition for lateral speed
-                6*a3*T+12*a4*T^2+20*a5*T^3==0,],[a3,a4,a5]);    % Boundary condition for lateral acceleration
-            % Solving for coefficients and conversion to double precision
-            a3=double(a3);
-            a4=double(a4);
-            a5=double(a5);
-            obj.trajPolynom_slow = num2cell([a0 a1 a2 a3 a4 a5]);
-            car.dataLog.MinJerkTrajPolynom_slow = {car.dataLog.MinJerkTrajPolynom_slow;obj.trajPolynom};
-            %             obj.velocityPolynom = num2cell([a0 a1 2*a2 3*a3 4*a4 5*a5]);
-            %             obj.accPolynom = num2cell([a0 a1 2*a2 6*a3 12*a4 20*a5]);
-            %             obj.jerkPolynom = num2cell([a0 a1 a2 6*a3 24*a4 60*a5]);
-            %             t=0:0.01:obj.vehicle.decisionUnit.LaneSwitchTime;
-            %             x=car.dynamics.speed*t;
-            %             y=a0+a1*t+a2*t.^2+a3*t.^3+a4*t.^4+a5*t.^5;
-            %             %             y_dot=a1+2*a2*t+3*a3*t^2+4*a4*t^3+5*a5*t^4;
-            %             %             y_ddot=2*a2+6*a3*t+12*a4*t^2+20*a5*t^3;
-            %             %             y_dddot = 6*a3+24*a4*t+60*a5*t^2;
-            %             obj.laneSwitchWayPoints = [x' y'];
-            
-        end
-        function costFunction_fastLaneChange(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom_fast{:});
-            t=0:0.01:obj.vehicle.decisionUnit.LaneSwitchTime*0.5;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/obj.vehicle.decisionUnit.LaneSwitchTime*0.5;
-            ttc_min = 2.1*obj.vehicle.decisionUnit.LaneSwitchTime+0-obj.vehicle.decisionUnit.LaneSwitchTime*0.5;
-            obj.vehicle.dataLog.costFunction_fastLaneChange=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
-        function costFunction_slowLaneChange(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom_slow{:});
-            t=0:0.01:obj.vehicle.decisionUnit.LaneSwitchTime*2;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/obj.vehicle.decisionUnit.LaneSwitchTime*2;
-            ttc_min = 2.1*obj.vehicle.decisionUnit.LaneSwitchTime+0-obj.vehicle.decisionUnit.LaneSwitchTime*2;
-            obj.vehicle.dataLog.costFunction_slowLaneChange=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
-        function costFunction_modLaneChange(obj,car)
-            [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom_mod{:});
-            t=0:0.01:obj.vehicle.decisionUnit.LaneSwitchTime;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/obj.vehicle.decisionUnit.LaneSwitchTime;
-            ttc_min = 2.1*obj.vehicle.decisionUnit.LaneSwitchTime+0-obj.vehicle.decisionUnit.LaneSwitchTime;
-            obj.vehicle.dataLog.costFunction_modLaneChange=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
         function trajChoose(obj,car)
-            obj.trajPolynom = obj.trajPolynom_mod;
-            obj.laneSwitchTime = obj.vehicle.decisionUnit.LaneSwitchTime;
-            if(car.dataLog.costFunction_fastLaneChange<car.dataLog.costFunction_modLaneChange)
-                obj.trajPolynom = obj.trajPolynom_fast;
-                obj.laneSwitchTime = obj.vehicle.decisionUnit.LaneSwitchTime*0.5;
-            end
-            if(car.dataLog.costFunction_slowLaneChange<car.dataLog.costFunction_fastLaneChange)
-                obj.trajPolynom = obj.trajPolynom_slow;
-                obj.laneSwitchTime = obj.vehicle.decisionUnit.LaneSwitchTime*2;
-            end
-            
-        end
-        function trajChoose1(obj,car)
             %find the trajectory with minimum cost function value
-            A = [car.dataLog.costFunction1 car.dataLog.costFunction2 car.dataLog.costFunction2_1 car.dataLog.costFunction3 car.dataLog.costFunction3_1 car.dataLog.costFunction4 car.dataLog.costFunction5];
+            A = [car.dataLog.costFunction05 car.dataLog.costFunction075 car.dataLog.costFunction09 car.dataLog.costFunction10 car.dataLog.costFunction11 car.dataLog.costFunction125 car.dataLog.costFunction15];
             ind = find(A==min(min(A)));
             if(ind==1)
-                obj.trajPolynom = obj.trajPolynom1;
-                obj.laneSwitchTime = 2;
+                obj.trajPolynom = obj.trajPolynom05;
+                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*0.5;
             end
             if(ind==2)
-                obj.trajPolynom = obj.trajPolynom2;
-                obj.laneSwitchTime = 2.5;
+                obj.trajPolynom = obj.trajPolynom075;
+                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*0.75;
             end
             if(ind==3)
-                obj.trajPolynom = obj.trajPolynom2_1;
-                obj.laneSwitchTime = 2.75;
+                obj.trajPolynom = obj.trajPolynom09;
+                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*0.9;
             end
             if(ind==4)
-                obj.trajPolynom = obj.trajPolynom3;
-                obj.laneSwitchTime = 3;
+                obj.trajPolynom = obj.trajPolynom10;
+                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*1;
             end
             if(ind==5)
-                obj.trajPolynom = obj.trajPolynom3_1;
-                obj.laneSwitchTime = 3.25;
+                obj.trajPolynom = obj.trajPolynom11;
+                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*1.1;
             end
             if(ind==6)
-                obj.trajPolynom = obj.trajPolynom4;
-                obj.laneSwitchTime = 3.5;
+                obj.trajPolynom = obj.trajPolynom125;
+                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*1.25;
             end
             if(ind==7)
-                obj.trajPolynom = obj.trajPolynom5;
-                obj.laneSwitchTime = 4;
+                obj.trajPolynom = obj.trajPolynom15;
+                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*1.5;
             end
-            obj.trajPolynom = obj.trajPolynom3;
-                obj.laneSwitchTime = 3;
         end
         function [position, orientation] = move_straight(obj,car,speed,Destination)
             %% Reference Waypoint Generation
@@ -842,7 +709,6 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             obj.error = d-vehicle_d;
             
             obj.int_error_d = obj.int_error_d+obj.error*0.01;
-            %             reference_yaw = atan2(obj.reference_vlat,car.dynamics.speed);
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,d,radian);
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];
         end
@@ -911,15 +777,8 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];
             
         end
-        
-        %         function [x,y] = get_vehicle_checkpoint(obj,car)
-        %             position = car.dynamics.position;%read vehicle position Info
-        %             orientation = car.dynamics.orientation(4)+1.5*pi; %read vehicle yaw Info and transfer it to world frame
-        %             checkPoint_offset = 0.5;%determine the offset distance between vehicle CoG and checkpoint
-        %             x=position(1)-checkPoint_offset*cos(orientation);
-        %             y=position(3)-checkPoint_offset*sin(orientation);
-        %         end
-        
+
+      
         function [position_C,orientation_C] = Frenet2Cartesian(obj,route,s,d,radian)
             
             %this function transfer a position in Frenet coordinate into Cartesian coordinate
@@ -1030,45 +889,38 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             % Initialize / reset discrete-state properties
         end
         
-        function [out, out2, out3,out4] = getOutputSizeImpl(~)
+        function [out, out2] = getOutputSizeImpl(~)
             % Return size for each output port
             out = [1 3];
             out2 = [1 3];
-            out3 = [1 1];
-            out4 = [1 1];
             
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
         end
         
-        function [out,out2, out3,out4] = getOutputDataTypeImpl(~)
+        function [out,out2] = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
             out2 = 'double';
-            out3 = 'double';
-            out4 = 'double';
-            
+
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
         
-        function [out, out2, out3,out4] = isOutputComplexImpl(~)
+        function [out, out2] = isOutputComplexImpl(~)
             % Return true for each output port with complex data
             out = false;
             out2 = false;
-            out3 = false;
-            out4 = false;
             
             % Example: inherit complexity from first input port
             % out = propagatedInputComplexity(obj,1);
         end
         
-        function [out, out2, out3,out4] = isOutputFixedSizeImpl(~)
+        function [out, out2] = isOutputFixedSizeImpl(~)
             % Return true for each output port with fixed size
             out = true;
             out2 = true;
-            out3 = true;
-            out4 = true;
+
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
         end

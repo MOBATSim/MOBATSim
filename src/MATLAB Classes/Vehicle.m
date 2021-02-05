@@ -81,7 +81,6 @@ classdef Vehicle < handle
             obj.dynamics.cornering.iterator = 1;
             obj.dynamics.orientation = [0 1 0 0];
             obj.dynamics.minDeceleration = minDeceleration;
-%             obj.dynamics.laneSwitchTime = 3;
             
             obj.sensors.frontSensorRange= frontSensorRange;
             obj.sensors.AEBdistance = AEBdistance;
@@ -129,22 +128,17 @@ classdef Vehicle < handle
             obj.dataLog.laneSwitchStartTime = [];
             obj.dataLog.laneSwitchEndTime = [];
             obj.dataLog.MinJerkTrajPolynom = {};
-%             obj.dataLog.MinJerkTrajPolynom_fast = {};
-%             obj.dataLog.MinJerkTrajPolynom_slow = {};
-%             obj.dataLog.costFunction_fastLaneChange=-1;
-%             obj.dataLog.costFunction_slowLaneChange=-1;
-%             obj.dataLog.costFunction_modLaneChange=-1;
-            obj.dataLog.costFunction1=-1;
-            obj.dataLog.costFunction2=-1;
-            obj.dataLog.costFunction2_1=-1;
-            obj.dataLog.costFunction3=-1;
-            obj.dataLog.costFunction3_1=-1;
-            obj.dataLog.costFunction4=-1;
-            obj.dataLog.costFunction5=-1;
+            
+            obj.dataLog.costFunction05=-1;
+            obj.dataLog.costFunction075=-1;
+            obj.dataLog.costFunction09=-1;
+            obj.dataLog.costFunction10=-1;
+            obj.dataLog.costFunction11=-1;
+            obj.dataLog.costFunction125=-1;
+            obj.dataLog.costFunction15=-1;
             
             obj.map = evalin('base','Map');
             
-            %obj.decisionUnit = DecisionUnit;
             obj.decisionUnit.Map = evalin('base','Map');
             obj.decisionUnit.simSpeed = evalin('base','simSpeed');
             obj.decisionUnit.accelerationPhase = zeros(1,5);

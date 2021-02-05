@@ -140,16 +140,16 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             %multiple leading vehicles exist, set nearest vehicle to be the
             %leading vehicle
             leadingVehicle = [];
-            ego_route = obj.vehicle.pathInfo.currentRoute;
+            ego_route = obj.vehicle.pathInfo.currentRoute;% Search vehicle on this route
             str1 = 'obj.vehicle.map.Vehicles';
             %%
-            %search leading Vehicle on current route
+            %traverse leading Vehicle on current route
             for i = 1:length(eval(str1))
-                checkVehicle = eval(strcat(str1,'(',int2str(i),')'));
-                if isequal(checkVehicle.pathInfo.currentRoute,ego_route)&&(checkVehicle.pathInfo.s>obj.vehicle.pathInfo.s)
-                    if isempty(leadingVehicle)
+                checkVehicle = eval(strcat(str1,'(',int2str(i),')'));%To be checked vehicle
+                if isequal(checkVehicle.pathInfo.currentRoute,ego_route)&&(checkVehicle.pathInfo.s>obj.vehicle.pathInfo.s)%If this vehicle is on the same route and ahead of the ego vehicle
+                    if isempty(leadingVehicle)%If no leading vehicle exists, set this vehicle to be the leading vehicle
                         leadingVehicle = checkVehicle;
-                    elseif checkVehicle.pathInfo.s<leadingVehicle.pathInfo.s
+                    elseif checkVehicle.pathInfo.s<leadingVehicle.pathInfo.s %if there's already a leading vehicle, find the closest one 
                         leadingVehicle = checkVehicle;
                     end
                 end
