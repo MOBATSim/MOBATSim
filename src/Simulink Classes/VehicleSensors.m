@@ -45,6 +45,12 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 % Detect Vehicles around if the vehicle is not on halt
                 if obj.vehicle.status.stop ==0 && ~isempty(obj.vehicle.pathInfo.currentTrajectory)
                     [V2VcommIDs, ObjectinFront] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
+                    %%
+                    %new function from Qihang
+                    check_leadingVehicle(obj);
+                    check_behindVehicle(obj);
+                    %check_doubleLane(obj);
+                    %%
                 else
                     % No detection value if it is on halt
                     V2VcommIDs = -1;
@@ -129,7 +135,136 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 return;
             end
         end
+        function check_leadingVehicle(obj)
+            %this function checks if there's a leading vehicle ahead, if
+            %multiple leading vehicles exist, set nearest vehicle to be the
+            %leading vehicle
+            leadingVehicle = [];
+            ego_route = obj.vehicle.pathInfo.currentRoute;% Search vehicle on this route
+            str1 = 'obj.vehicle.map.Vehicles';
+            %%
+            %traverse leading Vehicle on current route
+            for i = 1:length(eval(str1))
+                checkVehicle = eval(strcat(str1,'(',int2str(i),')'));%To be checked vehicle
+                if isequal(checkVehicle.pathInfo.currentRoute,ego_route)&&(checkVehicle.pathInfo.s>obj.vehicle.pathInfo.s)%If this vehicle is on the same route and ahead of the ego vehicle
+                    if isempty(leadingVehicle)%If no leading vehicle exists, set this vehicle to be the leading vehicle
+                        leadingVehicle = checkVehicle;
+                    elseif checkVehicle.pathInfo.s<leadingVehicle.pathInfo.s %if there's already a leading vehicle, find the closest one 
+                        leadingVehicle = checkVehicle;
+                    end
+                end
+                
+            end
+            if ~isempty(leadingVehicle)
+                relativeSpeed = obj.vehicle.dynamics.speed-leadingVehicle.dynamics.speed;
+                relativeDistance = leadingVehicle.pathInfo.s-obj.vehicle.pathInfo.s;
+                obj.vehicle.sensors.ttc = relativeDistance/relativeSpeed;
+                obj.vehicle.sensors.leadingVehicle = leadingVehicle;
+            else
+                %continue search next route
+                idx = find(obj.vehicle.pathInfo.path==obj.vehicle.pathInfo.lastWaypoint);
+                if idx+2<=length(obj.vehicle.pathInfo.path) % Next Route
+                    nextRoute = obj.vehicle.map.getRouteIDfromPath([obj.vehicle.pathInfo.path(idx+1) obj.vehicle.pathInfo.path(idx+2)]);
+                else % Destination Reached // CurrentRoute stays the same
+                    nextRoute = obj.vehicle.pathInfo.currentRoute;
+                end
+                for i = 1:length(eval(str1))
+                    if nextRoute == obj.vehicle.pathInfo.currentRoute
+                        break;
+                    end
+                    checkVehicle = eval(strcat(str1,'(',int2str(i),')'));
+                    if isequal(checkVehicle.pathInfo.currentRoute,nextRoute)
+                        if isempty(leadingVehicle)
+                            leadingVehicle = checkVehicle;
+                        elseif checkVehicle.pathInfo.s<leadingVehicle.pathInfo.s
+                            leadingVehicle = checkVehicle;
+                        end
+                    end
+                end
+                if ~isempty(leadingVehicle)
+                    relativeSpeed = obj.vehicle.dynamics.speed-leadingVehicle.dynamics.speed;
+                    relativeDistance = leadingVehicle.pathInfo.s+obj.vehicle.pathInfo.routeEndDistance;
+                    obj.vehicle.sensors.ttc = relativeDistance/relativeSpeed;
+                    obj.vehicle.sensors.leadingVehicle = leadingVehicle;
+                else
+                    obj.vehicle.sensors.ttc = 1000;
+                    obj.vehicle.sensors.leadingVehicle = [];
+                end
+            end
+            
+        end
         
+        function check_behindVehicle(obj)
+            %this function checks if there's a vehicle behind, if
+            %multiple leading vehicles exist, set nearest vehicle to be the
+            %leading vehicle
+            if obj.vehicle.pathInfo.startingPoint == obj.vehicle.pathInfo.lastWaypoint
+                obj.vehicle.pathInfo.staticPath = obj.vehicle.pathInfo.path;
+            end
+            behindVehicle = [];
+            ego_route = obj.vehicle.pathInfo.currentRoute;
+            str1 = 'obj.vehicle.map.Vehicles';
+            %%
+            %search leading Vehicle
+            for i = 1:length(eval(str1))
+                checkVehicle = eval(strcat(str1,'(',int2str(i),')'));
+                if isequal(checkVehicle.pathInfo.currentRoute,ego_route)&&(checkVehicle.pathInfo.s<obj.vehicle.pathInfo.s)
+                    if isempty(behindVehicle)
+                        behindVehicle = checkVehicle;
+                    elseif checkVehicle.pathInfo.s>behindVehicle.pathInfo.s
+                        behindVehicle = checkVehicle;
+                    end
+                end
+            end
+            %%
+            %store behind vehicle information
+            if ~isempty(behindVehicle)
+                relativeSpeed = obj.vehicle.dynamics.speed-behindVehicle.dynamics.speed;
+                relativeDistance = obj.vehicle.pathInfo.s-behindVehicle.pathInfo.s;
+                safetyTimeMargin = relativeDistance/relativeSpeed;
+                obj.vehicle.sensors.behindVehicleSafetyMargin = safetyTimeMargin;
+                obj.vehicle.sensors.behindVehicle = behindVehicle;
+            else
+                %continue to check last route
+                idx = find(obj.vehicle.pathInfo.staticPath==obj.vehicle.pathInfo.lastWaypoint);
+                if idx>1 % last Route
+                    lastRoute = obj.vehicle.map.getRouteIDfromPath([obj.vehicle.pathInfo.staticPath(idx-1) obj.vehicle.pathInfo.staticPath(idx)]);
+                else % Destination Reached // CurrentRoute stays the same
+                    lastRoute = obj.vehicle.pathInfo.currentRoute;
+                end
+                for i = 1:length(eval(str1))
+                    if lastRoute == obj.vehicle.pathInfo.currentRoute
+                        break;
+                    end
+                    checkVehicle = eval(strcat(str1,'(',int2str(i),')'));
+                    if isequal(checkVehicle.pathInfo.currentRoute,lastRoute)
+                        if isempty(behindVehicle)
+                            behindVehicle = checkVehicle;
+                        elseif checkVehicle.pathInfo.s>behindVehicle.pathInfo.s
+                            behindVehicle = checkVehicle;
+                        end
+                    end
+                end
+                if ~isempty(behindVehicle)
+                    relativeSpeed = obj.vehicle.dynamics.speed-behindVehicle.dynamics.speed;
+                    relativeDistance = obj.vehicle.pathInfo.s+behindVehicle.pathInfo.routeEndDistance;
+                    safetyTimeMargin = relativeDistance/relativeSpeed;
+                    obj.vehicle.sensors.behindVehicleSafetyMargin = safetyTimeMargin;
+                    obj.vehicle.sensors.behindVehicle = behindVehicle;
+                else
+                    obj.vehicle.sensors.behindVehicleSafetyMargin = 1000;
+                    obj.vehicle.sensors.behindVehicle = [];
+                end
+            end
+        end
+        function check_doubleLane(obj)
+            ego_route = obj.vehicle.pathInfo.currentRoute;
+            if ismember(ego_route,obj.vehicle.map.doubleLane)
+                obj.vehicle.sensors.onDoubleLane = 1;
+            else
+                obj.vehicle.sensors.onDoubleLane = 0;
+            end
+        end
         %% Standard Simulink Output functions
         
         
