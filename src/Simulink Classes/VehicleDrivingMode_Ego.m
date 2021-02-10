@@ -42,6 +42,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 %Output 4: Driving mode
                 if(emergencyCase == 0)
                     DrivingMode = 1;
+                    %% some longitudinal driving modes are deactivated so that the vehicle can do lane-changing
 %                                     elseif(emergencyCase == 1)
 %                                         DrivingMode = 2;
 %                                     elseif(emergencyCase == 2)
@@ -82,12 +83,12 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
         %% helper function
         function switch_decision(obj)
             
-            if (obj.vehicle.pathInfo.laneId<=0)&&(obj.vehicle.sensors.ttc <1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0)
-                obj.vehicle.status.canLaneSwitch = 1;
+            if (obj.vehicle.pathInfo.laneId<=0)&&(obj.vehicle.sensors.ttc <1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0)%conditions for left lane-changing
+                obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
             end
             
-            if (obj.vehicle.pathInfo.laneId>0)&&(obj.vehicle.sensors.behindVehicleSafetyMargin>2)&&(obj.vehicle.sensors.ttc>obj.vehicle.decisionUnit.LaneSwitchTime+0.5)
-                obj.vehicle.status.canLaneSwitch = 2;
+            if (obj.vehicle.pathInfo.laneId>0)&&(obj.vehicle.sensors.behindVehicleSafetyMargin>2)&&(obj.vehicle.sensors.ttc>obj.vehicle.decisionUnit.LaneSwitchTime+0.5)%conditions for right lane-changing
+                obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
             end
             
         end

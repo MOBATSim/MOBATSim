@@ -101,8 +101,8 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             
             referencePose = obj.referencePose';
             poseOut=pose';
-            obj.adaptive_gain = 2/(20*obj.curvature+1);
-            obj.vehicle.dynamics.maxSpeed = sqrt(0.7*10/obj.curvature);
+            obj.adaptive_gain = 2/(20*obj.curvature+1);%function of calculating adaptive control law G
+            obj.vehicle.dynamics.maxSpeed = sqrt(0.7*10/obj.curvature);%function of calculating maximum allowed speed on a curved road
         end
         
         function [position, orientation] = takeRoute(obj,car,speed,refRoute)
@@ -351,8 +351,8 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             T = car.decisionUnit.LaneSwitchTime*0.5;
             t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/2;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
+            mean_y_dddot2=sum(y_dddot2*0.01)/T;%Mean squared jerk
+            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;%mimimum ttc
             obj.vehicle.dataLog.costFunction05=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
         function costFunction075(obj,car)
@@ -587,12 +587,8 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             car.setRotationAngle(-step_length) % Vehicle Set
             t = car.dynamics.cornering.angles;
             
-            %             [checkPoint_x,checkPoint_y]=get_vehicle_checkpoint(obj,car);
-            %             checkPoint = [checkPoint_x 0 checkPoint_y];
-            %
-            %             if  norm(checkPoint - Destination) < 1+car.pathInfo.laneId*obj.laneWidth % TODO Check the value
-            %
-            if car.pathInfo.routeEndDistance <1
+
+            if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
                 car.pathInfo.s = 0;
                 
                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
@@ -714,42 +710,47 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
         end
         
         function generateLeftRotationWaypoints(obj,car)
-            route = car.pathInfo.currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];
-            position_C = car.dynamics.position([1,3]).*[1 -1];
-            radian = abs(car.pathInfo.currentTrajectory(3,1));
-            [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_C,radian);
-            car.pathInfo.s = s;
-            car.pathInfo.routeEndDistance = routeLength-s;
-            if(~isempty(obj.trajPolynom))
+            %this function generates waypoints according to reference
+            %trajectory. Waypoints are used as input signal for the Stanley
+            %controller.
+            route = car.pathInfo.currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
+            position_Cart = car.dynamics.position([1,3]).*[1 -1];%Position of the vehicle in Cartesian coordinate
+            radian = abs(car.pathInfo.currentTrajectory(3,1));%radian of the curved road, is positive for left rotating curved road
+            %% transfer Cartesian coordinate into Frenet coordinate
+            [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian); %Coordinate Conversion function
+            car.pathInfo.s = s;% Arc length
+            car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
+            %% apply lane-changing trajectory
+            if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
                 t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
-                [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});
-                if t<=obj.laneSwitchTime
-                    obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;
-                else
-                    obj.latOffset = 0;
-                    car.status.laneSwitchFinish = 1;
-                    if car.status.canLaneSwitch ==1
+                [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
+                if t<=obj.laneSwitchTime%lane-changing is not finished
+                    obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference d
+                else%lane-changing done
+                    obj.latOffset = 0;%reset reference d
+                    car.status.laneSwitchFinish = 1;%lane-changing done flag
+                    if car.status.canLaneSwitch ==1%left lane-changing
                         car.pathInfo.laneId = car.pathInfo.laneId+1;
-                    elseif car.status.canLaneSwitch ==2
+                    elseif car.status.canLaneSwitch ==2%right lane-changing
                         car.pathInfo.laneId = car.pathInfo.laneId-1;
                     end
-                    car.status.canLaneSwitch = 0;
-                    obj.trajPolynom={};
+%                    car.status.canLaneSwitch = 0;
+                    obj.trajPolynom={};%reset polynomial
                 end
             end
             
-            d=-(obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset);
-            obj.error = d-vehicle_d;
-            obj.int_error_d = obj.int_error_d+obj.error*0.01;
-            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,d,radian);
-            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];
+            d=-(obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset);%negative is only for left rotating vehicle
+            obj.error = d-vehicle_d;%lateral offset error
+            obj.int_error_d = obj.int_error_d+obj.error*0.01;%integral of lateral offset error
+            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptive_gain*obj.error+d,radian);%Coordinate Conversion function,obj.adaptive_gain*obj.error is for adaptive control
+            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
         end
         
         function generateRightRotationWaypoints(obj,car)
             route = car.pathInfo.currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];
-            position_C = car.dynamics.position([1,3]).*[1 -1];
+            position_Cart = car.dynamics.position([1,3]).*[1 -1];
             radian = -abs(car.pathInfo.currentTrajectory(3,1));
-            [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_C,radian);
+            [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian);
             car.pathInfo.s = s;
             car.pathInfo.routeEndDistance = routeLength-s;
             if(~isempty(obj.trajPolynom))
@@ -773,13 +774,13 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
             obj.error = d-vehicle_d;
             obj.int_error_d = obj.int_error_d+obj.error*0.01;
-            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,d,radian);
+            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptive_gain*obj.error+d,radian);
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];
             
         end
 
       
-        function [position_C,orientation_C] = Frenet2Cartesian(obj,route,s,d,radian)
+        function [position_Cart,orientation_Cart] = Frenet2Cartesian(obj,route,s,d,radian)
             
             %this function transfer a position in Frenet coordinate into Cartesian coordinate
             %input:
@@ -794,12 +795,12 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             
             startPoint = route(1,:);
             endPoint = route(2,:);
-            if radian == 0
+            if radian == 0%straight road
                 route_Vector = endPoint-startPoint;
                 local_route_Vector_i = route_Vector/norm(route_Vector);
-                orientation_C = atan2(local_route_Vector_i(2),local_route_Vector_i(1));
-                sideVector = [cos(orientation_C+pi/2) sin(orientation_C+pi/2)];
-                position_C = s*local_route_Vector_i+d*sideVector+startPoint;
+                orientation_Cart = atan2(local_route_Vector_i(2),local_route_Vector_i(1));
+                sideVector = [cos(orientation_Cart+pi/2) sin(orientation_Cart+pi/2)];
+                position_Cart = s*local_route_Vector_i+d*sideVector+startPoint;
             else
                 r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);
                 targetVector = (endPoint-startPoint)/norm(endPoint-startPoint);
@@ -811,14 +812,14 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
                 l = r+d;
                 lAng = sign(radian)*s/r+startPointVectorAng;
-                position_C = l*[cos(lAng) sin(lAng)]+center;
-                orientation_C = lAng+sign(radian)*pi/2;
-                orientation_C = mod(orientation_C,2*pi);
-                orientation_C = orientation_C.*(0<=orientation_C & orientation_C <= pi) + (orientation_C - 2*pi).*(pi<orientation_C & orientation_C<2*2*pi);   % angle in (-pi,pi]
+                position_Cart = l*[cos(lAng) sin(lAng)]+center;
+                orientation_Cart = lAng+sign(radian)*pi/2;
+                orientation_Cart = mod(orientation_Cart,2*pi);
+                orientation_Cart = orientation_Cart.*(0<=orientation_Cart & orientation_Cart <= pi) + (orientation_Cart - 2*pi).*(pi<orientation_Cart & orientation_Cart<2*2*pi);   % angle in (-pi,pi]
             end
         end
         
-        function [s,d,orientation_C,routeLength] = Cartesian2Frenet(obj,route,position_C,radian)
+        function [s,d,orientation_Cart,routeLength] = Cartesian2Frenet(obj,route,position_C,radian)
             
             %this function transform a position in Cartesian coordinate into Frenet coordinate
             
@@ -835,13 +836,13 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             
             startPoint = route(1,:);
             endPoint = route(2,:);
-            if radian == 0
+            if radian == 0%straight road
                 route_Vector = endPoint-startPoint;
                 local_route_Vector_i = route_Vector/norm(route_Vector);
-                orientation_C = atan2(local_route_Vector_i(2),local_route_Vector_i(1));
+                orientation_Cart = atan2(local_route_Vector_i(2),local_route_Vector_i(1));
                 posVector = position_C-startPoint;
                 s = dot(posVector,local_route_Vector_i);
-                sideVector = [cos(orientation_C+pi/2) sin(orientation_C+pi/2)];
+                sideVector = [cos(orientation_Cart+pi/2) sin(orientation_Cart+pi/2)];
                 d = dot(posVector,sideVector);
                 routeLength = norm(endPoint-startPoint);
                 obj.curvature = 0;
@@ -853,13 +854,11 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
                 center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;
                 startPointVector = startPoint-center;
-                %                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
-                %                 startPointVectorAng2pi = mod(startPointVectorAng,2*pi);
+
                 l = position_C-center;
                 d = norm(l)-r;
                 lAng = atan2(l(2),l(1));
-                %                 lAng2pi = mod(lAng,2*pi);
-                %                 s = sign(radian)*(lAng2pi-startPointVectorAng2pi)*r;
+
                 start_dot_l = dot(startPointVector,l);
                 start_cross_l = sign(radian)*(startPointVector(1)*l(2)-startPointVector(2)*l(1));
                 angle = atan2(start_cross_l,start_dot_l);
@@ -869,9 +868,9 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 end
                 s = angle*r;
                 routeLength = abs(radian)*r;
-                orientation_C = lAng+sign(radian)*pi/2;
-                orientation_C = mod(orientation_C,2*pi);
-                orientation_C = orientation_C.*(0<=orientation_C & orientation_C <= pi) + (orientation_C - 2*pi).*(pi<orientation_C & orientation_C<2*2*pi);   % angle in (-pi,pi]
+                orientation_Cart = lAng+sign(radian)*pi/2;
+                orientation_Cart = mod(orientation_Cart,2*pi);
+                orientation_Cart = orientation_Cart.*(0<=orientation_Cart & orientation_Cart <= pi) + (orientation_Cart - 2*pi).*(pi<orientation_Cart & orientation_Cart<2*2*pi);   % angle in (-pi,pi]
                 obj.curvature = 1/r;
             end
         end
