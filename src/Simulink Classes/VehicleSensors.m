@@ -246,7 +246,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     end
                 end
                 if ~isempty(behindVehicle)
-                    relativeSpeed = obj.vehicle.dynamics.speed-behindVehicle.dynamics.speed;
+                    relativeSpeed = behindVehicle.dynamics.speed - obj.vehicle.dynamics.speed;
                     relativeDistance = obj.vehicle.pathInfo.s+behindVehicle.pathInfo.routeEndDistance;
                     safetyTimeMargin = relativeDistance/relativeSpeed;
                     obj.vehicle.sensors.behindVehicleSafetyMargin = safetyTimeMargin;
