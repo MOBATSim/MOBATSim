@@ -7,7 +7,7 @@ classdef Vehicle < handle
         id
         simSpeed
         name
-        drivingBehavior
+        drivingBehavior % Check where they are set and get
         physics
         %         size
         %         mass
@@ -68,7 +68,7 @@ classdef Vehicle < handle
             obj.simSpeed = simSpeed;
             obj.name = car_name;
             
-            obj.drivingBehavior.safetyTime = 2;
+            obj.drivingBehavior.safetyTime = 2; % Check where they are set and get
             
             obj.physics.size = size; %Should be edited according to the vehicle
             obj.physics.mass = mass; %kg Should be edited according to the vehicle
@@ -86,20 +86,20 @@ classdef Vehicle < handle
             obj.sensors.AEBdistance = AEBdistance;
             obj.sensors.frontDistance = 1000;
             obj.sensors.vehicleInFrontId =0;
-            obj.sensors.leadingVehicle = [];
-            obj.sensors.behindVehicle = [];
-            obj.sensors.onDoubleLane = 0;
-            obj.sensors.ttc = 1000;
-            obj.sensors.time2surpass = 1000;
-            obj.sensors.behindVehicleDistance = 1000;
-            obj.sensors.behindVehicleSafetyMargin = 1000;
+            obj.sensors.leadingVehicle = []; % Check where they are set and get
+            obj.sensors.behindVehicle = []; % Check where they are set and get
+            obj.sensors.onDoubleLane = 0; % Check where they are set and get
+            obj.sensors.ttc = 1000; % Check where they are set and get
+            obj.sensors.time2surpass = 1000; % Check where they are set and get
+            obj.sensors.behindVehicleDistance = 1000; % Check where they are set and get
+            obj.sensors.behindVehicleSafetyMargin = 1000; % Check where they are set and get
             
             
             obj.status.emergencyCase = 0;
             obj.setStopStatus(true);
             obj.status.collided = 0;
-            obj.status.canLaneSwitch = 0;
-            obj.status.laneSwitchFinish = 0;
+            obj.status.canLaneSwitch = 0; % Check where they are set and get
+            obj.status.laneSwitchFinish = 0; % Check where they are set and get
             
             obj.pathInfo.startingTime = startingTime;
             obj.pathInfo.currentTrajectory = [];
@@ -112,11 +112,11 @@ classdef Vehicle < handle
             obj.pathInfo.referencePath = [];
             obj.pathInfo.routeCompleted = true;
             obj.pathInfo.path = 0;
-            obj.pathInfo.staticPath = 0;
+            obj.pathInfo.staticPath = 0; % Check where they are set and get
             obj.pathInfo.BOGPath = [];
-            obj.pathInfo.laneId = 0;
-            obj.pathInfo.s = 0;
-            obj.pathInfo.routeEndDistance = [];
+            obj.pathInfo.laneId = 0;  % Check where they are set and get
+            obj.pathInfo.s = 0; % Check where they are set and get
+            obj.pathInfo.routeEndDistance = []; % Check where they are set and get
             
             obj.dataLog.timeStamps =[];
             obj.dataLog.totalTravelTime = 0;
@@ -125,20 +125,21 @@ classdef Vehicle < handle
             obj.dataLog.speed = [];
             obj.dataLog.emergencyCase = [];
             obj.dataLog.platooning = [];
-            obj.dataLog.laneSwitchStartTime = [];
-            obj.dataLog.laneSwitchEndTime = [];
-            obj.dataLog.MinJerkTrajPolynom = {};
+            obj.dataLog.laneSwitchStartTime = []; % Check where they are set and get
+            obj.dataLog.laneSwitchEndTime = []; % Check where they are set and get
+            obj.dataLog.MinJerkTrajPolynom = {};% Check where they are set and get 
             
-            obj.dataLog.costFunction05=-1;
-            obj.dataLog.costFunction075=-1;
-            obj.dataLog.costFunction09=-1;
-            obj.dataLog.costFunction10=-1;
-            obj.dataLog.costFunction11=-1;
-            obj.dataLog.costFunction125=-1;
-            obj.dataLog.costFunction15=-1;
+            obj.dataLog.costFunction05=-1; % Check where they are set and get
+            obj.dataLog.costFunction075=-1; % Check where they are set and get
+            obj.dataLog.costFunction09=-1; % Check where they are set and get
+            obj.dataLog.costFunction10=-1; % Check where they are set and get
+            obj.dataLog.costFunction11=-1; % Check where they are set and get
+            obj.dataLog.costFunction125=-1; % Check where they are set and get
+            obj.dataLog.costFunction15=-1; % Check where they are set and get
             
             obj.map = evalin('base','Map');
             
+            %obj.decisionUnit = DecisionUnit;
             obj.decisionUnit.Map = evalin('base','Map');
             obj.decisionUnit.simSpeed = evalin('base','simSpeed');
             obj.decisionUnit.accelerationPhase = zeros(1,5);
@@ -146,7 +147,7 @@ classdef Vehicle < handle
             obj.decisionUnit.futureData = [];
             obj.decisionUnit.breakingFlag = 0;
             obj.decisionUnit.inCrossroad = [0 0];
-            obj.decisionUnit.LaneSwitchTime = 3;
+            obj.decisionUnit.LaneSwitchTime = 3; % Check where they are set and get
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;

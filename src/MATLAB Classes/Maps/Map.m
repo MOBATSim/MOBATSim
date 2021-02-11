@@ -108,6 +108,7 @@ classdef Map < handle
             
             
             if routeID>length(obj.connections.circle)
+                routeID = routeID - length(obj.connections.circle); % Some transformation to correct the error -> TODO: Check if consistent
                 formattedRoute = [obj.waypoints(obj.connections.translation(routeID,1),:);
                     obj.waypoints(obj.connections.translation(routeID,2),:);
                     zeros(1,3);
