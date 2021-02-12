@@ -45,7 +45,23 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 % Detect Vehicles around if the vehicle is not on halt
                 if obj.vehicle.status.stop ==0 && ~isempty(obj.vehicle.pathInfo.currentTrajectory)
                     % Detection function
-                    [V2VcommIDs, ObjectinFront] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
+                    [V2VcommIDs, ObjectinFront, ttc, V2VcommID_back, ObjectBehind, ttc_b] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
+                    
+                    %% Temp -> TODO: Carry these into Situation Awareness Block
+                    obj.vehicle.sensors.ttc = ttc;
+                    obj.vehicle.sensors.behindVehicleSafetyMargin = ttc_b;
+                    
+                    if V2VcommIDs == 0
+                        obj.vehicle.sensors.leadingVehicle = [];
+                    else
+                        obj.vehicle.sensors.leadingVehicle = obj.Vehicles(V2VcommIDs);
+                    end
+                    if V2VcommID_back == 0
+                        obj.vehicle.sensors.behindVehicle = [];
+                    else
+                        obj.vehicle.sensors.behindVehicle = obj.Vehicles(V2VcommID_back);
+                    end
+                         
                     
                 else
                     % No detection value if it is on halt
@@ -63,18 +79,30 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         
         
         
-        function [V2VcommIDs, ObjectinFront] = detectVehicles(obj ,car, Vehicles)
+        function [V2VcommIDs, ObjectinFront, ttc, V2VcommID_back, ObjectBehind, ttc_b] = detectVehicles(obj ,car, Vehicles)
                 %% Detect vehicles ahead
-                [ttc, leadingVehicle] = check_leadingVehicle(obj); %new function from Qihang
+                %[ttc, leadingVehicle] = check_leadingVehicle(obj); %new function from Qihang
                 
-                car.sensors.ttc = ttc;
-                car.sensors.leadingVehicle = leadingVehicle;
+                %car.sensors.ttc = ttc;
+                %car.sensors.leadingVehicle = leadingVehicle;
                 %% Detect vehicles behind
-                [behindVehicleSafetyMargin, behindVehicle] = check_behindVehicle(obj); %new function from Qihang
+                %[behindVehicleSafetyMargin, behindVehicle] = check_behindVehicle(obj); %new function from Qihang
                 
-                car.sensors.behindVehicleSafetyMargin = behindVehicleSafetyMargin;
-                car.sensors.behindVehicle = behindVehicle;
-            
+                %car.sensors.behindVehicleSafetyMargin = behindVehicleSafetyMargin;
+                %car.sensors.behindVehicle = behindVehicle;
+                
+                %% Default values for the outputs %we can also assign an arbitrary value % TODO remove redundant variables
+                V2VcommIDs = 0;
+                ObjectinFront = 1000;
+                ttc = inf;
+                ttc_f = inf;
+                
+                V2VcommID_back = 0;
+                ObjectBehind = 1000;
+                distance_back = 1000;
+                ttc_b = inf;
+                ttc_back = inf;
+
             %% Sensor information about a vehicle nearby (on the same route)
             id_distance = [];
             
@@ -96,16 +124,23 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     
                     if (c_distancetoDestination > v_distancetoDestination)
                         % If the "egoVehicle" is behind the "vehicle"
-                        distance_ = norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
+                        relativedistance = norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
+                        relativeSpeed = vehicle_.dynamics.speed-car.dynamics.speed;
+
                         id_ = vehicle_.id; % ID of the vehicle ahead
-                        id_distance = [id_distance; [id_ distance_]];
+                        ttc_f = relativedistance/relativeSpeed;
+                        id_distance = [id_distance; [id_ relativedistance ttc_f]];
                         
                     elseif (c_distancetoDestination <= v_distancetoDestination)
                         % If the "egoVehicle" is ahead of the "vehicle"
                         id_distance_back = [];
                         distance_back = norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
-                        id_back = vehicle_.id; % ID of the vehicle behind
-                        id_distance_back = [id_distance_back; [id_back distance_back]];
+                        relativeSpeed = vehicle_.dynamics.speed-car.dynamics.speed;
+                        
+                        V2VcommID_back = vehicle_.id; % ID of the vehicle behind
+                        ttc_back = distance_back/relativeSpeed;
+                        
+                        id_distance_back = [id_distance_back; [V2VcommID_back distance_back ttc_back]];
                     end
                     
                 end
@@ -120,11 +155,20 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 for j=1:length(idx)
                     %Check if there is a vehicle on the next
                     %neighbouring routes
-                    distance_ = (norm(car.dynamics.position-car.pathInfo.currentTrajectory(2,:)) + norm(Vehicles(idx(j)).dynamics.position-car.pathInfo.currentTrajectory(2,:)))-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
+                    relativedistance = (norm(car.dynamics.position-car.pathInfo.currentTrajectory(2,:)) + norm(Vehicles(idx(j)).dynamics.position-car.pathInfo.currentTrajectory(2,:)))-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
+                    relativeSpeed = Vehicles(idx(j)).dynamics.speed-car.dynamics.speed;
+                    
                     id_ = Vehicles(idx(j)).id;
-                    id_distance = [id_distance; [id_ distance_]];
+                    ttc_f = relativedistance/relativeSpeed;
+                    id_distance = [id_distance; [id_ relativedistance ttc_f]];
+                    
                 end
             end
+            
+            %% Test Qihang variables
+            %disp('test'); %Condition for comparing ttc values 
+            % exist('ttc_n') && ~(ttcQ==1000) &&~(ttcQ == ttc_n) && abs(ttc_n/ttcQ)<0.8
+            
             
             if ~isempty(id_distance)
                 % Front sensor perceives a vehicle in front if it is in range
@@ -132,18 +176,28 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     
                     rowId = id_distance(:,2)== min(id_distance(:,2));
                     
-                    
+                    % Register the detected vehicles
                     V2VcommIDs = id_distance(rowId,1);
                     ObjectinFront = min(id_distance(:,2));
+                    ttc = ttc_f;
+                    V2VcommID_back = V2VcommID_back;
+                    ObjectBehind = distance_back;
+                    ttc_b = ttc_back;
+                    
                     return;
                 else
-                    ObjectinFront = 1000; %we can also assign an arbitrary value
-                    V2VcommIDs = 0;
+                    % There is a vehicle in front actually but not in the range of the front sensor
+                    V2VcommID_back = V2VcommID_back;
+                    ObjectBehind = distance_back;
+                    ttc_b = ttc_back;
+                    return;
                 end
                 
             else
-                ObjectinFront = 1000; %we can also assign an arbitrary value
-                V2VcommIDs = 0;
+                % There is no vehicle in front, nor any perceived
+                V2VcommID_back = V2VcommID_back;
+                ObjectBehind = distance_back;
+                ttc_b = ttc_back;
                 return;
             end
             
