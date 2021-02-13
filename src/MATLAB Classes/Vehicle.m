@@ -129,13 +129,6 @@ classdef Vehicle < handle
             obj.dataLog.laneSwitchEndTime = []; % Check where they are set and get
             obj.dataLog.MinJerkTrajPolynom = {};% Check where they are set and get 
             
-            obj.dataLog.costFunction05=-1; % Check where they are set and get
-            obj.dataLog.costFunction075=-1; % Check where they are set and get
-            obj.dataLog.costFunction09=-1; % Check where they are set and get
-            obj.dataLog.costFunction10=-1; % Check where they are set and get
-            obj.dataLog.costFunction11=-1; % Check where they are set and get
-            obj.dataLog.costFunction125=-1; % Check where they are set and get
-            obj.dataLog.costFunction15=-1; % Check where they are set and get
             
             obj.map = evalin('base','Map');
             

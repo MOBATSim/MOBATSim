@@ -8,7 +8,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
         map = evalin('base','Map');
         simSpeed = evalin('base','simSpeed');
         modelName = evalin('base','modelName');
-        laneWidth = 3.7;
+        laneWidth = 3.7; % Standard road width
         laneSwitchWayPoints = [];
         laneSwitchStartPoint = [];
         laneSwitchTargetPoint = [];
@@ -19,14 +19,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
         latOffset = 0;
         
         trajPolynom_candidates = [];
-        trajPolynom = {};
-        trajPolynom05 = {};
-        trajPolynom075 = {};
-        trajPolynom09 = {};
-        trajPolynom10 = {};
-        trajPolynom11 = {};
-        trajPolynom125 = {};
-        trajPolynom15 = {};
+        trajPolynom = [];
         
         int_error_d =0;
         velocityPolynom = {};
@@ -129,36 +122,23 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
         function checkLaneSwitch(obj,car)
             if ~(car.status.canLaneSwitch==0) %lane switch
                 if isempty(obj.trajPolynom)
-                                      
-                    obj.generateMinJerkTrajectory(car,0.5)
-                    obj.trajPolynom05 = obj.trajPolynom_candidates(1,:);
                     
-                    obj.generateMinJerkTrajectory(car,0.75)
-                    obj.trajPolynom075 = obj.trajPolynom_candidates(2,:);
-                    
-                    obj.generateMinJerkTrajectory(car,1)
-                    obj.trajPolynom10 = obj.trajPolynom_candidates(3,:);
-                    
-                    obj.generateMinJerkTrajectory(car,1.25)
-                    obj.trajPolynom125 = obj.trajPolynom_candidates(4,:);
-                    
-                    obj.generateMinJerkTrajectory(car,1.5)
-                    obj.trajPolynom15 = obj.trajPolynom_candidates(5,:);
+                    candidateTrajectories = []; % Candidate trajectories stored here
+                    costsTrajectories = []; % 
 
-%                     obj.costFunction05(car);
-%                     obj.costFunction075(car);
-%                     obj.costFunction09(car);
-%                     obj.costFunction10(car);
-%                     obj.costFunction11(car);
-%                     obj.costFunction125(car);
-%                     obj.costFunction15(car);
-                    obj.trajChoose(car);
+                    for deltaTFactor = 0.5:0.25:1.5
+                        [cand_trajPolynom, costTraj] = obj.generateMinJerkTrajectory(car,deltaTFactor);
+                        candidateTrajectories = [candidateTrajectories; cand_trajPolynom];
+                        costsTrajectories = [costsTrajectories costTraj];
+                    end
+
+                    obj.trajChoose(car,candidateTrajectories,costsTrajectories);
                 end
             end
         end
         
         
-        function generateMinJerkTrajectory(obj,car,deltaTfactor)
+        function [cand_trajPolynom, costTraj]=generateMinJerkTrajectory(obj,car,deltaTfactor)
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];
@@ -186,29 +166,11 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             cand_trajPolynom = num2cell([a0 a1 a2 a3 a4 a5]);
             cand_traj_coeffs = [a3, a4 , a5];
             costTraj=obj.calculateCostFunction(car,cand_traj_coeffs);
-            disp(costTraj);
-            obj.registerCost(costTraj,deltaTfactor);
             
             obj.trajPolynom_candidates = [obj.trajPolynom_candidates; cand_trajPolynom];
             
         end
-        
-        function registerCost(obj,costTraj,deltaTfactor)
-            switch deltaTfactor
-                case 0.5
-                    obj.vehicle.dataLog.costFunction05 = costTraj;
-                case 0.75
-                    obj.vehicle.dataLog.costFunction075 = costTraj;
-                case 1
-                    obj.vehicle.dataLog.costFunction10 = costTraj;
-                case 1.25
-                    obj.vehicle.dataLog.costFunction125 = costTraj;
-                case 1.5
-                    obj.vehicle.dataLog.costFunction15 = costTraj;
-            end
-        end
 
-        
         function costTraj = calculateCostFunction(obj,car,candidateTrajectory)
             a3 = candidateTrajectory(1);
             a4 = candidateTrajectory(2);
@@ -222,69 +184,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             costTraj=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
         
-        function costFunction05(obj,car)
-            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom05{:});
-            T = car.decisionUnit.LaneSwitchTime*0.5;
-            t=0:0.01:T;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/T;%Mean squared jerk
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;%mimimum ttc
-            obj.vehicle.dataLog.costFunction05=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
-        function costFunction075(obj,car)
-            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom075{:});
-            T = car.decisionUnit.LaneSwitchTime*0.75;
-            t=0:0.01:T;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/T;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
-            obj.vehicle.dataLog.costFunction075=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
-        function costFunction09(obj,car)
-            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom09{:});
-            T = car.decisionUnit.LaneSwitchTime*0.9;
-            t=0:0.01:T;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/T;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
-            obj.vehicle.dataLog.costFunction09=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
-        function costFunction10(obj,car)
-            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom10{:});
-            T = car.decisionUnit.LaneSwitchTime*1;
-            t=0:0.01:T;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/T;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
-            obj.vehicle.dataLog.costFunction10=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
-        function costFunction11(obj,car)
-            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom11{:});
-            T = car.decisionUnit.LaneSwitchTime*1.1;
-            t=0:0.01:T;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/T;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
-            obj.vehicle.dataLog.costFunction11=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
-        function costFunction125(obj,car)
-            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom125{:});
-            T = car.decisionUnit.LaneSwitchTime*1.25;
-            t=0:0.01:T;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/T;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
-            obj.vehicle.dataLog.costFunction125=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
-        function costFunction15(obj,car)
-            [~,~,~,a3,a4,a5]=deal(obj.trajPolynom15{:});
-            T = car.decisionUnit.LaneSwitchTime*1.5;
-            t=0:0.01:T;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/T;
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;
-            obj.vehicle.dataLog.costFunction15=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
+
         function generateMinJerkTrajectory_standard(obj,car) % TODO: remove
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];
@@ -318,38 +218,24 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             t=0:0.01:obj.vehicle.decisionUnit.LaneSwitchTime;
             x=car.dynamics.speed*t;
             y=a0+a1*t+a2*t.^2+a3*t.^3+a4*t.^4+a5*t.^5;
-            %             y_dot=a1+2*a2*t+3*a3*t^2+4*a4*t^3+5*a5*t^4;
-            %             y_ddot=2*a2+6*a3*t+12*a4*t^2+20*a5*t^3;
-            %             y_dddot = 6*a3+24*a4*t+60*a5*t^2;
+            %             y_dot=a1+2*a2*t+3*a3*t^2+4*a4*t^3+5*a5*t^4;   % Lateral velocity 
+            %             y_ddot=2*a2+6*a3*t+12*a4*t^2+20*a5*t^3;       % Lateral acceleration polynomial
+            %             y_dddot = 6*a3+24*a4*t+60*a5*t^2;             % Lateral jerk polynomial
             obj.laneSwitchWayPoints = [x' y'];
             
         end
             
-        function trajChoose(obj,car)
+        function trajChoose(obj,car, candidateTrajectories, costsTrajectories)
             %find the trajectory with minimum cost function value
-            A = [car.dataLog.costFunction05 car.dataLog.costFunction075 car.dataLog.costFunction10 car.dataLog.costFunction125 car.dataLog.costFunction15];
-            ind = find(A==min(min(A)));
-            if(ind==1)
-                obj.trajPolynom = obj.trajPolynom05;
-                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*0.5;
-            end
-            if(ind==2)
-                obj.trajPolynom = obj.trajPolynom075;
-                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*0.75;
-            end
-            if(ind==3)
-                obj.trajPolynom = obj.trajPolynom10;
-                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*1;
-            end
-            if(ind==4)
-                obj.trajPolynom = obj.trajPolynom125;
-                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*1.25;
-            end
-            if(ind==5)
-                obj.trajPolynom = obj.trajPolynom15;
-                obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*1.5;
-            end
+            
+            ind = costsTrajectories==min(min(costsTrajectories)); % TODO: precaution should be taken when two costs are same
+            % ind might not be a single number in that case, it should be validated to be only a single number not an array.
+            
+            obj.trajPolynom = candidateTrajectories(ind,:);
+            obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*0.5;
+            
         end
+        
         function [position, orientation] = move_straight(obj,car,speed,Destination)
             %% Reference Waypoint Generation
             obj.generateStraightWaypoints(car)
@@ -646,7 +532,6 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];
             
         end
-
       
         function [position_Cart,orientation_Cart] = Frenet2Cartesian(obj,route,s,d,radian)
             
