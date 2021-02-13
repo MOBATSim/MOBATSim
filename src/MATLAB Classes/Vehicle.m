@@ -392,9 +392,29 @@ classdef Vehicle < handle
             car.pathInfo.path = newPath;
         end
         
-        function setVehicleFrontSensor(car,V2VcommIDs, ObjectinFront)
-            car.sensors.vehicleInFrontId = V2VcommIDs; 
+        function setVehicleSensorDetection(car,V2VcommIDs, ObjectinFront, V2VcommID_back, ObjectBehind)
+            car.sensors.vehicleInFrontId = V2VcommIDs;
             car.sensors.frontDistance = ObjectinFront;
+            %% Temp -> TODO: Carry these into Situation Awareness Block
+            if ~(V2VcommIDs==-1) % Register Front Vehicle
+                car.sensors.leadingVehicle = car.map.Vehicles(V2VcommIDs);
+                relSpeed = car.dynamics.speed - car.sensors.leadingVehicle.dynamics.speed;
+                car.sensors.ttc = ObjectinFront/relSpeed;
+            else
+                car.sensors.leadingVehicle = [];
+                car.sensors.ttc = inf;
+                
+            end
+            
+            if ~(V2VcommID_back==-1) % Register Behind Vehicle if exists
+                car.sensors.behindVehicle = car.map.Vehicles(V2VcommID_back);
+                relSpeed = car.sensors.behindVehicle.dynamics.speed-car.dynamics.speed;
+                car.sensors.behindVehicleSafetyMargin = ObjectBehind/relSpeed;
+            else
+                car.sensors.behindVehicle = [];
+                car.sensors.behindVehicleSafetyMargin = inf;
+            end
+           
         end
         
         function setEmergencyCase(car, EmergencyCase)
