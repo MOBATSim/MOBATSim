@@ -460,14 +460,19 @@ classdef Vehicle < handle
             car.dynamics.cornering.angles = car.dynamics.cornering.angles + step_length;
         end
         
-        function setOrientation(car,newOrientation)
+        function setOrientation(car,newOrientation) % Might be obsolete after implementing setYawAngle function
             car.dynamics.orientation = newOrientation;
+        end
+        
+        function setYawAngle(car,YawAngle) % Might replace set Orientation after careful analysis
+            car.dynamics.orientation = [0 1 0 YawAngle];
         end
         
         function setPosition(car,newPosition)
             car.dynamics.position = newPosition;
         end
         
+
     end
 end
 
