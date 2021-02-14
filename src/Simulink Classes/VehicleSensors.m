@@ -12,8 +12,8 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
     
     % Pre-computed constants
     properties(Access = private)
-        vehicle %Ego Vehicle
-        Vehicles %Other Vehicles (Used to generate the distance value)
+        vehicle     %Ego Vehicle
+        Vehicles    %Other Vehicles (Used to generate the distance value)
     end
     
     methods
@@ -34,27 +34,28 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         
         
         function [V2VcommIDs, ObjectinFront] = stepImpl(obj)
-            %This block shouldn't run if the vehicle has reached its
-            %destination
-            if obj.vehicle.pathInfo.destinationReached
+
+            if obj.vehicle.pathInfo.destinationReached %Skip function if the vehicle has reached its destination
                 % 2 Outputs: Vehicle in front id, Distance to the vehicle in front
                 V2VcommIDs = -1;
                 ObjectinFront = -1;
+                % 2 variables needed to register % TODO check if it should be also output of the function
+                V2VcommID_back = -1;
+                ObjectBehind = -1;
+                % Break out
                 
             else
                 % Detect Vehicles around if the vehicle is not on halt
                 if obj.vehicle.status.stop ==0 && ~isempty(obj.vehicle.pathInfo.currentTrajectory)
-                    [V2VcommIDs, ObjectinFront] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
-                    %%
-                    %new function from Qihang
-                    check_leadingVehicle(obj);
-                    check_behindVehicle(obj);
-                    %check_doubleLane(obj);
-                    %%
+                    % Detection function
+                    [V2VcommIDs, ObjectinFront, V2VcommID_back, ObjectBehind] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
+                                  
                 else
                     % No detection value if it is on halt
                     V2VcommIDs = -1;
                     ObjectinFront = -1;
+                    V2VcommID_back = -1;
+                    ObjectBehind = -1;
                 end
                 
             end
@@ -62,21 +63,28 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             
             % Output1 : V2VcommIDs      -> Vehicle in front id
             % Output2 : ObjectinFront   -> Distance to the vehicle in front
-            obj.vehicle.setVehicleFrontSensor(V2VcommIDs,ObjectinFront)
+            obj.vehicle.setVehicleSensorDetection(V2VcommIDs,ObjectinFront,V2VcommID_back, ObjectBehind)
         end
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        function [V2VcommIDs, ObjectinFront] = detectVehicles(~,car, Vehicles)
-            %% Sensor information about a vehicle nearby (on the same route)
+        function [V2VcommIDs, ObjectinFront, V2VcommID_back, ObjectBehind] = detectVehicles(obj ,car, Vehicles)
+                %% Detect vehicles ahead
+                %[ttc, leadingVehicle] = check_leadingVehicle(obj); %new function from Qihang
+                %% Detect vehicles behind
+                %[behindVehicleSafetyMargin, behindVehicle] = check_behindVehicle(obj); %new function from Qihang
+                
+                %% Default values for the outputs %we can also assign an arbitrary value % TODO remove redundant variables
+                V2VcommIDs = -1;
+                ObjectinFront = 1000;
+                
+                V2VcommID_back = -1;
+                ObjectBehind = 1000;
+                distance_back = 1000; % Redundant variable for ObjectBehind to avoid sending empty assignment at the end of the function
+
+            %% Sensor information about front and behinds vehicle nearby (on the same route)
             id_distance = [];
+            id_distance_back = [];
             
             i = 1:length(Vehicles);
             i(car.id)=[]; % Remove the car with the same id
@@ -90,16 +98,33 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 for vehicle_=VehiclesOnSameRoute
                     v_distancetoDestination = norm(vehicle_.dynamics.position-vehicle_.pathInfo.currentTrajectory(2,:));
                     
+                    if nnz(~(car.pathInfo.currentTrajectory == car.map.getRouteDefinitionfromRouteID(car.pathInfo.currentRoute)))
+                        break; %Inconsistency: The Route is updated but not the Trajectory -> TODO: Fix this issue in Vehicle Kinematics later on and remove this workaround
+                    end
+                    
                     if (c_distancetoDestination > v_distancetoDestination)
-                        % If the "car" is behind the "vehicle"
-                        distance_ = norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
-                        id_ = vehicle_.id;
-                        id_distance = [id_distance; [id_ distance_]];
+                        % If the "egoVehicle" is behind the "vehicle"
+                        relativedistance = norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
+                        %obj.vehicle.pathInfo.s-behindVehicle.pathInfo.s % TODO: At some point "s" parameter should be used
+                        %to increase accuracy rather than direct distances to the goal point especially for curved roads
+                        relativeSpeed = car.dynamics.speed-vehicle_.dynamics.speed;
+
+                        id_ = vehicle_.id; % ID of the vehicle ahead
+                        id_distance = [id_distance; [id_ relativedistance]];
+                        
+                    elseif (c_distancetoDestination <= v_distancetoDestination)
+                        % If the "egoVehicle" is ahead of the "vehicle"            
+                        distance_back = norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
+                        relativeSpeed = vehicle_.dynamics.speed-car.dynamics.speed;
+                        
+                        V2VcommID_back = vehicle_.id; % ID of the vehicle behind                        
+                        id_distance_back = [id_distance_back; [V2VcommID_back distance_back]];
                     end
                     
                 end
             end
-            %% Sensor information about a vehicle ahead (on the next route)
+            
+            %% Sensor information about a vehicle ahead (on the next route if not already found on the same route)
             if isempty(id_distance)
                 i = 1:length(Vehicles);
                 idx = car.map.getForwardNeighbourRoutes(car.pathInfo.currentRoute) == cat(2,cat(2,Vehicles(i).pathInfo).currentRoute);
@@ -108,58 +133,70 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 for j=1:length(idx)
                     %Check if there is a vehicle on the next
                     %neighbouring routes
-                    distance_ = (norm(car.dynamics.position-car.pathInfo.currentTrajectory(2,:)) + norm(Vehicles(idx(j)).dynamics.position-car.pathInfo.currentTrajectory(2,:)))-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
+                    relativedistance = (norm(car.dynamics.position-car.pathInfo.currentTrajectory(2,:)) + norm(Vehicles(idx(j)).dynamics.position-car.pathInfo.currentTrajectory(2,:)))-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
+                    relativeSpeed = car.dynamics.speed-Vehicles(idx(j)).dynamics.speed; % TODO - Check if TTC back definition is correct in terms of + or -
+                    
                     id_ = Vehicles(idx(j)).id;
-                    id_distance = [id_distance; [id_ distance_]];
+                    id_distance = [id_distance; [id_ relativedistance]];
+                    
                 end
             end
-            
+
             if ~isempty(id_distance)
                 % Front sensor perceives a vehicle in front if it is in range
                 if min(id_distance(:,2)) <= car.sensors.frontSensorRange
                     
                     rowId = id_distance(:,2)== min(id_distance(:,2));
                     
-                    
+                    % Register the detected vehicles
                     V2VcommIDs = id_distance(rowId,1);
                     ObjectinFront = min(id_distance(:,2));
+                    ObjectBehind = id_distance_back;                    
                     return;
                 else
-                    ObjectinFront = 1000; %we can also assign an arbitrary value
-                    V2VcommIDs = 0;
+                    % There is a vehicle in front actually but not in the range of the front sensor
+                    ObjectBehind = distance_back;
+                    return;
                 end
                 
             else
-                ObjectinFront = 1000; %we can also assign an arbitrary value
-                V2VcommIDs = 0;
+                % There is no vehicle in front, nor any perceived
+                ObjectBehind = distance_back;
                 return;
             end
+            
         end
-        function check_leadingVehicle(obj)
+        
+       
+      %% Will be removed after checking the main function  
+        function [ttc,leadingVehicle] = check_leadingVehicle(obj) 
             %this function checks if there's a leading vehicle ahead, if
             %multiple leading vehicles exist, set nearest vehicle to be the
             %leading vehicle
             leadingVehicle = [];
             ego_route = obj.vehicle.pathInfo.currentRoute;% Search vehicle on this route
-            str1 = 'obj.vehicle.map.Vehicles';
+            
+
             %%
             %traverse leading Vehicle on current route
-            for i = 1:length(eval(str1))
-                checkVehicle = eval(strcat(str1,'(',int2str(i),')'));%To be checked vehicle
-                if isequal(checkVehicle.pathInfo.currentRoute,ego_route)&&(checkVehicle.pathInfo.s>obj.vehicle.pathInfo.s)%If this vehicle is on the same route and ahead of the ego vehicle
+            for vehicle_ = obj.Vehicles
+                if vehicle_.id == obj.vehicle.id
+                    break;
+                end
+                if isequal(vehicle_.pathInfo.currentRoute,ego_route)&&(vehicle_.pathInfo.s>obj.vehicle.pathInfo.s)%If this vehicle is on the same route and ahead of the ego vehicle
                     if isempty(leadingVehicle)%If no leading vehicle exists, set this vehicle to be the leading vehicle
-                        leadingVehicle = checkVehicle;
-                    elseif checkVehicle.pathInfo.s<leadingVehicle.pathInfo.s %if there's already a leading vehicle, find the closest one 
-                        leadingVehicle = checkVehicle;
+                        leadingVehicle = vehicle_;
+                    elseif vehicle_.pathInfo.s<leadingVehicle.pathInfo.s %if there's already a leading vehicle, find the closest one
+                        leadingVehicle = vehicle_;
                     end
                 end
-                
             end
+            
+            
             if ~isempty(leadingVehicle)
                 relativeSpeed = obj.vehicle.dynamics.speed-leadingVehicle.dynamics.speed;
                 relativeDistance = leadingVehicle.pathInfo.s-obj.vehicle.pathInfo.s;
-                obj.vehicle.sensors.ttc = relativeDistance/relativeSpeed;
-                obj.vehicle.sensors.leadingVehicle = leadingVehicle;
+                ttc = relativeDistance/relativeSpeed;
             else
                 %continue search next route
                 idx = find(obj.vehicle.pathInfo.path==obj.vehicle.pathInfo.lastWaypoint);
@@ -168,33 +205,32 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 else % Destination Reached // CurrentRoute stays the same
                     nextRoute = obj.vehicle.pathInfo.currentRoute;
                 end
-                for i = 1:length(eval(str1))
-                    if nextRoute == obj.vehicle.pathInfo.currentRoute
+                for vehicle_ = obj.Vehicles
+                    if nextRoute == obj.vehicle.pathInfo.currentRoute || vehicle_.id == obj.vehicle.id
                         break;
                     end
-                    checkVehicle = eval(strcat(str1,'(',int2str(i),')'));
-                    if isequal(checkVehicle.pathInfo.currentRoute,nextRoute)
+
+                    if isequal(vehicle_.pathInfo.currentRoute,nextRoute)
                         if isempty(leadingVehicle)
-                            leadingVehicle = checkVehicle;
-                        elseif checkVehicle.pathInfo.s<leadingVehicle.pathInfo.s
-                            leadingVehicle = checkVehicle;
+                            leadingVehicle = vehicle_;
+                        elseif vehicle_.pathInfo.s<leadingVehicle.pathInfo.s
+                            leadingVehicle = vehicle_;
                         end
                     end
                 end
                 if ~isempty(leadingVehicle)
                     relativeSpeed = obj.vehicle.dynamics.speed-leadingVehicle.dynamics.speed;
                     relativeDistance = leadingVehicle.pathInfo.s+obj.vehicle.pathInfo.routeEndDistance;
-                    obj.vehicle.sensors.ttc = relativeDistance/relativeSpeed;
-                    obj.vehicle.sensors.leadingVehicle = leadingVehicle;
+                    ttc = relativeDistance/relativeSpeed;
                 else
-                    obj.vehicle.sensors.ttc = 1000;
-                    obj.vehicle.sensors.leadingVehicle = [];
+                    ttc = 1000;
+                    leadingVehicle = [];
                 end
             end
             
         end
         
-        function check_behindVehicle(obj)
+        function [behindVehicleSafetyMargin, behindVehicle] = check_behindVehicle(obj)
             %this function checks if there's a vehicle behind, if
             %multiple leading vehicles exist, set nearest vehicle to be the
             %leading vehicle
@@ -222,8 +258,8 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 relativeSpeed = obj.vehicle.dynamics.speed-behindVehicle.dynamics.speed;
                 relativeDistance = obj.vehicle.pathInfo.s-behindVehicle.pathInfo.s;
                 safetyTimeMargin = relativeDistance/relativeSpeed;
-                obj.vehicle.sensors.behindVehicleSafetyMargin = safetyTimeMargin;
-                obj.vehicle.sensors.behindVehicle = behindVehicle;
+                behindVehicleSafetyMargin = safetyTimeMargin;
+                behindVehicle = behindVehicle;
             else
                 %continue to check last route
                 idx = find(obj.vehicle.pathInfo.staticPath==obj.vehicle.pathInfo.lastWaypoint);
@@ -249,20 +285,12 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     relativeSpeed = behindVehicle.dynamics.speed - obj.vehicle.dynamics.speed;
                     relativeDistance = obj.vehicle.pathInfo.s+behindVehicle.pathInfo.routeEndDistance;
                     safetyTimeMargin = relativeDistance/relativeSpeed;
-                    obj.vehicle.sensors.behindVehicleSafetyMargin = safetyTimeMargin;
-                    obj.vehicle.sensors.behindVehicle = behindVehicle;
+                    behindVehicleSafetyMargin = safetyTimeMargin;
+                    behindVehicle = behindVehicle;
                 else
-                    obj.vehicle.sensors.behindVehicleSafetyMargin = 1000;
-                    obj.vehicle.sensors.behindVehicle = [];
+                    behindVehicleSafetyMargin = 1000;
+                    behindVehicle = [];
                 end
-            end
-        end
-        function check_doubleLane(obj)
-            ego_route = obj.vehicle.pathInfo.currentRoute;
-            if ismember(ego_route,obj.vehicle.map.doubleLane)
-                obj.vehicle.sensors.onDoubleLane = 1;
-            else
-                obj.vehicle.sensors.onDoubleLane = 0;
             end
         end
         %% Standard Simulink Output functions

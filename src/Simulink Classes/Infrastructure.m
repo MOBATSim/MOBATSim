@@ -23,6 +23,11 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             
         end
 
+        function icon = getIconImpl(~)
+            % Define icon for System block
+            icon = matlab.system.display.Icon("logo_small.png");
+        end
+
 
         
         function mergedBrakingFlagArrays = stepImpl(obj, V2Idata)
@@ -83,10 +88,6 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             % Initialize / reset discrete-state properties
         end
         
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("logo_small.png");
-        end
         
         function mergedBrakingFlagArrays = getOutputSizeImpl(~)
             % Maximum length of the output
