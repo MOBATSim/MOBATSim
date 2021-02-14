@@ -734,7 +734,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                     elseif car.status.canLaneSwitch ==2%right lane-changing
                         car.pathInfo.laneId = car.pathInfo.laneId-1;
                     end
-%                    car.status.canLaneSwitch = 0;
+                   car.status.canLaneSwitch = 0;
                     obj.trajPolynom={};%reset polynomial
                 end
             end

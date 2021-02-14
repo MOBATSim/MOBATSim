@@ -4,7 +4,7 @@ switch scenarioName
     case 'Urban City Traffic'
         %% test scenario Qihang
         startingPoints =    [84 86 15 15 15 15 15 15 15 15];
-        destinationPoints = [83 83 14 14  14  14 14 14 14 14];
+        destinationPoints = [83 51 14 14  14  14 14 14 14 14];
         maxSpeeds = [7 20 8 10 14 20 10 12 10 10];
         %% Complex crossroad scenario
 %         startingPoints =    [8  46 29 18 53 52 64 6 15 63];
