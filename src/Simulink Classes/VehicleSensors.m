@@ -45,13 +45,13 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 % Break out
                 
             else
-                % Detect Vehicles around if the vehicle is not on halt
+                % Detect Vehicles around if the ego vehicle is not on halt
                 if obj.vehicle.status.stop ==0 && ~isempty(obj.vehicle.pathInfo.currentTrajectory)
                     % Detection function
                     [V2VcommIDs, ObjectinFront, V2VcommID_back, ObjectBehind] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
                                   
                 else
-                    % No detection value if it is on halt
+                    % No detection value if the ego vehicle is on halt
                     V2VcommIDs = -1;
                     ObjectinFront = -1;
                     V2VcommID_back = -1;
@@ -68,7 +68,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         
         
         
-        function [V2VcommIDs, ObjectinFront, V2VcommID_back, ObjectBehind] = detectVehicles(obj ,car, Vehicles)
+        function [V2VcommIDs, ObjectinFront, V2VcommID_back, ObjectBehind] = detectVehicles(~ ,car, Vehicles)
                 %% Detect vehicles ahead
                 %[ttc, leadingVehicle] = check_leadingVehicle(obj); %new function from Qihang
                 %% Detect vehicles behind
@@ -79,7 +79,6 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 ObjectinFront = 1000;
                 
                 V2VcommID_back = -1;
-                ObjectBehind = 1000;
                 distance_back = 1000; % Redundant variable for ObjectBehind to avoid sending empty assignment at the end of the function
 
             %% Sensor information about front and behinds vehicle nearby (on the same route)
@@ -89,7 +88,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             i = 1:length(Vehicles);
             i(car.id)=[]; % Remove the car with the same id
             
-            VehiclesOnSameRoute=Vehicles(i(car.pathInfo.currentRoute == [cat(1,Vehicles([i]).pathInfo).currentRoute]));
+            VehiclesOnSameRoute=Vehicles(i(car.pathInfo.currentRoute == [cat(1,Vehicles(i).pathInfo).currentRoute]));
             
             if ~isempty(VehiclesOnSameRoute)
                 %If there is a vehicle on the same route,
@@ -107,15 +106,12 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                         relativedistance = norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
                         %obj.vehicle.pathInfo.s-behindVehicle.pathInfo.s % TODO: At some point "s" parameter should be used
                         %to increase accuracy rather than direct distances to the goal point especially for curved roads
-                        relativeSpeed = car.dynamics.speed-vehicle_.dynamics.speed;
-
                         id_ = vehicle_.id; % ID of the vehicle ahead
                         id_distance = [id_distance; [id_ relativedistance]];
                         
                     elseif (c_distancetoDestination <= v_distancetoDestination)
                         % If the "egoVehicle" is ahead of the "vehicle"            
                         distance_back = norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
-                        relativeSpeed = vehicle_.dynamics.speed-car.dynamics.speed;
                         
                         V2VcommID_back = vehicle_.id; % ID of the vehicle behind                        
                         id_distance_back = [id_distance_back; [V2VcommID_back distance_back]];
@@ -134,7 +130,6 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     %Check if there is a vehicle on the next
                     %neighbouring routes
                     relativedistance = (norm(car.dynamics.position-car.pathInfo.currentTrajectory(2,:)) + norm(Vehicles(idx(j)).dynamics.position-car.pathInfo.currentTrajectory(2,:)))-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
-                    relativeSpeed = car.dynamics.speed-Vehicles(idx(j)).dynamics.speed; % TODO - Check if TTC back definition is correct in terms of + or -
                     
                     id_ = Vehicles(idx(j)).id;
                     id_distance = [id_distance; [id_ relativedistance]];
