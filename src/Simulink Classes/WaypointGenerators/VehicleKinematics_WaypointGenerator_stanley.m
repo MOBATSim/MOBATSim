@@ -26,7 +26,6 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
         %accPolynom = {};%reference acc for minimum jerk trajectory
         %jerkPolynom = {};%reference jerk for minimum jerk trajectory
         
-        IntLatOffsetError =0;% Integral of lateral offset error
         referencePose = [0; 0; 0];
         adaptiveGain = 1;%adaptive control law G for the Stanley controller
         adaptiveGain_k0 = 2;%k0 of adaptive control law G,FKFS equation 10
@@ -89,7 +88,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 
                 %0.01 is the sample time -> obj.getSampleTime.SampleTime creates a huge overhead
                 
-                [~, ~] = obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory);
+                obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory);
                 %Output 1: Position of the vehicle
                 %Output 2: Rotation angle of the vehicle
                               
@@ -106,13 +105,13 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
         end
         
 
-        function [position, orientation] = takeRoute(obj,car,speed,refRoute)
+        function takeRoute(obj,car,speed,refRoute)
             RotationVector = refRoute(3,:);
             
             obj.checkLaneSwitch(car);
 
             if (RotationVector(1) == 0) %Straight motion
-                [position, orientation] = obj.move_straight(car,speed,refRoute(2,:));
+                obj.move_straight(car,speed,refRoute(2,:));
                 
             else %Rotational motion
                 rotation_angle = RotationVector(1);
@@ -120,9 +119,9 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 P_final = refRoute(2,:);
                 %Determine rotation direction: left or right
                 if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
-                    [position, orientation] = obj.rotate_left(car,speed, rotation_point,P_final);
+                    obj.rotate_left(car,speed, rotation_point,P_final);
                 elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
-                    [position, orientation] = obj.rotate_right(car,speed, rotation_point,P_final);
+                    obj.rotate_right(car,speed, rotation_point,P_final);
                 end
             end
             
@@ -205,66 +204,15 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             
         end
         
-        function [position, orientation] = move_straight(obj,car,speed,Destination)
+        function move_straight(obj,car,speed,Destination)
             %% Reference Waypoint Generation
             obj.generateStraightWaypoints(car)
             %%
-            %Displacement Vector and determination of its Angle
             if car.pathInfo.routeCompleted == true
-                DisplacementVector = Destination- car.dynamics.position;
-                ThetaRadian = atan(DisplacementVector(1)/DisplacementVector(3));
-                car.dynamics.orientation(4) = ThetaRadian;
-                car.dynamics.directionVector = DisplacementVector;
                 car.setRouteCompleted(false);
             end
             
-            % For Intercardinal directions: Depending on the four quadrants, the problem the atan function is that it
-            % is between -pi and pi so that it doesn't correctly cover a 360 degrees
-            % angle, therefore the quadrant check and pi addition must take place to
-            % make sure that the vehicle rotates correctly
-            ThetaRadian = car.dynamics.orientation(4);
-            
-            % Intercardinal Directions
-            if car.dynamics.directionVector(1)<0
-                if car.dynamics.directionVector(3)<0
-                    ThetaRadian= ThetaRadian+pi;
-                end
-            elseif car.dynamics.directionVector(1)>0
-                if car.dynamics.directionVector(3)<0
-                    ThetaRadian= ThetaRadian+pi;
-                end
-                
-                % Vertical and horizontal movements - Cardinal Directions
-                % Movement z direction
-            elseif car.dynamics.directionVector(1)==0
-                
-                % Positive z direction
-                if car.dynamics.directionVector(3)>0
-                    ThetaRadian = 0;
-                    
-                    % Negative z direction
-                elseif car.dynamics.directionVector(3)<0
-                    ThetaRadian =-pi;
-                end
-                
-                % Movement x direction
-            elseif car.dynamics.directionVector(3)==0
-                % Positive x direction
-                if car.dynamics.directionVector(1)>0
-                    ThetaRadian= pi/2;
-                    % Negative x direction
-                elseif car.dynamics.directionVector(3)<0
-                    ThetaRadian= -pi/2;
-                end
-                
-            end
-            
-            %             [checkPoint_x,checkPoint_y]=get_vehicle_checkpoint(obj,car);
-            %             checkPoint = [checkPoint_x 0 checkPoint_y];
-            %
-            %             %if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
-            %             if norm(checkPoint-Destination)< 1+car.pathInfo.laneId*obj.laneWidth % Error tolerance value TODO: check lower numbers
-            %
+
             if car.pathInfo.routeEndDistance <1
                 
                 car.pathInfo.s = 0;
@@ -277,13 +225,10 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
                 car.setCurrentRoute(nextRoute); % Vehicle Set
             end
-            
-            orientation = [ 0 1 0 ThetaRadian];
-            % Simple Straight Motion Equation
-            position = car.dynamics.position + (car.dynamics.directionVector/norm(car.dynamics.directionVector))*(speed);
+
         end
         
-        function [position, orientation] = rotate_left(obj ,car, speed, rotation_point,Destination)
+        function rotate_left(obj ,car, speed, rotation_point,Destination)
             %% Reference Waypoint Generation
             obj.generateLeftRotationWaypoints(car);
             %%
@@ -324,22 +269,12 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 
                 car.dynamics.cornering.angles = 0;
                 
-                position = Destination;
-                orientation = car.dynamics.orientation;
-            else
-                vector_velocity=[-a*sin(t)-cos(t)*c b a*cos(t)-c*sin(t)];
-                vector=cross(vector_velocity, vector_z);
-                vector=vector/norm(vector);
-                theta=acos(dot(vector_velocity, vector_z)/(norm(vector_velocity)*norm(vector_z)));
                 
-                
-                position = [rotation_point(1)-(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)-(a*sin(t)+c*cos(t))];
-                orientation = [vector -theta];
             end
             
         end
         
-        function [position, orientation] = rotate_right(obj ,car,speed, rotation_point,Destination)
+        function rotate_right(obj ,car,speed, rotation_point,Destination)
             %% Reference Waypoint Generation
             obj.generateRightRotationWaypoints(car);
             %%
@@ -362,10 +297,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             
             t = car.dynamics.cornering.angles;
             
-            %             [checkPoint_x,checkPoint_y]=get_vehicle_checkpoint(obj,car);
-            %             checkPoint = [checkPoint_x 0 checkPoint_y];
-            %
-            %             if  norm(checkPoint - Destination) < 1+car.pathInfo.laneId*obj.laneWidth % TODO Check the value
+
             if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
                 car.pathInfo.s = 0;%reset s at the end of road
                 
@@ -378,17 +310,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 car.setCurrentRoute(nextRoute);
                 
                 car.dynamics.cornering.angles = 0;
-                
-                position = Destination;
-                orientation = car.dynamics.orientation;
-            else
-                vector_velocity=[-a*sin(t)-cos(t)*c b a*cos(t)-c*sin(t)];
-                vector=cross(vector_velocity, vector_z);
-                vector=vector/norm(vector);
-                theta=acos(dot(vector_velocity, vector_z)/(norm(vector_velocity)*norm(vector_z)));
-                
-                position = [rotation_point(1)+(a*cos(t)-sin(t)*c) rotation_point(2)+b*t rotation_point(3)+(a*sin(t)+c*cos(t))];
-                orientation =[vector -theta];
+
             end
             
             
@@ -404,23 +326,29 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian);%Coordinate Conversion function
             car.pathInfo.s = s;% drived length
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
-            if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
+            
+            %% If lane-changing trajectory exists
+            if(~isempty(obj.trajPolynom))
                 t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
                 [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
+                
                 if t<=obj.laneSwitchTime%lane-changing is not finished
                     obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
+                    
                 else%lane-changing done
+                    
                     obj.latOffset = 0;%reset reference delta_d
                     car.status.laneSwitchFinish = 1;%lane-changing done flag
+                    
                     if car.status.canLaneSwitch ==1%left lane-changing
-                        car.pathInfo.laneId = car.pathInfo.laneId+1;
+                        car.pathInfo.laneId = car.pathInfo.laneId+1;%TODO: check +- to the LaneID
                     elseif car.status.canLaneSwitch ==2%right lane-changing
                         car.pathInfo.laneId = car.pathInfo.laneId-1;
                     end
+                    
                     car.status.canLaneSwitch = 0;%reset flag
                     car.dataLog.laneSwitchEndTime=[car.dataLog.laneSwitchEndTime get_param('MOBATSim','SimulationTime')];%logging endtime 
                     obj.trajPolynom={};%reset polynomial
-                    
                 end
             end
             
@@ -428,7 +356,6 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             
-            obj.IntLatOffsetError = obj.IntLatOffsetError+obj.latOffsetError*0.01;%integral of lateral offset error
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
         end
@@ -465,7 +392,6 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             
             d=-(obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset);%negative is only for left rotating vehicle
             obj.latOffsetError = d-vehicle_d;%lateral offset error
-            obj.IntLatOffsetError = obj.IntLatOffsetError+obj.latOffsetError*0.01;%integral of lateral offset error
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
         end
@@ -500,7 +426,6 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             
             d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;%for left rotating vehicle
             obj.latOffsetError = d-vehicle_d;%lateral offset error
-            obj.IntLatOffsetError = obj.IntLatOffsetError+obj.latOffsetError*0.01;%integral of lateral offset error
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
             
