@@ -35,48 +35,49 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
                 LeadSpeed = -1;
                 DrivingMode = 1;
                 Dist2Stop = -1;
-            else
-                
-                
-                %Output 4: Driving mode
-                if(emergencyCase == 0)
-                    DrivingMode = 1;
-                elseif(emergencyCase == 1)
+                return;
+            end
+                        
+            
+            %Output 4: Driving mode
+            if(emergencyCase == 0)
+                DrivingMode = 1;
+            elseif(emergencyCase == 1)
+                DrivingMode = 2;
+            elseif(emergencyCase == 2)
+                if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
+                    DrivingMode = 3;
+                else
                     DrivingMode = 2;
-                elseif(emergencyCase == 2)
+                end
+                
+            else
+                DrivingMode = 1;
+            end
+            
+            %Output 1: Reference Speed
+            SpeedReference = obj.vehicle.dynamics.maxSpeed;
+            %Output 2: Reference distance to the vehicle in front
+            DistanceReference = LeaderDistance;
+            %Output 3: The speed of the leading vehicle
+            LeadSpeed =LeaderSpeed;
+            
+            
+            if(obj.vehicle.pathInfo.stopAt ~= 0)
+                %Output 5: Distance to stop before a crossroad
+                Dist2Stop = norm(obj.vehicle.dynamics.position - obj.vehicle.map.get_coordinates_from_waypoint(obj.vehicle.pathInfo.stopAt));
+                DrivingMode = 4;
+                if(emergencyCase == 2)
                     if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
                         DrivingMode = 3;
-                    else
-                        DrivingMode = 2;
                     end
-                    
-                else
-                    DrivingMode = 1;
                 end
-                
-                %Output 1: Reference Speed
-                SpeedReference = obj.vehicle.dynamics.maxSpeed;
-                %Output 2: Reference distance to the vehicle in front
-                DistanceReference = LeaderDistance;
-                %Output 3: The speed of the leading vehicle
-                LeadSpeed =LeaderSpeed;
-                
-                
-                if(obj.vehicle.pathInfo.stopAt ~= 0)
-                    %Output 5: Distance to stop before a crossroad
-                    Dist2Stop = norm(obj.vehicle.dynamics.position - obj.vehicle.map.get_coordinates_from_waypoint(obj.vehicle.pathInfo.stopAt));
-                    DrivingMode = 4;
-                    if(emergencyCase == 2)
-                        if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
-                            DrivingMode = 3;
-                        end
-                    end
-                else
-                    %Output 5: Distance to stop before a crossroad
-                    Dist2Stop = 0;
-                end
-                
+            else
+                %Output 5: Distance to stop before a crossroad
+                Dist2Stop = 0;
             end
+            
+            
         end
         
         %% Standard Simulink Output functions
