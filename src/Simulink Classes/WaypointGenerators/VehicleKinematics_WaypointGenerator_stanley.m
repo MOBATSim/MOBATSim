@@ -116,14 +116,15 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 obj.move_straight(car,speed,refRoute(2,:));
                 
             else %Rotational motion
-                rotation_angle = RotationVector(1);
-                rotation_point = [RotationVector(2) 0 RotationVector(3)];
+
                 P_final = refRoute(2,:);
+                
                 %Determine rotation direction: left or right
                 if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
-                    obj.rotate_left(car,speed, rotation_point,P_final);
+                    obj.rotate_left(car,speed,P_final);
+                    
                 elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
-                    obj.rotate_right(car,speed, rotation_point,P_final);
+                    obj.rotate_right(car,speed,P_final);
                 end
             end
             
@@ -226,7 +227,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
 
         end
         
-        function rotate_left(obj ,car, speed, rotation_point,Destination)
+        function rotate_left(obj ,car, speed,Destination)
             %% Reference Waypoint Generation
             obj.generateLeftRotationWaypoints(car);
             %%
@@ -247,7 +248,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             
         end
         
-        function rotate_right(obj ,car,speed, rotation_point,Destination)
+        function rotate_right(obj ,car,speed,Destination)
             %% Reference Waypoint Generation
             obj.generateRightRotationWaypoints(car);
             %%
