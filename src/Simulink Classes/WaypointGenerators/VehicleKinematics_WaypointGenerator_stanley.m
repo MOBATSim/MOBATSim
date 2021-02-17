@@ -282,20 +282,9 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 
                 car.setRouteCompleted(false);
                 
-                car.setCorneringValues(car.dynamics.position, rotation_point)
             end
             
-            r = norm(Destination-rotation_point);
-            vector_z=[0 0 1];
-            
-            a = car.dynamics.cornering.a;
-            b = car.dynamics.cornering.b;
-            c = car.dynamics.cornering.c;
-            
-            step_length = speed/r;
-            car.setRotationAngle(step_length) % Vehicle Set
-            
-            t = car.dynamics.cornering.angles;
+
             
 
             if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
@@ -309,7 +298,6 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
                 car.setCurrentRoute(nextRoute);
                 
-                car.dynamics.cornering.angles = 0;
 
             end
             
@@ -328,29 +316,8 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
             
             %% If lane-changing trajectory exists
-            if(~isempty(obj.trajPolynom))
-                t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
-                [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
-                
-                if t<=obj.laneSwitchTime%lane-changing is not finished
-                    obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
-                    
-                else%lane-changing done
-                    
-                    obj.latOffset = 0;%reset reference delta_d
-                    car.status.laneSwitchFinish = 1;%lane-changing done flag
-                    
-                    if car.status.canLaneSwitch ==1%left lane-changing
-                        car.pathInfo.laneId = car.pathInfo.laneId+1;%TODO: check +- to the LaneID
-                    elseif car.status.canLaneSwitch ==2%right lane-changing
-                        car.pathInfo.laneId = car.pathInfo.laneId-1;
-                    end
-                    
-                    car.status.canLaneSwitch = 0;%reset flag
-                    car.dataLog.laneSwitchEndTime=[car.dataLog.laneSwitchEndTime get_param('MOBATSim','SimulationTime')];%logging endtime 
-                    obj.trajPolynom={};%reset polynomial
-                end
-            end
+            obj.generateLaneChanging_WPs(car)
+
             
             % ISSUE: Doesn't have meaning with LaneId-0.5 
             d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
@@ -371,24 +338,9 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian); %Coordinate Conversion function
             car.pathInfo.s = s;% Arc length
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
-            %% apply lane-changing trajectory
-            if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-                t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
-                [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
-                if t<=obj.laneSwitchTime%lane-changing is not finished
-                    obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
-                else%lane-changing done
-                    obj.latOffset = 0;%reset reference delta_d
-                    car.status.laneSwitchFinish = 1;%lane-changing done flag
-                    if car.status.canLaneSwitch ==1%left lane-changing
-                        car.pathInfo.laneId = car.pathInfo.laneId+1;
-                    elseif car.status.canLaneSwitch ==2%right lane-changing
-                        car.pathInfo.laneId = car.pathInfo.laneId-1;
-                    end
-                   car.status.canLaneSwitch = 0;%reset flag
-                   obj.trajPolynom={};%reset polynomial
-                end
-            end
+            %% apply lane-changing trajectory if a Trajectory polynomial has been set
+            obj.generateLaneChanging_WPs(car);
+
             
             d=-(obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset);%negative is only for left rotating vehicle
             obj.latOffsetError = d-vehicle_d;%lateral offset error
@@ -406,23 +358,9 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian);%Coordinate Conversion function
             car.pathInfo.s = s;% Arc length
             car.pathInfo.routeEndDistance = routeLength-s;%distance to the current route's endpoint
-            if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-                t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
-                [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
-                if t<=obj.laneSwitchTime%lane-changing is not finished
-                    obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
-                else%lane-changing done
-                    obj.latOffset = 0;%reset reference delta_d
-                    car.status.laneSwitchFinish = 1;%lane-changing done flag
-                    if car.status.canLaneSwitch ==1%left lane-changing
-                        car.pathInfo.laneId = car.pathInfo.laneId+1;
-                    elseif car.status.canLaneSwitch ==2%right lane-changing
-                        car.pathInfo.laneId = car.pathInfo.laneId-1;
-                    end
-                    car.status.canLaneSwitch = 0;%reset flag
-                    obj.trajPolynom={};%reset polynomial
-                end
-            end
+            
+            obj.generateLaneChanging_WPs(car);
+
             
             d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;%for left rotating vehicle
             obj.latOffsetError = d-vehicle_d;%lateral offset error
@@ -523,6 +461,26 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 orientation_Cart = mod(orientation_Cart,2*pi);
                 orientation_Cart = orientation_Cart.*(0<=orientation_Cart & orientation_Cart <= pi) + (orientation_Cart - 2*pi).*(pi<orientation_Cart & orientation_Cart<2*2*pi);   % angle in (-pi,pi]
                 obj.curvature = 1/r;
+            end
+        end
+        
+        function generateLaneChanging_WPs(obj, car)
+            if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
+                t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
+                [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
+                if t<=obj.laneSwitchTime%lane-changing is not finished
+                    obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
+                else%lane-changing done
+                    obj.latOffset = 0;%reset reference delta_d
+                    car.status.laneSwitchFinish = 1;%lane-changing done flag
+                    if car.status.canLaneSwitch ==1%left lane-changing
+                        car.pathInfo.laneId = car.pathInfo.laneId+1;
+                    elseif car.status.canLaneSwitch ==2%right lane-changing
+                        car.pathInfo.laneId = car.pathInfo.laneId-1;
+                    end
+                    car.status.canLaneSwitch = 0;%reset flag
+                    obj.trajPolynom={};%reset polynomial
+                end
             end
         end
         
