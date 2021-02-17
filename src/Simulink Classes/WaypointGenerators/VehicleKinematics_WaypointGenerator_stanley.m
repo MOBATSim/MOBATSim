@@ -79,6 +79,8 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                     
                     obj.vehicle.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
                     obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
+                    obj.vehicle.setRouteCompleted(false);                % Vehicle - Set Functions
+                    
                 end
                 
                 speedAccordingtoSimulation = speed*0.01*obj.simSpeed;%speed limit on curved road
@@ -208,11 +210,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             %% Reference Waypoint Generation
             obj.generateStraightWaypoints(car)
             %%
-            if car.pathInfo.routeCompleted == true
-                car.setRouteCompleted(false);
-            end
             
-
             if car.pathInfo.routeEndDistance <1
                 
                 car.pathInfo.s = 0;
@@ -232,29 +230,6 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             %% Reference Waypoint Generation
             obj.generateLeftRotationWaypoints(car);
             %%
-            if car.pathInfo.routeCompleted == true
-                
-                car.dynamics.cornering.angles = pi; % Vehicle Set
-                car.setRouteCompleted(false); % Vehicle Set
-                
-                point_to_rotate= car.dynamics.position;
-                
-                car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
-                car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
-                car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
-            end
-            
-            r = norm(Destination-rotation_point);
-            vector_z=[0 0 1];
-            
-            a = car.dynamics.cornering.a;
-            b = car.dynamics.cornering.b;
-            c = car.dynamics.cornering.c;
-            
-            step_length = speed/r;
-            car.setRotationAngle(-step_length) % Vehicle Set
-            t = car.dynamics.cornering.angles;
-            
 
             if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
                 car.pathInfo.s = 0;%reset s at the end of road
@@ -267,8 +242,6 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
                 car.setCurrentRoute(nextRoute); % Vehicle Set
                 
-                car.dynamics.cornering.angles = 0;
-                
                 
             end
             
@@ -278,15 +251,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             %% Reference Waypoint Generation
             obj.generateRightRotationWaypoints(car);
             %%
-            if car.pathInfo.routeCompleted == true
-                
-                car.setRouteCompleted(false);
-                
-            end
             
-
-            
-
             if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
                 car.pathInfo.s = 0;%reset s at the end of road
                 
@@ -466,8 +431,11 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
         
         function generateLaneChanging_WPs(obj, car)
             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
+                
                 t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
+                
                 [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
+                
                 if t<=obj.laneSwitchTime%lane-changing is not finished
                     obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
                 else%lane-changing done
