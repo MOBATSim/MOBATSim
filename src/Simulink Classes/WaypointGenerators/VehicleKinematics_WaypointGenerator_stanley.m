@@ -175,7 +175,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             a3=double(a3);
             a4=double(a4);
             a5=double(a5);
-            cand_trajPolynom = num2cell([a0 a1 a2 a3 a4 a5]);
+            cand_trajPolynom = [a0 a1 a2 a3 a4 a5];
             cand_traj_coeffs = [a3, a4 , a5];
             costTraj=obj.calculateCostFunction(car,cand_traj_coeffs);
             
@@ -435,7 +435,13 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                 
                 t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
                 
-                [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
+                % Unfortunately there is no better way than this, double2cell -> deal is slower
+                a0=obj.trajPolynom(1);% a0
+                a1=obj.trajPolynom(2);% a1
+                a2=obj.trajPolynom(3);% a2
+                a3=obj.trajPolynom(4);% a3
+                a4=obj.trajPolynom(5);% a4
+                a5=obj.trajPolynom(6);% a5
                 
                 if t<=obj.laneSwitchTime%lane-changing is not finished
                     obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
@@ -448,7 +454,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
                         car.pathInfo.laneId = car.pathInfo.laneId-1;
                     end
                     car.status.canLaneSwitch = 0;%reset flag
-                    obj.trajPolynom={};%reset polynomial
+                    obj.trajPolynom=[];%reset polynomial
                 end
             end
         end
