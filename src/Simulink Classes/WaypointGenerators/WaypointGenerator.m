@@ -7,7 +7,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
     end
     
     % Pre-computed constants
-    properties(Access = private)
+    properties(Access = protected)
         vehicle
         map = evalin('base','Map');
         simSpeed = evalin('base','simSpeed');
@@ -21,8 +21,13 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             setProperties(obj,nargin,varargin{:});
         end
     end
-
+    
     methods(Access = protected)
+        function setupImpl(obj)
+            % Perform one-time calculations, such as computing constants
+            obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
+        end
+        
         function currentRoute = generateCurrentRoute(~,car, path, lastWaypoint)
             
             idx = find(path==lastWaypoint);

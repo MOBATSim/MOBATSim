@@ -3,12 +3,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < WaypointGenerator
     %
     
     % Pre-computed constants
-    properties(Access = private)
-        vehicle
-        map = evalin('base','Map');
-        simSpeed = evalin('base','simSpeed');
-        modelName = evalin('base','modelName');
-        
+    properties(Access = private)      
         laneWidth = 3.7; % Standard road width
         curvature = 0;%curvature of the current road
      %  laneSwitchWayPoints = [];% Trajectory for pure pursuit controller
@@ -45,8 +40,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < WaypointGenerator
     methods(Access = protected)
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            %setupImpl@VehicleKinematics(obj);
-            obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
+            setupImpl@WaypointGenerator(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
         end
         
         
