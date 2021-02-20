@@ -46,6 +46,70 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
         end
         
+                function move_straight(obj,car,speed,Destination)
+            %% Reference Waypoint Generation
+            obj.generateStraightWaypoints(car)
+            %%
+            
+            if car.pathInfo.routeEndDistance <1
+                
+                car.pathInfo.s = 0;
+                
+                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
+                
+                car.setRouteCompleted(true); % Vehicle Set
+                car.setLastWaypoint(lastWaypoint); % Vehicle Set
+                
+                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
+                car.setCurrentRoute(nextRoute); % Vehicle Set
+            end
+
+        end
+        
+        function rotate_left(obj ,car, speed,Destination)
+            %% Reference Waypoint Generation
+            obj.generateLeftRotationWaypoints(car);
+            %%
+
+            if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
+                car.pathInfo.s = 0;%reset s at the end of road
+                
+                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
+                
+                car.setRouteCompleted(true);% Vehicle Set
+                car.setLastWaypoint(lastWaypoint); % Vehicle Set
+                
+                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
+                car.setCurrentRoute(nextRoute); % Vehicle Set
+                
+                
+            end
+            
+        end
+        
+        function rotate_right(obj ,car,speed,Destination)
+            %% Reference Waypoint Generation
+            obj.generateRightRotationWaypoints(car);
+            %%
+            
+            if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
+                car.pathInfo.s = 0;%reset s at the end of road
+                
+                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
+                
+                car.setRouteCompleted(true);% Vehicle Set
+                car.setLastWaypoint(lastWaypoint); % Vehicle Set
+                
+                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
+                car.setCurrentRoute(nextRoute);
+                
+
+            end
+            
+            
+        end
+        
+        
         function currentRoute = generateCurrentRoute(~,car, path, lastWaypoint)
             
             idx = find(path==lastWaypoint);
@@ -171,11 +235,20 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             end
         end
         
+
+    end
+    methods(Static,Access = protected)
         
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("WaypointGenerator.png");
-        end
+    end
+    
+        %% Abstract Methods / Must be implemented by Subclasses
+    methods (Abstract, Access = protected)
+
+        % Every Waypoint generator should generate Waypoints in their own way
+        generateStraightWaypoints(obj,car)
+        generateLeftRotationWaypoints(obj,car)
+        generateRightRotationWaypoints(obj,car)
+        
     end
 end
 

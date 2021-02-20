@@ -26,6 +26,13 @@ classdef VehicleKinematics_WaypointGenerator_stanley < WaypointGenerator
             % Perform one-time calculations, such as computing constants
             setupImpl@WaypointGenerator(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
         end
+
+        function icon = getIconImpl(~)
+            % Define icon for System block
+            icon = matlab.system.display.Icon("WaypointGenerator.png");
+        end
+
+
         
         
         function [poseOut, referencePose] = stepImpl(obj,pose,speed)
@@ -185,69 +192,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < WaypointGenerator
             
         end
         
-        function move_straight(obj,car,speed,Destination)
-            %% Reference Waypoint Generation
-            obj.generateStraightWaypoints(car)
-            %%
-            
-            if car.pathInfo.routeEndDistance <1
-                
-                car.pathInfo.s = 0;
-                
-                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true); % Vehicle Set
-                car.setLastWaypoint(lastWaypoint); % Vehicle Set
-                
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
-                car.setCurrentRoute(nextRoute); % Vehicle Set
-            end
 
-        end
-        
-        function rotate_left(obj ,car, speed,Destination)
-            %% Reference Waypoint Generation
-            obj.generateLeftRotationWaypoints(car);
-            %%
-
-            if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
-                car.pathInfo.s = 0;%reset s at the end of road
-                
-                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true);% Vehicle Set
-                car.setLastWaypoint(lastWaypoint); % Vehicle Set
-                
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
-                car.setCurrentRoute(nextRoute); % Vehicle Set
-                
-                
-            end
-            
-        end
-        
-        function rotate_right(obj ,car,speed,Destination)
-            %% Reference Waypoint Generation
-            obj.generateRightRotationWaypoints(car);
-            %%
-            
-            if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
-                car.pathInfo.s = 0;%reset s at the end of road
-                
-                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true);% Vehicle Set
-                car.setLastWaypoint(lastWaypoint); % Vehicle Set
-                
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
-                car.setCurrentRoute(nextRoute);
-                
-
-            end
-            
-            
-        end
-        
         function generateStraightWaypoints(obj,car)
             %this function generates waypoints according to reference
             %trajectory. Waypoints are used as input signal for the Stanley
@@ -345,11 +290,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < WaypointGenerator
     end
     %% Standard Simulink Output functions
     methods(Static,Access = protected)
-        
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("Vehicle.png");
-        end
+
         
         function resetImpl(~)
             % Initialize / reset discrete-state properties
