@@ -1,4 +1,4 @@
-classdef V_PurePursuitWPGenerator < WaypointGenerator
+classdef V_WPGenerator_PurePursuit < WaypointGenerator
     % This blocks generates waypoints.
     %
     
@@ -20,7 +20,7 @@ classdef V_PurePursuitWPGenerator < WaypointGenerator
     
     methods
         % Constructor
-        function obj = V_PurePursuitWPGenerator(varargin)
+        function obj = V_WPGenerator_PurePursuit(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:});
         end

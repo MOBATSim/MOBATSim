@@ -1,4 +1,4 @@
-classdef VehicleKinematics_WaypointGenerator_stanley < WaypointGenerator
+classdef V_WPGenerator_Stanley < WaypointGenerator
     % This blocks generates waypoints.
     %
     
@@ -15,7 +15,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < WaypointGenerator
     
     methods
         % Constructor
-        function obj = VehicleKinematics_WaypointGenerator_stanley(varargin)
+        function obj = V_WPGenerator_Stanley(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:});
         end
