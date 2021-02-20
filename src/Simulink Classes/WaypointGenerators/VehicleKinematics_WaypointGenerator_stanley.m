@@ -1,4 +1,4 @@
-classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
+classdef VehicleKinematics_WaypointGenerator_stanley < WaypointGenerator
     % This blocks generates waypoints.
     %
     
