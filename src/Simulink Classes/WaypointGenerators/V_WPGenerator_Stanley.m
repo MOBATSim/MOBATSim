@@ -149,7 +149,6 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             end
             obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
             %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
-            tic
             syms t; % time
             % matrix with polynom coefficients for  lateral position, speed and acceleration
             %         a0   a1    a2     a3      a4       a5
@@ -172,7 +171,6 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             a4=A(5);
             a5=A(6);
             cand_trajPolynom = [a0 a1 a2 a3 a4 a5];
-            toc
             cand_traj_coeffs = [a3, a4 , a5];
             costTraj=obj.calculateCostFunction(car,cand_traj_coeffs);
             
