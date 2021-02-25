@@ -149,23 +149,32 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             end
             obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
             %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
-            a0=0;
-            a1=0;
-            a2=0;
-            syms a3 a4 a5;
-            [a3,a4,a5]=solve([a0+a3*T^3+a4*T^4+a5*T^5==y_f, ... % Boundary condition for lateral displacement
-                3*a3*T^2+4*a4*T^3+5*a5*T^4==0, ...              % Boundary condition for lateral speed
-                6*a3*T+12*a4*T^2+20*a5*T^3==0,],[a3,a4,a5]);    % Boundary condition for lateral acceleration
-            % Solving for coefficients and conversion to double precision
-            a3=double(a3);
-            a4=double(a4);
-            a5=double(a5);
+            syms t; % time
+            % matrix with polynom coefficients for  lateral position, speed and acceleration
+            %         a0   a1    a2     a3      a4       a5
+            d(t) = [  1     t   t^2    t^3     t^4     t^5;
+                      0     1   2*t  3*t^2   4*t^3   5*t^4;
+                      0     0     2    6*t  12*t^2  20*t^3];
+            % Starting conditions
+            ti = 0; % time
+            d_ti = [0; 0; 0]; % position, speed, acceleration
+            % Finish conditions
+            tf = T;
+            d_tf = [y_f; 0; 0]; % position, speed, acceleration        
+            % Solve all linear equations with conditions at t = ti and t = tf
+            A = linsolve([d(ti);d(tf)], [d_ti; d_tf]);
+            A = double(A);
+            a0=A(1);
+            a1=A(2);
+            a2=A(3);
+            a3=A(4);
+            a4=A(5);
+            a5=A(6);
             cand_trajPolynom = [a0 a1 a2 a3 a4 a5];
             cand_traj_coeffs = [a3, a4 , a5];
             costTraj=obj.calculateCostFunction(car,cand_traj_coeffs);
             
             obj.trajPolynom_candidates = [obj.trajPolynom_candidates; cand_trajPolynom];
-            
         end
 
         function costTraj = calculateCostFunction(obj,car,candidateTrajectory)
