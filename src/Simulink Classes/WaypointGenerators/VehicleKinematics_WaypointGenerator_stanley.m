@@ -166,7 +166,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
             tic
             syms t; % time
-            % Rearanged matrix to extract polynom coefficients
+            % matrix with polynom coefficients for  lateral position, speed and acceleration
             %         a0   a1    a2     a3      a4       a5
             d(t) = [  1     t   t^2    t^3     t^4     t^5;
                       0     1   2*t  3*t^2   4*t^3   5*t^4;
@@ -177,8 +177,7 @@ classdef VehicleKinematics_WaypointGenerator_stanley < VehicleKinematics
             % Finish conditions
             tf = T;
             d_tf = [y_f; 0; 0]; % position, speed, acceleration        
-            % Solve all linear equations 
-            % with conditions at t = 0 and t = tf
+            % Solve all linear equations with conditions at t = ti and t = tf
             A = linsolve([d(ti);d(tf)], [d_ti; d_tf]);
             A = double(A);
             a0=A(1);
