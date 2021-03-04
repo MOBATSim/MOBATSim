@@ -1,8 +1,8 @@
-classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
+classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
     % Behavioral Planner - Vehicle determines its driving mode.
     %
-
+    
     % Public, tunable properties
     properties
         Vehicle_id
@@ -26,9 +26,9 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
         end
-               
+        
         function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
-            %This block shouldn't run if the vehicle has reached its destination
+            %This block shouldn't run if the ego vehicle has reached its destination
             if obj.vehicle.pathInfo.destinationReached
                 SpeedReference=0;
                 DistanceReference =-1;
@@ -37,19 +37,22 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
                 Dist2Stop = -1;
                 return;
             end
-                        
             
+            % Evaluation of lane-changing maneuver
+            switch_decision(obj);
+
             %Output 4: Driving mode
             if(emergencyCase == 0)
                 DrivingMode = 1;
-            elseif(emergencyCase == 1)
-                DrivingMode = 2;
-            elseif(emergencyCase == 2)
-                if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
-                    DrivingMode = 3;
-                else
-                    DrivingMode = 2;
-                end
+                %% some longitudinal driving modes are deactivated so that the vehicle can do lane-changing
+                %                                     elseif(emergencyCase == 1)
+                %                                         DrivingMode = 2;
+                %                                     elseif(emergencyCase == 2)
+                %                                         if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
+                %                                             DrivingMode = 3;
+                %                                         else
+                %                                             DrivingMode = 2;
+                %                                         end
                 
             else
                 DrivingMode = 1;
@@ -79,6 +82,18 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             
             
         end
+        %% helper function
+        function switch_decision(obj)
+            
+            if (obj.vehicle.pathInfo.laneId<=0)&&(obj.vehicle.sensors.ttc <1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0)%conditions for left lane-changing
+                obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
+            end
+            
+            if (obj.vehicle.pathInfo.laneId>0)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.sensors.ttc>obj.vehicle.decisionUnit.LaneSwitchTime+0.5)%conditions for right lane-changing
+                obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
+            end
+            
+        end
         
         %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
@@ -104,8 +119,8 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             
             % Set public properties and states
             loadObjectImpl@matlab.System(obj,s,wasLocked);
-        end 
-    end   
+        end
+    end
     methods(Static, Access = protected)
         function header = getHeaderImpl
             % Define header panel for System block dialog

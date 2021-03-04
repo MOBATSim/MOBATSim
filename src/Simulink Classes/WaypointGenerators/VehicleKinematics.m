@@ -50,7 +50,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
                 %Output 2: Rotation angle of the vehicle
                 
                 obj.vehicle.setPosition(position); % Vehicle - Set Functions
-                obj.vehicle.setOrientation(rotation); % Vehicle - Set Functions
+                obj.vehicle.setOrientation(rotation); % Vehicle - Set Functions (This might be obsolete)
                 
             end
             

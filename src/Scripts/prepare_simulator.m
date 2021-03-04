@@ -5,7 +5,7 @@ warning off
 %% Added for Fast Debug /Needs to be removed later to make sure that simulations can be repeated without "clear all"
 if exist('Map','var') 
     clear all; %TODO: needs to be off in order not to delete the variables assigned from the GUI
-    close all; %to avoid some problems with the deleted handles
+    close all; %to avoid some problems with the deleted handles TODO: Try -> close('all', 'hidden')
     MapType = MapTypes.GridMap;
 elseif ~exist('MapType','var')
     MapType = MapTypes.GridMap;
@@ -16,7 +16,7 @@ end
 modelName = 'MOBATSim';
 
 simSpeed = 1; % For scaling the simulation speed
-Sim_Ts = 0.01; % Sample time of the simulation (may not be stable if changed)
+Sim_Ts = 0.02; % Sample time of the simulation (may not be stable if changed)
 
 configs = MOBATSimConfigurations(modelName,simSpeed,Sim_Ts,MapType); % MapType: 'GridMap' or 'DigraphMap'
 

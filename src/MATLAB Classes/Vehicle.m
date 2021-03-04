@@ -7,6 +7,7 @@ classdef Vehicle < handle
         id
         simSpeed
         name
+        drivingBehavior % Check where they are set and get
         physics
         %         size
         %         mass
@@ -67,6 +68,8 @@ classdef Vehicle < handle
             obj.simSpeed = simSpeed;
             obj.name = car_name;
             
+            obj.drivingBehavior.safetyTime = 2; % Check where they are set and get
+            
             obj.physics.size = size; %Should be edited according to the vehicle
             obj.physics.mass = mass; %kg Should be edited according to the vehicle
             
@@ -83,10 +86,20 @@ classdef Vehicle < handle
             obj.sensors.AEBdistance = AEBdistance;
             obj.sensors.frontDistance = 1000;
             obj.sensors.vehicleInFrontId =0;
+            obj.sensors.leadingVehicle = []; % Check where they are set and get
+            obj.sensors.behindVehicle = []; % Check where they are set and get
+            obj.sensors.onDoubleLane = 0; % Check where they are set and get
+            obj.sensors.ttc = 1000; % Check where they are set and get
+            obj.sensors.time2surpass = 1000; % Check where they are set and get
+            obj.sensors.behindVehicleDistance = 1000; % Check where they are set and get
+            obj.sensors.behindVehicleSafetyMargin = 1000; % Check where they are set and get
+            
             
             obj.status.emergencyCase = 0;
             obj.setStopStatus(true);
             obj.status.collided = 0;
+            obj.status.canLaneSwitch = 0; % Check where they are set and get
+            obj.status.laneSwitchFinish = 0; % Check where they are set and get
             
             obj.pathInfo.startingTime = startingTime;
             obj.pathInfo.currentTrajectory = [];
@@ -99,7 +112,11 @@ classdef Vehicle < handle
             obj.pathInfo.referencePath = [];
             obj.pathInfo.routeCompleted = true;
             obj.pathInfo.path = 0;
+            obj.pathInfo.staticPath = 0; % Check where they are set and get
             obj.pathInfo.BOGPath = [];
+            obj.pathInfo.laneId = 0;  % Check where they are set and get
+            obj.pathInfo.s = 0; % Check where they are set and get
+            obj.pathInfo.routeEndDistance = []; % Check where they are set and get
             
             obj.dataLog.timeStamps =[];
             obj.dataLog.totalTravelTime = 0;
@@ -108,6 +125,10 @@ classdef Vehicle < handle
             obj.dataLog.speed = [];
             obj.dataLog.emergencyCase = [];
             obj.dataLog.platooning = [];
+            obj.dataLog.laneSwitchStartTime = []; % Check where they are set and get
+            obj.dataLog.laneSwitchEndTime = []; % Check where they are set and get
+            obj.dataLog.MinJerkTrajPolynom = {};% Check where they are set and get 
+            
             
             obj.map = evalin('base','Map');
             
@@ -119,6 +140,7 @@ classdef Vehicle < handle
             obj.decisionUnit.futureData = [];
             obj.decisionUnit.breakingFlag = 0;
             obj.decisionUnit.inCrossroad = [0 0];
+            obj.decisionUnit.LaneSwitchTime = 3; % Check where they are set and get
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
@@ -363,9 +385,29 @@ classdef Vehicle < handle
             car.pathInfo.path = newPath;
         end
         
-        function setVehicleFrontSensor(car,V2VcommIDs, ObjectinFront)
-            car.sensors.vehicleInFrontId = V2VcommIDs; 
+        function setVehicleSensorDetection(car,V2VcommIDs, ObjectinFront, V2VcommID_back, ObjectBehind)
+            car.sensors.vehicleInFrontId = V2VcommIDs;
             car.sensors.frontDistance = ObjectinFront;
+            %% Temp -> TODO: Carry these into Situation Awareness Block
+            if ~(V2VcommIDs==-1) % Register Front Vehicle
+                car.sensors.leadingVehicle = car.map.Vehicles(V2VcommIDs);
+                relSpeed = car.dynamics.speed - car.sensors.leadingVehicle.dynamics.speed;
+                car.sensors.ttc = ObjectinFront/relSpeed;
+            else
+                car.sensors.leadingVehicle = [];
+                car.sensors.ttc = inf;
+                
+            end
+            
+            if ~(V2VcommID_back==-1) % Register Behind Vehicle if exists
+                car.sensors.behindVehicle = car.map.Vehicles(V2VcommID_back);
+                relSpeed = car.sensors.behindVehicle.dynamics.speed-car.dynamics.speed;
+                car.sensors.behindVehicleSafetyMargin = ObjectBehind/relSpeed;
+            else
+                car.sensors.behindVehicle = [];
+                car.sensors.behindVehicleSafetyMargin = inf;
+            end
+           
         end
         
         function setEmergencyCase(car, EmergencyCase)
@@ -411,14 +453,19 @@ classdef Vehicle < handle
             car.dynamics.cornering.angles = car.dynamics.cornering.angles + step_length;
         end
         
-        function setOrientation(car,newOrientation)
+        function setOrientation(car,newOrientation) % Might be obsolete after implementing setYawAngle function
             car.dynamics.orientation = newOrientation;
+        end
+        
+        function setYawAngle(car,YawAngle) % Might replace set Orientation after careful analysis
+            car.dynamics.orientation = [0 1 0 YawAngle];
         end
         
         function setPosition(car,newPosition)
             car.dynamics.position = newPosition;
         end
         
+
     end
 end
 
