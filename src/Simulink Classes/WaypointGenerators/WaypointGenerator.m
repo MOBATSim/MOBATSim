@@ -150,29 +150,29 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             %radian is the radian of the whole curved road,is positive when
             %counterclockwise turns
             %output:
-            %position_C is the 1x2 array [x y] in Cartesian coordinate
-            %orientation_C is the angle of the tangent vector on the reference roadline
+            %position_Cart is the 1x2 array [x y] in Cartesian coordinate
+            %orientation_Cart is the angle of the tangent vector on the reference roadline and the x axis of cartesian
             %detail information check Frenet.mlx
             startPoint = route(1,:);
             endPoint = route(2,:);
             if radian == 0%straight road
                 route_Vector = endPoint-startPoint;
-                local_route_Vector_i = route_Vector/norm(route_Vector);
-                orientation_Cart = atan2(local_route_Vector_i(2),local_route_Vector_i(1));
-                sideVector = [cos(orientation_Cart+pi/2) sin(orientation_Cart+pi/2)];
-                position_Cart = s*local_route_Vector_i+d*sideVector+startPoint;
-            else
-                r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);%The radius of the road segment
-                targetVector = (endPoint-startPoint)/norm(endPoint-startPoint);
-                beta = atan2(targetVector(2),targetVector(1));
-                plumbLength = cos(radian/2)*r;
+                local_route_Vector_i = route_Vector/norm(route_Vector);% unit vector of the route_vector
+                orientation_Cart = atan2(local_route_Vector_i(2),local_route_Vector_i(1)); % reverse tangent of unit vector
+                sideVector = [cos(orientation_Cart+pi/2) sin(orientation_Cart+pi/2)];%vector of the tangent line of reference line
+                position_Cart = s*local_route_Vector_i+d*sideVector+startPoint;% position= start point + length of journey
+            else %curved road
+                r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
+                targetVector = (endPoint-startPoint)/norm(endPoint-startPoint); %Unit vector of route vector (p in Frenet.xml)
+                beta = atan2(targetVector(2),targetVector(1)); %the angle of target vector and x axis in cartesian coordinate (theta 1 in Frenet.xml)
+                plumbLength = cos(radian/2)*r; % the distance from circle center to targetVector (OG in Frenet.xml)
                 plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
-                center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;%rotation center of the road
-                startPointVector = startPoint-center;
+                center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
+                startPointVector = startPoint-center;%OP1 in Frenet.xml
                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
-                l = r+d;
-                lAng = sign(radian)*s/r+startPointVectorAng;
-                position_Cart = l*[cos(lAng) sin(lAng)]+center;
+                l = r+d;%current distance from rotation center to position
+                lAng = sign(radian)*s/r+startPointVectorAng;% the angle of vector l
+                position_Cart = l*[cos(lAng) sin(lAng)]+center;% the position in Cartesion coordinate
                 orientation_Cart = lAng+sign(radian)*pi/2;
                 orientation_Cart = mod(orientation_Cart,2*pi);
                 orientation_Cart = orientation_Cart.*(0<=orientation_Cart & orientation_Cart <= pi) + (orientation_Cart - 2*pi).*(pi<orientation_Cart & orientation_Cart<2*2*pi);   % angle in (-pi,pi]
@@ -199,37 +199,37 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             if radian == 0%straight road
                 route_Vector = endPoint-startPoint;
                 local_route_Vector_i = route_Vector/norm(route_Vector);
-                orientation_Cart = atan2(local_route_Vector_i(2),local_route_Vector_i(1));
+                orientation_Cart = atan2(local_route_Vector_i(2),local_route_Vector_i(1));% orientation angle
                 posVector = position_C-startPoint;
-                s = dot(posVector,local_route_Vector_i);
-                sideVector = [cos(orientation_Cart+pi/2) sin(orientation_Cart+pi/2)];
-                d = dot(posVector,sideVector);
-                routeLength = norm(endPoint-startPoint);
+                s = dot(posVector,local_route_Vector_i);% the projection of posVector on local_route_vector_i
+                sideVector = [cos(orientation_Cart+pi/2) sin(orientation_Cart+pi/2)];% side vector is perpendicular to the route
+                d = dot(posVector,sideVector);% the projection of posVector on sideVector
+                routeLength = norm(endPoint-startPoint);% the length of the route_Vector
                 obj.curvature = 0;
             else
-                r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);
-                targetVector = (endPoint-startPoint)/norm(endPoint-startPoint);
-                beta = atan2(targetVector(2),targetVector(1));
-                plumbLength = cos(radian/2)*r;
+                r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
+                targetVector = (endPoint-startPoint)/norm(endPoint-startPoint);%Unit vector of route vector (p in Frenet.xml)
+                beta = atan2(targetVector(2),targetVector(1));%the angle of target vector and x axis in cartesian coordinate (theta 1 in Frenet.xml)
+                plumbLength = cos(radian/2)*r;% the distance from circle center to targetVector (OG in Frenet.xml)
                 plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
-                center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;
-                startPointVector = startPoint-center;
+                center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
+                startPointVector = startPoint-center;% vector OP_1 in Frenet.xml
 
-                l = position_C-center;
+                l = position_C-center;% the vector from rotation center to position
                 d = norm(l)-r;
-                lAng = atan2(l(2),l(1));
+                lAng = atan2(l(2),l(1)); % the angle of vector l with x axis (phi 3 in Frenet.xml)
 
-                start_dot_l = dot(startPointVector,l);
-                start_cross_l = sign(radian)*(startPointVector(1)*l(2)-startPointVector(2)*l(1));
-                angle = atan2(start_cross_l,start_dot_l);
-                if mod(angle,2*pi) > abs(radian)
+                start_dot_l = dot(startPointVector,l);% |startPointVetor|*|l|*sin(angle)
+                start_cross_l = sign(radian)*(startPointVector(1)*l(2)-startPointVector(2)*l(1));% |startPointVetor|*|l|*cos(angle)
+                angle = atan2(start_cross_l,start_dot_l);% the angle between startPointVector and vector l, tan(angle) = start_dot_l/start_cross_1
+                if mod(angle,2*pi) > abs(radian)% judge if the radian of the angle bigger than the radian of the road
                     start_cross_l = -(startPointVector(1)*l(2)-startPointVector(2)*l(1));
                     angle = -atan2(start_cross_l,start_dot_l);
                 end
                 s = angle*r;
                 routeLength = abs(radian)*r;
-                orientation_Cart = lAng+sign(radian)*pi/2;
-                orientation_Cart = mod(orientation_Cart,2*pi);
+                orientation_Cart = lAng+sign(radian)*pi/2;% the orientation of the current point of the road(phi 4 in Frenet.xml) in cartesian coordinate
+                orientation_Cart = mod(orientation_Cart,2*pi);% orientation can not bigger than 2pi
                 orientation_Cart = orientation_Cart.*(0<=orientation_Cart & orientation_Cart <= pi) + (orientation_Cart - 2*pi).*(pi<orientation_Cart & orientation_Cart<2*2*pi);   % angle in (-pi,pi]
                 obj.curvature = 1/r;
             end
