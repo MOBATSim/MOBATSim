@@ -1,0 +1,16 @@
+Issues:
+Exception calling MATLAB: Derivative of state '1' in block 'MOBATSim/Vehicle Model 8/Longitudinal Speed Control/Vehicle Acceleration Model/Vehicle Acceleration Dynamics' 
+at time 116.66 is not finite. There may be a singularity in the solution. 
+If not, try reducing the step size (either by reducing the fixed step size 
+or by tightening the error tolerances)
+Possible solutions---
+There are two reasons that might cause it. First thing to check is to make 
+sure the system is stable with the implemented controller. Second is to check 
+the solver step size is small enough for the solution of the ODE to be stable 
+(this means just reduce the maximum step size for variable step ODE solvers 
+or change to one of the fixed step size solvers and choose a small step size).
+when it appears, then try:
+(1) Try reducing fixed step size
+(2) Go to model configuration parameters/Solver/Solver Options:
+    Type: Variable-step
+    Solver: ode15s (stiff/NDF)
