@@ -595,7 +595,7 @@ road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road96');
 % Add the ego vehicle
 % ans = ans;
 % load('matlab.mat')
-load('test.mat');
+load('vehicleTrajectories.mat');
 step_length = 10;
 
 
