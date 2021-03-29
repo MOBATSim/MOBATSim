@@ -589,7 +589,7 @@ road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road96');
 
 
 %% Add all the Vehicles as actors and their trajectory data to the drivingSceanario object
-load('test.mat'); % TODO: the .mat file should be renamed to vehicleTrajectories.mat
+load('vehicleTrajectories.mat'); % TODO: the .mat file should be renamed to vehicleTrajectories.mat
 step_length = 10; % Affects how fine the trajectory waypoint sampling is.
 
 
