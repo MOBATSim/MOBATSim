@@ -1,15 +1,15 @@
 %clear all
 %clc
 
-%%load file from DrivingScenarioDesigner
-load map_v1.mat; 
-load waypoints_origin.mat;
+%%load data file
+load map_v1.mat; %map data from drivingScenarioDesigner
+load waypoints_origin.mat;% original map data to order right sequence
 
 %%initialize
 Waypoints_new = [];
 connections_circle = [];
 connections_translation = [];
-waypoints = [];
+waypoints = [];%waypoints of extend map with the right order
 
 %% waypoints
 % Get all the waypoints from drivingScenarioDesigner output file
@@ -37,7 +37,7 @@ B2(:,3) = 0;
 
 Circle = zeros(1,7);
 h = 1;
-%% connection_ransition
+%% connection_transition
 for j = 1:size(data.RoadSpecifications,2)
     if size(data.RoadSpecifications(1,j).Centers,1)==2 % if there are only 2 points in one road section, it is straight road
     a = ismember(B2, data.RoadSpecifications(1,j).Centers(1,:),'rows');
@@ -53,8 +53,9 @@ for j = 1:size(data.RoadSpecifications,2)
     D = data.RoadSpecifications(1,j).Centers(2,1:2);
     E = data.RoadSpecifications(1,j).Centers(end,1:2);
     % Calculate the circle center 
-    [x0,y0] = Circle_center(C,D,E);
- 
+    [x0, y0, r] = Circle_center(C,D,E);
+    k = 1/r; % calculate curvature for the future speed limit
+  
     F1 = data.RoadSpecifications(1,j).Centers(end,:);
     F2 = data.RoadSpecifications(1,j).Centers(1,:);
     a = ismember(B2, F1,'rows'); % find the sequence of circle connection
@@ -107,12 +108,16 @@ for j = 1:size(data.RoadSpecifications,2)
     Circle(1,5) = 0;
     Circle(1,6) = -x0;
     Circle(1,7) = 100;
-    
+%     if k>0.0007 % Set speed limit depending on the curvature
+%         Circle(1,7) = 50;
+%     else
+%         Circle(1,7) = 100;
+%     end
     connections_circle = [connections_circle; Circle];   
     end    
 end
 
 %% Clean variables
-clearvars a h  A alpha b B1 B2 C Circle D data E End F1 F2 F3 G1 G2 G3 i j m n rho1 rho2 rho3 Start tag theta1 theta2 theta3 alpha1 alpha2 x0 y0 waypoints_origin Waypoints_new
+clearvars a h  A alpha b B1 B2 C Circle D data E End F1 F2 F3 G1 G2 G3 i j m n rho1 rho2 rho3 Start tag theta1 theta2 theta3 alpha1 alpha2 x0 y0 waypoints_origin Waypoints_new k r R curvature 
 
 

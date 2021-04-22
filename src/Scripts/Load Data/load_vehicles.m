@@ -8,7 +8,7 @@ dataLinksV2I = ones(1,length(VehicleNames));
 
 frontSensorRange = 100.* ones(1,length(VehicleNames));
 AEBdistance = 25.* ones(1,length(VehicleNames));
-minDeceleration = -40.* ones(1,length(VehicleNames)); % -9.15 m/s^2 dec
+minDeceleration = -9.15.* ones(1,length(VehicleNames)); % -9.15 m/s^2 dec
 
 
 
