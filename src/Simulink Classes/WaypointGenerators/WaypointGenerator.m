@@ -23,7 +23,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         comfortGain = 0.05;%k_1 in cost function(FKFS)
         laneSwitchTime = 3;%delta_T, choosen by cost function
         latOffset = 0;%variable to save reference delta_d in Frenet coordinate
-        trajPolynom_candidates = [];% condidate trajectories
+        trajPolynom_candidates = [];% candidate trajectories
         trajPolynom = [];% Trajectory choosen
         %velocityPolynom = {};% reference velocity for minimum jerk trajectory
         %accPolynom = {};%reference acc for minimum jerk trajectory

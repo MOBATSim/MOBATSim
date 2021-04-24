@@ -143,10 +143,11 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
             if car.status.canLaneSwitch ==1
-                y_f = obj.laneWidth; % Final y coordinate
+                y_f = -obj.laneWidth-2; % Final y coordinate // -2 as an extra effort, TODO: remove -2 after lateral control is improved
             elseif car.status.canLaneSwitch ==2
-                y_f = -obj.laneWidth;
-            end
+                y_f = +obj.laneWidth; % Final y coordinate
+            end           
+
             obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
             %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
             syms t; % time
@@ -175,6 +176,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             costTraj=obj.calculateCostFunction(car,cand_traj_coeffs);
             
             obj.trajPolynom_candidates = [obj.trajPolynom_candidates; cand_trajPolynom];
+
         end
 
         function costTraj = calculateCostFunction(obj,car,candidateTrajectory)
@@ -240,8 +242,9 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             %% apply lane-changing trajectory if a Trajectory polynomial has been set
             obj.generateLaneChanging_WPs(car);
 
+            % ISSUE: Doesn't have meaning with LaneId-0.5 
+            d=-obj.latOffset;%negative is only for left rotating vehicle
             
-            d=-(obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset);%negative is only for left rotating vehicle
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
@@ -260,8 +263,9 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             
             obj.generateLaneChanging_WPs(car);
 
+            % ISSUE: Doesn't have meaning with LaneId-0.5 
+            d=obj.latOffset;%for right rotating vehicle
             
-            d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;%for left rotating vehicle
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
