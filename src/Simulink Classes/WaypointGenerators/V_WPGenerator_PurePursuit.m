@@ -406,7 +406,8 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             %             end
             
             % ISSUE: Doesn't have meaning with LaneId-0.5
-            d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
+            %d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
+            d = obj.latOffset;
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             
             WP_s = s:1:s+length(obj.referenceWaypoints)-1;

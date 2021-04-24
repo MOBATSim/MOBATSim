@@ -7,8 +7,8 @@ switch scenarioName
        %startingPoints =    [84 86 15 15 15 15 15 15 15 15];
        %destinationPoints = [83 51 14 14  14  14 14 14 14 14];
        %maxSpeeds = [7 20 8 10 14 20 10 12 10 10];
-        startingPoints =    [84 86 29 18 53 52 64 57 15 63];
-        destinationPoints = [83 51 78 1  3  27 42 25 76 46];
+        startingPoints =    [84 86 29 3 53 52 64 57 4 63];
+        destinationPoints = [83 51 78 27  3  27 42 25 3 46];
         maxSpeeds = [7 20 8 7 14 20 10 12 10 10];
         
         %% Complex crossroad scenario

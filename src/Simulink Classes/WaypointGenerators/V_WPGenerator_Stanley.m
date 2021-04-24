@@ -218,7 +218,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
 
             
             % ISSUE: Doesn't have meaning with LaneId-0.5 
-            d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
+            %d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
+            d = obj.latOffset;
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
