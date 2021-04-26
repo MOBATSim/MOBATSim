@@ -9,7 +9,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
         adaptiveGain = 1;%adaptive control law G for the Stanley controller
         adaptiveGain_k0 = 2;%k0 of adaptive control law G,FKFS equation 10
         adaptiveGain_g0 = 20;%g0 of adaptive control law G,FKFS equation 10
-        latOffsetError = 0;   
+        latOffsetError = 0;
+        changeLane = 0;
 
     end
     
@@ -35,7 +36,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
 
         
         
-        function [poseOut, referencePose] = stepImpl(obj,pose,speed)
+        function [poseOut, referencePose] = stepImpl(obj,pose,speed,changeLane)
+            obj.changeLane = changeLane;
             %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
             pose(3)=pose(3)*180/pi; % rad to deg
             
@@ -118,7 +120,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
         
         
         function checkLaneSwitch(obj,car)
-            if ~(car.status.canLaneSwitch==0) %lane switch
+            if ~(obj.changeLane==0) %lane switch
                 if isempty(obj.trajPolynom)
                     
                     candidateTrajectories = []; % Candidate trajectories stored here
@@ -145,9 +147,9 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             T = car.decisionUnit.LaneSwitchTime*deltaTfactor*0.5;%delta_T!!!!!!!!!!!
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
-            if car.status.canLaneSwitch ==1
+            if obj.changeLane ==1
                 y_f = +obj.laneWidth; % Final y coordinate // -2 as an extra effort, TODO: remove -2 after lateral control is improved
-            elseif car.status.canLaneSwitch ==2
+            elseif obj.changeLane ==2
                 y_f = -obj.laneWidth; % Final y coordinate
             end           
 
@@ -296,12 +298,12 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 else%lane-changing done
                     % obj.latOffset = 0;%reset reference delta_d 
                     car.status.laneSwitchFinish = 1;%lane-changing done flag
-                    if car.status.canLaneSwitch ==1%left lane-changing
+                    if obj.changeLane ==1%left lane-changing
                         car.pathInfo.laneId = car.pathInfo.laneId+1;
-                    elseif car.status.canLaneSwitch ==2%right lane-changing
+                    elseif obj.changeLane ==2%right lane-changing
                         car.pathInfo.laneId = car.pathInfo.laneId-1;
                     end
-                    car.status.canLaneSwitch = 0;%reset flag
+                    %car.status.canLaneSwitch = 0;%reset flag
                     obj.trajPolynom=[];%reset polynomial
                 end
             end

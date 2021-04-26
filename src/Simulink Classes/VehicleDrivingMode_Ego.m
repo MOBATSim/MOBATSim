@@ -27,7 +27,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
         end
         
-        function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
+        function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop, laneChange, destReached] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
             %This block shouldn't run if the ego vehicle has reached its destination
             if obj.vehicle.pathInfo.destinationReached
                 SpeedReference=0;
@@ -35,11 +35,13 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 LeadSpeed = -1;
                 DrivingMode = 1;
                 Dist2Stop = -1;
+                laneChange = 0;
+                destReached =1;
                 return;
             end
-            
+            destReached = 0;
             % Evaluation of lane-changing maneuver
-            switch_decision(obj);
+            laneChange = switch_decision(obj);
 
             %Output 4: Driving mode
             if(emergencyCase == 0)
@@ -83,14 +85,16 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             
         end
         %% helper function
-        function switch_decision(obj)
+        function laneChange = switch_decision(obj)
             
-            if (obj.vehicle.pathInfo.laneId<=0)&&(obj.vehicle.sensors.ttc <1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0)%conditions for left lane-changing
+            if (obj.vehicle.pathInfo.laneId==0)&&(obj.vehicle.sensors.ttc <1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0)%conditions for left lane-changing
                 obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
-            end
-            
-            if (obj.vehicle.pathInfo.laneId>0)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.sensors.ttc>obj.vehicle.decisionUnit.LaneSwitchTime+0.5)%conditions for right lane-changing
+                laneChange = 1;
+            elseif (obj.vehicle.pathInfo.laneId>0)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.sensors.ttc>obj.vehicle.decisionUnit.LaneSwitchTime+0.5)%conditions for right lane-changing
                 obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
+                laneChange = 2;
+            else
+                laneChange = 0;
             end
             
         end
@@ -147,51 +151,56 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             flag = true;
         end
         
-        function [out,out2,out3,out4,out5] = getOutputDataTypeImpl(~)
+        function [out,out2,out3,out4,out5,out6,out7] = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
             out2 = 'double';
             out3 = 'double';
             out4 = 'double';
             out5 = 'double';
+            out6 = 'double';
+            out7 = 'double';
             
             
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
         
-        function [out,out2,out3,out4,out5] = isOutputComplexImpl(~)
+        function [out,out2,out3,out4,out5,out6,out7] = isOutputComplexImpl(~)
             % Return true for each output port with complex data
             out = false;
             out2 = false;
             out3 = false;
             out4 = false;
             out5 = false;
-            
+            out6 = false;
+            out7 = false;
             % Example: inherit complexity from first input port
             % out = propagatedInputComplexity(obj,1);
         end
         
-        function [out,out2,out3,out4,out5] = isOutputFixedSizeImpl(~)
+        function [out,out2,out3,out4,out5,out6,out7] = isOutputFixedSizeImpl(~)
             % Return true for each output port with fixed size
             out = true;
             out2 = true;
             out3 = true;
             out4 = true;
             out5 = true;
-            
+            out6 = true;
+            out7 = true;
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
         end
         
-        function [out,out2,out3,out4,out5] = getOutputSizeImpl(~)
+        function [out,out2,out3,out4,out5,out6,out7] = getOutputSizeImpl(~)
             % Return size for each output port
             out = [1 1];
             out2 = [1 1];
             out3 = [1 1];
             out4 = [1 1];
             out5 = [1 1];
-            
+            out6 = [1 1];
+            out7 = [1 1];
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
         end
