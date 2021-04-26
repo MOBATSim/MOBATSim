@@ -191,17 +191,12 @@ classdef Vehicle < handle
         end
         
         function vehiclesCollide(car1,car2)
-            % if collision happens, car.status.emergencyCase is set to "3"
-            car1.status.emergencyCase = 3;
+            % set collision on both vehicles and stop them
             car1.status.collided = 1;
             car1.setStopStatus(true);
-            car1.dynamics.speed = 0;
             
-            car2.status.emergencyCase =3;
             car2.status.collided =1;
-            car2.setStopStatus(true);
-            car2.dynamics.speed = 0;
-            
+            car2.setStopStatus(true);     
         end
         
         function Hitbox = getHitbox(car)
@@ -365,9 +360,9 @@ classdef Vehicle < handle
         
         %% SET/GET Functions to control the changes in the properties
 
-        function setStopStatus(car, bool)
-            car.status.stop = bool;
-            if bool % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
+        function setStopStatus(car, stop)
+            car.status.stop = stop;
+            if stop % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
                 car.updateActualSpeed(0);               
             end
         end
