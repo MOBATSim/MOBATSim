@@ -95,9 +95,9 @@ classdef Vehicle < handle
             obj.sensors.behindVehicleSafetyMargin = 1000; % Check where they are set and get
             
             
-            obj.status.emergencyCase = 0;
+            obj.setEmergencyCase(0); % no emergency case appears
             obj.setStopStatus(true);
-            obj.status.collided = 0;
+            obj.setCollided(false); % vehicle has no collision
             obj.status.canLaneSwitch = 0; % Check where they are set and get
             obj.status.laneSwitchFinish = 0; % Check where they are set and get
             
@@ -191,10 +191,10 @@ classdef Vehicle < handle
         
         function vehiclesCollide(car1,car2)
             % set collision on both vehicles and stop them
-            car1.status.collided = 1;
+            car1.setCollided(true);
             car1.setStopStatus(true);
             
-            car2.status.collided =1;
+            car2.setCollided(true);
             car2.setStopStatus(true);     
         end
         
@@ -407,6 +407,10 @@ classdef Vehicle < handle
         
         function setEmergencyCase(car, EmergencyCase)
             car.status.emergencyCase = EmergencyCase;         
+        end
+        
+        function setCollided(car, collided)
+            car.status.collided = collided;         
         end
         
         function setCurrentTrajectory(car, currentTrajectory)
