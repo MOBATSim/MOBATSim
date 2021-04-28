@@ -15,7 +15,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
     
     methods
         % Constructor
-        function obj = VehicleDrivingMode(varargin)
+        function obj = VehicleDrivingMode_Ego(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:});
         end
@@ -87,10 +87,10 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
         %% helper function
         function laneChange = switch_decision(obj)
             
-            if (obj.vehicle.pathInfo.laneId==0)&&(obj.vehicle.sensors.ttc <1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0)%conditions for left lane-changing
+            if (obj.vehicle.pathInfo.laneId==0)&&(obj.vehicle.sensors.ttc <1.4*3)%conditions for left lane-changing
                 obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
                 laneChange = 1;
-            elseif (obj.vehicle.pathInfo.laneId>0)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.sensors.ttc>obj.vehicle.decisionUnit.LaneSwitchTime+0.5)%conditions for right lane-changing
+            elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.sensors.ttc>3.5)%conditions for right lane-changing
                 obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
                 laneChange = 2;
             else

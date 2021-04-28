@@ -19,9 +19,10 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         laneSwitchTargetPoint = [];
         laneSwitchStartTime = [];
         
+        %% TODO: Some of these variables will be deleted
         safetyGain = 80;%k_2 in cost function(FKFS)
         comfortGain = 0.05;%k_1 in cost function(FKFS)
-        laneSwitchTime = 3;%delta_T, choosen by cost function
+        laneSwitchTime = 4;%delta_T, choosen by cost function
         latOffset = 0;%variable to save reference delta_d in Frenet coordinate
         trajPolynom_candidates = [];% candidate trajectories
         trajPolynom = [];% Trajectory choosen
