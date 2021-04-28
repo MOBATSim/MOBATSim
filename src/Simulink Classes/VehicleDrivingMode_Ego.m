@@ -45,16 +45,20 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
 
             %Output 4: Driving mode
             if(emergencyCase == 0)
+                % Mode 1: drive at reference speed
                 DrivingMode = 1;
-                %% some longitudinal driving modes are deactivated so that the vehicle can do lane-changing
-                %                                     elseif(emergencyCase == 1)
-                %                                         DrivingMode = 2;
-                %                                     elseif(emergencyCase == 2)
-                %                                         if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
-                %                                             DrivingMode = 3;
-                %                                         else
-                %                                             DrivingMode = 2;
-                %                                         end
+            elseif(emergencyCase == 1)
+                % Mode 2: follow leading vehicle at platoon mode
+                DrivingMode = 2;
+            elseif(emergencyCase == 2)
+                if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
+                    % Mode 3: stop
+                    DrivingMode = 3;
+                else
+                    %DrivingMode = 2; % TODO JP: just quickfix, this broke
+                    %platoon mode, I think
+                    DrivingMode = 3;
+                end
                 
             else
                 DrivingMode = 1;

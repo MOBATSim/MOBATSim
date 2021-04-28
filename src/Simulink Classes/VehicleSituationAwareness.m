@@ -56,7 +56,7 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
                 % Level 1 = Vehicle platooning mode
                 emergencyCase = 1;
                 
-            elseif frontDistance > 0     
+            elseif frontDistance > 0
                 % Level 2 = Emergency Brake
                 emergencyCase = 2;
                 
@@ -64,7 +64,13 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
                 % TODO: Check if this happens Level BUG
                 emergencyCase = 2;
             end
+            % Just for testing emergency brake
+            if (get_param('MOBATSim','SimulationTime')>5)&&(car.id==2)
+                % Level 2 = Emergency Brake
+                emergencyCase = 2;
+            end
         end
+  
         
         %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
