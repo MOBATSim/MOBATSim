@@ -48,7 +48,8 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
                 if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
                     DrivingMode = 3;
                 else
-                    DrivingMode = 2;
+                    %DrivingMode = 2; Test collsion avoidance
+                    DrivingMode = 3;
                 end
                 
             else
