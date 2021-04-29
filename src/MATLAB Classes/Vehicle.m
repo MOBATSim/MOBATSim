@@ -1,5 +1,5 @@
 classdef Vehicle < handle
-    %VEHÝCLE Summary of this class goes here
+    %VEHICLE Summary of this class goes here
     
     %   Detailed explanation goes here
     
@@ -116,6 +116,7 @@ classdef Vehicle < handle
             obj.pathInfo.BOGPath = [];
             obj.pathInfo.laneId = 0;  % Check where they are set and get
             obj.pathInfo.s = 0; % Check where they are set and get
+            obj.pathInfo.d = 0; % Check where they are set and get
             obj.pathInfo.routeEndDistance = []; % Check where they are set and get
             
             obj.dataLog.timeStamps =[];
@@ -419,6 +420,12 @@ classdef Vehicle < handle
         
         function updateActualSpeed(car,speed)
             car.dynamics.speed = speed;
+        end
+        
+        function updateVehicleFrenetPosition(car, s,vehicle_d,routeLength)
+            car.pathInfo.s = s;% driven length
+            car.pathInfo.d = vehicle_d; % lateral offset
+            car.pathInfo.routeEndDistance = routeLength-s; %distance to the current routes endpoint
         end
         
         function setLastWaypoint(car,lastWaypoint)

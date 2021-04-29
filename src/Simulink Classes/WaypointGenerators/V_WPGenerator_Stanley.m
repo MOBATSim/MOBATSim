@@ -10,6 +10,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
         adaptiveGain_k0 = 2;%k0 of adaptive control law G,FKFS equation 10
         adaptiveGain_g0 = 20;%g0 of adaptive control law G,FKFS equation 10
         latOffsetError = 0;
+        changeLane = 0;
 
     end
     
@@ -35,7 +36,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
 
         
         
-        function [poseOut, referencePose] = stepImpl(obj,pose,speed)
+        function [poseOut, referencePose] = stepImpl(obj,pose,speed,changeLane)
+            obj.changeLane = changeLane;
             %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
             pose(3)=pose(3)*180/pi; % rad to deg
             
@@ -78,6 +80,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory);
                 %Output 1: Position of the vehicle
                 %Output 2: Rotation angle of the vehicle
+                
                               
             end
             
@@ -117,19 +120,21 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
         
         
         function checkLaneSwitch(obj,car)
-            if ~(car.status.canLaneSwitch==0) %lane switch
+            if ~(obj.changeLane==0) %lane switch
                 if isempty(obj.trajPolynom)
                     
                     candidateTrajectories = []; % Candidate trajectories stored here
                     costsTrajectories = []; % 
+                    timeFactorTrajectories = []; % candidate deltaFactor stored here !!!!!!!!!!!!!
 
                     for deltaTFactor = 0.5:0.25:1.5
                         [cand_trajPolynom, costTraj] = obj.generateMinJerkTrajectory(car,deltaTFactor);
                         candidateTrajectories = [candidateTrajectories; cand_trajPolynom];
                         costsTrajectories = [costsTrajectories costTraj];
+                        timeFactorTrajectories = [timeFactorTrajectories deltaTFactor]; %!!!!!!!!!!!!
                     end
 
-                    obj.chooseReferenceTrajectory(car,candidateTrajectories,costsTrajectories);
+                    obj.chooseReferenceTrajectory(car,candidateTrajectories,costsTrajectories,timeFactorTrajectories); %!!!!!!!!!!!!
                 end
             end
         end
@@ -139,14 +144,15 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];%logging lane-switch start time
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];%coordinates conversion
-            T = car.decisionUnit.LaneSwitchTime*deltaTfactor;%delta_T
+            T = car.decisionUnit.LaneSwitchTime*deltaTfactor*0.5;%delta_T!!!!!!!!!!!
             %% minimum jerk trajectory
             x_f = T*car.dynamics.speed; % Final x coordinate
-            if car.status.canLaneSwitch ==1
-                y_f = obj.laneWidth; % Final y coordinate
-            elseif car.status.canLaneSwitch ==2
-                y_f = -obj.laneWidth;
-            end
+            if obj.changeLane ==1
+                y_f = +obj.laneWidth; % Final y coordinate // -2 as an extra effort, TODO: remove -2 after lateral control is improved
+            elseif obj.changeLane ==2
+                y_f = -obj.laneWidth; % Final y coordinate
+            end           
+
             obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
             %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
             syms t; % time
@@ -172,17 +178,18 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             a5=A(6);
             cand_trajPolynom = [a0 a1 a2 a3 a4 a5];
             cand_traj_coeffs = [a3, a4 , a5];
-            costTraj=obj.calculateCostFunction(car,cand_traj_coeffs);
+            costTraj=obj.calculateCostFunction(car, cand_traj_coeffs, tf);%!!!!!!!!!!!!!!!!!!!!!!!!
             
             obj.trajPolynom_candidates = [obj.trajPolynom_candidates; cand_trajPolynom];
+
         end
 
-        function costTraj = calculateCostFunction(obj,car,candidateTrajectory)
+        function costTraj = calculateCostFunction(obj,car,candidateTrajectory, T) %!!!!!!!!!!!!!!!!!!!!!!
             a3 = candidateTrajectory(1);
             a4 = candidateTrajectory(2);
             a5 = candidateTrajectory(3);
 
-            T = car.decisionUnit.LaneSwitchTime*0.5;
+            % T = car.decisionUnit.LaneSwitchTime*0.5; %!!!!!!!!!!
             t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
             mean_y_dddot2=sum(y_dddot2*0.01)/T;%Mean squared jerk
@@ -190,14 +197,16 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             costTraj=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
               
-        function chooseReferenceTrajectory(obj,car, candidateTrajectories, costsTrajectories)
+        function chooseReferenceTrajectory(obj,car, candidateTrajectories, costsTrajectories, timeFactorTrajectories) %!!!!!!!!!!!!!!!
             %find the trajectory with minimum cost function value
             
-            ind = costsTrajectories==min(min(costsTrajectories)); % TODO: precaution should be taken when two costs are same
+            ind = costsTrajectories==min(min(costsTrajectories));
+            % TODO: precaution should be taken when two costs are same
             % ind might not be a single number in that case, it should be validated to be only a single number not an array.
             
             obj.trajPolynom = candidateTrajectories(ind,:);
-            obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*0.5;
+            actualTimeFactor = timeFactorTrajectories(ind); %!!!!!!!!!!!!!!!!!!!!!!
+            obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*actualTimeFactor*0.5; %!!!!!!!!!!!!!!!!!
             
         end
         
@@ -218,7 +227,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
 
             
             % ISSUE: Doesn't have meaning with LaneId-0.5 
-            d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
+            %d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
+            d = obj.latOffset;
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
@@ -239,8 +249,9 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             %% apply lane-changing trajectory if a Trajectory polynomial has been set
             obj.generateLaneChanging_WPs(car);
 
+            % ISSUE: Doesn't have meaning with LaneId-0.5 
+            d=-obj.latOffset;%negative is only for left rotating vehicle
             
-            d=-(obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset);%negative is only for left rotating vehicle
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
@@ -259,8 +270,9 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             
             obj.generateLaneChanging_WPs(car);
 
+            % ISSUE: Doesn't have meaning with LaneId-0.5 
+            d=obj.latOffset;%for right rotating vehicle
             
-            d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;%for left rotating vehicle
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
@@ -282,15 +294,16 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 
                 if t<=obj.laneSwitchTime%lane-changing is not finished
                     obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
+             
                 else%lane-changing done
-                    obj.latOffset = 0;%reset reference delta_d
+                    % obj.latOffset = 0;%reset reference delta_d 
                     car.status.laneSwitchFinish = 1;%lane-changing done flag
-                    if car.status.canLaneSwitch ==1%left lane-changing
+                    if obj.changeLane ==1%left lane-changing
                         car.pathInfo.laneId = car.pathInfo.laneId+1;
-                    elseif car.status.canLaneSwitch ==2%right lane-changing
+                    elseif obj.changeLane ==2%right lane-changing
                         car.pathInfo.laneId = car.pathInfo.laneId-1;
                     end
-                    car.status.canLaneSwitch = 0;%reset flag
+                    %car.status.canLaneSwitch = 0;%reset flag
                     obj.trajPolynom=[];%reset polynomial
                 end
             end

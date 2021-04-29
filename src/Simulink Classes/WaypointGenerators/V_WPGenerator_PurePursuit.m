@@ -406,7 +406,8 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             %             end
             
             % ISSUE: Doesn't have meaning with LaneId-0.5
-            d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
+            %d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
+            d = obj.latOffset;
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             
             WP_s = s:1:s+length(obj.referenceWaypoints)-1;
@@ -447,8 +448,9 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
 %                     obj.trajPolynom={};%reset polynomial
 %                 end
 %             end
-            
-            d=-(obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset);%negative is only for left rotating vehicle
+            % ISSUE: Doesn't have meaning with LaneId-0.5 
+            d=-obj.latOffset;%for left rotating vehicle
+
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             WP_s = s:1:s+length(obj.referenceWaypoints)-1;
             for i = 1:1:length(obj.referenceWaypoints)
@@ -486,8 +488,9 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
 %                     obj.trajPolynom={};%reset polynomial
 %                 end
 %             end
-            
-            d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;%for left rotating vehicle
+            % ISSUE: Doesn't have meaning with LaneId-0.5 
+            d=obj.latOffset;%for right rotating vehicle
+
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             WP_s = s:1:s+length(obj.referenceWaypoints)-1;
             for i = 1:1:length(obj.referenceWaypoints)
