@@ -11,7 +11,6 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
     % Pre-computed constants
     properties(Access = private)
         vehicle
-        Vehicles % for testing collision avoidance
     end
     
     methods
@@ -26,7 +25,6 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
-            obj.Vehicles = evalin('base','Vehicles'); % for testing collision avoidance
         end
         
         function [leaderDistance,emergencyCase] = stepImpl(obj, FrontSensorData)
@@ -40,12 +38,12 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
                 leaderDistance = FrontSensorData;
                 
                 % Output 2: Emergency case signal
-                emergencyCase=obj.determineEmergencyCase(obj.vehicle,FrontSensorData, obj.Vehicles); % vehicles just for testing
+                emergencyCase=obj.determineEmergencyCase(obj.vehicle,FrontSensorData);
                 obj.vehicle.setEmergencyCase(emergencyCase);
             end
         end
         
-        function emergencyCase = determineEmergencyCase(obj, car, frontDistance, vehicles)
+        function emergencyCase = determineEmergencyCase(~, car, frontDistance)
             if car.status.collided
                 % Level 3 = Vehicle collided
                 emergencyCase = 3;
@@ -66,65 +64,8 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
                 % TODO: Check if this happens Level BUG
                 emergencyCase = 2;
             end
-            
-            % find an other car heading to the same waypoint
-            [lastWaypoints, nextWaypoints] = obj.getActiveWaypoints(vehicles); % Get needed waypoints for check
-            competingCarId = obj.checkNextWaypointClear(car.id, lastWaypoints, nextWaypoints);
-            
-            if competingCarId && (competingCarId>=car.id)
-                % other car with higher priority (carId) is heading to next
-                % waypoint
-                
-                % brake
-                % Level 2 = Emergency Brake
-                emergencyCase = 2;
-            end
         end
         
-        function [lastWaypoints, nextWaypoints] = getActiveWaypoints(~, vehicles)
-            % get the waypoints all vehicle come from and go to
-            % ATTENTION: a vehicle should not pass a waypoint twice
-            
-            lastWaypoints = [];
-            nextWaypoints = [];
-            for i = 1:length(vehicles)
-                % get actual waypoint from every vehicle
-                pathInfo = vehicles(i).pathInfo;
-                % get last waypoint
-                lastWaypoints = [lastWaypoints; pathInfo.lastWaypoint];
-                % find the point after the last waypoint when not
-                % destination reached
-                if ~pathInfo.destinationReached
-                    nextWaypoint = pathInfo.path(find(pathInfo.path == pathInfo.lastWaypoint)+1);
-                    nextWaypoints = [nextWaypoints; nextWaypoint];
-                else
-                    % when destination is reached, last waypoint is the
-                    % next waypoint
-                    nextWaypoints = [nextWaypoints; pathInfo.lastWaypoint];
-                end
-                
-            end
-        end 
-        
-        function competingCarId = checkNextWaypointClear(~, carId, lastWaypoints, nextWaypoints)
-            % Check if an other, competing car is heading to next waypoint from an other waypoint
-
-            for i = 1:length(nextWaypoints)
-                if (nextWaypoints(carId) == nextWaypoints(i))&&(i~=carId)
-                    % Check only other cars with the same next waypoint
-                    if lastWaypoints(carId) ~= lastWaypoints(i)
-                        % Find other cars coming from an other waypoint
-                        % (on the same lane (last waypoint) sensor detects
-                        % other vehicle)
-                        competingCarId = i; % the other car also heading to this waypoint
-                        return
-                    end
-                end
-            end
-            % no other car found heading to the next waypoint
-            competingCarId = false;
-        end
-     
         
         
         %% Standard Simulink Output functions
