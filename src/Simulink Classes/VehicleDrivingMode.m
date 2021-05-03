@@ -83,7 +83,7 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             end
             
             %%%%% Safety planner test %%%%%
-            enableSafetyPlanner = true; % condition to enable safety planner
+            enableSafetyPlanner = false; % condition to enable safety planner
             if enableSafetyPlanner
                 % find an other car heading to the same waypoint
                 [lastWaypoints, nextWaypoints] = obj.getActiveWaypoints(obj.vehicles); % Get needed waypoints for check
