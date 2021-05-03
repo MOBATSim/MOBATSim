@@ -46,15 +46,15 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             %Output 4: Driving mode
             if(emergencyCase == 0)
                 DrivingMode = 1;
-                %% some longitudinal driving modes are deactivated so that the vehicle can do lane-changing
-                %                                     elseif(emergencyCase == 1)
-                %                                         DrivingMode = 2;
-                %                                     elseif(emergencyCase == 2)
-                %                                         if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
-                %                                             DrivingMode = 3;
-                %                                         else
-                %                                             DrivingMode = 2;
-                %                                         end
+            %% some longitudinal driving modes are deactivated so that the vehicle can do lane-changing
+            %                                     elseif(emergencyCase == 1)
+            %                                         DrivingMode = 2;
+            %                                     elseif(emergencyCase == 2)
+            %                                         if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
+            %                                             DrivingMode = 3;
+            %                                         else
+            %                                             DrivingMode = 2;
+            %                                         end
                 
             else
                 DrivingMode = 1;

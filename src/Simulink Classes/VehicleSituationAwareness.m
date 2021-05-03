@@ -44,31 +44,29 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
         end
         
         function emergencyCase = determineEmergencyCase(~, car, frontDistance)
-            if car.status.emergencyCase == 3
-                %If vehicle has collided -> Emergency Case stays as 3
-                emergencyCase=3;
+            if car.status.collided
+                % Level 3 = Vehicle collided
+                emergencyCase = 3;
                 
             elseif frontDistance > car.sensors.frontSensorRange
                 % Level 0 = Safe
-                emergencyCase =0;
-                
-            elseif frontDistance >80
-                % Level 1 = Vehicle far ahead
-                emergencyCase=1;
+                emergencyCase = 0;
                 
             elseif frontDistance > car.sensors.AEBdistance
-                % Level 2 = Vehicle close infront
-                emergencyCase=1;
+                % Level 1 = Vehicle platooning mode
+                emergencyCase = 1;
                 
-            elseif frontDistance >0     
+            elseif frontDistance > 0
                 % Level 2 = Emergency Brake
-                emergencyCase=2;
+                emergencyCase = 2;
                 
-            elseif frontDistance <0
+            elseif frontDistance < 0
                 % TODO: Check if this happens Level BUG
-                emergencyCase=2;
+                emergencyCase = 2;
             end
         end
+        
+        
         
         %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)

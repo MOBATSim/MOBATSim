@@ -95,9 +95,9 @@ classdef Vehicle < handle
             obj.sensors.behindVehicleSafetyMargin = 1000; % Check where they are set and get
             
             
-            obj.status.emergencyCase = 0;
+            obj.setEmergencyCase(0); % no emergency case appears
             obj.setStopStatus(true);
-            obj.status.collided = 0;
+            obj.setCollided(false); % vehicle has no collision
             obj.status.canLaneSwitch = 0; % Check where they are set and get
             obj.status.laneSwitchFinish = 0; % Check where they are set and get
             
@@ -191,17 +191,12 @@ classdef Vehicle < handle
         end
         
         function vehiclesCollide(car1,car2)
-            % if collision happens, car.status.emergencyCase is set to "3"
-            car1.status.emergencyCase = 3;
-            car1.status.collided = 1;
+            % set collision on both vehicles and stop them
+            car1.setCollided(true);
             car1.setStopStatus(true);
-            car1.dynamics.speed = 0;
             
-            car2.status.emergencyCase =3;
-            car2.status.collided =1;
-            car2.setStopStatus(true);
-            car2.dynamics.speed = 0;
-            
+            car2.setCollided(true);
+            car2.setStopStatus(true);     
         end
         
         function Hitbox = getHitbox(car)
@@ -365,9 +360,9 @@ classdef Vehicle < handle
         
         %% SET/GET Functions to control the changes in the properties
 
-        function setStopStatus(car, bool)
-            car.status.stop = bool;
-            if bool % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
+        function setStopStatus(car, stop)
+            car.status.stop = stop;
+            if stop % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
                 car.updateActualSpeed(0);               
             end
         end
@@ -413,6 +408,10 @@ classdef Vehicle < handle
         
         function setEmergencyCase(car, EmergencyCase)
             car.status.emergencyCase = EmergencyCase;         
+        end
+        
+        function setCollided(car, collided)
+            car.status.collided = collided;         
         end
         
         function setCurrentTrajectory(car, currentTrajectory)
