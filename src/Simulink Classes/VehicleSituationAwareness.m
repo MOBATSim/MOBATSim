@@ -71,7 +71,7 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
             [lastWaypoints, nextWaypoints] = obj.getActiveWaypoints(vehicles); % Get needed waypoints for check
             competingCarId = obj.checkNextWaypointClear(car.id, lastWaypoints, nextWaypoints);
             
-            if competingCarId && (competingCarId<car.id)
+            if competingCarId && (competingCarId>=car.id)
                 % other car with higher priority (carId) is heading to next
                 % waypoint
                 
