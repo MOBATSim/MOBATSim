@@ -12,6 +12,7 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
     properties(Access = private)
         vehicle
         vehicles % for testing collision avoidance
+        oldNextWaypoint % check if next waypoint is free, for testing collision avoidance
     end
     
     methods
@@ -27,6 +28,7 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
             obj.vehicles = evalin('base','Vehicles'); % for testing collision avoidance
+            obj.oldNextWaypoint = 0;
         end
                
         function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
@@ -83,19 +85,33 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             end
             
             %%%%% Safety planner test %%%%%
-            enableSafetyPlanner = false; % condition to enable safety planner
+            enableSafetyPlanner = true; % condition to enable safety planner
             if enableSafetyPlanner
                 % find an other car heading to the same waypoint
                 [lastWaypoints, nextWaypoints] = obj.getActiveWaypoints(obj.vehicles); % Get needed waypoints for check
-                competingCarId = obj.checkNextWaypointClear(obj.vehicle.id, lastWaypoints, nextWaypoints);
                 
-                if competingCarId && (competingCarId>=obj.vehicle.id)
-                    % other car with higher priority (carId) is heading to next
-                    % waypoint
+                % check if next waypoint should be checked
+                checkNextWaypoint = (obj.oldNextWaypoint == lastWaypoints(obj.vehicle.id)) ... % when heading to another waypoint
+                                    || (obj.vehicle.dynamics.speed == 0); % or speed is zero
                     
-                    % Level 2 = Emergency Brake
-                    DrivingMode = 3;
+                if checkNextWaypoint
+                    % check if next waypoint is free
+                    competingCarId = obj.checkNextWaypointClear(obj.vehicle.id, lastWaypoints, nextWaypoints);
+                    if competingCarId
+                        % a competing car to waypoint is found
+                        competingCarSpeed = obj.vehicles(competingCarId).dynamics.speed;
+                        if (competingCarSpeed ~= 0) ...
+                           || (competingCarSpeed == 0) && (competingCarId>=obj.vehicle.id)
+                            % stop when the other is already moving to next waypoint or
+                            % is waiting but has higher Id
+                            
+                            % Level 2 = Emergency Brake
+                            DrivingMode = 3;
+                        end
+                    end
                 end
+                
+                
             end
         end
         
