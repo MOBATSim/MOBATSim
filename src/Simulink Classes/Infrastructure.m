@@ -6,6 +6,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         map = evalin('base','Map');
         modelName = evalin('base','modelName');
+        vehicleAnalysingWindow = evalin('base','VehicleAnalysingWindow');
     end
     
     
@@ -64,6 +65,11 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                     vehicle.checkCollision(obj.map.Vehicles);
                 end
             end
+            %% Vehicle Analysing Window TODO: check if should be called here
+            obj.vehicleAnalysingWindow.update();
+
+            
+            
         end
 
         
