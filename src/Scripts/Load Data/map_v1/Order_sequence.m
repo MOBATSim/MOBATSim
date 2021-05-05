@@ -5,11 +5,11 @@ function Waypoints_new_rightorder = Order_sequence(waypoints_ori,Waypoints_new)
   g = 1;
  for k = 1: size(Waypoints_new,1)
      for t = 1: size(waypoints_ori,1)
-         if Waypoints_new(k,:)== waypoints_ori(t,:) % the point is the same with one of the original point
+         if Waypoints_new(k,1:3)== waypoints_ori(t,:) % the point is the same with one of the original point
             Waypoints_new_rightorder(t,:) = Waypoints_new(k,:);
             break; 
       
-          elseif ismember(waypoints_ori,Waypoints_new(k,:),'rows')==0 % new added point for the map extension
+          elseif ismember(waypoints_ori,Waypoints_new(k,1:3),'rows')==0 % new added point for the map extension
               Waypoints_extra(g,:) = Waypoints_new(k,:);
               g = g+1;
               break;
@@ -17,3 +17,4 @@ function Waypoints_new_rightorder = Order_sequence(waypoints_ori,Waypoints_new)
      end
  end
  Waypoints_new_rightorder = [Waypoints_new_rightorder;Waypoints_extra];
+ 

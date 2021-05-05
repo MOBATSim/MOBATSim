@@ -11,10 +11,11 @@ classdef Map < handle
         plots
         crossroadUnits
         crossroads
+        Route_LaneNumber % lane number of the route
     end
     
     methods
-        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes)
+        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
             obj.mapName = mapName;
             obj.waypoints = waypoints;
             obj.Vehicles = [];
@@ -23,6 +24,7 @@ classdef Map < handle
             obj.connections.circle = connections_circle;
             obj.connections.translation = connections_translation;
             obj.plots.trajectories = [];
+            obj.Route_LaneNumber = Route_LaneNumber;
             
             obj.crossroads.startingNodes = startingNodes;
             obj.crossroads.breakingNodes = breakingNodes;
@@ -55,6 +57,10 @@ classdef Map < handle
             obj.directedGraph = digraph( [obj.connections.circle(:,1)' obj.connections.translation(:,1)'],[obj.connections.circle(:,2)' obj.connections.translation(:,2)'],[ obj.connections.distances']);
             
         end %Constructor
+        
+        function lanenumber = get_lane_number_from_route (obj, routenumber)%to find the lane number of the route
+             lanenumber = obj.Route_LaneNumber(routenumber,2);
+        end    
         
         function waypoint = get_waypoint_from_coordinates (obj,coordinates)
             
