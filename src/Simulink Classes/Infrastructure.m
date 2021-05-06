@@ -73,7 +73,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                 end
             end
             %% Vehicle Analysing Window TODO: check if should be called here
-            obj.vehicleAnalysingWindow.update();
+            obj.vehicleAnalysingWindow.updatePlot();
 
             
             
