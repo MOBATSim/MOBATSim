@@ -3,37 +3,40 @@ classdef VehicleAnalysingWindow < handle
     %   Detailed explanation goes here TODO: write a detailed explanation
     
     properties
-        egoVehicle  % vehicle the camera should focus on
-        vehicles    % all other vehicles that should be shown in the analysis
-        gui         % contains all parts of the gui
+        egoVehicleId    % vehicle the camera should focus on
+        vehicles        % all vehicles that should be shown in the analysis
+        gui             % contains all parts of the gui
             % fig                   figure of the analysis window
             % grid                  grid to align all components of the gui
             % vehicleSelectionDd    drop-down selection menu for the actual vehicle
-            % axes                  axes to plot the vehicle data into
-            % plots                 contains all plotted data
-                % egoVehicle        the vehicle to show in ego perspective
-                % vehicles          all other vehicles
-      
-    end
+            % axes                  used as a container for a plot
+            % bep                   birds eye plot
+            % outlinePlotter        plots the outlines of the cars
+            % lanePlotter           plots the outlines of the roads
+        scenario        % contains cars and roads that should be plotted
+    end 
     
     methods
         function obj = VehicleAnalysingWindow(vehicles, egoVehicleId)
             %VEHICLEANALYSINGWINDOW Construct an instance of this class
             %   Detailed explanation goes here
             
-            % get ego vehicle
-            i = 1:length(vehicles);
-            obj.egoVehicle = vehicles([vehicles(i).id] == egoVehicleId);
+            % get ego vehicle id
+            obj.egoVehicleId = egoVehicleId;
             % get all vehicles
             obj.vehicles = vehicles;
-            
 
             % generate window 
             obj.gui = generateGui(obj);
-         
             
-            % plot vehicle data
-            obj.plotVehicles(obj.vehicles);
+            % generate road boundaries
+            obj.generateRoads();
+            
+            % generate vehicles
+            obj.generateVehicles(obj.vehicles);
+            
+            % initialize birds eye view
+            obj.updatePlot();
         end
         
         function gui = generateGui(~)
@@ -62,80 +65,87 @@ classdef VehicleAnalysingWindow < handle
             %tab1 = uitab(tabgp,'Title','Vehicle 1');
             %tab2 = uitab(tabgp,'Title','Vehicle 2');
             %tab1 = uitab('Title','Vehicle 1');
-            % generate vehicle plot placeholder by using axes
+            % generate vehicle plot container by using axes
             gui.axes = uiaxes(gui.grid);
             gui.axes.Layout.Row = 3;
             gui.axes.Layout.Column = 2;
             % set the unit length to the same length
-            daspect(gui.axes,[1 1 1]);
+            daspect(gui.axes,[1 1 1]); % TODO: still neccesary?
+            % birds eye plot in axes container
+            gui.bep = birdsEyePlot('Parent', gui.axes, 'XLim',[-50 100], 'YLim',[-20 20]);
+            % plotters
+            gui.outlinePlotter = outlinePlotter(gui.bep);
+            gui.lanePlotter = laneBoundaryPlotter(gui.bep,'DisplayName','Road');
         end
-        
-        function plotVehicles(obj, vehicles)
-            % initalize all needed vehicles
-            
-            % find analysing window plot
-            axes = obj.gui.axes; % axes to plot into
-            hold(axes,'on')
-            
-            % plot all vehicles
-            for i = 1 : length(vehicles)          
-                % get lower left edge from vehicle
-                [leftPosition, lowerPosition] = obj.getVehicleEdge(vehicles(i));
-                
-                if vehicles(i).id == obj.egoVehicle.id
-                    % plot ego vehicle
-                    obj.gui.plots.egoVehicle = rectangle(axes, 'Position', [leftPosition lowerPosition vehicles(i).physics.size(2) vehicles(i).physics.size(3)], ...
-                        'FaceColor', 'cyan', 'EdgeColor', '#0072BD'); % colors for infill and edge
-                else
-                    % plot other vehicle
-                    obj.gui.plots.vehicles(i) = rectangle(axes, 'Position', [leftPosition lowerPosition vehicles(i).physics.size(2) vehicles(i).physics.size(3)], ...
-                        'FaceColor', '#EDB120', 'EdgeColor', '#D95319'); % colors for infill and edge
-                end  
-            end
-
-            % focus plot on ego vehicle
-            obj.focusOnVehicle(obj.egoVehicle)
-        end
-        
-        function update(obj)
-            % get new position from every vehicle and update plot
-            obj.updateVehiclePositions(obj.vehicles);
-            % update ego vehicle focus
-            obj.focusOnVehicle(obj.egoVehicle);
-        end
-        
-        function updateVehiclePositions(obj, vehicles)
-            % update positions from all vehicles
+               
+        function generateVehicles(obj, vehicles)
+            % generate vehicles for plotting with properties of the
+            % simulated vehicles
             
             for i = 1 : length(vehicles)
-                % get lower left edge from vehicle
-                [leftPosition, lowerPosition] = obj.getVehicleEdge(vehicles(i));
-                
-                if vehicles(i).id == obj.egoVehicle.id
-                    % update plot position of ego vehicle
-                    obj.gui.plots.egoVehicle.Position(1) = leftPosition;
-                    obj.gui.plots.egoVehicle.Position(2) = lowerPosition;
-                else
-                    % update plot positions of all other vehicles
-                    obj.gui.plots.vehicles(i).Position(1) = leftPosition;
-                    obj.gui.plots.vehicles(i).Position(2) = lowerPosition;
-                end
+                vehicle(obj.scenario, ...
+                        'ClassID', 1, ... % group 1 means cars
+                        'Name', vehicles(i).id, ...
+                        'Length', vehicles(i).physics.size(3), ...
+                        'Width', vehicles(i).physics.size(2), ...
+                        'Height', vehicles(i).physics.size(1), ...
+                        'RearOverhang', vehicles(i).physics.size(3)/2); % This moves the origin to the middle of the car
+            end                   
+        end
+
+        
+        function updatePlot(obj)
+            % update all plotted objects
+            
+            % update vehicle pose
+            i = 1:length(obj.vehicles);
+            positions = cat(1,cat(2,obj.vehicles(i).dynamics).position);
+            orientations = cat(1,cat(2,obj.vehicles(i).dynamics).orientation);
+            % coordinate transformation for plot
+            x = -positions(:,3);
+            y = -positions(:,1);
+            obj.updateVehiclePose(x, y, orientations(:,4)+pi);
+            
+            % update vehicle plots
+            [position,yaw,Length,width,originOffset,color] = targetOutlines(obj.scenario.Actors(obj.egoVehicleId));
+            plotOutline(obj.gui.outlinePlotter, position, yaw, Length, width, ...
+               'OriginOffset',originOffset, 'Color',color);
+                       
+            % update road according to ego vehicles position
+            rb = roadBoundaries(obj.scenario.Actors(obj.egoVehicleId));
+            plotLaneBoundary(obj.gui.lanePlotter,rb);
+
+        end
+        
+        function updateVehiclePose(obj, x, y, yaw)
+            % update positions from all vehicles
+            % yaw is in degree
+            
+            for i = 1 : length(obj.vehicles)
+                % set position of actor
+                obj.scenario.Actors(i).Position = [x(i) y(i) 0];
+                % set rotation of actor
+                obj.scenario.Actors(i).Yaw = yaw(i)-90;%(i)/pi*180; TODO: check why not in radians
             end
         end
         
-        function focusOnVehicle(obj, vehicle)
-            % focus plot on vehicle
-            obj.gui.axes.XLim = [vehicle.dynamics.position(1)-10 vehicle.dynamics.position(1)+10];
-            obj.gui.axes.YLim = [vehicle.dynamics.position(3)-5 vehicle.dynamics.position(3)+30];
+        function focusOnEgoVehicle(obj)
+            % focus plot on ego vehicle that is plotted
+            obj.gui.axes.XLim = [obj.scenario.Actors(obj.egoVehicleId).Position(1)-10 obj.scenario.Actors(obj.egoVehicleId).Position(1)+10];
+            obj.gui.axes.YLim = [obj.scenario.Actors(obj.egoVehicleId).Position(2)-5 obj.scenario.Actors(obj.egoVehicleId).Position(2)+30];
         end
         
-        
-        function [left, lower] = getVehicleEdge(~, vehicle)
-            % get vehicle lower left edge for plotting rectangles
-            % TODO: add rotation but this needs polygons
-        
-            left = vehicle.dynamics.position(1) - vehicle.physics.size(2)/2;  % x-Position - width/2
-            lower = vehicle.dynamics.position(3) - vehicle.physics.size(3)/2; % y-Position - length/2
+        function generateRoads(obj)
+            % generate lane boundaries of the whole map
+            
+            % lane boundary plotter
+            %lbp = laneBoundaryPlotter(obj.gui.bep,'DisplayName','Road');
+            % get scenario % TODO move this to an other place
+            [obj.scenario] = DrivingScenarioDesigner();
+            % generate lane boundaries
+            %rbScenario = roadBoundaries(obj.scenario);
+            % plot lanes
+            %plotLaneBoundary(lbp,rbScenario)
         end
         
     end
