@@ -149,7 +149,8 @@ classdef Vehicle < handle
             
             obj.modelName = evalin('base','modelName');
             
-            obj.dynamics.position = obj.map.get_coordinates_from_waypoint(startingPoint);
+            obj.setPosition(obj.map.get_coordinates_from_waypoint(startingPoint));
+            obj.setYawAngle(obj.map.getInitialYawAnglefromWaypoint(startingPoint));
         end %Constructor
                 
         function car = setDestination(car, destination, global_timesteps)

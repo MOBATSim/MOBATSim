@@ -90,6 +90,42 @@ classdef Map < handle
             
         end
         
+        function initialYawAngle = getInitialYawAnglefromWaypoint(obj,waypoint)
+            
+            possibleForwardPaths = obj.connections.all(obj.connections.all(:,1)==waypoint,:);          
+            forwardRouteID = getRouteIDfromPath(obj, possibleForwardPaths(1,:));          
+            initialYawAngle = getSpeedVectorAnglefromRouteDefinition(obj,forwardRouteID);
+
+        end
+        
+        function theta = getSpeedVectorAnglefromRouteDefinition(obj, routeID)
+            forwardRouteDefinition = getRouteDefinitionfromRouteID(obj,routeID);
+            
+            if forwardRouteDefinition(4,1) == 0 % Straight
+                speedVector = forwardRouteDefinition(2,:) - forwardRouteDefinition(1,:);
+                theta = atan2(-speedVector(3),speedVector(1)); % MOBATSim coordinates -(3) = y, (1) =x
+                
+            else%Rotation
+                vector_z=[0 0 1];
+                rotation_point = [forwardRouteDefinition(3,2) 0 forwardRouteDefinition(3,3)];
+                point_to_rotate = forwardRouteDefinition(1,:);         
+                                    
+                a=point_to_rotate(1)-rotation_point(1);
+                b=point_to_rotate(3)-rotation_point(3);
+
+                vectorB = [a b 0];
+                
+                if forwardRouteDefinition(4,1) == -1 % -1 means turn left
+                    vectorSpeedDir = cross(vectorB,vector_z); %left
+                    theta=-atan2(vectorSpeedDir(2),vectorSpeedDir(1));       
+                    
+                elseif forwardRouteDefinition(4,1) == 1 % 1 means turn right
+                    vectorSpeedDir = cross(vector_z,vectorB);% right
+                    theta=-atan2(vectorSpeedDir(2),vectorSpeedDir(1));
+                end
+            end
+        end
+        
         function neighbourRoutes = getForwardNeighbourRoutes(obj, route)
             connections = obj.connections.all;
             connection = connections(route,:);
