@@ -15,13 +15,6 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     end
     
     methods(Access = protected)
-        function setupImpl(obj)
-            %Initializing the Vehicles on the Map
-            for vehicle = obj.map.Vehicles
-                vehicle.initVehicle();
-            end
-            
-        end
 
         function icon = getIconImpl(~)
             % Define icon for System block
