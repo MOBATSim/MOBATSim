@@ -151,11 +151,7 @@ classdef Vehicle < handle
             
             obj.dynamics.position = obj.map.get_coordinates_from_waypoint(startingPoint);
         end %Constructor
-        
-        function car = initVehicle(car)
-            car.dynamics.position = car.map.get_coordinates_from_waypoint(car.pathInfo.lastWaypoint);
-        end
-        
+                
         function car = setDestination(car, destination, global_timesteps)
             
             car.pathInfo.destinationPoint = destination;
