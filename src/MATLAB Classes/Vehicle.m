@@ -461,6 +461,7 @@ classdef Vehicle < handle
         end
         
         function setYawAngle(car,YawAngle) % Might replace set Orientation after careful analysis
+            % Set the yaw angle in rad
             car.dynamics.orientation = [0 1 0 YawAngle];
         end
         
