@@ -75,6 +75,12 @@ clear_init_variables();
 % Open MOBATSim Simulink Model
 open_system(modelName)
 
+% generate vehicle analysing window TODO JP: maybe move, only here for
+% testing
+enableAnalysingWindow = false;
+if enableAnalysingWindow
+    VehicleAnalysingWindow = VehicleAnalysingWindow(Vehicles, 9);
+end
 %% Fault Injection properties (TODO: To be implemented soon)
 FI_distance = 0;
 FI_speed = 0;
