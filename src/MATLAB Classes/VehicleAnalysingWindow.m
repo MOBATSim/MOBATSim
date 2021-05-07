@@ -29,11 +29,11 @@ classdef VehicleAnalysingWindow < handle
             % generate window 
             obj.gui = generateGui(obj);
             
-            % generate road boundaries
-            obj.generateRoads();
+            % get scenario with road network
+            obj.getRoadScenario();
             
-            % generate vehicles
-            obj.generateVehicles(obj.vehicles);
+            % add vehicles to the driving scenario
+            obj.addVehiclesToScenario(obj.vehicles);
             
             % initialize birds eye view
             obj.updatePlot();
@@ -77,77 +77,68 @@ classdef VehicleAnalysingWindow < handle
             gui.outlinePlotter = outlinePlotter(gui.bep);
             gui.lanePlotter = laneBoundaryPlotter(gui.bep,'DisplayName','Road');
         end
-               
-        function generateVehicles(obj, vehicles)
-            % generate vehicles for plotting with properties of the
-            % simulated vehicles
+                    
+        
+        function getRoadScenario(obj)
+            % get a scenario with the road network
+            
+            obj.scenario = scenario_map_v1();
+        end
+        
+        
+        function addVehiclesToScenario(obj, vehicles)
+            % add vehicles for plotting with properties of the
+            % simulated vehicles to the scenario
             
             for i = 1 : length(vehicles)
                 vehicle(obj.scenario, ...
-                        'ClassID', 1, ... % group 1 means cars
-                        'Name', vehicles(i).id, ...
-                        'Length', vehicles(i).physics.size(3), ...
-                        'Width', vehicles(i).physics.size(2), ...
-                        'Height', vehicles(i).physics.size(1), ...
-                        'RearOverhang', vehicles(i).physics.size(3)/2); % This moves the origin to the middle of the car
-            end                   
+                    'ClassID', 1, ... % group 1 means cars
+                    'Name', vehicles(i).id, ...
+                    'Length', vehicles(i).physics.size(3), ...
+                    'Width', vehicles(i).physics.size(2), ...
+                    'Height', vehicles(i).physics.size(1), ...
+                    'RearOverhang', vehicles(i).physics.size(3)/2); % This moves the origin to the middle of the car
+            end
         end
-
+        
         
         function updatePlot(obj)
             % update all plotted objects
             
-            % update vehicle pose
+            % get vehicles poses
             i = 1:length(obj.vehicles);
             positions = cat(1,cat(2,obj.vehicles(i).dynamics).position);
             orientations = cat(1,cat(2,obj.vehicles(i).dynamics).orientation);
             % coordinate transformation for plot
-            x = -positions(:,3);
-            y = -positions(:,1);
-            obj.updateVehiclePose(x, y, orientations(:,4)+pi);
+            x = -positions(:,3); % x = negative y-Position of vehicle
+            y = -positions(:,1); % y = negative x-Position of vehicle
+            yaw = orientations(:,4) + pi; % rotate by 180 degrees
+            % update vehicle position and orientation
+            obj.updateVehiclePose(x, y, yaw);
             
-            % update vehicle plots
+            % redraw vehicles
             [position,yaw,Length,width,originOffset,color] = targetOutlines(obj.scenario.Actors(obj.egoVehicleId));
             plotOutline(obj.gui.outlinePlotter, position, yaw, Length, width, ...
-               'OriginOffset',originOffset, 'Color',color);
-                       
-            % update road according to ego vehicles position
+                'OriginOffset',originOffset, 'Color',color);
+            
+            % redraw vehicles from ego vehicle pose
             rb = roadBoundaries(obj.scenario.Actors(obj.egoVehicleId));
             plotLaneBoundary(obj.gui.lanePlotter,rb);
-
         end
+        
         
         function updateVehiclePose(obj, x, y, yaw)
             % update positions from all vehicles
-            % yaw is in degree
+            % yaw is in rad
             
             for i = 1 : length(obj.vehicles)
                 % set position of actor
                 obj.scenario.Actors(i).Position = [x(i) y(i) 0];
                 % set rotation of actor
-                obj.scenario.Actors(i).Yaw = yaw(i)-90;%(i)/pi*180; TODO: check why not in radians
+                obj.scenario.Actors(i).Yaw = yaw(i)/pi*180;
             end
         end
-        
-        function focusOnEgoVehicle(obj)
-            % focus plot on ego vehicle that is plotted
-            obj.gui.axes.XLim = [obj.scenario.Actors(obj.egoVehicleId).Position(1)-10 obj.scenario.Actors(obj.egoVehicleId).Position(1)+10];
-            obj.gui.axes.YLim = [obj.scenario.Actors(obj.egoVehicleId).Position(2)-5 obj.scenario.Actors(obj.egoVehicleId).Position(2)+30];
-        end
-        
-        function generateRoads(obj)
-            % generate lane boundaries of the whole map
-            
-            % lane boundary plotter
-            %lbp = laneBoundaryPlotter(obj.gui.bep,'DisplayName','Road');
-            % get scenario % TODO move this to an other place
-            [obj.scenario] = DrivingScenarioDesigner();
-            % generate lane boundaries
-            %rbScenario = roadBoundaries(obj.scenario);
-            % plot lanes
-            %plotLaneBoundary(lbp,rbScenario)
-        end
-        
+ 
     end
 end
 
