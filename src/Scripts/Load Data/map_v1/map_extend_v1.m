@@ -6,35 +6,40 @@ load map_v1.mat; %map data from drivingScenarioDesigner
 load waypoints_origin.mat;% original map data to order right sequence
 
 %%initialize
-Waypoints_new = [];% waypoints of extended map before oder the sequence
+waypoints_new = [];% waypoints of extended map before oder the sequence
 connections_circle = [];
 connections_translation = [];
 waypoints = [];%waypoints of extended map with the right order
+WP_from_app = []; % waypoints got from drivingScenarioDesigner
+Route_LaneNumber = []; % [Route_id, LaneNumber]
+
 
 %% waypoints
 % Get all the waypoints from drivingScenarioDesigner output file
 Start = data.RoadSpecifications(1,1).Centers(1,:); % Start point of the first road section in drivingScenarioDesigner
 End = data.RoadSpecifications(1,1).Centers(end,:); % End point of the first road section in drivingScenarioDesigner
-A = [Start;End];% Start and end point of the  first road section in drivingScenarioDesigner
+WP_from_app = [Start,;End,];% Start and end point of the  first road section in drivingScenarioDesigner
 
 % From the second road section, put all the start and end points together
 for i = 2:size(data.RoadSpecifications,2)
-    A = [A; data.RoadSpecifications(1,i).Centers(1,:);data.RoadSpecifications(1,i).Centers(end,:)];   
+    WP_from_app = [WP_from_app; 
+                  data.RoadSpecifications(1,i).Centers(1,:);
+                  data.RoadSpecifications(1,i).Centers(end,:)];   
 end
-B1 = unique(A,'row','stable'); % remove all the repeated points(coordinage in drivingScenarioDesigner)
+B1 = unique(WP_from_app(:,1:3),'row','stable'); % remove all the repeated points with same lane number(coordinate in drivingScenarioDesigner)
 
 %%Coordinate transformation
 % Coordinate transformation(from drivingScenarioDesigner coordinat to MOBATSim coordimate)
 % [y,-x,0]->[x,0,-y]
-Waypoints_new(:,1) = -B1(:,2);
-Waypoints_new(:,3) = -B1(:,1);
+waypoints_new(:,1) = -B1(:,2);
+waypoints_new(:,3) = -B1(:,1);
 % Put the new waypoints in the same sequence as before
-waypoints =  Order_sequence(waypoints_origin,Waypoints_new);
+waypoints =  Order_sequence(waypoints_origin,waypoints_new);
 B2 = [];
 B2(:,1) = -waypoints(:,3);% after sequence order, transfer MOBATSim coordinate to drivingScenariodesigner coordinate
 B2(:,2) = -waypoints(:,1);
 B2(:,3) = 0;
-
+ 
 Circle = zeros(1,7);
 h = 1;
 %% connection_transition
@@ -55,14 +60,14 @@ for j = 1:size(data.RoadSpecifications,2)
     % Calculate the circle center 
     [x0, y0, r] = Circle_center(C,D,E);
     k = 1/r; % calculate curvature for the future speed limit
-  
+
     F1 = data.RoadSpecifications(1,j).Centers(end,:);
     F2 = data.RoadSpecifications(1,j).Centers(1,:);
     a = ismember(B2, F1,'rows'); % find the sequence of circle connection
     m = find(a==1);
     b = ismember(B2, F2,'rows');
     n = find(b==1);
-        
+         
     % Polar coordinate
     F1 = F1(1:2);
     F2 = F2(1:2);
@@ -71,7 +76,7 @@ for j = 1:size(data.RoadSpecifications,2)
     [theta1, rho1] = cart2pol(G1(1),G1(2));% polar coordinate of G1
     [theta2, rho2] = cart2pol(G2(1),G2(2));
     if theta1 < 0 % [-pi~pi]->[0~2pi]
-        theta1 = theta1+2*pi;
+        theta1 = theta1+2*pi;     
     end
     if theta2 < 0
         theta2 = theta2+2*pi;
@@ -99,7 +104,7 @@ for j = 1:size(data.RoadSpecifications,2)
         elseif alpha2 < -pi
             alpha2 = alpha2+2*pi;
         end
-        alpha = alpha1+alpha2; %seperate arc in to two parts, and calculate the sum of two angle.
+            alpha = alpha1+alpha2; %seperate arc in to two parts, and calculate the sum of two angle.
     end
     Circle(1,1) = m;
     Circle(1,2) = n;
@@ -113,11 +118,59 @@ for j = 1:size(data.RoadSpecifications,2)
 %     else
 %         Circle(1,7) = 100;
 %     end
-    connections_circle = [connections_circle; Circle];   
-    end    
+   connections_circle = [connections_circle; Circle];   
+   end    
 end
 
+%% start to find lane number for every connections
+WP_from_app_LaneNum = [];%[start, end, laneNumber]
+%get the waypoints and the coorsponding lane number from map data
+for i = 1:size(data.RoadSpecifications,2)
+    WP_from_app_LaneNum = [WP_from_app_LaneNum; 
+                  data.RoadSpecifications(1,i).Centers(1,:),data.RoadSpecifications(1,i).Centers(end,:),data.RoadSpecifications(1,i).Lanes.NumLanes];   
+end
+
+%%coordinate transformation
+% [y,-x,0]->[x,0,-y]
+WP_from_app_LaneNum_new(:,1) = -WP_from_app_LaneNum(:,2);
+WP_from_app_LaneNum_new(:,3) = -WP_from_app_LaneNum(:,1);
+WP_from_app_LaneNum_new(:,4) = -WP_from_app_LaneNum(:,5);
+WP_from_app_LaneNum_new(:,6) = -WP_from_app_LaneNum(:,4);
+WP_from_app_LaneNum_new(:,7) =  WP_from_app_LaneNum(:,7);
+
+%seperate the waypoints to startpoints and endpoints
+startpoints = WP_from_app_LaneNum_new(:,4:6);
+endpoints = WP_from_app_LaneNum_new(:,1:3);
+ 
+circle_lane = [];%the lane number of all the circle
+translation_lane = [];% the lane number of all the straight road
+Index_circle = [];
+Index_translation = [];
+
+%%find the the lane number for coorsponding route
+% curved road
+ for i = 1:size(connections_circle,1)
+     Index_circle = find(ismember(startpoints, waypoints(connections_circle(i,1),:),'rows'));
+     for j = 1:size(Index_circle,1)
+         if waypoints(connections_circle(i,2),:)== endpoints(Index_circle(j),:)
+              circle_lane = [circle_lane;WP_from_app_LaneNum_new(Index_circle(j),7)]; 
+         end
+     end
+ end
+ %straight road
+ for i = 1:size(connections_translation,1)
+     Index_translation = find(ismember(startpoints, waypoints(connections_translation(i,1),:),'rows'));
+     for j = 1:size(Index_translation,1)
+         if waypoints(connections_translation(i,2),:)== endpoints(Index_translation(j),:)
+              translation_lane = [translation_lane;WP_from_app_LaneNum_new(Index_translation(j),7)]; 
+         end
+     end
+ end
+ 
+ Route_id = size(connections_circle,1)+size(connections_translation,1); %route id
+ Route_LaneNumber = [[1:Route_id]',[circle_lane;translation_lane]];
+ 
 %% Clean variables
-clearvars a h  A alpha b B1 B2 C Circle D data E End F1 F2 F3 G1 G2 G3 i j m n rho1 rho2 rho3 Start tag theta1 theta2 theta3 alpha1 alpha2 x0 y0 waypoints_origin Waypoints_new k r R curvature 
+clearvars  translation_lane circle_lane endpoints i j Index_circle Index_translation Route_id startpoints WP_from_app WP_from_app_LaneNum WP_from_app_LaneNum_new waypoints_new a h  A alpha b B1 B2 C Circle D data E End F1 F2 F3 G1 G2 G3  m n rho1 rho2 rho3 Start tag theta1 theta2 theta3 alpha1 alpha2 x0 y0 waypoints_origin B1 k r R curvature 
 
 

@@ -19,6 +19,7 @@ assignin('base','mapName',mapName);
 assignin('base','waypoints',waypoints);
 assignin('base','connections_circle',connections_circle);
 assignin('base','connections_translation',connections_translation);
+assignin('base','Route_LaneNumber',Route_LaneNumber);
 
 assignin('base','startingNodes',startingNodes);
 assignin('base','breakingNodes',breakingNodes);

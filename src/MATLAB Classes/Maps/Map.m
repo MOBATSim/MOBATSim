@@ -11,10 +11,11 @@ classdef Map < handle
         plots
         crossroadUnits
         crossroads
+        Route_LaneNumber % lane number of the route
     end
     
     methods
-        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes)
+        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
             obj.mapName = mapName;
             obj.waypoints = waypoints;
             obj.Vehicles = [];
@@ -23,6 +24,7 @@ classdef Map < handle
             obj.connections.circle = connections_circle;
             obj.connections.translation = connections_translation;
             obj.plots.trajectories = [];
+            obj.Route_LaneNumber = Route_LaneNumber;
             
             obj.crossroads.startingNodes = startingNodes;
             obj.crossroads.breakingNodes = breakingNodes;
@@ -56,6 +58,10 @@ classdef Map < handle
             
         end %Constructor
         
+        function lanenumber = get_lane_number_from_route (obj, routenumber)%to find the lane number of the route
+             lanenumber = obj.Route_LaneNumber(routenumber,2);
+        end    
+        
         function waypoint = get_waypoint_from_coordinates (obj,coordinates)
             
             [~,waypoint] = ismember(coordinates, obj.waypoints, 'rows');
@@ -82,6 +88,42 @@ classdef Map < handle
                 car.setStopStatus(true);
             end
             
+        end
+        
+        function initialYawAngle = getInitialYawAnglefromWaypoint(obj,waypoint)
+            
+            possibleForwardPaths = obj.connections.all(obj.connections.all(:,1)==waypoint,:);          
+            forwardRouteID = getRouteIDfromPath(obj, possibleForwardPaths(1,:));          
+            initialYawAngle = getSpeedVectorAnglefromRouteDefinition(obj,forwardRouteID);
+
+        end
+        
+        function theta = getSpeedVectorAnglefromRouteDefinition(obj, routeID)
+            forwardRouteDefinition = getRouteDefinitionfromRouteID(obj,routeID);
+            
+            if forwardRouteDefinition(4,1) == 0 % Straight
+                speedVector = forwardRouteDefinition(2,:) - forwardRouteDefinition(1,:);
+                theta = atan2(-speedVector(3),speedVector(1)); % MOBATSim coordinates -(3) = y, (1) =x
+                
+            else%Rotation
+                vector_z=[0 0 1];
+                rotation_point = [forwardRouteDefinition(3,2) 0 forwardRouteDefinition(3,3)];
+                point_to_rotate = forwardRouteDefinition(1,:);         
+                                    
+                a=point_to_rotate(1)-rotation_point(1);
+                b=point_to_rotate(3)-rotation_point(3);
+
+                vectorB = [a b 0];
+                
+                if forwardRouteDefinition(4,1) == -1 % -1 means turn left
+                    vectorSpeedDir = cross(vectorB,vector_z); %left
+                    theta=-atan2(vectorSpeedDir(2),vectorSpeedDir(1));       
+                    
+                elseif forwardRouteDefinition(4,1) == 1 % 1 means turn right
+                    vectorSpeedDir = cross(vector_z,vectorB);% right
+                    theta=-atan2(vectorSpeedDir(2),vectorSpeedDir(1));
+                end
+            end
         end
         
         function neighbourRoutes = getForwardNeighbourRoutes(obj, route)
