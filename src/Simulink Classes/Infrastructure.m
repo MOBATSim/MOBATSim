@@ -12,7 +12,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     
     % Pre-computed constants
     properties(Access = private)
-        
+        vehicleAnalysingWindow
     end
     
     methods(Access = protected)
@@ -25,7 +25,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             if obj.enableAnalysingWindow
-                VehcileAnalysingWindow = evalin('base','VehicleAnalysingWindow');
+                obj.vehicleAnalysingWindow = evalin('base','VehicleAnalysingWindow');
             end
         end
 
@@ -74,7 +74,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             end
             %% Vehicle Analysing Window TODO: check if should be called here
             if obj.enableAnalysingWindow % call only if window exists
-                obj.vehicleAnalysingWindow.updatePlot();
+                obj.vehicleAnalysingWindow.update();
             end            
             
         end

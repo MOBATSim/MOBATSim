@@ -5,6 +5,7 @@ classdef VehicleAnalysingWindow < handle
     properties
         egoVehicleId    % vehicle the camera should focus on
         vehicles        % all vehicles that should be shown in the analysis
+        modelName       % simulation model name
         gui             % contains all parts of the gui
             % fig                   figure of the analysis window
             % grid                  grid to align all components of the gui
@@ -21,6 +22,9 @@ classdef VehicleAnalysingWindow < handle
             %VEHICLEANALYSINGWINDOW Construct an instance of this class
             %   Detailed explanation goes here
             
+            % setup properties
+            obj.setup();
+            
             % get ego vehicle id
             obj.egoVehicleId = egoVehicleId;
             % get all vehicles
@@ -35,11 +39,17 @@ classdef VehicleAnalysingWindow < handle
             % add vehicles to the driving scenario
             obj.addVehiclesToScenario(obj.vehicles);
             
-            % initialize birds eye view
-            obj.updatePlot();
+            % initialize gui
+            obj.update();
+        end
+ 
+        function setup(obj)
+            % setup object properties
+            obj.modelName = evalin('base','modelName');
+            
         end
         
-        function gui = generateGui(~)
+        function gui = generateGui(obj)
             %GENERATEGUI Generate the vehicle analysing window
             %   using uifigure
            
@@ -51,31 +61,52 @@ classdef VehicleAnalysingWindow < handle
             gui.fig.Visible = 'on';
             gui.fig.Tag = 'vehicleAnalysingWindow_tag';
             
-            % generate grid layout
+            % Grid layout
             gui.grid = uigridlayout(gui.fig);
-            gui.grid.RowHeight = {22,22,'1x'};
-            gui.grid.ColumnWidth = {150,'1x'};
+            gui.grid.RowHeight = {'fit','fit','1x'};
+            gui.grid.ColumnWidth = {300,'1x'};
             % generate drop-downs
-            gui.vehicleSelectionDd = uidropdown(gui.grid,'Items',{'Vehicle 1','Vehicle 2'});
+            gui.vehicleSelectionDd = uidropdown(gui.grid,'Items',{'Out of service!','Vehicle 1','Vehicle 2'});
             % TODO: one dropdown item per vehicle
-            % TODO: get nextWaypointBlocked! visible on screen
             %dd1.Items = {'1','2'};
             %generate tabs
             %tabgp = uitabgroup(obj.fig,'Position',[.05 .05 .3 .8]);
             %tab1 = uitab(tabgp,'Title','Vehicle 1');
             %tab2 = uitab(tabgp,'Title','Vehicle 2');
             %tab1 = uitab('Title','Vehicle 1');
+            
+            % Pause button
+            gui.pauseBtn = uibutton(gui.grid, 'state', ...
+                                              'ValueChangedFcn', @(btn,event) obj.pauseSimTime(btn));
+            gui.pauseBtn.Text = 'Pause';
+            gui.pauseBtn.Layout.Row = 1;
+            gui.pauseBtn.Layout.Column = 2;
+            %gui.pauseBtn.HorizontalAlignment = 'right';
+            
+            % area showing all important variables
+            gui.subgridVariables = uigridlayout(gui.grid);
+            gui.subgridVariables.RowHeight = {'fit','fit','1x'};
+            gui.subgridVariables.ColumnWidth = {'fit','fit'};
+            gui.subgridVariables.Layout.Row = 3;
+            gui.subgridVariables.Layout.Column = 1;
+            
+            % Simulation time
+            gui.lblSimTime = uilabel(gui.subgridVariables, 'Text','Simulation time (ms): ');
+            gui.lblSimTime.WordWrap = 'on';
+            gui.valueSimTime = uilabel(gui.subgridVariables);
+            
             % generate vehicle plot container by using axes
             gui.axes = uiaxes(gui.grid);
             gui.axes.Layout.Row = 3;
             gui.axes.Layout.Column = 2;
-            % set the unit length to the same length
-            daspect(gui.axes,[1 1 1]); % TODO: still neccesary?
             % birds eye plot in axes container
             gui.bep = birdsEyePlot('Parent', gui.axes, 'XLim',[-50 100], 'YLim',[-20 20]);
+            legend(gui.axes,'off');
+            
+            
             % plotters
             gui.outlinePlotter = outlinePlotter(gui.bep);
-            gui.lanePlotter = laneBoundaryPlotter(gui.bep,'DisplayName','Road');
+            gui.lanePlotter = laneBoundaryPlotter(gui.bep);%,'DisplayName','Road');
         end
                     
         
@@ -101,7 +132,16 @@ classdef VehicleAnalysingWindow < handle
             end
         end
         
-        
+        function update(obj)
+            % update gui
+            
+            % update all shown values
+            obj.updateValueArea();
+            
+            % update birds eye view
+            obj.updatePlot();
+        end
+           
         function updatePlot(obj)
             % update all plotted objects
             
@@ -138,7 +178,26 @@ classdef VehicleAnalysingWindow < handle
                 obj.scenario.Actors(i).Yaw = yaw(i)/pi*180;
             end
         end
+        
+        function updateValueArea(obj)
+            % Update all values in gui with simulation values
+           obj.gui.valueSimTime.Text = string(obj.getCurrentSimTime());
+        end
  
+        function currentSimTime = getCurrentSimTime(obj)
+            currentSimTime = get_param(obj.modelName,'SimulationTime');
+        end
+        
+        function pauseSimTime(~, btn)
+            % pause/resume simulation execution
+            
+            if btn.Value == true
+                uiwait % pause simulation
+            else
+                uiresume % unpause simulation
+            end
+        end
+        
     end
 end
 
