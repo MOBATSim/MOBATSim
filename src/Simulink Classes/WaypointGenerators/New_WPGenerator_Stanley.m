@@ -189,6 +189,8 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             
             [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,obj.latOffsetError+d,radian);%Coordinate Conversion function
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
+            % TRY
+            obj.RouteOrientation = roadOrientation;
         end
         
         function generateLeftRotationWaypoints(obj,car)

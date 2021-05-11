@@ -8,7 +8,7 @@ switch scenarioName
        %destinationPoints = [83 51 14 14  14  14 14 14 14 14];
        %maxSpeeds = [7 20 8 10 14 20 10 12 10 10];
 
-        startingPoints =    [46 47 29 3 53 52 64 57 4 63];
+        startingPoints =    [46 30 29 3 53 52 64 57 4 63];
         destinationPoints = [54 51 78 27  3  27 42 25 3 47];
         maxSpeeds = [3 15 8 7 14 20 10 12 10 10];
 
