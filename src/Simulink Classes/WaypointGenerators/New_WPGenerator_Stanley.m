@@ -205,6 +205,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             car.pathInfo.s = s;% Arc length
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
 
+            car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates
             %% If lane-changing trajectory exists
             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
                 obj.generateLaneChanging_WPs(car)
@@ -213,7 +214,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             end
 
             % ISSUE: Doesn't have meaning with LaneId-0.5 
-            d=-obj.latOffset;%negative is only for left rotating vehicle
+            d=-obj.latOffset;%negative is only for left rotating vehicle -> Check if minus is right
             
             obj.latOffsetError = d-vehicle_d;%lateral offset error
             [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,obj.latOffsetError+d,radian);%Coordinate Conversion function
@@ -233,6 +234,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             car.pathInfo.s = s;% Arc length
             car.pathInfo.routeEndDistance = routeLength-s;%distance to the current route's endpoint
             
+            car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates
             %% If lane-changing trajectory exists
             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
                 obj.generateLaneChanging_WPs(car)
