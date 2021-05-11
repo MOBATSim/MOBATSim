@@ -87,15 +87,28 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
         %% helper function
         function laneChange = switch_decision(obj)
             
-            if (obj.vehicle.pathInfo.laneId==0)&&(obj.vehicle.sensors.ttc <1.4*3)%conditions for left lane-changing
-                obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
-                laneChange = 1;
-            elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.sensors.ttc>3.5)%conditions for right lane-changing
-                obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
-                laneChange = 2;
+            % Check if currentRoute variable exists and non zero
+            if isempty(obj.vehicle.pathInfo.currentRoute) || obj.vehicle.pathInfo.currentRoute ==0
+                laneChange = 0;
+                return
+            end
+
+        % First check if the road is a double lane
+            if(obj.vehicle.map.get_lane_number_from_route(obj.vehicle.pathInfo.currentRoute)==2)
+                if (obj.vehicle.pathInfo.laneId==0)&&(obj.vehicle.sensors.ttc <1.4*3)%conditions for left lane-changing
+                    obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
+                    laneChange = 1;
+                elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.sensors.ttc>3.5)%conditions for right lane-changing
+                    obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
+                    laneChange = 2;
+                else
+                    laneChange = 0;
+                end
+            
             else
                 laneChange = 0;
             end
+
             
         end
         
