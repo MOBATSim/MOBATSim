@@ -70,7 +70,10 @@ classdef VehicleAnalysingWindow < handle
             gui.grid.RowHeight = {'fit','fit','1x'};
             gui.grid.ColumnWidth = {300,'1x'};
             % generate drop-downs
-            gui.vehicleSelectionDd = uidropdown(gui.grid,'Items',{'<b style="color:red;">Out of service!</b>','<em>Vehicle 1</em>','Vehicle 2'});
+            gui.vehicleSelectionDd = uidropdown(gui.grid,'Items',{'<b style="color:red;">Out of service!</b>','<em>Vehicle 1</em>','Vehicle 1','Vehicle 2','Vehicle 4'}, ...
+                                                         'ValueChangedFcn',@(dd,event) obj.vehicleSelectionCallback(dd));
+            % TODO: make the vehicle item generation automated with
+            % vehicles(i).name
             %gui.vehicleSelectionDd.Interpreter = 'html';
             % TODO: one dropdown item per vehicle
             %dd1.Items = {'1','2'};
@@ -101,25 +104,10 @@ classdef VehicleAnalysingWindow < handle
             gui.subgridVariables.ColumnWidth = {'fit',100,'fit'};
             
             % Add variable entrys to subgrid
-            gui.entrySimTime = obj.generateVariableEntry(gui, 'Simulation time', 'ms');
             
-            
-%             gui.lblSimTime = uilabel(gui.subgridVariables, 'Text','Simulation time: ');
-%             gui.lblSimTime.Layout.Row = 1;
-%             gui.lblSimTime.Layout.Column = 1;
-%             gui.lblSimTime.WordWrap = 'on';
-%             gui.valueSimTime = uilabel(gui.subgridVariables, 'Text','0');
-%             gui.valueSimTime.HorizontalAlignment = 'right';
-            
-            
-            % Ego vehicle velocity
-            gui.lblEgoVelocity = uilabel(gui.subgridVariables, 'Text','Ego vehicle velocity: ');
-            gui.lblEgoVelocity.Layout.Row = 2;
-            gui.lblEgoVelocity.Layout.Column = 1;
-            gui.lblEgoVelocity.WordWrap = 'on';
-            gui.valueEgoVelocity = uilabel(gui.subgridVariables, 'Text','0');
-            gui.valueEgoVelocity.HorizontalAlignment = 'right';
-            
+            gui.entrySimTime = obj.generateVariableEntry(gui, 'Simulation time', 's');
+            gui.entryEgoVelocity = obj.generateVariableEntry(gui, 'Ego vehicle velocity', 'm/s');       
+                       
             % Emergency Brake Distance
             gui.lblEmBrakeDist = uilabel(gui.subgridVariables, 'Text','Emergency brake distance: ');
             gui.lblEmBrakeDist.Layout.Row = 3;
@@ -269,8 +257,8 @@ classdef VehicleAnalysingWindow < handle
             
             % Update variable entrys
            obj.updateVariableEntry(obj.gui.entrySimTime, obj.getCurrentSimTime());
-           obj.gui.valueEgoVelocity.Text = obj.vehicles(obj.egoVehicleId).dynamics.speed + " m/s";
-           obj.gui.valueEgoVelocity.Interpreter = 'latex';
+           obj.updateVariableEntry(obj.gui.entryEgoVelocity, obj.vehicles(obj.egoVehicleId).dynamics.speed);
+           %obj.gui.valueEgoVelocity.Text = obj.vehicles(obj.egoVehicleId).dynamics.speed + " m/s";
            % emergency brake distance
            actSpeed = obj.vehicles(obj.egoVehicleId).dynamics.speed;
            minAccleration = obj.vehicles(obj.egoVehicleId).dynamics.minDeceleration;
@@ -319,6 +307,34 @@ classdef VehicleAnalysingWindow < handle
             emergencyBrakeDistance = 0.5*-actSpeed^2/minAcceleration;
         end
         
+        
+        
+        function changeEgoVehicle(obj, egoVehicleId)
+            % Change ego vehicle at GUI
+            
+            obj.egoVehicleId = egoVehicleId;
+            % Update GUI with new ego vehicle
+            obj.update();
+        end
+        
+        %% Callbacks
+        function vehicleSelectionCallback(obj, dropdown)
+            % Callback of the vehicle selection dropdown menu
+            % TODO: make this more generic when entry generation is
+            % automated
+            switch dropdown.Value
+                case 'Vehicle 1'
+                    newEgoVehicleId = 1;
+                case 'Vehicle 2'
+                    newEgoVehicleId = 2;
+                case 'Vehicle 4'
+                    newEgoVehicleId = 4;
+                otherwise
+                    newEgoVehicleId = 9;
+            end
+            % Change the ego vehicle at GUI
+            obj.changeEgoVehicle(newEgoVehicleId);
+        end
         
     end
 end
