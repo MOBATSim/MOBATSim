@@ -141,7 +141,7 @@ classdef Vehicle < handle
             obj.decisionUnit.futureData = [];
             obj.decisionUnit.breakingFlag = 0;
             obj.decisionUnit.inCrossroad = [0 0];
-            obj.decisionUnit.LaneSwitchTime = 3; % Check where they are set and get
+            obj.decisionUnit.LaneSwitchTime = 4; % Check where they are set and get
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;

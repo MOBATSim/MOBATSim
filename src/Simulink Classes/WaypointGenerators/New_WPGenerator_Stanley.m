@@ -371,7 +371,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
                 startPointVector = Route_StartPoint-center;% vector OP_1 in Frenet.xml
 
                 l = vehiclePos_Cartesian-center;% the vector from rotation center to position
-                d = r-norm(l); % Check try: d = norm(l)-r;
+                d = abs(r-norm(l)); % Previously: d = norm(l)-r;
                 lAng = atan2(l(2),l(1)); % the angle of vector l with x axis (phi 3 in Frenet.xml)
 
                 start_dot_l = dot(startPointVector,l);% |startPointVetor|*|l|*sin(angle)

@@ -108,7 +108,13 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             if isempty(obj.vehicle.pathInfo.currentRoute) || obj.vehicle.pathInfo.currentRoute ==0 || obj.vehicle.map.get_lane_number_from_route(obj.vehicle.pathInfo.currentRoute)==1
                 allowed = 0;
             else
-                allowed = 1;
+                % Check if there is enough distance in the route
+                if (obj.vehicle.pathInfo.routeEndDistance> obj.vehicle.dynamics.speed*obj.vehicle.decisionUnit.LaneSwitchTime)
+                    allowed = 1;
+                else
+                    allowed = 0;
+                end
+                
             end
         end
         
