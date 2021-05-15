@@ -141,7 +141,7 @@ classdef Vehicle < handle
             obj.decisionUnit.futureData = [];
             obj.decisionUnit.breakingFlag = 0;
             obj.decisionUnit.inCrossroad = [0 0];
-            obj.decisionUnit.LaneSwitchTime = 3; % Check where they are set and get
+            obj.decisionUnit.LaneSwitchTime = 4; % Check where they are set and get
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
@@ -461,6 +461,7 @@ classdef Vehicle < handle
         end
         
         function setYawAngle(car,YawAngle) % Might replace set Orientation after careful analysis
+            % Set the yaw angle in rad
             car.dynamics.orientation = [0 1 0 YawAngle];
         end
         

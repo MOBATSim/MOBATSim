@@ -6,6 +6,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         map = evalin('base','Map');
         modelName = evalin('base','modelName');
+        enableAnalysingWindow = evalin('base','enableAnalysingWindow');
     end
     
     
@@ -19,6 +20,13 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("logo_small.png");
+        end
+        
+        function setupImpl(obj)
+            % Perform one-time calculations, such as computing constants
+            if obj.enableAnalysingWindow
+                VehcileAnalysingWindow = evalin('base','VehicleAnalysingWindow');
+            end
         end
 
 
@@ -64,6 +72,11 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                     vehicle.checkCollision(obj.map.Vehicles);
                 end
             end
+            %% Vehicle Analysing Window TODO: check if should be called here
+            if obj.enableAnalysingWindow % call only if window exists
+                obj.vehicleAnalysingWindow.updatePlot();
+            end            
+            
         end
 
         

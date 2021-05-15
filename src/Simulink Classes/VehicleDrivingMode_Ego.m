@@ -86,17 +86,36 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
         end
         %% helper function
         function laneChange = switch_decision(obj)
-            
-            if (obj.vehicle.pathInfo.laneId==0)&&(obj.vehicle.sensors.ttc <1.4*3)%conditions for left lane-changing
-                obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
-                laneChange = 1;
-            elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.sensors.ttc>3.5)%conditions for right lane-changing
-                obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
-                laneChange = 2;
+
+            if checkNecessaryConditionsforLaneChanging(obj)
+                if (obj.vehicle.pathInfo.laneId==0)&&(obj.vehicle.sensors.ttc <1.4*3)%conditions for left lane-changing
+                    obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
+                    laneChange = 1;
+                elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.sensors.ttc>3.5)%conditions for right lane-changing
+                    obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
+                    laneChange = 2;
+                else
+                    laneChange = 0;
+                end
             else
                 laneChange = 0;
             end
             
+        end
+        
+        function allowed = checkNecessaryConditionsforLaneChanging(obj)
+        % Check if currentRoute variable Exists and NON-zero and NOT Single lane
+            if isempty(obj.vehicle.pathInfo.currentRoute) || obj.vehicle.pathInfo.currentRoute ==0 || obj.vehicle.map.get_lane_number_from_route(obj.vehicle.pathInfo.currentRoute)==1
+                allowed = 0;
+            else
+                % Check if there is enough distance in the route
+                if (obj.vehicle.pathInfo.routeEndDistance> obj.vehicle.dynamics.speed*obj.vehicle.decisionUnit.LaneSwitchTime)
+                    allowed = 1;
+                else
+                    allowed = 0;
+                end
+                
+            end
         end
         
         %% Standard Simulink Output functions

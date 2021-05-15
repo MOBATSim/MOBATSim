@@ -105,6 +105,10 @@ classdef Map < handle
                 speedVector = forwardRouteDefinition(2,:) - forwardRouteDefinition(1,:);
                 theta = atan2(-speedVector(3),speedVector(1)); % MOBATSim coordinates -(3) = y, (1) =x
                 
+                if theta == -pi
+                    theta = -theta; %Correction for sometimes -pi. It results an initial circle move for the vehicle.
+                end
+                
             else%Rotation
                 vector_z=[0 0 1];
                 rotation_point = [forwardRouteDefinition(3,2) 0 forwardRouteDefinition(3,3)];
