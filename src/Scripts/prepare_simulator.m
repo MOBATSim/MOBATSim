@@ -79,7 +79,7 @@ open_system(modelName)
 % testing
 enableAnalysingWindow = true;
 if enableAnalysingWindow
-    VehicleAnalysingWindow = VehicleAnalysingWindow(Vehicles, 9);
+    vehicleAnalysingWindow = VehicleAnalysingWindow(Vehicles, 9);
 end
 %% Fault Injection properties (TODO: To be implemented soon)
 FI_distance = 0;

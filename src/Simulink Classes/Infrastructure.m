@@ -25,7 +25,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             if obj.enableAnalysingWindow
-                obj.vehicleAnalysingWindow = evalin('base','VehicleAnalysingWindow');
+                obj.vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow');
             end
         end
 
