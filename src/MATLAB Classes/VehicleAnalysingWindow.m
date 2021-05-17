@@ -27,27 +27,22 @@ classdef VehicleAnalysingWindow < handle
             %   Detailed explanation goes here
             
             % setup properties
-            obj.setup();
+            obj.setup(vehicles);
             
-            % get all vehicles
-            obj.vehicles = vehicles;
-            % get ego vehicle id
-            obj.egoVehicleId = egoVehicleId;  
-
             % generate window 
-            obj.gui = generateGui(obj);
+            obj.gui = obj.generateGui(obj.vehicles);  
             
             % get scenario with road network
             obj.setRoadScenario(scenario_map_v1());
             
             % add vehicles to the driving scenario
             obj.addVehiclesToScenario(obj.vehicles);
-            
-            % initialize gui
-            obj.update();
+                        
+            % set the actual shown ego vehicle id and update GUI
+            obj.setEgoVehicle(egoVehicleId);  
         end
  
-        function setup(obj)
+        function setup(obj, vehicles)
             % Setup this object
             
             % find old analysing window and close it
@@ -56,10 +51,11 @@ classdef VehicleAnalysingWindow < handle
             % setup object properties
             obj.modelName = evalin('base','modelName');
             obj.timeToPause = 0;
+            obj.vehicles = vehicles;
             
         end
         
-        function gui = generateGui(obj)
+        function gui = generateGui(obj, vehicles)
             %GENERATEGUI Generate the vehicle analysing window
             %   using uifigure
            
@@ -70,13 +66,12 @@ classdef VehicleAnalysingWindow < handle
             
             % Grid layout
             gui.grid = uigridlayout(gui.fig);
-            gui.grid.RowHeight = {'fit','fit','1x'};
+            gui.grid.RowHeight = {'fit','fit',150,'1x'};
             gui.grid.ColumnWidth = {300,'1x'};
-            % generate drop-downs
-            gui.vehicleSelectionDd = uidropdown(gui.grid, 'ValueChangedFcn',@(dd,event) obj.vehicleSelectionCallback(dd));
+            % Vehicle selection drop down
             i = 1:length(obj.vehicles);
-            gui.vehicleSelectionDd.Items = {obj.vehicles(i).name};
-            % TODO: automate loop for cycling though names                                        
+            gui.vehicleSelectionDd = uidropdown(gui.grid, 'ValueChangedFcn',@(dd,event) obj.vehicleSelectionCallback(dd),...
+                                                          'Items', {vehicles(i).name});                                       
 
             %generate tabs TODO: use tabs
             %tabgp = uitabgroup(obj.fig,'Position',[.05 .05 .3 .8]);
@@ -86,12 +81,11 @@ classdef VehicleAnalysingWindow < handle
             % TODO: use the html interpreter for coloring words: <b style="color:red;">Out of service!</b>','<em>Vehicle 1</em>
             % Pause button
             gui.pauseBtn = uibutton(gui.grid, 'state', ...
-                                              'ValueChangedFcn', @(btn,event) obj.pauseSimTimeCallback(btn));
-            gui.pauseBtn.Text = 'Pause';
-            gui.pauseBtn.BackgroundColor = [0.9290 0.6940 0.1250]; % kind of orange, yellow
-            
+                                              'ValueChangedFcn', @(btn,event) obj.pauseSimTimeCallback(btn), ...
+                                              'Text', 'Pause', ...
+                                              'BackgroundColor', [0.9290 0.6940 0.1250]); % kind of orange, yellow            
             %% Simulation time area           
-            % Subgrid
+            % Subgrid simulation time
             gui.subgridSimTime = uigridlayout(gui.grid);
             gui.subgridSimTime.Layout.Row = 2;
             gui.subgridSimTime.Layout.Column = 1;
@@ -115,7 +109,7 @@ classdef VehicleAnalysingWindow < handle
             gui.panelEgoVehicle.Layout.Column = 1;
             % Subgrid
             gui.subgridVariables = uigridlayout(gui.panelEgoVehicle);
-            gui.subgridVariables.RowHeight = {'fit','fit','fit','fit','1x'};
+            gui.subgridVariables.RowHeight = {'fit','fit','fit','fit',20};
             gui.subgridVariables.ColumnWidth = {'fit','1x','fit','fit'};
             
             % Variable entrys to subgrid
@@ -130,20 +124,65 @@ classdef VehicleAnalysingWindow < handle
             gui.categoryAreas = uitreenode(gui.tree, 'Text','Shown Areas');
             gui.nodeEmBrake = uitreenode(gui.categoryAreas, 'Text','Emergency Brake Distance');
             %expand(gui.tree);
+            %% Safe space at selected driving mode
+            % TODO: maybe use tabs for more graphs.
+            gui.axesSafeSpace = uiaxes(gui.grid);
+            gui.axesSafeSpace.Layout.Row = 4;
+            gui.axesSafeSpace.Layout.Column = 1;
+            gui.axesSafeSpace.XLim = [0 20]; % TODO: find good values
+            gui.axesSafeSpace.YLim = [0 20]; % TODO: find good values
+            % Title
+            title(gui.axesSafeSpace, 'Safe space');
+            % Label
+            xlabel(gui.axesSafeSpace, 'relative distance');
+            ylabel(gui.axesSafeSpace, 'relative velocity');
+            %legend({'Model A','Model B'})
+            
+            % Create 2 sets of data
+            distance = linspace(0,20);
+            minDeceleration = -9.15;
+            %minAcceleration = obj.vehicles(obj.egoVehicleId).dynamics.minDeceleration;
+            velocity = sqrt(2*distance*-minDeceleration);
+            midDeceleration = -7.15;
+            velocity = [velocity; sqrt(2*distance*-midDeceleration)];
+            velocity = velocity';
+            
+            % set axes background color to red
+            set(gui.axesSafeSpace, 'color', '#CC0033'); % kind of red
+            
+            % Create colored area showing safe sets
+            gui.areaSafeSet = area(gui.axesSafeSpace, distance,velocity,'FaceColor','g','FaceAlpha',1,'EdgeAlpha',1);
+            gui.areaSafeSet(1).FaceColor = '#009900'; % dark green
+            gui.areaSafeSet(2).FaceColor = '#33FF33'; % bright green
+            gui.areaSafeSet(1).LineStyle = 'none';
+            gui.areaSafeSet(2).LineStyle = 'none';
+            %zoom(gui.axesSafeSpace,'reset')
+            hold(gui.axesSafeSpace, 'on');
+            % Point showing actual set of vehicle
+            gui.pointActualSet = plot(gui.axesSafeSpace, 10, 10,'b--o');
+            hold(gui.axesSafeSpace, 'on');
+            gui.arrow = quiver(gui.axesSafeSpace, 10, 10, -1, 1, 3);
+            hold on
+            %gui.areaSafeTerminalSet = area(gui.axesSafeSpace, distance,velocity2,'FaceColor','b','FaceAlpha',.3,'EdgeAlpha',.3);
+            %gui.area2 = area(gui.axesSafeSpace, x,y2,'FaceColor','r','FaceAlpha',.3,'EdgeAlpha',.3);
+            hold off
+            
+     
+            
             %% Birds eye plot
             % Axes as plot container
-            gui.axes = uiaxes(gui.grid);
-            gui.axes.Layout.Row = 3;
-            gui.axes.Layout.Column = 2;
+            gui.axesBep = uiaxes(gui.grid);
+            gui.axesBep.Layout.Row = [3,4];
+            gui.axesBep.Layout.Column = 2;
             
             % birds eye plot in axes container
-            gui.bep = birdsEyePlot('Parent', gui.axes, 'XLim',[-50 100], 'YLim',[-20 20]);
-            legend(gui.axes,'off');
+            gui.bep = birdsEyePlot('Parent', gui.axesBep, 'XLim',[-50 100], 'YLim',[-20 20]);
+            legend(gui.axesBep,'off');
             
             
             % Plotters for different aspects
             gui.outlinePlotter = outlinePlotter(gui.bep);
-            gui.lanePlotter = laneBoundaryPlotter(gui.bep);%,'DisplayName','Road');
+            gui.lanePlotter = laneBoundaryPlotter(gui.bep);
         end
         
         function variableEntry = generateVariableEntry(~, parent, title, unit, checkboxNeeded)
@@ -215,41 +254,44 @@ classdef VehicleAnalysingWindow < handle
         function updatePlot(obj)
             % update all plotted objects
             
-            
             % get vehicles poses
             i = 1:length(obj.vehicles);
             positions = cat(1,cat(2,obj.vehicles(i).dynamics).position);
             orientations = cat(1,cat(2,obj.vehicles(i).dynamics).orientation);
-            % coordinate transformation for plot
-            x = -positions(:,3); % x = negative y-Position of vehicle
-            y = -positions(:,1); % y = negative x-Position of vehicle
-            yaw = orientations(:,4) + pi; % rotate by 180 degrees
             % update vehicle position and orientation
-            obj.updateVehiclePose(x, y, yaw);
-            
+            obj.updateVehiclePose(positions(:,1), positions(:,3), orientations(:,4));
+            % redraw roads from ego vehicle pose
+            rb = roadBoundaries(obj.scenario.Actors(obj.egoVehicleId)); 
             % redraw vehicles
             [position,yaw,Length,width,originOffset,color] = targetOutlines(obj.scenario.Actors(obj.egoVehicleId));
+            
+            plotLaneBoundary(obj.gui.lanePlotter,rb);
             plotOutline(obj.gui.outlinePlotter, position, yaw, Length, width, ...
                 'OriginOffset',originOffset, 'Color',color);
             
-            % redraw vehicles from ego vehicle pose
-            rb = roadBoundaries(obj.scenario.Actors(obj.egoVehicleId));
-            plotLaneBoundary(obj.gui.lanePlotter,rb);
+            
+           
+           
             
             % plot coverage areas
             % plot emergency brake area
-            % width - size of vehicle
-            % length - emergency brake distance
-            vehicleWidth = obj.vehicles(obj.egoVehicleId).physics.size(2); 
-            vehicleLength = obj.vehicles(obj.egoVehicleId).physics.size(3);
             
-            p1 = [vehicleLength/2 -vehicleWidth/2];
-            p2 = [vehicleLength/2 vehicleWidth/2];
-            p3 = [vehicleLength/2+obj.emergencyBrakeDistance vehicleWidth/2];
-            p4 = [vehicleLength/2+obj.emergencyBrakeDistance -vehicleWidth/2];
-            if (obj.gui.entryEmBrakeDistance.cb.Value == 1) && (p1(1) ~= p4(1)) % use a callback for activation, so area is also shown, when simulation is paused
-                polyg = polyshape([p1(1) p2(1) p3(1) p4(1)], [p1(2) p2(2) p3(2) p4(2)]);
-                obj.plotEmBrake = plot(obj.gui.axes, polyg, 'FaceColor','cyan', 'EdgeColor','blue', 'FaceAlpha',0.5);
+            if obj.gui.entryEmBrakeDistance.cb.Value == 1 % use a callback for activation, so area is also shown, when simulation is paused
+                % width - size of vehicle
+                % length - emergency brake distance
+                vehicleWidth = obj.vehicles(obj.egoVehicleId).physics.size(2);
+                vehicleLength = obj.vehicles(obj.egoVehicleId).physics.size(3);
+                
+                p1 = [vehicleLength/2 -vehicleWidth/2];
+                p2 = [vehicleLength/2 vehicleWidth/2];
+                p3 = [vehicleLength/2+obj.emergencyBrakeDistance vehicleWidth/2];
+                p4 = [vehicleLength/2+obj.emergencyBrakeDistance -vehicleWidth/2];
+                
+                if p1(1) ~= p4(1) % show only if area has a length
+                    
+                    polyg = polyshape([p1(1) p2(1) p3(1) p4(1)], [p1(2) p2(2) p3(2) p4(2)]);
+                    obj.plotEmBrake = plot(obj.gui.axesBep, polyg, 'FaceColor','cyan', 'EdgeColor','blue', 'FaceAlpha',0.5);
+                end
             else
                 delete(obj.plotEmBrake);
             end
@@ -262,8 +304,17 @@ classdef VehicleAnalysingWindow < handle
             
             for i = 1 : length(obj.vehicles)
                 % set position of actor
-                obj.scenario.Actors(i).Position = [x(i) y(i) 0];
+                % change positions from mobatsim coordinate system
+                obj.scenario.Actors(i).Position = [-y(i) -x(i) 0];
                 % set rotation of actor
+                % rotate from mobatsim coordinate system
+                yaw(i) = yaw(i) - pi/2;
+                % limit angle from -pi to pi
+                if yaw(i) > pi
+                    yaw(i) = yaw(i) - 2*pi;
+                elseif  yaw(i) < pi
+                    yaw(i) = yaw(i) + 2*pi;
+                end
                 obj.scenario.Actors(i).Yaw = yaw(i)/pi*180;
             end
         end
@@ -305,7 +356,7 @@ classdef VehicleAnalysingWindow < handle
         function plottedPoly = plotPolygon(obj, polyshape, color, edgeColor)
             % draw a polygon into the birds eye plot
             
-            plottedPoly = plot(obj.gui.axes, polyshape, 'FaceColor',color, 'EdgeColor',edgeColor);
+            plottedPoly = plot(obj.gui.axesBep, polyshape, 'FaceColor',color, 'EdgeColor',edgeColor);
         end
         
         function emergencyBrakeDistance = calculateEmergencyBrakeDistance(obj)
@@ -319,31 +370,18 @@ classdef VehicleAnalysingWindow < handle
             emergencyBrakeDistance = 0.5*-curSpeed^2/minAcceleration;
         end
         
-        function changeEgoVehicle(obj, egoVehicleId)
-            % Change ego vehicle at GUI
-            
-            obj.egoVehicleId = egoVehicleId;
-            % Update GUI with new ego vehicle
-            obj.update();
-        end
-        
         %% Callbacks
         function vehicleSelectionCallback(obj, dropdown)
             % Callback of the vehicle selection dropdown menu
-            % TODO: make this more generic when entry generation is
-            % automated
-            switch dropdown.Value
-                case 'Vehicle 1'
-                    newEgoVehicleId = 1;
-                case 'Vehicle 2'
-                    newEgoVehicleId = 2;
-                case 'Vehicle 4'
-                    newEgoVehicleId = 4;
-                otherwise
-                    newEgoVehicleId = 9;
+
+            % find the selected car and set the egoVehicleId
+            for i = 1 : length(obj.vehicles)
+                if string(dropdown.Value) == obj.vehicles(i).name % at least one variable has to be string for comparison
+                    % Change the ego vehicle at GUI
+                    obj.setEgoVehicle(obj.vehicles(i).id);
+                    return;
+                end
             end
-            % Change the ego vehicle at GUI
-            obj.changeEgoVehicle(newEgoVehicleId);
         end
         
         function pauseSimTimeCallback(~, btn)
@@ -369,6 +407,18 @@ classdef VehicleAnalysingWindow < handle
             
             obj.currentSimTime = get_param(obj.modelName,'SimulationTime');
         end
+        
+        function setEgoVehicle(obj, egoVehicleId)
+            % Set the ego vehicle and update GUI with ego vehicle
+            % information
+            
+            obj.egoVehicleId = egoVehicleId;
+            % Update vehicle selction dropdown
+            obj.gui.vehicleSelectionDd.Value = obj.vehicles(egoVehicleId).name;
+            % Update GUI with new ego vehicle
+            obj.update();
+        end
+
     end
 end
 
