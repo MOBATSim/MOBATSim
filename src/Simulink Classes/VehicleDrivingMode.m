@@ -31,7 +31,7 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             obj.oldNextWaypoint = 0;
         end
                
-        function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
+        function [SpeedReference, DistanceReference, LeadSpeed, DrivingMode, Dist2Stop] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
             %This block shouldn't run if the vehicle has reached its destination
             if obj.vehicle.pathInfo.destinationReached
                 SpeedReference=0;
@@ -61,13 +61,15 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             else
                 DrivingMode = 1;
             end
+            % Set driving mode at vehicle
+            obj.vehicle.setDrivingMode(DrivingMode);
             
             %Output 1: Reference Speed
             SpeedReference = obj.vehicle.dynamics.maxSpeed;
             %Output 2: Reference distance to the vehicle in front
             DistanceReference = LeaderDistance;
             %Output 3: The speed of the leading vehicle
-            LeadSpeed =LeaderSpeed;
+            LeadSpeed = LeaderSpeed;
             
             
             if(obj.vehicle.pathInfo.stopAt ~= 0)
@@ -85,7 +87,7 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             end
             
             %%%%% Safety planner test %%%%%
-            enableSafetyPlanner = false; % condition to enable safety planner
+            enableSafetyPlanner = true; % condition to enable safety planner
             if enableSafetyPlanner
                 % find an other car heading to the same waypoint
                 [lastWaypoints, nextWaypoints] = obj.getActiveWaypoints(obj.vehicles); % Get needed waypoints for check
