@@ -26,6 +26,7 @@ classdef Vehicle < handle
         %         vehicleInFrontId
         status
         %         emergencyCase
+        %         drivingMode
         %         stop
         %         collided
         pathInfo
@@ -96,6 +97,7 @@ classdef Vehicle < handle
             
             
             obj.setEmergencyCase(0); % no emergency case appears
+            obj.setDrivingMode(0);
             obj.setStopStatus(true);
             obj.setCollided(false); % vehicle has no collision
             obj.status.canLaneSwitch = 0; % Check where they are set and get
@@ -405,6 +407,10 @@ classdef Vehicle < handle
         
         function setEmergencyCase(car, EmergencyCase)
             car.status.emergencyCase = EmergencyCase;         
+        end
+        
+        function setDrivingMode(car, DrivingMode)
+            car.status.drivingMode = DrivingMode;         
         end
         
         function setCollided(car, collided)
