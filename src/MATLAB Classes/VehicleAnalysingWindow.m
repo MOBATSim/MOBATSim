@@ -124,50 +124,34 @@ classdef VehicleAnalysingWindow < handle
             gui.categoryAreas = uitreenode(gui.tree, 'Text','Shown Areas');
             gui.nodeEmBrake = uitreenode(gui.categoryAreas, 'Text','Emergency Brake Distance');
             %expand(gui.tree);
-            %% Safe space at selected driving mode
+            %% Safe space from selected driving mode
             % TODO: maybe use tabs for more graphs.
             gui.axesSafeSpace = uiaxes(gui.grid);
             gui.axesSafeSpace.Layout.Row = 4;
             gui.axesSafeSpace.Layout.Column = 1;
-            gui.axesSafeSpace.XLim = [0 20]; % TODO: find good values
-            gui.axesSafeSpace.YLim = [0 20]; % TODO: find good values
-            % Title
+            gui.axesSafeSpace.XLim = [0 20];
+            gui.axesSafeSpace.YLim = [0 20];
             title(gui.axesSafeSpace, 'Safe space');
-            % Label
-            xlabel(gui.axesSafeSpace, 'relative distance');
-            ylabel(gui.axesSafeSpace, 'relative velocity');
-            %legend({'Model A','Model B'})
-            
-            % Create 2 sets of data
-            distance = linspace(0,20);
-            minDeceleration = -9.15;
-            %minAcceleration = obj.vehicles(obj.egoVehicleId).dynamics.minDeceleration;
-            velocity = sqrt(2*distance*-minDeceleration);
-            midDeceleration = -7.15;
-            velocity = [velocity; sqrt(2*distance*-midDeceleration)];
-            velocity = velocity';
-            
+            xlabel(gui.axesSafeSpace, 'relative distance (m)');
+            ylabel(gui.axesSafeSpace, 'relative velocity (m/s)');
             % set axes background color to red
             set(gui.axesSafeSpace, 'color', '#CC0033'); % kind of red
             
-            % Create colored area showing safe sets
-            gui.areaSafeSet = area(gui.axesSafeSpace, distance,velocity,'FaceColor','g','FaceAlpha',1,'EdgeAlpha',1);
-            gui.areaSafeSet(1).FaceColor = '#009900'; % dark green
-            gui.areaSafeSet(2).FaceColor = '#33FF33'; % bright green
-            gui.areaSafeSet(1).LineStyle = 'none';
-            gui.areaSafeSet(2).LineStyle = 'none';
-            %zoom(gui.axesSafeSpace,'reset')
-            hold(gui.axesSafeSpace, 'on');
+            % Create plot
+            % Create colored areas showing safe sets
+            % TODO: maybe generate this in a kind of update function, when
+            % vehicle is changing like setEgoVehicle
+            minDeceleration = -9.15;
+            midDeceleration = -6.15;            
+            gui.areaSafeSet = obj.generateAreaVelocity(gui.axesSafeSpace, minDeceleration, '#33FF33'); % bright green
+            gui.areaSafeTerminalSet = obj.generateAreaVelocity(gui.axesSafeSpace, midDeceleration, '#009900'); % dark green
+           
             % Point showing actual set of vehicle
+            % TODO: make a function for that
+            hold(gui.axesSafeSpace, 'on');
             gui.pointActualSet = plot(gui.axesSafeSpace, 10, 10,'b--o');
             hold(gui.axesSafeSpace, 'on');
-            gui.arrow = quiver(gui.axesSafeSpace, 10, 10, -1, 1, 3);
-            hold on
-            %gui.areaSafeTerminalSet = area(gui.axesSafeSpace, distance,velocity2,'FaceColor','b','FaceAlpha',.3,'EdgeAlpha',.3);
-            %gui.area2 = area(gui.axesSafeSpace, x,y2,'FaceColor','r','FaceAlpha',.3,'EdgeAlpha',.3);
-            hold off
-            
-     
+            gui.arrow = quiver(gui.axesSafeSpace, 10, 10, -1, 1, 1.5);         
             
             %% Birds eye plot
             % Axes as plot container
@@ -210,6 +194,23 @@ classdef VehicleAnalysingWindow < handle
             if ~checkboxNeeded
                 variableEntry.cb.Visible = false;
             end
+        end
+        
+        function areaVelocity = generateAreaVelocity(~, axes, minDeceleration, color)
+            % generate an area showing the velocities that allow
+            % deceleration with minDeceleration
+            
+            % Function describing maximal velocity at minDeceleration
+            distance = linspace(0,20);
+            velocity = sqrt(2*distance*-minDeceleration);
+            
+            % Create colored veloctiy area
+            hold(axes, 'on');
+            areaVelocity = area(axes, distance, ...
+                                      velocity, ...
+                                      'FaceColor', color, ...
+                                      'EdgeAlpha', 0.2);
+            
         end
         
         function setRoadScenario(obj, roadScenario)
@@ -329,7 +330,7 @@ classdef VehicleAnalysingWindow < handle
            obj.updateVariableEntry(obj.gui.entrySimTime, obj.currentSimTime);
            obj.updateVariableEntry(obj.gui.entryVelocity, obj.vehicles(obj.egoVehicleId).dynamics.speed);
            obj.updateVariableEntry(obj.gui.entryEmBrakeDistance, obj.emergencyBrakeDistance);
-           obj.updateVariableEntry(obj.gui.entryDrivingMode, obj.vehicles(obj.egoVehicleId).status.emergencyCase); %TODO: get the driving mode
+           obj.updateVariableEntry(obj.gui.entryDrivingMode, obj.vehicles(obj.egoVehicleId).status.drivingMode);
         end
         
         function updateVariableEntry(~, variableEntry, value)
