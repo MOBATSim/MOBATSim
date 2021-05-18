@@ -77,7 +77,7 @@ open_system(modelName)
 
 % generate vehicle analysing window TODO JP: maybe move, only here for
 % testing
-enableAnalysingWindow = true;
+enableAnalysingWindow = false;
 if enableAnalysingWindow
     vehicleAnalysingWindow = VehicleAnalysingWindow(Vehicles, 9);
 end
