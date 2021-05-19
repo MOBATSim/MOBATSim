@@ -27,22 +27,20 @@ classdef VehicleAnalysingWindow < handle
             %   Detailed explanation goes here
             
             % setup properties
-            obj.setup(vehicles);
-            
-            % generate window 
-            obj.gui = obj.generateGui(obj.vehicles);  
-            
-            % get scenario with road network
-            obj.setRoadScenario(scenario_map_v1());
-            
-            % add vehicles to the driving scenario
-            obj.addVehiclesToScenario(obj.vehicles);
+            obj.setup(vehicles, egoVehicleId);
                         
-            % set the actual shown ego vehicle id and update GUI
-            obj.setEgoVehicle(egoVehicleId);  
+            % setup the driving scenario
+            obj.scenario = obj.setupScenario(scenario_map_v1(), obj.vehicles);
+            
+            % generate GUI 
+            obj.gui = obj.generateGui(obj.vehicles);
+                        
+            % initialize GUI
+            obj.changeViewToEgoVehicle();  
+            obj.gui.fig.Visible = 'on'; % show window
         end
  
-        function setup(obj, vehicles)
+        function setup(obj, vehicles, egoVehicleId)
             % Setup this object
             
             % find old analysing window and close it
@@ -50,9 +48,9 @@ classdef VehicleAnalysingWindow < handle
             
             % setup object properties
             obj.modelName = evalin('base','modelName');
-            obj.timeToPause = 0;
+            obj.setTimeToPause(0);
             obj.vehicles = vehicles;
-            
+            obj.setEgoVehicleId(egoVehicleId);
         end
         
         function gui = generateGui(obj, vehicles)
@@ -61,7 +59,7 @@ classdef VehicleAnalysingWindow < handle
            
             % Ui figure              
             gui.fig = uifigure('Name','Vehicle Analysing Window');
-            gui.fig.Visible = 'on';
+            gui.fig.Visible = 'off'; % don't show window during generation
             gui.fig.Tag = 'vehicleAnalysingWindow_tag';
             
             % Grid layout
@@ -71,7 +69,8 @@ classdef VehicleAnalysingWindow < handle
             % Vehicle selection drop down
             i = 1:length(obj.vehicles);
             gui.vehicleSelectionDd = uidropdown(gui.grid, 'ValueChangedFcn',@(dd,event) obj.vehicleSelectionCallback(dd),...
-                                                          'Items', {vehicles(i).name});                                       
+                                                          'Items', {vehicles(i).name}, ...
+                                                          'ItemsData', [vehicles(i).id]);                                       
 
             %generate tabs TODO: use tabs
             %tabgp = uitabgroup(obj.fig,'Position',[.05 .05 .3 .8]);
@@ -142,9 +141,11 @@ classdef VehicleAnalysingWindow < handle
             % TODO: maybe generate this in a kind of update function, when
             % vehicle is changing like setEgoVehicle
             minDeceleration = -9.15;
-            midDeceleration = -6.15;            
-            gui.areaSafeSet = obj.generateAreaVelocity(gui.axesSafeSpace, minDeceleration, '#33FF33'); % bright green
-            gui.areaSafeTerminalSet = obj.generateAreaVelocity(gui.axesSafeSpace, midDeceleration, '#009900'); % dark green
+            midDeceleration = -6.15;
+            minSafeDistance = 1;
+            midSafeDistance = 2;
+            gui.areaSafeSet = obj.generateAreaVelocity(gui.axesSafeSpace, minDeceleration, minSafeDistance, '#33FF33'); % bright green
+            gui.areaSafeTerminalSet = obj.generateAreaVelocity(gui.axesSafeSpace, midDeceleration, midSafeDistance, '#009900'); % dark green
            
             % Point showing actual set of vehicle
             % TODO: make a function for that
@@ -167,9 +168,10 @@ classdef VehicleAnalysingWindow < handle
             % Plotters for different aspects
             gui.outlinePlotter = outlinePlotter(gui.bep);
             gui.lanePlotter = laneBoundaryPlotter(gui.bep);
+            
         end
         
-        function variableEntry = generateVariableEntry(~, parent, title, unit, checkboxNeeded)
+        function variableEntry = generateVariableEntry(obj, parent, title, unit, checkboxNeeded)
             % generate a subgridVariabeles entry for showing an variable value
             % returns a structure with following content:
                 % .lbl      name of the variable
@@ -191,18 +193,23 @@ classdef VehicleAnalysingWindow < handle
             
             % Check box - mandatory
             variableEntry.cb = uicheckbox(parent, 'Text','');
-            if ~checkboxNeeded
-                variableEntry.cb.Visible = false;
+            if checkboxNeeded
+                % redraw plot to change visibility when checkbox value is
+                % changed
+                variableEntry.cb.ValueChangedFcn = @(cbx,event) obj.updatePlot();
+            else
+                % disable checkbox
+                variableEntry.cb.Visible = false; 
             end
         end
         
-        function areaVelocity = generateAreaVelocity(~, axes, minDeceleration, color)
+        function areaVelocity = generateAreaVelocity(~, axes, minDeceleration, safeDistance, color)
             % generate an area showing the velocities that allow
             % deceleration with minDeceleration
             
             % Function describing maximal velocity at minDeceleration
             distance = linspace(0,20);
-            velocity = sqrt(2*distance*-minDeceleration);
+            velocity = sqrt(2*(distance-safeDistance)*-minDeceleration);
             
             % Create colored veloctiy area
             hold(axes, 'on');
@@ -213,19 +220,12 @@ classdef VehicleAnalysingWindow < handle
             
         end
         
-        function setRoadScenario(obj, roadScenario)
-            % set a scenario with the road network
+        function roadScenario = setupScenario(~, roadScenario, vehicles)
+            % Setup the scenario with a road network
             
-            obj.scenario = roadScenario;
-        end
-        
-        
-        function addVehiclesToScenario(obj, vehicles)
-            % add vehicles for plotting with properties of the
-            % simulated vehicles to the scenario
-            
+            % Add vehicles with properties of the simulated vehicles to scenario
             for i = 1 : length(vehicles)
-                vehicle(obj.scenario, ...
+                vehicle(roadScenario, ...
                     'ClassID', 1, ... % group 1 means cars
                     'Name', vehicles(i).id, ...
                     'Length', vehicles(i).physics.size(3), ...
@@ -342,6 +342,15 @@ classdef VehicleAnalysingWindow < handle
             
             variableEntry.value.Text = string(value); % write the value to the matching label
         end
+        
+        function changeViewToEgoVehicle(obj)
+            % change GUI view to the actual ego vehicle
+            
+            % Update vehicle selction dropdown
+            obj.gui.vehicleSelectionDd.Value = obj.egoVehicleId;
+            % Update GUI with new ego vehicle
+            obj.update();
+        end
  
         %%
         
@@ -374,15 +383,10 @@ classdef VehicleAnalysingWindow < handle
         %% Callbacks
         function vehicleSelectionCallback(obj, dropdown)
             % Callback of the vehicle selection dropdown menu
-
-            % find the selected car and set the egoVehicleId
-            for i = 1 : length(obj.vehicles)
-                if string(dropdown.Value) == obj.vehicles(i).name % at least one variable has to be string for comparison
-                    % Change the ego vehicle at GUI
-                    obj.setEgoVehicle(obj.vehicles(i).id);
-                    return;
-                end
-            end
+            
+            % Change the ego vehicle according to the selected name
+            obj.setEgoVehicleId(dropdown.Value);
+            obj.update();        
         end
         
         function pauseSimTimeCallback(~, btn)
@@ -409,15 +413,10 @@ classdef VehicleAnalysingWindow < handle
             obj.currentSimTime = get_param(obj.modelName,'SimulationTime');
         end
         
-        function setEgoVehicle(obj, egoVehicleId)
-            % Set the ego vehicle and update GUI with ego vehicle
-            % information
+        function setEgoVehicleId(obj, egoVehicleId)
+            % Set the ego vehicle id
             
             obj.egoVehicleId = egoVehicleId;
-            % Update vehicle selction dropdown
-            obj.gui.vehicleSelectionDd.Value = obj.vehicles(egoVehicleId).name;
-            % Update GUI with new ego vehicle
-            obj.update();
         end
 
     end
