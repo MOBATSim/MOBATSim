@@ -6,13 +6,12 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         map = evalin('base','Map');
         modelName = evalin('base','modelName');
-        enableAnalysingWindow = evalin('base','enableAnalysingWindow');
     end
     
     
     % Pre-computed constants
     properties(Access = private)
-        vehicleAnalysingWindow
+        vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow');
     end
     
     methods(Access = protected)
@@ -22,11 +21,8 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             icon = matlab.system.display.Icon("logo_small.png");
         end
         
-        function setupImpl(obj)
+        function setupImpl(~)
             % Perform one-time calculations, such as computing constants
-            if obj.enableAnalysingWindow
-                obj.vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow');
-            end
         end
 
 
@@ -73,7 +69,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                 end
             end
             %% Vehicle Analysing Window TODO: check if should be called here
-            if obj.enableAnalysingWindow % call only if window exists
+            if obj.vehicleAnalysingWindow ~= false % call only if window is generated
                 obj.vehicleAnalysingWindow.update();
             end            
             
