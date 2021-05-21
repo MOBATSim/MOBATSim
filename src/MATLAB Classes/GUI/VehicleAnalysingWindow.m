@@ -19,6 +19,10 @@ classdef VehicleAnalysingWindow < handle
         plotEmBrake     % plotted area for emergency brake
         timeToPause     % simulation should pause when simulation time is at this value
         currentSimTime  % current simulation time
+        
+        frontCar        % all information regarding the car infront of the ego vehicle
+            % relative distance
+            % relative speed
     end 
     
     methods
@@ -99,7 +103,7 @@ classdef VehicleAnalysingWindow < handle
             gui.fieldSimTime.Limits = [0 inf];
             gui.fieldSimTime.Layout.Column = 5;
                     
-            %% Area showing all important variables
+            %% Area showing all important variables of ego vehicle
             % Panel for ego vehicle
             gui.panelEgoVehicle = uipanel('Parent',gui.grid, 'Title','Ego vehicle',...
                                           'FontSize',14, 'BackgroundColor','white');
@@ -108,17 +112,20 @@ classdef VehicleAnalysingWindow < handle
             gui.panelEgoVehicle.Layout.Column = 1;
             % Subgrid
             gui.subgridVariables = uigridlayout(gui.panelEgoVehicle);
-            gui.subgridVariables.RowHeight = {'fit','fit','fit','fit',20};
+            gui.subgridVariables.RowHeight = {'fit','fit','fit','fit','fit','fit','fit','fit','fit',20};
             gui.subgridVariables.ColumnWidth = {'fit','1x','fit','fit'};
             
             % Variable entrys to subgrid
-            gui.entryVelocity = obj.generateVariableEntry(gui.subgridVariables, 'Velocity', 'm/s', false);       
+            gui.entryVelocity = obj.generateVariableEntry(gui.subgridVariables, 'Velocity', 'm/s', false);
+            gui.entryDeltaDistance = obj.generateVariableEntry(gui.subgridVariables, 'Delta distance', 'm', true);
+            gui.entryDeltaSpeed = obj.generateVariableEntry(gui.subgridVariables, 'Delta velocity', 'm/s', true);
             gui.entryEmBrakeDistance = obj.generateVariableEntry(gui.subgridVariables, 'Emergency brake distance', 'm', true);
             gui.entryDrivingMode = obj.generateVariableEntry(gui.subgridVariables, 'Driving mode', '', false);
             % Check box tree
             gui.tree = uitree(gui.subgridVariables);%'checkbox'); TODO: activate in v2021a
-            gui.tree.Layout.Row = 5;
+            gui.tree.Layout.Row = 10;
             gui.tree.Layout.Column = [1,3];
+            gui.tree.Visible = false;
             
             gui.categoryAreas = uitreenode(gui.tree, 'Text','Shown Areas');
             gui.nodeEmBrake = uitreenode(gui.categoryAreas, 'Text','Emergency Brake Distance');
@@ -131,15 +138,13 @@ classdef VehicleAnalysingWindow < handle
             gui.axesSafeSpace.XLim = [0 20];
             gui.axesSafeSpace.YLim = [0 20];
             title(gui.axesSafeSpace, 'Safe space');
-            xlabel(gui.axesSafeSpace, 'relative distance (m)');
-            ylabel(gui.axesSafeSpace, 'relative velocity (m/s)');
+            xlabel(gui.axesSafeSpace, 'relative distance in m');
+            ylabel(gui.axesSafeSpace, 'relative velocity in m/s');
             % set axes background color to red
             set(gui.axesSafeSpace, 'color', '#CC0033'); % kind of red
             
             % Create plot
             % Create colored areas showing safe sets
-            % TODO: maybe generate this in a kind of update function, when
-            % vehicle is changing like setEgoVehicle
             minDeceleration = -9.15;
             midDeceleration = -6.15;
             minSafeDistance = 1;
@@ -160,10 +165,12 @@ classdef VehicleAnalysingWindow < handle
             gui.axesBep.Layout.Row = [3,4];
             gui.axesBep.Layout.Column = 2;
             
-            % birds eye plot in axes container
+            % Birds eye plot in axes container
             gui.bep = birdsEyePlot('Parent', gui.axesBep, 'XLim',[-50 100], 'YLim',[-20 20]);
             legend(gui.axesBep,'off');
             
+            % Different elements to plot
+            gui.rulerDistance = Ruler(gui.axesBep, 0, -3, 3, 'Distance');
             
             % Plotters for different aspects
             gui.outlinePlotter = outlinePlotter(gui.bep);
@@ -238,45 +245,54 @@ classdef VehicleAnalysingWindow < handle
         %% Update functions
         function update(obj)
             % update gui
+
+            %% Get information
+            % get new simulation time
+            obj.getCurrentSimTime();
             
-            % update simulation time
-            obj.getCurrentSimTime();       
+            % get front car information
+            [obj.frontCar.relativeDistance, obj.frontCar.relativeSpeed] = obj.check_leadingVehicle(obj.vehicles, obj.vehicles(obj.egoVehicleId));
             
+            %% Set information
             % update all shown values
             obj.updateValueArea();
             
             % check if simulation should pause
             obj.checkTimeToPause();
-            
+
             % update birds eye view
             obj.updatePlot();
+            
         end
            
         function updatePlot(obj)
             % update all plotted objects
             
+            %% update vehicles
             % get vehicles poses
             i = 1:length(obj.vehicles);
             positions = cat(1,cat(2,obj.vehicles(i).dynamics).position);
             orientations = cat(1,cat(2,obj.vehicles(i).dynamics).orientation);
             % update vehicle position and orientation
             obj.updateVehiclePose(positions(:,1), positions(:,3), orientations(:,4));
-            % redraw roads from ego vehicle pose
-            rb = roadBoundaries(obj.scenario.Actors(obj.egoVehicleId)); 
             % redraw vehicles
             [position,yaw,Length,width,originOffset,color] = targetOutlines(obj.scenario.Actors(obj.egoVehicleId));
-            
-            plotLaneBoundary(obj.gui.lanePlotter,rb);
             plotOutline(obj.gui.outlinePlotter, position, yaw, Length, width, ...
                 'OriginOffset',originOffset, 'Color',color);
+            %% update roads
+            % redraw roads from ego vehicle pose
+            rb = roadBoundaries(obj.scenario.Actors(obj.egoVehicleId)); % Maybe use laneBoundaries and only show a part of the map
+            plotLaneBoundary(obj.gui.lanePlotter,rb);
+
+            %% 
+            % update length of distance ruler
+            obj.gui.rulerDistance.updateLength(obj.frontCar.relativeDistance);
             
             
-           
-           
-            
+            %% update coverage areas
             % plot coverage areas
             % plot emergency brake area
-            
+            % TODO: make this better and nicer
             if obj.gui.entryEmBrakeDistance.cb.Value == 1 % use a callback for activation, so area is also shown, when simulation is paused
                 % width - size of vehicle
                 % length - emergency brake distance
@@ -296,8 +312,7 @@ classdef VehicleAnalysingWindow < handle
             else
                 delete(obj.plotEmBrake);
             end
-        end
-        
+        end      
         
         function updateVehiclePose(obj, x, y, yaw)
             % update positions from all vehicles
@@ -327,10 +342,12 @@ classdef VehicleAnalysingWindow < handle
             obj.emergencyBrakeDistance = obj.calculateEmergencyBrakeDistance();
             
             % Update variable entrys
-           obj.updateVariableEntry(obj.gui.entrySimTime, obj.currentSimTime);
-           obj.updateVariableEntry(obj.gui.entryVelocity, obj.vehicles(obj.egoVehicleId).dynamics.speed);
-           obj.updateVariableEntry(obj.gui.entryEmBrakeDistance, obj.emergencyBrakeDistance);
-           obj.updateVariableEntry(obj.gui.entryDrivingMode, obj.vehicles(obj.egoVehicleId).status.drivingMode);
+            obj.updateVariableEntry(obj.gui.entrySimTime, obj.currentSimTime);
+            obj.updateVariableEntry(obj.gui.entryVelocity, obj.vehicles(obj.egoVehicleId).dynamics.speed);
+            obj.updateVariableEntry(obj.gui.entryDeltaDistance, obj.frontCar.relativeDistance);
+            obj.updateVariableEntry(obj.gui.entryDeltaSpeed, obj.frontCar.relativeSpeed);
+            obj.updateVariableEntry(obj.gui.entryEmBrakeDistance, obj.emergencyBrakeDistance);
+            obj.updateVariableEntry(obj.gui.entryDrivingMode, obj.vehicles(obj.egoVehicleId).status.drivingMode);
         end
         
         function updateVariableEntry(~, variableEntry, value)
@@ -380,6 +397,13 @@ classdef VehicleAnalysingWindow < handle
             emergencyBrakeDistance = 0.5*-curSpeed^2/minAcceleration;
         end
         
+        function getCurrentSimTime(obj)
+            % Get current simulation time
+            
+            obj.currentSimTime = get_param(obj.modelName,'SimulationTime');
+        end
+        
+
         %% Callbacks
         function vehicleSelectionCallback(obj, dropdown)
             % Callback of the vehicle selection dropdown menu
@@ -406,19 +430,79 @@ classdef VehicleAnalysingWindow < handle
             
             obj.timeToPause = time;
         end
-        
-        function getCurrentSimTime(obj)
-            % Get current simulation time
-            
-            obj.currentSimTime = get_param(obj.modelName,'SimulationTime');
-        end
-        
+                
         function setEgoVehicleId(obj, egoVehicleId)
             % Set the ego vehicle id
             
             obj.egoVehicleId = egoVehicleId;
         end
 
+        %% Copied functions from other code parts
+        
+        %VehicleSensors
+        
+        function [relativeDistance, relativeSpeed, ttc, leadingVehicle] = check_leadingVehicle(~, Vehicles, vehicle)
+            %this function checks if there's a leading vehicle ahead, if
+            %multiple leading vehicles exist, set nearest vehicle to be the
+            %leading vehicle
+            leadingVehicle = [];
+            relativeDistance = inf;
+            relativeSpeed = inf;
+            ego_route = vehicle.pathInfo.currentRoute;% Search vehicle on this route
+            
+            
+            %%
+            %traverse leading Vehicle on current route
+            for vehicle_ = Vehicles
+                if vehicle_.id == vehicle.id
+                    break;
+                end
+                if isequal(vehicle_.pathInfo.currentRoute,ego_route)&&(vehicle_.pathInfo.s>vehicle.pathInfo.s)%If this vehicle is on the same route and ahead of the ego vehicle
+                    if isempty(leadingVehicle)%If no leading vehicle exists, set this vehicle to be the leading vehicle
+                        leadingVehicle = vehicle_;
+                    elseif vehicle_.pathInfo.s<leadingVehicle.pathInfo.s %if there's already a leading vehicle, find the closest one
+                        leadingVehicle = vehicle_;
+                    end
+                end
+            end
+            
+            
+            if ~isempty(leadingVehicle)
+                relativeSpeed = vehicle.dynamics.speed-leadingVehicle.dynamics.speed;
+                relativeDistance = leadingVehicle.pathInfo.s-vehicle.pathInfo.s;
+                ttc = relativeDistance/relativeSpeed;
+            else
+                %continue search next route
+                idx = find(vehicle.pathInfo.path==vehicle.pathInfo.lastWaypoint);
+                if idx+2<=length(vehicle.pathInfo.path) % Next Route
+                    nextRoute = vehicle.map.getRouteIDfromPath([vehicle.pathInfo.path(idx+1) vehicle.pathInfo.path(idx+2)]);
+                else % Destination Reached // CurrentRoute stays the same
+                    nextRoute = vehicle.pathInfo.currentRoute;
+                end
+                for vehicle_ = Vehicles
+                    if nextRoute == vehicle.pathInfo.currentRoute || vehicle_.id == vehicle.id
+                        break;
+                    end
+                    
+                    if isequal(vehicle_.pathInfo.currentRoute,nextRoute)
+                        if isempty(leadingVehicle)
+                            leadingVehicle = vehicle_;
+                        elseif vehicle_.pathInfo.s<leadingVehicle.pathInfo.s
+                            leadingVehicle = vehicle_;
+                        end
+                    end
+                end
+                if ~isempty(leadingVehicle)
+                    relativeSpeed = vehicle.dynamics.speed-leadingVehicle.dynamics.speed;
+                    relativeDistance = leadingVehicle.pathInfo.s+vehicle.pathInfo.routeEndDistance;
+                    ttc = relativeDistance/relativeSpeed;
+                else
+                    ttc = 1000;
+                    leadingVehicle = [];
+                end
+            end
+            
+        end
     end
 end
 
