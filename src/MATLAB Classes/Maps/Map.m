@@ -228,7 +228,7 @@ classdef Map < handle
             
             % Vehicles' Annotation String
             speedArray = compose('%4.1f', [cat(1,cat(1,obj.Vehicles(1:length(obj.Vehicles))).dynamics).speed]);
-            nameArray={obj.Vehicles(1:length(obj.Vehicles)).name};
+            nameArray = num2cell("V" + cat(1,obj.Vehicles.id))';
             
             %requiredArrayHandle= get(obj.plots.carDescription,{'String'}); % The required format for the handles
             % TODO: If the number of vehicles on the map are not known, use the for loop below, but the performance is
@@ -244,7 +244,7 @@ classdef Map < handle
                 {nameArray{4};speedArray{4}};{nameArray{5};speedArray{5}};{nameArray{6};speedArray{6}};{nameArray{7};speedArray{7}};...
                 {nameArray{8};speedArray{8}};{nameArray{9};speedArray{9}};{nameArray{10};speedArray{10}}};
             
-            
+
             
             % Vehicles' Annotation Position
             allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-8, -allVehiclePositions(1:length(obj.Vehicles),3)+8, 0.011.*ones(1,10)'];
@@ -253,7 +253,6 @@ classdef Map < handle
             %set the position and string handles
             set(obj.plots.carDescription,{'Position'},allTextPositions);
             set(obj.plots.carDescription,{'String'},textDescArray);
-            
         end
         
 
