@@ -32,7 +32,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         end
        
         
-        function [mergedBrakingFlagArrays] = stepImpl(obj, V2Idata)
+        function mergedBrakingFlagArrays = stepImpl(obj, V2Idata)
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
             % Add test data as the second output
