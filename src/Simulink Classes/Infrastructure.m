@@ -104,7 +104,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         % These have to be specified because of
         % matlab.system.mixin.Propagates, to have variable size of outputs
         % and to avoid code generation which does not support the digraph
-        function [mergedBrakingFlagArrays] = isOutputFixedSizeImpl(~)
+        function mergedBrakingFlagArrays = isOutputFixedSizeImpl(~)
             %Both outputs are always variable-sized
             mergedBrakingFlagArrays = false;
             
@@ -117,18 +117,18 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         end
         
         
-        function [mergedBrakingFlagArrays] = getOutputSizeImpl(~)
+        function mergedBrakingFlagArrays = getOutputSizeImpl(~)
             % Maximum length of the output
             mergedBrakingFlagArrays = [10 20];
             
         end
         
-        function [mergedBrakingFlagArrays] = getOutputDataTypeImpl(~)
+        function mergedBrakingFlagArrays = getOutputDataTypeImpl(~)
             mergedBrakingFlagArrays = 'double'; %Linear indices are always double values
             
         end
         
-        function [mergedBrakingFlagArrays] = isOutputComplexImpl(~)
+        function mergedBrakingFlagArrays = isOutputComplexImpl(~)
             mergedBrakingFlagArrays = false; %Linear indices are always real values
            
         end
