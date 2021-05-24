@@ -8,13 +8,14 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         modelName = evalin('base','modelName');
         enableAnalysingWindow = evalin('base','enableAnalysingWindow');
         Vehicles = evalin('base','Vehicles'); % prepare for logging test data
+        Sim_t = evalin('base','Sim_t')% simulation time
     end
     
     
     % Pre-computed constants
     properties(Access = private)
         vehicleAnalysingWindow
-        allTestData
+        allTestData 
     end
     
     methods(Access = protected)
@@ -35,7 +36,6 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         function mergedBrakingFlagArrays = stepImpl(obj, V2Idata)
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
-            % Add test data as the second output
             
             for i=1:size(V2Idata,1)
                 if ~(V2Idata(i,1) == 0)
@@ -83,8 +83,10 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             if enableLogData
                  TestData = obj.logTestData(); 
                  obj.allTestData = cat(3, obj.allTestData, TestData); % all test data in 3 dimension array
+                 if obj.getCurrentTime >= obj.Sim_t % the last loop of simulation, "Sim_t" can be changed in "prepare_simulator.m"
                  assignin('base', 'allTestData', obj.allTestData); % all test data in workspace
                  %assignin('base', 'TestData', TestData); % only test data at stop time
+                 end
             end
         end
         %% load test data for safety evaluation
