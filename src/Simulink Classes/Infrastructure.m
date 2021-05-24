@@ -7,12 +7,15 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         map = evalin('base','Map');
         modelName = evalin('base','modelName');
         enableAnalysingWindow = evalin('base','enableAnalysingWindow');
+        Vehicles = evalin('base','Vehicles'); % prepare for logging test data
+        Sim_t = evalin('base','Sim_t')% simulation time
     end
     
     
     % Pre-computed constants
     properties(Access = private)
         vehicleAnalysingWindow
+        allTestData 
     end
     
     methods(Access = protected)
@@ -28,8 +31,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                 obj.vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow');
             end
         end
-
-
+       
         
         function mergedBrakingFlagArrays = stepImpl(obj, V2Idata)
             % Implement algorithm. Calculate y as a function of input u and
@@ -75,17 +77,39 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             %% Vehicle Analysing Window TODO: check if should be called here
             if obj.enableAnalysingWindow % call only if window exists
                 obj.vehicleAnalysingWindow.update();
-            end            
-            
+            end
+         %% Test data for evaluation
+            enableLogData = true; % if it is able to log test data
+            if enableLogData
+                 TestData = obj.logTestData(); 
+                 obj.allTestData = cat(3, obj.allTestData, TestData); % all test data in 3 dimension array
+                 if obj.getCurrentTime >= obj.Sim_t % the last loop of simulation, "Sim_t" can be changed in "prepare_simulator.m"
+                 assignin('base', 'allTestData', obj.allTestData); % all test data in workspace
+                 %assignin('base', 'TestData', TestData); % only test data at stop time
+                 end
+            end
         end
-
-        
+        %% load test data for safety evaluation
+         function TestData = logTestData(obj)
+             TestData = zeros(7, length(obj.Vehicles));
+             for i = 1:length(obj.Vehicles)
+                 TestData(1, i) = obj.Vehicles(1,i).dynamics.speed;
+                 TestData(2, i) = obj.Vehicles(1,i).dynamics.minDeceleration;
+                 TestData(3, i) = obj.Vehicles(1,i).dynamics.position(1);
+                 TestData(4, i) = obj.Vehicles(1,i).dynamics.position(3);
+                 TestData(5, i) = obj.Vehicles(1,i).sensors.AEBdistance;
+                 TestData(6, i) = obj.Vehicles(1,i).sensors.frontSensorRange;
+                 TestData(7, i) = obj.Vehicles(1,i).sensors.ttc;
+             end
+         end
+  %%      
         % These have to be specified because of
         % matlab.system.mixin.Propagates, to have variable size of outputs
         % and to avoid code generation which does not support the digraph
         function mergedBrakingFlagArrays = isOutputFixedSizeImpl(~)
             %Both outputs are always variable-sized
             mergedBrakingFlagArrays = false;
+            
         end
     end
     
@@ -98,14 +122,17 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         function mergedBrakingFlagArrays = getOutputSizeImpl(~)
             % Maximum length of the output
             mergedBrakingFlagArrays = [10 20];
+            
         end
         
         function mergedBrakingFlagArrays = getOutputDataTypeImpl(~)
             mergedBrakingFlagArrays = 'double'; %Linear indices are always double values
+            
         end
         
         function mergedBrakingFlagArrays = isOutputComplexImpl(~)
             mergedBrakingFlagArrays = false; %Linear indices are always real values
+           
         end
     end
 end
