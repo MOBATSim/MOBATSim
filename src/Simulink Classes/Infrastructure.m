@@ -14,6 +14,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     % Pre-computed constants
     properties(Access = private)
         vehicleAnalysingWindow
+        allTestData
     end
     
     methods(Access = protected)
@@ -31,7 +32,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         end
        
         
-        function [mergedBrakingFlagArrays, TestData] = stepImpl(obj, V2Idata)
+        function [mergedBrakingFlagArrays] = stepImpl(obj, V2Idata)
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
             % Add test data as the second output
@@ -78,9 +79,13 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                 obj.vehicleAnalysingWindow.update();
             end
          %% Test data for evaluation
-         % the second output of the block
-         % to save it to workspace; add block "To Workspace" (save format: Structure With-Time; Sample Time: Sim-Ts)
-         TestData = obj.logTestData();  
+            enableLogData = true; % if it is able to log test data
+            if enableLogData
+                 TestData = obj.logTestData(); 
+                 obj.allTestData = cat(3, obj.allTestData, TestData); % all test data in 3 dimension array
+                 assignin('base', 'allTestData', obj.allTestData); % all test data in workspace
+                 %assignin('base', 'TestData', TestData); % only test data at stop time
+            end
         end
         %% load test data for safety evaluation
          function TestData = logTestData(obj)
@@ -94,15 +99,15 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                  TestData(6, i) = obj.Vehicles(1,i).sensors.frontSensorRange;
                  TestData(7, i) = obj.Vehicles(1,i).sensors.ttc;
              end
-        end%
+         end
   %%      
         % These have to be specified because of
         % matlab.system.mixin.Propagates, to have variable size of outputs
         % and to avoid code generation which does not support the digraph
-        function [mergedBrakingFlagArrays, TestData] = isOutputFixedSizeImpl(~)
+        function [mergedBrakingFlagArrays] = isOutputFixedSizeImpl(~)
             %Both outputs are always variable-sized
             mergedBrakingFlagArrays = false;
-            TestData = false;
+            
         end
     end
     
@@ -112,20 +117,20 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         end
         
         
-        function [mergedBrakingFlagArrays,TestData] = getOutputSizeImpl(~)
+        function [mergedBrakingFlagArrays] = getOutputSizeImpl(~)
             % Maximum length of the output
             mergedBrakingFlagArrays = [10 20];
-            TestData = [7 10];
+            
         end
         
-        function [mergedBrakingFlagArrays,TestData] = getOutputDataTypeImpl(~)
+        function [mergedBrakingFlagArrays] = getOutputDataTypeImpl(~)
             mergedBrakingFlagArrays = 'double'; %Linear indices are always double values
-            TestData = 'double';
+            
         end
         
-        function [mergedBrakingFlagArrays,TestData] = isOutputComplexImpl(~)
+        function [mergedBrakingFlagArrays] = isOutputComplexImpl(~)
             mergedBrakingFlagArrays = false; %Linear indices are always real values
-            TestData = false;
+           
         end
     end
 end
