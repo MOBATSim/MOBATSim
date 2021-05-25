@@ -23,6 +23,9 @@ classdef VehicleAnalysingWindow < handle
         frontCar        % all information regarding the car infront of the ego vehicle
             % relative distance
             % relative speed
+        safeSpace       % contains variables needed for safe space calculation
+            % ts            % time step width in sec
+            % nrSteps       % number of steps to predict in the future
     end 
     
     methods
@@ -55,6 +58,9 @@ classdef VehicleAnalysingWindow < handle
             obj.setTimeToPause(0);
             obj.vehicles = vehicles;
             obj.setEgoVehicleId(egoVehicleId);
+            obj.getCurrentSimTime();
+            obj.safeSpace.ts = 0.1; % TODO: find good default value
+            obj.safeSpace.nrSteps = 10; % TODO: find good default value
         end
         
         function gui = generateGui(obj, vehicles)
@@ -62,14 +68,15 @@ classdef VehicleAnalysingWindow < handle
             %   using uifigure
            
             % Ui figure              
-            gui.fig = uifigure('Name','Vehicle Analysing Window');
+            gui.fig = uifigure('Name','Vehicle Analysing Window', 'WindowStyle','normal');
             gui.fig.Visible = 'off'; % don't show window during generation
             gui.fig.Tag = 'vehicleAnalysingWindow_tag';
+            gui.fig.Position = [681 409 630 620];
             
             % Grid layout
             gui.grid = uigridlayout(gui.fig);
-            gui.grid.RowHeight = {'fit','fit',150,'1x'};
-            gui.grid.ColumnWidth = {300,'1x'};
+            gui.grid.RowHeight = {'fit','fit','fit','1x'};
+            gui.grid.ColumnWidth = {300,'1x','2x'};
             % Vehicle selection drop down
             i = 1:length(obj.vehicles);
             gui.vehicleSelectionDd = uidropdown(gui.grid, 'ValueChangedFcn',@(dd,event) obj.vehicleSelectionCallback(dd),...
@@ -85,8 +92,13 @@ classdef VehicleAnalysingWindow < handle
             % Pause button
             gui.pauseBtn = uibutton(gui.grid, 'state', ...
                                               'ValueChangedFcn', @(btn,event) obj.pauseSimTimeCallback(btn), ...
-                                              'Text', 'Pause', ...
-                                              'BackgroundColor', [0.9290 0.6940 0.1250]); % kind of orange, yellow            
+                                              'BackgroundColor', [0.9290 0.6940 0.1250]); % kind of orange, yellow
+            gui.pauseBtn.Layout.Column = [2,3];
+            if obj.currentSimTime <= 0
+                gui.pauseBtn.Text = 'Start Simulation'; % at start used as start button
+            else
+                gui.pauseBtn.Text = 'Pause';
+            end
             %% Simulation time area           
             % Subgrid simulation time
             gui.subgridSimTime = uigridlayout(gui.grid);
@@ -121,6 +133,26 @@ classdef VehicleAnalysingWindow < handle
             gui.entryDeltaSpeed = obj.generateVariableEntry(gui.subgridVariables, 'Delta velocity', 'm/s', true);
             gui.entryEmBrakeDistance = obj.generateVariableEntry(gui.subgridVariables, 'Emergency brake distance', 'm', true);
             gui.entryDrivingMode = obj.generateVariableEntry(gui.subgridVariables, 'Driving mode', '', false);
+            
+            % Edit fields
+            gui.fieldTs = uieditfield(gui.subgridVariables,'numeric',...
+                                                           'ValueDisplayFormat', 'Ts = %.2f s',...
+                                                           'ValueChangedFcn',@(txt,event) obj.editTimeStepCallback(txt));
+            gui.fieldTs.Limits = [0 inf];
+            gui.fieldTs.LowerLimitInclusive = false;
+            gui.fieldTs.Value = obj.safeSpace.ts;
+            gui.fieldTs.Layout.Row = 6;
+            gui.fieldTs.Layout.Column = 1;
+            
+            gui.fieldNrSteps = uieditfield(gui.subgridVariables,'numeric',...
+                                                           'ValueDisplayFormat', 'Number of steps = %.f',...
+                                                           'ValueChangedFcn',@(txt,event) obj.editNrStepsCallback(txt));
+            gui.fieldNrSteps.Limits = [0 inf];
+            gui.fieldNrSteps.LowerLimitInclusive = false;
+            gui.fieldNrSteps.Value = obj.safeSpace.nrSteps;
+            gui.fieldNrSteps.Layout.Row = 7;
+            gui.fieldNrSteps.Layout.Column = 1;
+            
             % Check box tree
             gui.tree = uitree(gui.subgridVariables);%'checkbox'); TODO: activate in v2021a
             gui.tree.Layout.Row = 10;
@@ -134,9 +166,9 @@ classdef VehicleAnalysingWindow < handle
             % TODO: maybe use tabs for more graphs.
             gui.axesSafeSpace = uiaxes(gui.grid);
             gui.axesSafeSpace.Layout.Row = 4;
-            gui.axesSafeSpace.Layout.Column = 1;
-            gui.axesSafeSpace.XLim = [0 20];
-            gui.axesSafeSpace.YLim = [0 20];
+            gui.axesSafeSpace.Layout.Column = [1,2];
+            gui.axesSafeSpace.XLim = [0 150];
+            gui.axesSafeSpace.YLim = [0 25];
             title(gui.axesSafeSpace, 'Safe space');
             xlabel(gui.axesSafeSpace, 'relative distance in m');
             ylabel(gui.axesSafeSpace, 'relative velocity in m/s');
@@ -155,15 +187,16 @@ classdef VehicleAnalysingWindow < handle
             % Point showing actual set of vehicle
             % TODO: make a function for that
             hold(gui.axesSafeSpace, 'on');
-            gui.pointActualSet = plot(gui.axesSafeSpace, 10, 10,'b--o');
+            gui.pointActualSet = plot(gui.axesSafeSpace, inf, inf, 'b--o');
             hold(gui.axesSafeSpace, 'on');
-            gui.arrow = quiver(gui.axesSafeSpace, 10, 10, -1, 1, 1.5);         
+            gui.lineNextSets = plot(gui.axesSafeSpace, inf, inf); 
+            %gui.arrow = quiver(gui.axesSafeSpace, 10, 10, -1, 1, 1.5);         
             
             %% Birds eye plot
             % Axes as plot container
             gui.axesBep = uiaxes(gui.grid);
             gui.axesBep.Layout.Row = [3,4];
-            gui.axesBep.Layout.Column = 2;
+            gui.axesBep.Layout.Column = 3;
             
             % Birds eye plot in axes container
             gui.bep = birdsEyePlot('Parent', gui.axesBep, 'XLim',[-50 100], 'YLim',[-20 20]);
@@ -176,14 +209,22 @@ classdef VehicleAnalysingWindow < handle
             gui.outlinePlotter = outlinePlotter(gui.bep);
             gui.lanePlotter = laneBoundaryPlotter(gui.bep);
             
+            %% Callbacks for gui elements
+            % done at the end when all elements are generated that should
+            % be connected
+            
+            % Checkboxes
+            gui.entryDeltaDistance.cb.ValueChangedFcn = @(cbx,event) obj.rulerEntryCheckboxCallback(cbx);
+            gui.entryentryEmBrakeDistance.cb.ValueChangedFcn = @(cbx,event) obj.updateBep();
         end
         
-        function variableEntry = generateVariableEntry(obj, parent, title, unit, checkboxNeeded)
+        function variableEntry = generateVariableEntry(~, parent, title, unit, checkboxNeeded)
             % generate a subgridVariabeles entry for showing an variable value
             % returns a structure with following content:
                 % .lbl      name of the variable
                 % .value    value of the variable
                 % .unit     unit of the value
+                % .cb       mandatory - checkbox to activate somthing like a ploted object
             
             % Name field
             variableEntry.lbl = uilabel(parent, 'Text',title + ": ");
@@ -200,13 +241,9 @@ classdef VehicleAnalysingWindow < handle
             
             % Check box - mandatory
             variableEntry.cb = uicheckbox(parent, 'Text','');
-            if checkboxNeeded
-                % redraw plot to change visibility when checkbox value is
-                % changed
-                variableEntry.cb.ValueChangedFcn = @(cbx,event) obj.updatePlot();
-            else
+            if ~checkboxNeeded
                 % disable checkbox
-                variableEntry.cb.Visible = false; 
+                variableEntry.cb.Visible = false;
             end
         end
         
@@ -215,7 +252,7 @@ classdef VehicleAnalysingWindow < handle
             % deceleration with minDeceleration
             
             % Function describing maximal velocity at minDeceleration
-            distance = linspace(0,20);
+            distance = linspace(axes.XLim(1),axes.XLim(2));
             velocity = sqrt(2*(distance-safeDistance)*-minDeceleration);
             
             % Create colored veloctiy area
@@ -254,19 +291,24 @@ classdef VehicleAnalysingWindow < handle
             [obj.frontCar.relativeDistance, obj.frontCar.relativeSpeed] = obj.check_leadingVehicle(obj.vehicles, obj.vehicles(obj.egoVehicleId));
             
             %% Set information
-            % update all shown values
-            obj.updateValueArea();
             
             % check if simulation should pause
             obj.checkTimeToPause();
+            
+            % update all shown values
+            obj.updateValueArea();
+            
+            % update safe set plot
+            
+            obj.updateSafeSpace();
 
             % update birds eye view
-            obj.updatePlot();
-            
+            obj.updateBep();
+             
         end
            
-        function updatePlot(obj)
-            % update all plotted objects
+        function updateBep(obj)
+            % update birds eye plot
             
             %% update vehicles
             % get vehicles poses
@@ -286,14 +328,14 @@ classdef VehicleAnalysingWindow < handle
 
             %% 
             % update length of distance ruler
-            obj.gui.rulerDistance.updateLength(obj.frontCar.relativeDistance);
+            obj.gui.rulerDistance.setLength(obj.frontCar.relativeDistance);
             
             
             %% update coverage areas
             % plot coverage areas
             % plot emergency brake area
             % TODO: make this better and nicer
-            if obj.gui.entryEmBrakeDistance.cb.Value == 1 % use a callback for activation, so area is also shown, when simulation is paused
+            if obj.gui.entryEmBrakeDistance.cb.Value == 1 % TODO: use a callback for activation, so area is also shown, when simulation is paused
                 % width - size of vehicle
                 % length - emergency brake distance
                 vehicleWidth = obj.vehicles(obj.egoVehicleId).physics.size(2);
@@ -369,6 +411,34 @@ classdef VehicleAnalysingWindow < handle
             obj.update();
         end
  
+        function updateSafeSpace(obj)
+            % update objects in safe space plot
+            
+            %% actual set
+            obj.gui.pointActualSet.XData = obj.frontCar.relativeDistance;
+            obj.gui.pointActualSet.YData = obj.frontCar.relativeSpeed;
+            
+            %% predicted sets
+            nrSteps = obj.safeSpace.nrSteps;
+            Ts = obj.safeSpace.ts; % time step
+            deltaX = obj.frontCar.relativeDistance;
+            deltaV = obj.frontCar.relativeSpeed;
+            deltaAcc = obj.vehicles(obj.egoVehicleId).dynamics.minDeceleration; % TODO: match all values to the right coordinate system
+            
+            % starting point of line is actual set
+            obj.gui.lineNextSets.XData = obj.gui.pointActualSet.XData;
+            obj.gui.lineNextSets.YData = obj.gui.pointActualSet.YData;
+            
+            for i=1:nrSteps
+                % calulate speed and distance for next time step
+                deltaV = deltaV + deltaAcc*Ts;
+                deltaX = deltaX - deltaV*Ts - deltaAcc*Ts^2/2;
+                % safe values in plotted line
+                obj.gui.lineNextSets.XData(end+1) = deltaX;
+                obj.gui.lineNextSets.YData(end+1) = deltaV;
+            end
+            
+        end
         %%
         
         function checkTimeToPause(obj)
@@ -413,16 +483,54 @@ classdef VehicleAnalysingWindow < handle
             obj.update();        
         end
         
-        function pauseSimTimeCallback(~, btn)
+        function pauseSimTimeCallback(obj, btn)
             % pause/resume simulation execution
             
             if btn.Value == true
-                uiwait % pause simulation
+                if obj.currentSimTime == 0 % start simulation
+                    btn.Enable = false; % deactivate to prevent multiple calls
+                    waitfor(btn,'Enable','off');
+                    % The button change to pause button is executed after!!!
+                    % the simulation is started! (UI stuff actualizing
+                    % takes some time, but code execution is not stopped.
+                    % Simulation preparing takes all resources, so the button
+                    % is not actualized until the preparation is finished)
+                    % This behavior is intended!
+                    obj.gui.pauseBtn.Text = "Pause";
+                    btn.Value = false;
+                    btn.Enable = true; 
+                    % start simulation
+                    evalin('base', 'run_Sim');
+                else
+                    uiwait % pause simulation
+                end
             else
                 uiresume % unpause simulation
             end
         end
         
+        function rulerEntryCheckboxCallback(obj, cbx)
+            % Callback for the checkbox of an ruler entry at the value area
+            
+            obj.gui.rulerDistance.setActive(cbx.Value); % activate ruler
+            obj.updateBep(); % update ruler length
+        end
+        
+        function editTimeStepCallback(obj, txt)
+            % Callback for the edit field for changing the time step of
+            % safe space
+            
+            obj.safeSpace.ts = txt.Value;
+            obj.updateSafeSpace();
+        end
+        
+        function editNrStepsCallback(obj, txt)
+            % Callback for the edit field for changing the number of steps
+            % to predict at safe space
+            
+            obj.safeSpace.nrSteps = txt.Value;
+            obj.updateSafeSpace();
+        end
         %% Setter/Getter
         
         function setTimeToPause(obj, time)
