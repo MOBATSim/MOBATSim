@@ -23,4 +23,3 @@ for j=1:length(VehicleNames)
     Vehicles =[Vehicles NewVehicle];
 end
 
-clear VehicleNames sizes mass dataLinksV2V dataLinksV2I frontSensorRange AEBdistance minDeceleration

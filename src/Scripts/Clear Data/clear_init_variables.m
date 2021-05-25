@@ -4,8 +4,12 @@ clear waypoints
 clear crossroads
 
 clear maxSpeeds
-clear sizes
 clear dataLinks
-%clear destinationPoints
-%clear startingPoints
+
 clear startingTimes
+
+clear VehicleNames sizes mass dataLinksV2V dataLinksV2I frontSensorRange AEBdistance minDeceleration NewVehicle VehicleVariable
+
+clear startingNodes breakingNodes stoppingNodes leavingNodes Route_LaneNumber
+
+clear startingPoints destinationPoints
