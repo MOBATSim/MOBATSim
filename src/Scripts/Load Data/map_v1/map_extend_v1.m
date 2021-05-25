@@ -6,11 +6,7 @@ load waypoints_origin.mat;  % (Important to keep the crossroad waypoints correct
 
 %% Initialization
 waypoints_new = [];% waypoints of the extended map before the right sequence is ordered
-
-waypoints = [];%waypoints of extended map with the right order
 WP_from_app = []; % waypoints got from drivingScenarioDesigner
-Route_LaneNumber = []; % [Route_id, LaneNumber]
-
 
 %% waypoints
 % Get all the waypoints from drivingScenarioDesigner output file
