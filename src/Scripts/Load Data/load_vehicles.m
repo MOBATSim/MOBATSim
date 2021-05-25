@@ -1,6 +1,8 @@
 Vehicles =[];
 VehicleNames = [{'V1'} {'V2'} {'V3'} {'V4'} {'V5'} {'V6'} {'V7'} {'V8'} {'V9'} {'V10'}];
-sizes = [[1.5 2 5];[1.5 2 5];[1.5 2 5];[1.5 2 5]; [1.5 2 5]; [1.5 2 5]; [1.5 2 5]; [1.5 2 5]; [1.5 2 5]; [1.5 2 5]]; % height, width, length in m
+
+% According to the Cuboid world standard vehicle dimensions [2 1.8 4.7] => [height, width, length] in meters
+sizes = [[2 1.8 4.7];[2 1.8 4.7];[2 1.8 4.7];[2 1.8 4.7]; [2 1.8 4.7]; [2 1.8 4.7]; [2 1.8 4.7]; [2 1.8 4.7]; [2 1.8 4.7]; [2 1.8 4.7]];
 mass = [1800,3000,900,3000,900, 900,1000,1000,1000,1000,];
 dataLinksV2V = ones(10,10);
 dataLinksV2I = ones(1,length(VehicleNames));
