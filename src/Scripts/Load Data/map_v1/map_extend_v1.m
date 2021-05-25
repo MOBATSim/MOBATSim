@@ -6,8 +6,7 @@ load waypoints_origin.mat;  % (Important to keep the crossroad waypoints correct
 
 %% Initialization
 waypoints_new = [];% waypoints of the extended map before the right sequence is ordered
-connections_circle = [];
-connections_translation = [];
+
 waypoints = [];%waypoints of extended map with the right order
 WP_from_app = []; % waypoints got from drivingScenarioDesigner
 Route_LaneNumber = []; % [Route_id, LaneNumber]
@@ -34,92 +33,13 @@ waypoints_new(:,1) = -uniqueWaypoints(:,2);
 waypoints_new(:,3) = -uniqueWaypoints(:,1);
 % Put the new waypoints into order to have the right sequence as previous MOBATKent Map -> (Important to keep the crossroad waypoints correct)
 waypoints =  Order_sequence(waypoints_origin,waypoints_new);
-B2 = [];
-B2(:,1) = -waypoints(:,3);% after sequence order, transfer MOBATSim coordinate to drivingScenariodesigner coordinate
-B2(:,2) = -waypoints(:,1);
-B2(:,3) = 0;
- 
-Circle = zeros(1,7);
-h = 1;
-%% connection_transition
-for j = 1:size(data.RoadSpecifications,2)
-    if size(data.RoadSpecifications(1,j).Centers,1)==2 % if there are only 2 points in one road section, it is straight road
-    a = ismember(B2, data.RoadSpecifications(1,j).Centers(1,:),'rows');
-    m = find(a==1); %index of end point of transition
-    b = ismember(B2, data.RoadSpecifications(1,j).Centers(2,:),'rows');
-    n = find(b==1); % index of start point of transition
-    connections_translation(h,:) = [n m 100];% find the sequence of translation connections
-    h = h+1;
-%% connection_circle
-    elseif size(data.RoadSpecifications(1,j).Centers,1)>2 % if there are more than 2 points in one road section, it is arc
-    % Find three points on tne arc
-    C = data.RoadSpecifications(1,j).Centers(1,1:2); % only takes x and y for circle center calculation
-    D = data.RoadSpecifications(1,j).Centers(2,1:2);
-    E = data.RoadSpecifications(1,j).Centers(end,1:2);
-    % Calculate the circle center 
-    [x0, y0, r] = Circle_center(C,D,E);
-    k = 1/r; % calculate curvature for the future speed limit
 
-    F1 = data.RoadSpecifications(1,j).Centers(end,:);
-    F2 = data.RoadSpecifications(1,j).Centers(1,:);
-    a = ismember(B2, F1,'rows'); % find the sequence of circle connection
-    m = find(a==1);
-    b = ismember(B2, F2,'rows');
-    n = find(b==1);
-         
-    % Polar coordinate
-    F1 = F1(1:2);
-    F2 = F2(1:2);
-    G1 = F1-[x0,y0];% the coordinate of F1 relative to circle center
-    G2 = F2-[x0,y0];
-    [theta1, rho1] = cart2pol(G1(1),G1(2));% polar coordinate of G1
-    [theta2, rho2] = cart2pol(G2(1),G2(2));
-    if theta1 < 0 % [-pi~pi]->[0~2pi]
-        theta1 = theta1+2*pi;     
-    end
-    if theta2 < 0
-        theta2 = theta2+2*pi;
-    end
-    %disp([j-55, 0, theta1, theta2]);
-    alpha = theta2-theta1; % caltulate the the angle of arc
-    if alpha > pi % if arc accross the positive part of x axis
-        alpha = alpha - 2*pi; % 
-    elseif alpha < -pi
-        alpha = alpha + 2*pi;
-    elseif abs(alpha) == pi
-        F3 = data.RoadSpecifications(1,j).Centers(2,:);
-        F3 = F3(1:2);
-        G3 = F3-[x0, y0];
-        [theta3, rho3] = cart2pol(G3(1),G3(2));
-        alpha1 = theta3-theta1; 
-        alpha2 = theta2-theta3;%find another point between start point and end point, to judge the direction of the arc.
-        if alpha1 > pi
-            alpha1 = alpha1-2*pi;
-        elseif alpha1 < -pi
-            alpha1 = alpha1+2*pi;
-        end
-        if alpha2 > pi
-            alpha2 = alpha2-2*pi;
-        elseif alpha2 < -pi
-            alpha2 = alpha2+2*pi;
-        end
-            alpha = alpha1+alpha2; %seperate arc in to two parts, and calculate the sum of two angle.
-    end
-    Circle(1,1) = m;
-    Circle(1,2) = n;
-    Circle(1,3) = alpha;
-    Circle(1,4) = -y0;
-    Circle(1,5) = 0;
-    Circle(1,6) = -x0;
-    Circle(1,7) = 100;
-%     if k>0.0007 % Set speed limit depending on the curvature
-%         Circle(1,7) = 50;
-%     else
-%         Circle(1,7) = 100;
-%     end
-   connections_circle = [connections_circle; Circle];   
-   end    
-end
+%% Conversion back to DrivingScenarioDesigner APP
+% after sequence order, transfer MOBATSim coordinate to drivingScenariodesigner coordinate
+MOBATSim_WPs = [-waypoints(:,3) -waypoints(:,1) zeros(length(waypoints),1)];
+ 
+[connections_translation,connections_circle] = convertBackToMOBATSimfromAPP(MOBATSim_WPs,data);
+
 
 %% start to find lane number for every connections
 WP_from_app_LaneNum = [];%[start, end, laneNumber]
@@ -182,4 +102,101 @@ Waypoints_new = Waypoints_new(idx,:,:);
 
 Waypoints_new_rightorder = [waypoints_ori; Waypoints_new];
 
+end
+
+
+function [connections_translation,connections_circle] = convertBackToMOBATSimfromAPP(WPs,data)
+connections_circle = [];
+connections_translation = [];
+
+%% Loop through all RoadSpecifications
+for j = 1:size(data.RoadSpecifications,2)
+    %% connection_transition
+    if size(data.RoadSpecifications(1,j).Centers,1)==2 % if there are only 2 points in one road section, it is straight road
+        a = ismember(WPs, data.RoadSpecifications(1,j).Centers(1,:),'rows');
+        m = find(a==1); %index of end point of transition
+        b = ismember(WPs, data.RoadSpecifications(1,j).Centers(2,:),'rows');
+        n = find(b==1); % index of start point of transition
+        connections_translation = [connections_translation; n m 100];% find the sequence of translation connections
+        %% connection_circle
+    elseif size(data.RoadSpecifications(1,j).Centers,1)>2 % if there are more than 2 points in one road section, it is arc
+        % Find three points on tne arc
+        C = data.RoadSpecifications(1,j).Centers(1,1:2); % only takes x and y for circle center calculation
+        D = data.RoadSpecifications(1,j).Centers(2,1:2);
+        E = data.RoadSpecifications(1,j).Centers(end,1:2);
+        % Calculate the circle center
+        [x0, y0, r] = Circle_center(C,D,E);
+        k = 1/r; % calculate curvature for the future speed limit
+        
+        WP_end = data.RoadSpecifications(1,j).Centers(end,:);
+        WP_start = data.RoadSpecifications(1,j).Centers(1,:);
+
+        a = ismember(WPs, WP_end,'rows'); % find the sequence of circle connection
+        m = find(a==1);
+        b = ismember(WPs, WP_start,'rows');
+        n = find(b==1);
+        
+        % Polar coordinate
+        WP_end = WP_end(1:2);
+        WP_start = WP_start(1:2);
+        G1 = WP_end-[x0,y0];% the coordinate of WP_end relative to circle center
+        G2 = WP_start-[x0,y0];
+        [theta1, rho1] = cart2pol(G1(1),G1(2));% polar coordinate of G1
+        [theta2, rho2] = cart2pol(G2(1),G2(2));
+        if theta1 < 0 % [-pi~pi]->[0~2pi]
+            theta1 = theta1+2*pi;
+        end
+        if theta2 < 0
+            theta2 = theta2+2*pi;
+        end
+        %disp([j-55, 0, theta1, theta2]);
+        alpha = theta2-theta1; % caltulate the the angle of arc
+        if alpha > pi % if arc accross the positive part of x axis
+            alpha = alpha - 2*pi; %
+        elseif alpha < -pi
+            alpha = alpha + 2*pi;
+        elseif abs(alpha) == pi
+            F3 = data.RoadSpecifications(1,j).Centers(2,:);
+            F3 = F3(1:2);
+            G3 = F3-[x0, y0];
+            [theta3, rho3] = cart2pol(G3(1),G3(2));
+            alpha1 = theta3-theta1;
+            alpha2 = theta2-theta3;%find another point between start point and end point, to judge the direction of the arc.
+            if alpha1 > pi
+                alpha1 = alpha1-2*pi;
+            elseif alpha1 < -pi
+                alpha1 = alpha1+2*pi;
+            end
+            if alpha2 > pi
+                alpha2 = alpha2-2*pi;
+            elseif alpha2 < -pi
+                alpha2 = alpha2+2*pi;
+            end
+            alpha = alpha1+alpha2; %seperate arc in to two parts, and calculate the sum of two angle.
+        end
+
+
+        connections_circle = [connections_circle; m n alpha -y0 0 -x0 100];
+    end
+end
+end
+
+function [x0, y0, r] = Circle_center(A,B,C)% this function use three points on the arc to calculate the circle center
+% just use three points on the arc
+% A and B are start and end points
+% C is the middle point of the arc
+syms x y r % three unknown parameters: the coordinate of the circle center and the radius
+eqn1 = r==(x-A(1))^2+(y-A(2))^2; %according to the stantard equation of the circle :(x-a)^2+(y-b)^2 = r^2
+eqn2 = r==(x-B(1))^2+(y-B(2))^2;
+eqn3 = r==(x-C(1))^2+(y-C(2))^2;
+
+[x,y,r]=solve(eqn1, eqn2, eqn3, x, y, r);% solve three equation to get three unknown parameters 
+x = double(x);
+y = double(y);
+r = double(r);
+r = sqrt(r);
+
+x0 = roundn(x, -2);% rounded to 2 digits
+y0 = roundn(y, -2);
+r  = roundn(r,-2); 
 end
