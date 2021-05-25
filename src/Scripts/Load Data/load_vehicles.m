@@ -22,3 +22,5 @@ for j=1:length(VehicleNames)
     NewVehicle = evalin('base',strcat('Vehicle',int2str(j)));
     Vehicles =[Vehicles NewVehicle];
 end
+
+clear VehicleNames sizes mass dataLinksV2V dataLinksV2I frontSensorRange AEBdistance minDeceleration
