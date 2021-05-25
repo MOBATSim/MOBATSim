@@ -2,17 +2,18 @@ classdef Ruler < handle
     %RULER A graphical plotted component that shows the distance between to objects
     %   Is designed for use in a birds-eye-plot from driving scenario
     %   toolbox
-    
-    properties (Access=private)
+       
+    properties (Access = private)
         lowerEnd    % lower cross beam
         middle      % middle connection part
         upperEnd    % upper cross beam
         label       % label that shows content near the middle part of the ruler
-        visible     % visibility of the ruler
+        visible     % visibility of the ruler components
+        active      % when not active, the ruler is not shown
     end
     
     methods
-        function obj = Ruler(parent, xPos, yPos, width, label)
+        function obj = Ruler(parent, xPos, yPos, width, label, active)
             %RULER Construct an instance with origin at center lower end
             %and plot it into the parent axis component
             %   Detailed explanation goes here
@@ -30,12 +31,22 @@ classdef Ruler < handle
             obj.label = text(parent, xPos+length/2,yPos-1.5,label);
             % visiblity is true by default of these components
             obj.visible = true;
+            
+            % activate component
+            if nargin == 6
+                obj.setActive(active);
+            end
         end
         
-        function updateLength(obj, length)
+        function setLength(obj, length)
             % update the length of the ruler with value in bep units
             % when length is infinite, ruler is deactivated
             
+            % only update if active
+            if ~obj.active
+                return;
+            end
+                
             if length == inf
                 % deactivate ruler when length is infinite
                 obj.setVisibility(false);
@@ -49,7 +60,28 @@ classdef Ruler < handle
                 obj.label.Position(1) = obj.lowerEnd.XData(1) + length/2;
             end
         end
-        %% setter/getter
+        %% Setter/Getter
+        function setActive(obj, active)
+            % activate/deactivate the ruler
+            % when not active, the ruler is not shown
+            
+            % Set property
+            obj.active = active;
+            
+            
+            % Set visibilty
+            obj.setVisibility(active);
+        end
+        
+        function active = getActive(obj)
+            
+            active = obj.active;
+        end
+    end
+    
+    methods (Access = private)
+        %% private methods
+        
         function setVisibility(obj, visible)
             % Set the visibility of the ruler object
             
@@ -70,7 +102,7 @@ classdef Ruler < handle
                 obj.visible = false;
             end
         end
-
+        
     end
 end
 
