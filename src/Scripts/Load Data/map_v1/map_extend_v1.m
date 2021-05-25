@@ -15,24 +15,24 @@ Route_LaneNumber = []; % [Route_id, LaneNumber]
 
 %% waypoints
 % Get all the waypoints from drivingScenarioDesigner output file
-Start = data.RoadSpecifications(1,1).Centers(1,:); % Start point of the first road section in drivingScenarioDesigner
-End = data.RoadSpecifications(1,1).Centers(end,:); % End point of the first road section in drivingScenarioDesigner
-WP_from_app = [Start,;End,];% Start and end point of the  first road section in drivingScenarioDesigner
-
-% From the second road section, put all the start and end points together
-for i = 2:size(data.RoadSpecifications,2)
+% Put all the STARTING and ENDING points of the CENTER LANES together
+for i = 1:size(data.RoadSpecifications,2)
     WP_from_app = [WP_from_app; 
                   data.RoadSpecifications(1,i).Centers(1,:);
                   data.RoadSpecifications(1,i).Centers(end,:)];   
 end
-B1 = unique(WP_from_app(:,1:3),'row','stable'); % remove all the repeated points with same lane number(coordinate in drivingScenarioDesigner)
 
-%%Coordinate transformation
-% Coordinate transformation(from drivingScenarioDesigner coordinat to MOBATSim coordimate)
-% [y,-x,0]->[x,0,-y]
-waypoints_new(:,1) = -B1(:,2);
-waypoints_new(:,3) = -B1(:,1);
-% Put the new waypoints in the same sequence as before
+% Remove all the repeated WAYPOINTS with the same coordinates in drivingScenarioDesigner
+uniqueWaypoints = unique(WP_from_app(:,1:3),'row','stable'); % This is necessary because more than one ROUTE might have the same merging WAYPOINT
+
+%% Coordinate transformation
+% Coordinate transformation(drivingScenarioDesigner APP ->MOBATSim coordinate system)
+% [y,-x,0]->[x,0,-y] : 
+% Take the second column (APP), multiply by -1, make it the first column (MOBATSim)
+% Take the first column (APP), multiply by -1, make it the third column (MOBATSim)
+waypoints_new(:,1) = -uniqueWaypoints(:,2);
+waypoints_new(:,3) = -uniqueWaypoints(:,1);
+% Put the new waypoints into order to have the right sequence as previous MOBATKent Map -> (Important to keep the crossroad waypoints correct)
 waypoints =  Order_sequence(waypoints_origin,waypoints_new);
 B2 = [];
 B2(:,1) = -waypoints(:,3);% after sequence order, transfer MOBATSim coordinate to drivingScenariodesigner coordinate
@@ -174,23 +174,12 @@ clearvars  translation_lane circle_lane endpoints i j Index_circle Index_transla
 
 
 function Waypoints_new_rightorder = Order_sequence(waypoints_ori,Waypoints_new)
-% Compare the new waypoints with original waypoints to get right sequence
- Waypoints_new_rightorder = [];
- Waypoints_extra = [];
-  g = 1;
- for k = 1: size(Waypoints_new,1)
-     for t = 1: size(waypoints_ori,1)
-         if Waypoints_new(k,1:3)== waypoints_ori(t,:) % the point is the same with one of the original point
-            Waypoints_new_rightorder(t,:) = Waypoints_new(k,:);
-            break; 
-      
-          elseif ismember(waypoints_ori,Waypoints_new(k,1:3),'rows')==0 % new added point for the map extension
-              Waypoints_extra(g,:) = Waypoints_new(k,:);
-              g = g+1;
-              break;
-         end
-     end
- end
- Waypoints_new_rightorder = [Waypoints_new_rightorder;Waypoints_extra];
+% Compare the new WAYPOINTS with original WAYPOINTS to get the right
+% sequence, add the new WAYPOINTS after the original WAYPOINTS
+idx = ~ismember(Waypoints_new,waypoints_ori,'rows');
+
+Waypoints_new = Waypoints_new(idx,:,:);
+
+Waypoints_new_rightorder = [waypoints_ori; Waypoints_new];
 
 end
