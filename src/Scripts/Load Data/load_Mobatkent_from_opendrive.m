@@ -1,7 +1,6 @@
-mapName = 'Mobatkent';
 %load the new mobatkent map from drivingScenarioDesigner
 %run new_map_for_mobatsim.m % this one test the transformation script
-run map_extend_v1.m 
+map_extend_v1(); 
 
 startingNodes = [56    72    73    65;
     51     0     0    44];
@@ -15,13 +14,13 @@ stoppingNodes = [68    62    49    66;
 leavingNodes = [69    50    67    63;
     0     0    42     0];
 
-assignin('base','mapName',mapName);
-assignin('base','waypoints',waypoints);
-assignin('base','connections_circle',connections_circle);
-assignin('base','connections_translation',connections_translation);
-assignin('base','Route_LaneNumber',Route_LaneNumber);
-
-assignin('base','startingNodes',startingNodes);
-assignin('base','breakingNodes',breakingNodes);
-assignin('base','stoppingNodes',stoppingNodes);
-assignin('base','leavingNodes',leavingNodes);
+% assignin('base','mapName',mapSelection);
+% assignin('base','waypoints',waypoints);
+% assignin('base','connections_circle',connections_circle);
+% assignin('base','connections_translation',connections_translation);
+% assignin('base','Route_LaneNumber',Route_LaneNumber);
+% 
+% assignin('base','startingNodes',startingNodes);
+% assignin('base','breakingNodes',breakingNodes);
+% assignin('base','stoppingNodes',stoppingNodes);
+% assignin('base','leavingNodes',leavingNodes);

@@ -1,12 +1,11 @@
-%clear all
-%clc
+%% Load data file
+load map_v1.mat;            % Map data (.mat format) taken as the OUTPUT of the "drivingScenarioDesigner App"
 
-%%load data file
-load map_v1.mat; %map data from drivingScenarioDesigner
-load waypoints_origin.mat;% original map data to order right sequence
+% Original map waypoints to put the converted waypoints from OPENDrive into the right order of sequence in MOBATSim
+load waypoints_origin.mat;  % (Important to keep the crossroad waypoints correct)
 
-%%initialize
-waypoints_new = [];% waypoints of extended map before oder the sequence
+%% Initialization
+waypoints_new = [];% waypoints of the extended map before the right sequence is ordered
 connections_circle = [];
 connections_translation = [];
 waypoints = [];%waypoints of extended map with the right order
@@ -174,3 +173,24 @@ Index_translation = [];
 clearvars  translation_lane circle_lane endpoints i j Index_circle Index_translation Route_id startpoints WP_from_app WP_from_app_LaneNum WP_from_app_LaneNum_new waypoints_new a h  A alpha b B1 B2 C Circle D data E End F1 F2 F3 G1 G2 G3  m n rho1 rho2 rho3 Start tag theta1 theta2 theta3 alpha1 alpha2 x0 y0 waypoints_origin B1 k r R curvature 
 
 
+function Waypoints_new_rightorder = Order_sequence(waypoints_ori,Waypoints_new)
+% Compare the new waypoints with original waypoints to get right sequence
+ Waypoints_new_rightorder = [];
+ Waypoints_extra = [];
+  g = 1;
+ for k = 1: size(Waypoints_new,1)
+     for t = 1: size(waypoints_ori,1)
+         if Waypoints_new(k,1:3)== waypoints_ori(t,:) % the point is the same with one of the original point
+            Waypoints_new_rightorder(t,:) = Waypoints_new(k,:);
+            break; 
+      
+          elseif ismember(waypoints_ori,Waypoints_new(k,1:3),'rows')==0 % new added point for the map extension
+              Waypoints_extra(g,:) = Waypoints_new(k,:);
+              g = g+1;
+              break;
+         end
+     end
+ end
+ Waypoints_new_rightorder = [Waypoints_new_rightorder;Waypoints_extra];
+
+end
