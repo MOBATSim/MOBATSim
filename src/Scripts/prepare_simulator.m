@@ -58,7 +58,7 @@ end
 %load_scenario(scenarioSelection); % default on - for Monte Carlo experiments comment out
 
 % Load Vehicles
-load_vehicles(); % default on - for Monte Carlo experiments comment out
+Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, simSpeed); % default on - for Monte Carlo experiments comment out
 
 %MonteCarlo_scenarios(); % default off - for Monte Carlo experiments uncomment
 
@@ -76,12 +76,10 @@ clear_init_variables();
 % Open MOBATSim Simulink Model
 open_system(modelName)
 
-% generate vehicle analysing window TODO JP: maybe move, only here for
-% testing
-enableAnalysingWindow = false;
-if enableAnalysingWindow
-    vehicleAnalysingWindow = VehicleAnalysingWindow(Vehicles, 9);
-end
+% deactivate vehicle analysing window
+vehicleAnalysingWindow = false;
+close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow_tag')); % close analysing window
+
 %% Fault Injection properties (TODO: To be implemented soon)
 FI_distance = 0;
 FI_speed = 0;
