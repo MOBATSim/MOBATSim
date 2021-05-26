@@ -163,31 +163,19 @@ classdef Vehicle < handle
             car.destinationReached = false;
         end
    
-        function checkCollision(car,Vehicles)
+        function checkCollision(vehicle,car)
             %this function should be seperate from the sensor because sensor can be faulty but collision will appear as
             %an accident so to create the conditions for instant stop we need to keep it as a seperate function
-            
-            % Car's hitbox can be calculated once.
-            Box1 = getHitbox(car);
-            
-            for i=1:length(Vehicles)  
-                if car.id == Vehicles(i).id
-                    break; 
-                    %This "break" prevents double checks, for example: V1 doesn't check at all, 
-                    %V4 checks all before until itself, V10 checks with everyone before it.
-                else                           
-                    Box2 = getHitbox(Vehicles(i));
-                    hasCollided = checkIntersection(car,Box1,Box2);  
-                    if hasCollided == true
-                        % Collision occurs                      
-                        car.vehiclesCollide(Vehicles(i));
-                    end
-                end
-
+            Box1 = getHitbox(vehicle);
+            Box2 = getHitbox(car);
+            hasCollided = checkIntersection(vehicle,Box1,Box2);
+            if hasCollided == true
+                % Collision occurs
+                vehicle.vehiclesCollide(car);
             end
-            
-            
+
         end
+            
         
         function vehiclesCollide(car1,car2)
             % set collision on both vehicles and stop them

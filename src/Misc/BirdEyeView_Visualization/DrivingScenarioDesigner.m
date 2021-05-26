@@ -17,7 +17,7 @@ scenario = scenario_map_v1(); % export from drivingScenarioDesigner
 % ans = ans;
 % load('matlab.mat')
 load('vehicleTrajectories.mat');
-step_length = 10;
+step_length = 1; % TODO, make a try catch or better solve the trajectory error with same WAYPOINTS with different SPEEDS error
 
 
 % temp1 = [ans.logsout{1}.Values.Data(1,1) -ans.logsout{1}.Values.Data(1,3) 0];

@@ -40,9 +40,11 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 return;
             end
             destReached = 0;
+            
             % Evaluation of lane-changing maneuver
-            laneChange = switch_decision(obj);
-
+            %laneChange = switch_decision(obj);
+            laneChange=0;
+            
             %Output 4: Driving mode
             if(emergencyCase == 0)
                 DrivingMode = 1;
