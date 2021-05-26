@@ -52,13 +52,13 @@ end
 
 %% Load Scenario and Vehicles
 if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % new
-load_scenario(scenarioSelection); % default on - for Monte Carlo experiments comment out
+load_scenariostartingPoints, destinationPoints, maxSpeeds, startingTimes, simSpeed(scenarioSelection); % default on - for Monte Carlo experiments comment out
 end
 %uncomment line below to undo
 %load_scenario(scenarioSelection); % default on - for Monte Carlo experiments comment out
 
 % Load Vehicles
-load_vehicles(); % default on - for Monte Carlo experiments comment out
+Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, simSpeed); % default on - for Monte Carlo experiments comment out
 
 %MonteCarlo_scenarios(); % default off - for Monte Carlo experiments uncomment
 
