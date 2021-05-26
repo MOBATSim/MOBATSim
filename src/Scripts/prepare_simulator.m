@@ -17,6 +17,7 @@ modelName = 'MOBATSim';
 
 simSpeed = 1; % For scaling the simulation speed
 Sim_Ts = 0.02; % Sample time of the simulation (may not be stable if changed)
+Sim_t = 30; % set simulation time
 
 configs = MOBATSimConfigurations(modelName,simSpeed,Sim_Ts,MapType); % MapType: 'GridMap' or 'DigraphMap'
 
@@ -44,9 +45,9 @@ end
 
 %% Generate the 2D Map and the instance from the Map class
 if configs.MapType == MapTypes.GridMap
-    Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
+    Map = GridMap(mapSelection,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
 else
-    Map = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
+    Map = DigraphMap(mapSelection,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
 end
 
 %% Load Scenario and Vehicles

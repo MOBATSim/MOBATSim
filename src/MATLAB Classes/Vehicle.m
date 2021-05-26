@@ -202,8 +202,9 @@ classdef Vehicle < handle
                     
             centerP = [car.dynamics.position(1); -car.dynamics.position(3)];
             angle = car.dynamics.orientation(4); % it isn't always correct on corners
-            a = car.physics.size(1)/2;
-            b = car.physics.size(3)/2;
+            
+            a = car.physics.size(3)/2; % Half length of a vehicle
+            b = car.physics.size(2)/2; % Half width of a vehicle          
             
             p1 =[a; b];
             p2 =[a; -b];
