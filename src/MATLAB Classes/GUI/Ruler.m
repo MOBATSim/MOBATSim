@@ -8,27 +8,30 @@ classdef Ruler < handle
         middle      % middle connection part
         upperEnd    % upper cross beam
         label       % label that shows content near the middle part of the ruler
+        labelText   % text for describing the ruler measurement
         visible     % visibility of the ruler components
-        active      % when not active, the ruler is not shown
+        active      % ruler must be activated to be shown
+        toLong      % ruler length is to long to show (inf)
     end
     
     methods
-        function obj = Ruler(parent, xPos, yPos, width, label, active)
+        function obj = Ruler(axes, xPos, yPos, width, labelText, active)
             %RULER Construct an instance with origin at center lower end
             %and plot it into the parent axis component
             %   Detailed explanation goes here
             
             length = 20; % default value
             % position lines to draw a ruler
-            obj.lowerEnd = line(parent,[xPos xPos],[yPos-width yPos+width]);
-            obj.middle = line(parent,[xPos xPos+length],[yPos yPos]);
-            obj.upperEnd = line(parent,[xPos+length xPos+length],[yPos-width yPos+width]);
+            obj.lowerEnd = line(axes,[xPos xPos],[yPos-width yPos+width]);
+            obj.middle = line(axes,[xPos xPos+length],[yPos yPos]);
+            obj.upperEnd = line(axes,[xPos+length xPos+length],[yPos-width yPos+width]);
             % change line width
             obj.lowerEnd.LineWidth = 1;
             obj.middle.LineWidth = 1;
             obj.upperEnd.LineWidth = 1;
             % add label
-            obj.label = text(parent, xPos+length/2,yPos-1.5,label);
+            obj.labelText = labelText;
+            obj.label = text(axes, xPos+length/2, yPos-0.5, labelText);
             % visiblity is true by default of these components
             obj.visible = true;
             
@@ -48,16 +51,19 @@ classdef Ruler < handle
             end
                 
             if length == inf
-                % deactivate ruler when length is infinite
-                obj.setVisibility(false);
+                % deactivate ruler when length is to long (infinite)
+                obj.toLong = true;
+                obj.setVisibility();
             else
-                obj.setVisibility(true);
+                obj.toLong = false;
+                obj.setVisibility();
                 % Update positions
                 obj.middle.XData(2) = obj.middle.XData(1) + length;
                 obj.upperEnd.XData(1) = obj.lowerEnd.XData(1) + length;
                 obj.upperEnd.XData(2) = obj.lowerEnd.XData(2) + length;
                 
                 obj.label.Position(1) = obj.lowerEnd.XData(1) + length/2;
+                obj.label.String = obj.labelText + sprintf(" %.2f m",length);
             end
         end
         %% Setter/Getter
@@ -68,9 +74,8 @@ classdef Ruler < handle
             % Set property
             obj.active = active;
             
-            
-            % Set visibilty
-            obj.setVisibility(active);
+            % Actualize visibilty
+            obj.setVisibility();
         end
         
         function active = getActive(obj)
@@ -82,23 +87,24 @@ classdef Ruler < handle
     methods (Access = private)
         %% private methods
         
-        function setVisibility(obj, visible)
+        function setVisibility(obj)
             % Set the visibility of the ruler object
             
-            if visible && ~obj.visible
-                % make all parts visible
+            if obj.active && ~obj.toLong && ~obj.visible
+                % make all parts visible, when active and not to long
                 obj.lowerEnd.Visible = true;
                 obj.middle.Visible = true;
                 obj.upperEnd.Visible = true;
                 obj.label.Visible = true;
                 % set property
                 obj.visible = true;
-            elseif ~visible && obj.visible
-                % make all part invisible
+            elseif (~obj.active || obj.toLong) && obj.visible
+                % make all part invisible, if not active or to long
                 obj.lowerEnd.Visible = false;
                 obj.middle.Visible = false;
                 obj.upperEnd.Visible = false;
                 obj.label.Visible = false;
+                % set property
                 obj.visible = false;
             end
         end
