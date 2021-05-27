@@ -68,7 +68,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 allVehiclePositions = cat(1,cat(1,cat(1,obj.map.Vehicles).dynamics).position);
                 allVehicleDistancesMatrix = pdist2(allVehiclePositions,allVehiclePositions,'euclidean');
-                [row,column] = find(triu(allVehicleDistancesMatrix<20)-eye(10)); % The value 20 is the threshold for checking for collision
+                [row,column] = find(triu(allVehicleDistancesMatrix<20)-eye(length(allVehiclePositions))); % The value 20 is the threshold for checking for collision
                 if ~isempty(column) 
                     for k = 1:length(column) % If there are vehicle closer than 20 meters, check the collision for vehicle column(k) to row(k)
                         obj.map.Vehicles(column(k)).checkCollision(obj.map.Vehicles(row(k)));
