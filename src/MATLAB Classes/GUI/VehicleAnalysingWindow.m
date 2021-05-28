@@ -133,7 +133,7 @@ classdef VehicleAnalysingWindow < handle
                                                                       'ColumnWidth', {'fit','1x','fit','fit'});
             
             % Variable entrys
-            gui.entryVelocity = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Velocity', 'm/s', false);
+            gui.entryVelocity = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Velocity', 'm/s', true);
             gui.entryEmBrakeDistance = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Emergency brake distance', 'm', true);
             gui.entryDrivingMode = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Driving mode', '', false);
                         
@@ -164,7 +164,7 @@ classdef VehicleAnalysingWindow < handle
                                                                  
             % Variable entrys
             gui.entryDeltaDistance = obj.generateVariableEntry(gui.subgridLeadingVehicle, 'Delta distance', 'm', true);
-            gui.entryDeltaSpeed = obj.generateVariableEntry(gui.subgridLeadingVehicle, 'Delta velocity', 'm/s', true);
+            gui.entryDeltaSpeed = obj.generateVariableEntry(gui.subgridLeadingVehicle, 'Delta velocity', 'm/s', false);
             
             % Edit fields
             gui.fieldTs = uieditfield(gui.subgridLeadingVehicle,'numeric', ...
@@ -194,10 +194,10 @@ classdef VehicleAnalysingWindow < handle
                                                  'color', '#CC0033'); % kind of dark red
             gui.axesSafeSpace.Title.String = 'Safe space';
             gui.axesSafeSpace.XLabel.String = '\bf \DeltaDistance (m)';
-            gui.axesSafeSpace.YLabel.String = '\bf \DeltaVelocity (m/s)';
+            gui.axesSafeSpace.YLabel.String = '\bf \DeltaSpeed (m/s)';
             gui.axesSafeSpace.Layout.Row = 5;
             gui.axesSafeSpace.Layout.Column = [1,2];
-            gui.axesSafeSpace.Interactions = [regionZoomInteraction];%rulerPanInteraction ];%zoomInteraction];
+            gui.axesSafeSpace.Interactions = regionZoomInteraction;%rulerPanInteraction ];%zoomInteraction]; % TODO: check if this is the best way
             
             % Areas TODO: get the decelerations and safe distance for area from somewhere, now only placeholder
             gui.areaSafeSet = obj.generateAreaVelocity(gui.axesSafeSpace, -9.15, 1, '#33FF33'); % bright green
@@ -228,20 +228,26 @@ classdef VehicleAnalysingWindow < handle
             gui.lanePlotter = laneBoundaryPlotter(gui.bep); % plots road lanes
             
             % Coverage areas
-            gui.covAreaEmBrake = obj.generateCoverageArea(gui.axesBep);
+            gui.covAreaEmBrake = CoverageArea(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, ... % start position
+                                                           obj.egoVehicle.physics.size(2), 0, ... % dimensions
+                                                           'cyan', 'blue'); % colors
+            
+            % Arrows
+            gui.vecEgoVelocity = Arrow(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, ... % start position
+                                                    'black'); % color
             
             % Ruler
             gui.rulerDistance = Ruler(gui.axesBep, obj.egoVehicle.physics.size(3)/2, -3, 3, '\Deltad =', false);
-            
-            
+                      
             
             %% Special callbacks for gui elements
             % done at the end when all elements are generated that are
             % needed for the callback
             
             % Checkboxes
-            gui.entryDeltaDistance.cb.ValueChangedFcn = @(cbx,event) obj.rulerEntryCheckboxCallback(cbx);
-            gui.entryentryEmBrakeDistance.cb.ValueChangedFcn = @(cbx,event) obj.updateBep();
+            gui.entryEmBrakeDistance.cb.ValueChangedFcn = @(cbx,event) obj.checkboxPlotObjectCallback(cbx, gui.covAreaEmBrake);
+            gui.entryDeltaDistance.cb.ValueChangedFcn = @(cbx,event) obj.checkboxPlotObjectCallback(cbx, gui.rulerDistance);
+            gui.entryVelocity.cb.ValueChangedFcn = @(cbx,event) obj.checkboxPlotObjectCallback(cbx, gui.vecEgoVelocity);
             
         end
         
@@ -293,26 +299,7 @@ classdef VehicleAnalysingWindow < handle
                                       'EdgeAlpha', 0.2);
             
         end
-        
-        function coverageArea = generateCoverageArea(obj, axes)
-            % generate an area that shows the coverage specified by
-            % distance in front of the ego vehicle
-            
-            % vehicle size
-            width = obj.egoVehicle.physics.size(2);
-            length = obj.egoVehicle.physics.size(3);
-            
-            % make a polygon for the coverage area
-            polyg = polyshape([length/2 -width/2; ...
-                               length/2 width/2; ...
-                               length/2+0.1 width/2; ... % x values must be different to make a polygon
-                               length/2+0.1 -width/2]);
-            
-            % Create colored coverage area
-            hold(axes, 'on');
-            coverageArea = plot(axes, polyg, 'FaceColor','cyan', 'EdgeColor','blue', 'FaceAlpha',0.5);
-        end
-        
+               
         function roadScenario = setupScenario(~, roadScenario, vehicles)
             % Setup the scenario already containing a road network
             
@@ -461,13 +448,18 @@ classdef VehicleAnalysingWindow < handle
             rb = roadBoundaries(obj.scenario.Actors(obj.egoVehicle.id)); % Maybe use laneBoundaries and only show a part of the map
             plotLaneBoundary(obj.gui.lanePlotter,rb);
 
-            %% Ruler
-            % update length of distance ruler
-            obj.gui.rulerDistance.setLength(obj.relativeDistance);
-            
+           
             
             %% Coverage areas
-            obj.updateCoverageArea(obj.gui.covAreaEmBrake, obj.emergencyBrakeDistance);
+            obj.gui.covAreaEmBrake.update(obj.egoVehicle.physics.size(3)/2, obj.egoVehicle.physics.size(3)/2+obj.emergencyBrakeDistance);
+            %obj.updateCoverageArea(obj.gui.covAreaEmBrake, obj.emergencyBrakeDistance);
+            
+            %% Arrows
+            obj.gui.vecEgoVelocity.update(obj.egoVehicle.dynamics.speed);
+            
+            %% Ruler
+            % update length of distance ruler
+            obj.gui.rulerDistance.update(obj.relativeDistance);
             
         end      
         
@@ -502,21 +494,7 @@ classdef VehicleAnalysingWindow < handle
             
             variableEntry.value.Text = string(value); % write the value to the matching label
         end
-        
-        function updateCoverageArea(obj, coverageArea, distance)
-            % Update the length of a coverage area
-            
-            if distance == 0 %TODO: coverage area needs a property to know if checkbox is enabled (make class)
-                coverageArea.Visible = false;
-            else
-                coverageArea.Visible = true;
-                % increase the length of the coverage area by changing the
-                % x-values of the both upper points
-                coverageArea.Shape.Vertices(3:4,1) = obj.egoVehicle.physics.size(3)/2 + distance;
-            end
-        end
-        
-        
+                     
         function changeViewToEgoVehicle(obj)
             % change GUI view to the actual ego vehicle
             
@@ -555,9 +533,6 @@ classdef VehicleAnalysingWindow < handle
             emergencyBrakeDistance = 0.5*-curSpeed^2/minAcceleration;
         end
         
-        
-        
-
         %% Callbacks
         function vehicleSelectionCallback(obj, dropdown)
             % Callback of the vehicle selection dropdown menu
@@ -593,11 +568,12 @@ classdef VehicleAnalysingWindow < handle
             end
         end
         
-        function rulerEntryCheckboxCallback(obj, cbx)
-            % Callback for the checkbox of an ruler entry at the value area
+        function checkboxPlotObjectCallback(obj, cbx, plotObject)
+            % Callback for a checkbox (cbx) triggering a activtable plot
+            % object
             
-            obj.gui.rulerDistance.setActive(cbx.Value); % activate ruler
-            obj.updateBep(); % update ruler length
+            plotObject.Active = cbx.Value; % change active
+            obj.updateBep(); % update the birds eye plot that shows the object
         end
         
         function editTimeStepCallback(obj, txt)
