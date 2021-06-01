@@ -2,11 +2,15 @@ classdef Ruler < ActivatablePlotObject
     %RULER A graphical plotted component that shows the distance between to objects
     %   Is designed for use in a birds-eye-plot from driving scenario
     %   toolbox
-    %   _ _
-    %    |
-    %    | label        ^ x
-    %   _|_             |
-    %               y <- 
+    % 
+    %                 ^ 
+    %                 | x-Axis
+    %
+    %                _ _
+    %                 |
+    %                 | label        
+    % y-Axis <-      _|_             
+    %              
        
     properties (Access = private)
         lowerEnd    % lower cross beam
@@ -24,16 +28,16 @@ classdef Ruler < ActivatablePlotObject
             
             length = 20; % default value
             % position lines to draw a ruler
-            obj.lowerEnd = line(axes,[xPos xPos],[yPos-width yPos+width]);
+            obj.lowerEnd = line(axes,[xPos xPos],[yPos-width/2 yPos+width/2]);
             obj.middle = line(axes,[xPos xPos+length],[yPos yPos]);
-            obj.upperEnd = line(axes,[xPos+length xPos+length],[yPos-width yPos+width]);
+            obj.upperEnd = line(axes,[xPos+length xPos+length],[yPos-width/2 yPos+width/2]);
             % change line width
             obj.lowerEnd.LineWidth = 1;
             obj.middle.LineWidth = 1;
             obj.upperEnd.LineWidth = 1;
             % add label
-            obj.labelText = labelText;
-            obj.label = text(axes, xPos+length/2, yPos-0.5, labelText);
+            obj.labelText = string(labelText);
+            obj.label = text(axes, xPos+length/2, yPos-0.5, obj.labelText);
             
             % set active
             if (nargin == 6) && (active == true)
@@ -79,19 +83,10 @@ classdef Ruler < ActivatablePlotObject
         function setVisibility(obj, visible)
             % Set the visibility of the ruler object
             
-            if visible
-                % make all parts visible
-                obj.lowerEnd.Visible = true;
-                obj.middle.Visible = true;
-                obj.upperEnd.Visible = true;
-                obj.label.Visible = true;
-            else
-                % make all parts invisible
-                obj.lowerEnd.Visible = false;
-                obj.middle.Visible = false;
-                obj.upperEnd.Visible = false;
-                obj.label.Visible = false;
-            end
+            obj.lowerEnd.Visible = visible;
+            obj.middle.Visible = visible;
+            obj.upperEnd.Visible = visible;
+            obj.label.Visible = visible;
         end
         
     end

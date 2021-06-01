@@ -50,7 +50,7 @@ classdef Arrow < ActivatablePlotObject
                 return;
             end
             
-            if length == inf
+            if (length == inf) || (length == 0)
                 % deactivate arrow when length is to long (infinite)
                 obj.setVisibility(false);
             else
@@ -73,15 +73,9 @@ classdef Arrow < ActivatablePlotObject
         function setVisibility(obj, visible)
             % Set the visibility of the arrow
             
-            if visible
-                % make all parts visible
-                obj.head.Visible = true;
-                obj.shaft.Visible = true;
-            else
-                % make all parts invisible
-                obj.head.Visible = false;
-                obj.shaft.Visible = false;
-            end
+            obj.head.Visible = visible;
+            obj.shaft.Visible = visible;
+
         end
         
     end

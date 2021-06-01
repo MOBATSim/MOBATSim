@@ -10,16 +10,24 @@ classdef CoverageArea < ActivatablePlotObject
     
     properties (Access = private)
         polygon     % plotted polygon showing the coverage area
+        width       % width of the plotted polygon
     end
     
     methods
-        function obj = CoverageArea(axes,xPos, yPos, width, length, color, edgeColor, active)
+        function obj = CoverageArea(axes,xPos, yPos, width, length, faceColor, faceAlpha, edgeColor, edgeAlpha, active)
             %COVERAGEAREA generate an area that shows the coverage specified by
             % distance in front of the ego vehicle
             %   xPos, yPos      % origin, located at lower end of x axis and middle of the
             %                   % y axis of the component
             %   width, length   % dimensions of coverage area
             %   active          % activated at start?
+            
+            % set active
+            if nargin == 10
+                obj.Active = active;
+            else
+                obj.Active = false;
+            end
             
             % polygons with no width or length are not generated properly
             if width == 0, width = 0.1; end
@@ -30,25 +38,21 @@ classdef CoverageArea < ActivatablePlotObject
                                0 width/2; ...
                                length width/2; ...
                                length -width/2]);
+            obj.width = width;
             % move to x,y - position
             poly = translate(poly, [xPos, yPos]);            
             % Create colored coverage area
             hold(axes, 'on');
             obj.polygon = plot(axes, poly, ...
-                                     'FaceColor', color, ...
+                                     'FaceColor', faceColor, ...
                                      'EdgeColor', edgeColor, ...
-                                     'FaceAlpha', 0.5, ...
-                                     'EdgeAlpha', 0.5);
+                                     'FaceAlpha', faceAlpha, ...
+                                     'EdgeAlpha', edgeAlpha);
             
-            % set active
-            if (nargin == 8) && (active == true)
-                obj.Active = true;
-            else
-                obj.Active = false;
-            end
+
         end
         
-        function update(obj, xPosStart, xPosEnd)
+        function update(obj, xStart, xEnd)
             % update the x start and end positions
                         
             if ~obj.Active
@@ -57,14 +61,17 @@ classdef CoverageArea < ActivatablePlotObject
                 return;
             end
             
-            if xPosStart == xPosEnd
+            if xStart == xEnd
                 % deactivate when there is no area to plot
                 obj.setVisibility(false);
             else
-                % Update the lower points
-                obj.polygon.Shape.Vertices(1:2,1) = xPosStart;
-                % Update the upper points
-                obj.polygon.Shape.Vertices(3:4,1) = xPosEnd;
+                % Draw with new points (dont change the vertices, this is
+                % buggy with small numbers)
+                obj.polygon.Shape = polyshape([xStart -obj.width/2; ...
+                               xStart obj.width/2; ...
+                               xEnd obj.width/2; ...
+                               xEnd -obj.width/2]);
+
                 % Show all components
                 obj.setVisibility(true);
             end

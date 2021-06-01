@@ -17,7 +17,6 @@ classdef VehicleAnalysingWindow < handle
             % lanePlotter           plots the outlines of the roads
         scenario        % contains cars and roads that should be plotted
         emergencyBrakeDistance      % distance to stop ego vehicle TODO: move this to a safety part
-        plotEmBrake     % plotted area for emergency brake
         timeToPause     % simulation should pause when simulation time is at this value
         currentSimTime  % current simulation time
         relativeDistance            % distance to the leadingVehicle
@@ -25,6 +24,8 @@ classdef VehicleAnalysingWindow < handle
         safeSpace       % contains variables needed for safe space calculation
             % ts            % time step width in sec
             % nrSteps       % number of steps to predict in the future
+        timeStep        % time between two steps TODO: fuse this with safeSpace ts
+        nrSteps         % number of predicted steps TODO: same problem
     end 
     
     methods
@@ -60,6 +61,8 @@ classdef VehicleAnalysingWindow < handle
             obj.getCurrentSimTime();
             obj.safeSpace.ts = 0.1; % TODO: find good default value
             obj.safeSpace.nrSteps = 10; % TODO: find good default value
+            obj.timeStep = 0.1;
+            obj.nrSteps = 10;
         end
         
         function gui = generateGui(obj, vehicles)
@@ -70,7 +73,7 @@ classdef VehicleAnalysingWindow < handle
             gui.fig = uifigure('Name','Vehicle Analysing Window', 'WindowStyle','normal');
             gui.fig.Visible = 'off'; % don't show window during generation
             gui.fig.Tag = 'vehicleAnalysingWindow_tag';
-            gui.fig.Position = [681 409 630 620];
+            gui.fig.Position = [681 309 630 720];
             
             % Grid layout
             gui.grid = uigridlayout(gui.fig);
@@ -136,7 +139,19 @@ classdef VehicleAnalysingWindow < handle
             gui.entryVelocity = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Velocity', 'm/s', true);
             gui.entryEmBrakeDistance = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Emergency brake distance', 'm', true);
             gui.entryDrivingMode = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Driving mode', '', false);
-                        
+            gui.entryPredictionBox = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Prediction box for 10 steps', '', true);
+            %TODO: clean this up
+            gui.sliderTimeStep = uislider(gui.subgridEgoVehicle, 'Value', obj.timeStep, ...
+                                                                 'ValueChangedFcn',@(sld,event) obj.timeStepSliderCallback(sld));
+            gui.sliderTimeStep.Layout.Column = [1,3];
+            gui.sliderTimeStep.Limits = [0 0.7];
+            gui.labelTimeStep = uilabel(gui.subgridEgoVehicle, 'Text', 'Ts');
+            
+            gui.sliderNrSteps = uislider(gui.subgridEgoVehicle, 'Value', obj.nrSteps, ...
+                                                                 'ValueChangedFcn',@(sld,event) obj.nrStepsSliderCallback(sld));
+            gui.sliderNrSteps.Layout.Column = [1,3];
+            gui.sliderNrSteps.Limits = [0 50];
+            gui.labelNrSteps = uilabel(gui.subgridEgoVehicle, 'Text', 'k');
             % Check box tree TODO: use this to activate elements shown in
             % bep plot and not the checkboxes behind the entries
             %gui.tree = uitree(gui.subgridEgoVehicle);%'checkbox'); TODO: activate in v2021a
@@ -227,10 +242,10 @@ classdef VehicleAnalysingWindow < handle
             gui.outlinePlotter = outlinePlotter(gui.bep); % plots oultline of cars
             gui.lanePlotter = laneBoundaryPlotter(gui.bep); % plots road lanes
             
-            % Coverage areas
-            gui.covAreaEmBrake = CoverageArea(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, ... % start position
-                                                           obj.egoVehicle.physics.size(2), 0, ... % dimensions
-                                                           'cyan', 'blue'); % colors
+            % Coverage areas TODO: dont use coverage area for em brake
+            %gui.covAreaEmBrake = CoverageArea(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, ... % start position
+            %                                               obj.egoVehicle.physics.size(2), 0, ... % dimensions
+            %                                               'cyan', 'blue'); % colors
             
             % Arrows
             gui.vecEgoVelocity = Arrow(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, ... % start position
@@ -238,16 +253,25 @@ classdef VehicleAnalysingWindow < handle
             
             % Ruler
             gui.rulerDistance = Ruler(gui.axesBep, obj.egoVehicle.physics.size(3)/2, -3, 3, '\Deltad =', false);
-                      
+            
+            % Bars
+            gui.barEmBrake = Bar(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, 9, 'red', '\bf   Stop!');
+            
+            % Prediction Box
+            colors = ["blue" "green" "green" "blue"];
+            labels = ["u=2" "u=0" "u=-1" "u=-3"];
+            gui.predictionBox = PredictionBox(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, 7, colors, labels, true);
+            gui.entryPredictionBox.cb.Value = true; % TODO: remove after testing
             
             %% Special callbacks for gui elements
             % done at the end when all elements are generated that are
             % needed for the callback
             
             % Checkboxes
-            gui.entryEmBrakeDistance.cb.ValueChangedFcn = @(cbx,event) obj.checkboxPlotObjectCallback(cbx, gui.covAreaEmBrake);
+            gui.entryEmBrakeDistance.cb.ValueChangedFcn = @(cbx,event) obj.checkboxPlotObjectCallback(cbx, gui.barEmBrake);
             gui.entryDeltaDistance.cb.ValueChangedFcn = @(cbx,event) obj.checkboxPlotObjectCallback(cbx, gui.rulerDistance);
             gui.entryVelocity.cb.ValueChangedFcn = @(cbx,event) obj.checkboxPlotObjectCallback(cbx, gui.vecEgoVelocity);
+            gui.entryPredictionBox.cb.ValueChangedFcn = @(cbx,event) obj.checkboxPlotObjectCallback(cbx, gui.predictionBox);
             
         end
         
@@ -451,8 +475,8 @@ classdef VehicleAnalysingWindow < handle
            
             
             %% Coverage areas
-            obj.gui.covAreaEmBrake.update(obj.egoVehicle.physics.size(3)/2, obj.egoVehicle.physics.size(3)/2+obj.emergencyBrakeDistance);
-            %obj.updateCoverageArea(obj.gui.covAreaEmBrake, obj.emergencyBrakeDistance);
+            %.gui.covAreaEmBrake.update(obj.egoVehicle.physics.size(3)/2, obj.egoVehicle.physics.size(3)/2+obj.emergencyBrakeDistance);
+           
             
             %% Arrows
             obj.gui.vecEgoVelocity.update(obj.egoVehicle.dynamics.speed);
@@ -460,6 +484,19 @@ classdef VehicleAnalysingWindow < handle
             %% Ruler
             % update length of distance ruler
             obj.gui.rulerDistance.update(obj.relativeDistance);
+            
+            %% Bar
+            obj.gui.barEmBrake.update(obj.emergencyBrakeDistance);
+            
+            %% Prediction box
+            % Test predict motion parameters TODO: move this part!
+            i=1:obj.nrSteps;
+            futureDistance1 = obj.predictMotion(obj.timeStep, i*2, 0, obj.egoVehicle.dynamics.speed);
+            futureDistance2 = obj.predictMotion(obj.timeStep, i*0, 0, obj.egoVehicle.dynamics.speed);
+            futureDistance3 = obj.predictMotion(obj.timeStep, i*-1, 0, obj.egoVehicle.dynamics.speed);
+            futureDistance4 = obj.predictMotion(obj.timeStep, i*-3, 0, obj.egoVehicle.dynamics.speed);
+            
+            obj.gui.predictionBox.update([futureDistance1 futureDistance2 futureDistance3 futureDistance4]);
             
         end      
         
@@ -482,8 +519,7 @@ classdef VehicleAnalysingWindow < handle
                 end
                 obj.scenario.Actors(i).Yaw = yaw(i)/pi*180;
             end
-        end
-        
+        end 
         
         function updateVariableEntry(~, variableEntry, value)
             % update the value of a variable entry
@@ -515,13 +551,7 @@ classdef VehicleAnalysingWindow < handle
                uiwait; % pause
            end    
         end
-        
-        function plottedPoly = plotPolygon(obj, polyshape, color, edgeColor)
-            % draw a polygon into the birds eye plot
-            
-            plottedPoly = plot(obj.gui.axesBep, polyshape, 'FaceColor',color, 'EdgeColor',edgeColor);
-        end
-        
+                
         function emergencyBrakeDistance = calculateEmergencyBrakeDistance(obj)
             % Calculate the distance a vehicle needs to stop with min deceleration
             %TODO: move this to a safety component, should not be in UI
@@ -531,6 +561,28 @@ classdef VehicleAnalysingWindow < handle
             minAcceleration = obj.egoVehicle.dynamics.minDeceleration;
             % calculate distance
             emergencyBrakeDistance = 0.5*-curSpeed^2/minAcceleration;
+        end
+        
+        function [futureDistance, futureSpeed] = predictMotion(~, tStep, accelerations, curDistance, curSpeed)
+            % calculate future distance and speed after all accelerations
+            % applied
+            %
+            %   tStep               % time between two acceleration values in s
+            %   accelerations       % row vector of actual and future acceleration values
+            %   curDistance         % current distance covered
+            %   curSpeed            % current speed
+            %
+            % the math of this formulars can be found in DA Pintscher
+            
+            nrSteps = length(accelerations); % number of steps to predict
+            
+            % future speed calculation
+            futureSpeed = curSpeed + tStep*sum(accelerations);
+            
+            % future distance calculation
+            n=1:nrSteps; % first value is 1 instead of 0 because of matlab indexing
+            futureDistance = curDistance + tStep*nrSteps*curSpeed + ...
+                             tStep^2/2*sum(accelerations(n).*(2*nrSteps+1-2*n));
         end
         
         %% Callbacks
@@ -590,6 +642,18 @@ classdef VehicleAnalysingWindow < handle
             
             obj.safeSpace.nrSteps = txt.Value;
             obj.updateSafeSpace();
+        end
+        
+        function timeStepSliderCallback(obj, sld)
+            % Callback of the time step changing slider
+            obj.timeStep=sld.Value;
+            obj.updateBep();
+        end
+        
+        function nrStepsSliderCallback(obj, sld)
+            % Callback of the number of steps changing slider
+            obj.nrSteps=sld.Value;
+            obj.updateBep();
         end
         %% Setter/Getter
         

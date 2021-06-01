@@ -10,7 +10,6 @@ classdef (Abstract) ActivatablePlotObject < handle
         % Every plot object needs an update function for changing the
         % appereance
         update(obj) 
-
     end
     
     methods (Access = protected, Abstract) 
