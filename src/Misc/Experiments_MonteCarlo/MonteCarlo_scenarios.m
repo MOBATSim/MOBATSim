@@ -11,7 +11,6 @@ isMonteCarlo = true; % default: false
 
 %% Create a set of possible starting and destination points sets
 startingTimes = [0 0 0 0 0 0 0 0 0 0];
-SimTimeOut= '20';
 
 AllSets = [1:78];
 OnlyStartingSet = [30 38 6 53 29 28 37 5];
