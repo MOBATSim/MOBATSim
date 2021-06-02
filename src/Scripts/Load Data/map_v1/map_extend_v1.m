@@ -1,56 +1,55 @@
-%% Load data file
-load map_v1.mat;            % Map data (.mat format) taken as the OUTPUT of the "drivingScenarioDesigner App"
+function [Route_LaneNumber, waypoints, connections_translation, connections_circle] = map_extend_v1()
+    %% Load data file
+    load('map_v1.mat','data');  % Map data (.mat format) taken as the OUTPUT of the "drivingScenarioDesigner App"
 
-% Original map waypoints to put the converted waypoints from OPENDrive into the right order of sequence in MOBATSim
-load waypoints_origin.mat;  % (Important to keep the crossroad waypoints correct)
+    % Original map waypoints to put the converted waypoints from OPENDrive into the right order of sequence in MOBATSim
+    load('waypoints_origin.mat','waypoints_origin');  % (Important to keep the crossroad waypoints correct)
 
-%% Initialization
-waypoints_new = [];% waypoints of the extended map before the right sequence is ordered
-WP_from_app = []; % waypoints got from drivingScenarioDesigner
+    %% Initialization
+    waypoints_new = [];% waypoints of the extended map before the right sequence is ordered
+    WP_from_app = []; % waypoints got from drivingScenarioDesigner
 
-%% waypoints
-% Get all the waypoints from drivingScenarioDesigner output file
-% Put all the STARTING and ENDING points of the CENTER LANES together
-for i = 1:size(data.RoadSpecifications,2)
-    WP_from_app = [WP_from_app; 
-                  data.RoadSpecifications(1,i).Centers(1,:);
-                  data.RoadSpecifications(1,i).Centers(end,:)];   
+    %% waypoints
+    % Get all the waypoints from drivingScenarioDesigner output file
+    % Put all the STARTING and ENDING points of the CENTER LANES together
+    for i = 1:size(data.RoadSpecifications,2)
+        WP_from_app = [WP_from_app;
+            data.RoadSpecifications(1,i).Centers(1,:);
+            data.RoadSpecifications(1,i).Centers(end,:)];
+    end
+
+    % Remove all the repeated WAYPOINTS with the same coordinates in drivingScenarioDesigner
+    uniqueWaypoints = unique(WP_from_app(:,1:3),'row','stable'); % This is necessary because more than one ROUTE might have the same merging WAYPOINT
+
+    %% Coordinate transformation
+    % Coordinate transformation(drivingScenarioDesigner APP ->MOBATSim coordinate system)
+    % [y,-x,0]->[x,0,-y] :
+    % Take the second column (APP), multiply by -1, make it the first column (MOBATSim)
+    % Take the first column (APP), multiply by -1, make it the third column (MOBATSim)
+    waypoints_new(:,1) = -uniqueWaypoints(:,2);
+    waypoints_new(:,3) = -uniqueWaypoints(:,1);
+    % Put the new waypoints into order to have the right sequence as previous MOBATKent Map -> (Important to keep the crossroad waypoints correct)
+    waypoints =  Order_sequence(waypoints_origin,waypoints_new);
+
+    %% Conversion back to DrivingScenarioDesigner APP
+    % after sequence order, transfer MOBATSim coordinate to drivingScenariodesigner coordinate
+    MOBATSim_WPs = [-waypoints(:,3) -waypoints(:,1) zeros(length(waypoints),1)];
+
+    [connections_translation,connections_circle] = convertBackToMOBATSimfromAPP(MOBATSim_WPs,data);
+
+    %% Fine lane number of corresponding route_id
+    Route_LaneNumber =  getLaneNumber(data,waypoints,connections_circle,connections_translation);
+
 end
 
-% Remove all the repeated WAYPOINTS with the same coordinates in drivingScenarioDesigner
-uniqueWaypoints = unique(WP_from_app(:,1:3),'row','stable'); % This is necessary because more than one ROUTE might have the same merging WAYPOINT
-
-%% Coordinate transformation
-% Coordinate transformation(drivingScenarioDesigner APP ->MOBATSim coordinate system)
-% [y,-x,0]->[x,0,-y] : 
-% Take the second column (APP), multiply by -1, make it the first column (MOBATSim)
-% Take the first column (APP), multiply by -1, make it the third column (MOBATSim)
-waypoints_new(:,1) = -uniqueWaypoints(:,2);
-waypoints_new(:,3) = -uniqueWaypoints(:,1);
-% Put the new waypoints into order to have the right sequence as previous MOBATKent Map -> (Important to keep the crossroad waypoints correct)
-waypoints =  Order_sequence(waypoints_origin,waypoints_new);
-
-%% Conversion back to DrivingScenarioDesigner APP
-% after sequence order, transfer MOBATSim coordinate to drivingScenariodesigner coordinate
-MOBATSim_WPs = [-waypoints(:,3) -waypoints(:,1) zeros(length(waypoints),1)];
- 
-[connections_translation,connections_circle] = convertBackToMOBATSimfromAPP(MOBATSim_WPs,data);
-
-%% Fine lane number of corresponding route_id
-Route_LaneNumber =  getLaneNumber(data,waypoints,connections_circle,connections_translation);
-
-%% Clean variables
-clearvars  MOBATSim_WPs uniqueWaypoints translation_lane circle_lane endpoints i j Index_circle Index_translation Route_id startpoints WP_from_app WP_from_app_LaneNum WP_from_app_LaneNum_new waypoints_new a h alpha b Circle  data  m n rho1 rho2 rho3 Start tag theta1 theta2 theta3 alpha1 alpha2 x0 y0 waypoints_origin k r R curvature 
-
-
 function Waypoints_new_rightorder = Order_sequence(waypoints_ori,Waypoints_new)
-% Compare the new WAYPOINTS with original WAYPOINTS to get the right
-% sequence, add the new WAYPOINTS after the original WAYPOINTS
-idx = ~ismember(Waypoints_new,waypoints_ori,'rows');
+    % Compare the new WAYPOINTS with original WAYPOINTS to get the right
+    % sequence, add the new WAYPOINTS after the original WAYPOINTS
+    idx = ~ismember(Waypoints_new,waypoints_ori,'rows');
 
-Waypoints_new = Waypoints_new(idx,:,:);
+    Waypoints_new = Waypoints_new(idx,:,:);
 
-Waypoints_new_rightorder = [waypoints_ori; Waypoints_new];
+    Waypoints_new_rightorder = [waypoints_ori; Waypoints_new];
 
 end
 

@@ -27,7 +27,8 @@ function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, 
     for j=1:length(VehicleNames)
 
         VehicleVariable = strcat('Vehicle',num2str(j));
-        assignin('caller',VehicleVariable,Vehicle(j,VehicleNames{j},startingPoints(j),destinationPoints(j),...
+        % TODO: would be nicer with an function output
+        assignin('base',VehicleVariable,Vehicle(j,VehicleNames{j},startingPoints(j),destinationPoints(j),...
         startingTimes(j),maxSpeeds(j),sizes(j,:),dataLinksV2V(j,:),dataLinksV2I(j),mass(j),...
         simSpeed,frontSensorRange(j),AEBdistance(j),minDeceleration(j)) );
         NewVehicle = evalin('base',strcat('Vehicle',int2str(j)));
