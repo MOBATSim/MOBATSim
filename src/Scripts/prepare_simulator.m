@@ -1,12 +1,18 @@
-function prepare_simulator()
+function prepare_simulator(options)
+    % This function prepares the simulation
+    %   After calling this method the simulation can run
+    arguments
+        options.Analysing (1,1) logical = false
+    end
+    
     %% Init file for MOBATSim
     hold off
     warning off
 
     %% Added for Fast Debug /Needs to be removed later to make sure that simulations can be repeated without "clear all"
     if evalin('base','exist(''Map'',''var'')') 
-        clear all; %TODO: needs to be off in order not to delete the variables assigned from the GUI
-        close all; %to avoid some problems with the deleted handles TODO: Try -> close('all', 'hidden')
+        evalin('base','clear all'); %TODO: needs to be off in order not to delete the variables assigned from the GUI
+        evalin('base','close all'); %to avoid some problems with the deleted handles TODO: Try -> close('all', 'hidden')
         MapType = MapTypes.GridMap;
     elseif ~evalin('base','exist(''MapType'',''var'')')
         MapType = MapTypes.GridMap;
@@ -82,14 +88,19 @@ function prepare_simulator()
         %create BOG
         [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
     end
-
+    
     % Open MOBATSim Simulink Model
     open_system(modelName)
 
-    % deactivate vehicle analysing window
-    vehicleAnalysingWindow = false;
+    %% Initalize analysing
+    % close vehicle analysing window
     close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow_tag')); % close analysing window
-
+    
+    if options.Analysing
+        vehicleAnalysingWindow = VehicleAnalysingWindow(Vehicles, 2);
+    else
+        vehicleAnalysingWindow = false;
+    end
     %% Fault Injection properties (TODO: To be implemented soon)
     FI_distance = 0;
     FI_speed = 0;
