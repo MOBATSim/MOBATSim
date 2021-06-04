@@ -26,8 +26,8 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
         %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
             obj.Vehicles = evalin('base','Vehicles');
+            obj.vehicle = obj.Vehicles(obj.Vehicle_id);
         end
         
         function [OtherVehiclesFutureData,LeaderSpeed] = stepImpl(obj,CommunicationID)

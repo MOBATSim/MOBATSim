@@ -26,8 +26,8 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
     methods(Access = protected)
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
             obj.vehicles = evalin('base','Vehicles'); % for testing collision avoidance
+            obj.vehicle = obj.vehicles(obj.Vehicle_id);
             obj.oldNextWaypoint = 0;
         end
                

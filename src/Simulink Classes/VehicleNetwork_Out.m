@@ -22,7 +22,7 @@ classdef VehicleNetwork_Out < matlab.System & handle & matlab.system.mixin.Propa
         %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
+            obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
             
         end
 
