@@ -87,30 +87,28 @@ for j = 1:size(data.RoadSpecifications,2)
         n = find(b==1);
         
         % Polar coordinate
-%         WP_end_xy = WP_end(1:2);
-%         WP_start_xy = WP_start(1:2);
         WP_end_rela = WP_end(1:2)-[x0,y0];% the coordinate of WP_end relative to circle center
         WP_start_rela = WP_start(1:2)-[x0,y0];
         [theta1, rho1] = cart2pol(WP_end_rela(1),WP_end_rela(2));% cartesian coordinate to polar coordinate of G1
         [theta2, rho2] = cart2pol(WP_start_rela(1),WP_start_rela(2));
-        if theta1 < 0 % [-pi~pi](MATLAB range)->[0~2pi](MOBATSim range) 
-            theta1 = theta1+2*pi;
+        alpha = theta2-theta1; % calculate the angle of the arc
+         
+        % the range of the angle in MOBATSim is [-pi,pi], make sure it is not out of range
+        if alpha>pi 
+            alpha = alpha-2*pi;
         end
-        if theta2 < 0
-            theta2 = theta2+2*pi;
+        if alpha<-pi
+            alpha = alpha+2*pi;
         end
         
-        alpha = theta2-theta1; % calculate the angle of the arc
-        if alpha > pi % if arc angle crosses the positive part of x axis
-            alpha = alpha - 2*pi;
-        elseif alpha < -pi
-            alpha = alpha + 2*pi;
-        elseif abs(alpha) == pi
+       % the road is a half circle, then the direction of the angle should be determined
+        if abs(alpha) == pi 
             WP_middle_rela = WP_middle(1:2)-[x0, y0];
             [theta3, rho3] = cart2pol(WP_middle_rela(1),WP_middle_rela(2));
+            
             alpha1 = theta3-theta1;
             alpha2 = theta2-theta3;% find another point between start point and end point, to judge the direction of the arc
-            if alpha1 > pi
+            if alpha1 > pi % the same as previous step, make sure it is not out of range
                 alpha1 = alpha1-2*pi;
             elseif alpha1 < -pi
                 alpha1 = alpha1+2*pi;
