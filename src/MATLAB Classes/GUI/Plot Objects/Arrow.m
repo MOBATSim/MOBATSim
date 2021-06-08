@@ -18,6 +18,11 @@ classdef Arrow < ActivatablePlotObject
             %ARROW Construct an arrow with origin at the arrow end
             %   Detailed explanation goes here
             
+            % set active
+            if nargin < 5
+                active = false;
+            end 
+            
             length = 3; % default length
             obj.headLength = 2; % length of the x/y part of one side of the arrow head
             
@@ -31,12 +36,8 @@ classdef Arrow < ActivatablePlotObject
                                   'Color', color, ...
                                   'LineWidth', 1.3);
             
-            % set active
-            if (nargin == 5) && (active == true)
-                obj.Active = true;
-            else
-                obj.Active = false;
-            end
+            % set super class properties
+            obj.initialize(active);
         end
         
         function update(obj, length)

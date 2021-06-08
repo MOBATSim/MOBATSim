@@ -22,11 +22,9 @@ classdef CoverageArea < ActivatablePlotObject
             %   width, length   % dimensions of coverage area
             %   active          % activated at start?
             
-            % set active
-            if nargin == 10
-                obj.Active = active;
-            else
-                obj.Active = false;
+            % set active when not an input
+            if nargin < 10
+                 active = false;
             end
             
             % polygons with no width or length are not generated properly
@@ -49,7 +47,8 @@ classdef CoverageArea < ActivatablePlotObject
                                      'FaceAlpha', faceAlpha, ...
                                      'EdgeAlpha', edgeAlpha);
             
-
+            % set super class properties
+            obj.initialize(active);
         end
         
         function update(obj, xStart, xEnd)

@@ -26,10 +26,8 @@ classdef PredictionBox < ActivatablePlotObject
             %   Detailed explanation goes here
             
             % set active
-            if nargin == 7
-                obj.Active = active;
-            else
-                obj.Active = false;
+            if nargin < 7
+                active = false;
             end            
           
             % set origin
@@ -44,7 +42,9 @@ classdef PredictionBox < ActivatablePlotObject
                                                   'green', 0.15, ... % inner color
                                                   'green', 0.15, ... % edge color
                                                   active);
-       
+            
+            % set super class properties
+            obj.initialize(active);
         end
         
         function update(obj, distances)
@@ -62,6 +62,7 @@ classdef PredictionBox < ActivatablePlotObject
             for i=1:length(distances)
                 obj.bars(i).update(distances(i));
             end
+            %
             
             % Update coverage area
             xLowestBar = obj.origin(1) + min(distances); % x value of the bar with lowest position

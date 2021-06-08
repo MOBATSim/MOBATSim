@@ -26,6 +26,11 @@ classdef Ruler < ActivatablePlotObject
             %and plot it into the parent axis component
             %   Detailed explanation goes here
             
+                        % set active
+            if nargin < 6
+                active = false;
+            end 
+            
             length = 20; % default value
             % position lines to draw a ruler
             obj.lowerEnd = line(axes,[xPos xPos],[yPos-width/2 yPos+width/2]);
@@ -38,13 +43,9 @@ classdef Ruler < ActivatablePlotObject
             % add label
             obj.labelText = string(labelText);
             obj.label = text(axes, xPos+length/2, yPos-0.5, obj.labelText);
-            
-            % set active
-            if (nargin == 6) && (active == true)
-                obj.Active = true;
-            else
-                obj.Active = false;
-            end
+                       
+            % set super class properties
+            obj.initialize(active);
         end
         
         function update(obj, length)

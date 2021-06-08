@@ -25,13 +25,11 @@ classdef Bar < ActivatablePlotObject
             %   Detailed explanation goes here
             
             % set active
-            if nargin == 7
-                obj.Active = active;
-            else
-                obj.Active = false;
-            end
+            if nargin < 7
+                active = false;
+            end 
             
-            distance = 20; % default value
+            distance = 0; % default value
             % set origin
             obj.origin = [xPos yPos];
             % position the bar
@@ -42,6 +40,9 @@ classdef Bar < ActivatablePlotObject
             obj.hLine.Color = color;
             % add label
             obj.label = text(axes, xPos+distance, yPos-width/2-0.5, string(labelText));
+            
+            % set super class properties
+            obj.initialize(active);
         end
         
         function update(obj, distance)
