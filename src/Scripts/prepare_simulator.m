@@ -92,15 +92,6 @@ function prepare_simulator(options)
     % Open MOBATSim Simulink Model
     open_system(modelName)
 
-    %% Initalize analysing
-    % close vehicle analysing window
-    close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow_tag')); % close analysing window
-    
-    if options.Analysing
-        vehicleAnalysingWindow = VehicleAnalysingWindow(Vehicles, 2);
-    else
-        vehicleAnalysingWindow = false;
-    end
     %% Fault Injection properties (TODO: To be implemented soon)
     FI_distance = 0;
     FI_speed = 0;
@@ -114,12 +105,23 @@ function prepare_simulator(options)
     assignin('base','scenarioSelection',scenarioSelection);
     assignin('base','mapName',mapName);
     assignin('base','Map',Map);
-    assignin('base','Vehicles',Vehicles);
-    assignin('base','vehicleAnalysingWindow',vehicleAnalysingWindow);
+    assignin('base','Vehicles',Vehicles);  
     assignin('base','FI_distance',FI_distance);
     assignin('base','FI_speed',FI_speed);
     assignin('base','SafeDistance',SafeDistance);
 
+    %% Initalize analysing
+    % close vehicle analysing window
+    close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow')); % close analysing window
+    
+    if options.Analysing
+        vehicleAnalysingWindow_Gui = VehicleAnalysingWindow_Gui(Vehicles, 2);
+    else
+        vehicleAnalysingWindow_Gui = false;
+    end
+    
+    assignin('base','vehicleAnalysingWindow_Gui',vehicleAnalysingWindow_Gui);
+    
     %sim(modelName); % Uncomment this line for a single button execution
 
 end

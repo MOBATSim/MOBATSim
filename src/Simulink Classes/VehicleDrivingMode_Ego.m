@@ -24,7 +24,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
     methods(Access = protected)
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
+            obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
         
         function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop, laneChange, destReached] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)

@@ -13,7 +13,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     
     % Pre-computed constants
     properties(Access = private)
-        vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow');
+        vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow_Gui');
         allTestData 
     end
     
@@ -61,7 +61,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             obj.map.dynamicTrafficPlot();
             
             %% Path Dynamic Highlight
-            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0
+            if mod(obj.getCurrentTime,0.2) == 0
                 obj.map.dynamicRouteHighlighting();
             end
             %% Collision detection
@@ -77,7 +77,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             end
             %% Vehicle Analysing Window TODO: check if should be called here
             if obj.vehicleAnalysingWindow ~= false % call only if window is generated
-                obj.vehicleAnalysingWindow.update();
+                obj.vehicleAnalysingWindow.update(obj.getCurrentTime);
             end
          %% Test data for evaluation
             enableLogData = true; % if it is able to log test data

@@ -6,7 +6,6 @@ classdef VehicleAnalysingWindow < handle
         vehicles        % all vehicles that should be shown in the analysis
         egoVehicle      % vehicle the camera focus on
         leadingVehicle  % vehicle in front of ego vehicle if there is one
-        modelName       % simulation model name
         gui             % contains all parts of the gui
             % fig                   figure of the analysis window
             % grid                  grid to align all components of the gui
@@ -24,14 +23,16 @@ classdef VehicleAnalysingWindow < handle
         safeSpace       % contains variables needed for safe space calculation
             % ts            % time step width in sec
             % nrSteps       % number of steps to predict in the future
-        timeStep        % time between two steps TODO: fuse this with safeSpace ts
-        nrSteps         % number of predicted steps TODO: same problem
+        ts              % time between two discrete calculation steps
+        k               % number of steps to predict in the future
     end 
     
     methods
         function obj = VehicleAnalysingWindow(vehicles, egoVehicleId)
             %VEHICLEANALYSINGWINDOW Construct an instance of this class
             %   Detailed explanation goes here
+            % TODO: maybe input simulation time, when analysing window is
+            % called and simulation does not run
             
             % setup properties
             obj.setup(vehicles, egoVehicleId);                              
@@ -53,16 +54,15 @@ classdef VehicleAnalysingWindow < handle
             % setup object properties
             obj.vehicles = vehicles;
             obj.setEgoVehicle(egoVehicleId);
-            obj.leadingVehicle = [];
-            obj.modelName = evalin('base','modelName');    
+            obj.leadingVehicle = [];   
             obj.scenario = obj.setupScenario(scenario_map_v1(), obj.vehicles); % setup the driving scenario
             obj.emergencyBrakeDistance = obj.calculateEmergencyBrakeDistance();
             obj.setTimeToPause(0);
-            obj.getCurrentSimTime();
+            obj.setCurrentSimTime(0);
             obj.safeSpace.ts = 0.1; % TODO: find good default value
             obj.safeSpace.nrSteps = 10; % TODO: find good default value
-            obj.timeStep = 0.1;
-            obj.nrSteps = 10;
+            obj.ts = 0.1;
+            obj.k = 10;
         end
         
         function gui = generateGui(obj, vehicles)
@@ -131,8 +131,12 @@ classdef VehicleAnalysingWindow < handle
             gui.panelEgoVehicle.Layout.Row = 3;
             gui.panelEgoVehicle.Layout.Column = 1;
             
-            % Grid
-            gui.subgridEgoVehicle = uigridlayout(gui.panelEgoVehicle, 'RowHeight', {'fit','fit','fit','fit','fit','fit','fit','fit','fit',20}, ...
+            % Subgrid for different kind of elements like entry or
+            % interaction
+            gui.gridEgoPanel = uigridlayout(gui.panelEgoVehicle, 'RowHeight', {'fit','fit','fit','fit'});
+            % Subgrid for variable entries TODO: rename grid (see
+            % interaction)
+            gui.subgridEgoVehicle = uigridlayout(gui.gridEgoPanel, 'RowHeight', {'fit','fit','fit','fit','fit','fit','fit','fit','fit',20}, ...
                                                                       'ColumnWidth', {'fit','1x','fit','fit'});
             
             % Variable entrys
@@ -140,14 +144,32 @@ classdef VehicleAnalysingWindow < handle
             gui.entryEmBrakeDistance = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Emergency brake distance', 'm', true);
             gui.entryDrivingMode = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Driving mode', '', false);
             gui.entryPredictionBox = obj.generateVariableEntry(gui.subgridEgoVehicle, 'Prediction box for 10 steps', '', true);
-            %TODO: clean this up
-            gui.sliderTimeStep = uislider(gui.subgridEgoVehicle, 'Value', obj.timeStep, ...
-                                                                 'ValueChangedFcn',@(sld,event) obj.timeStepSliderCallback(sld));
-            gui.sliderTimeStep.Layout.Column = [1,3];
-            gui.sliderTimeStep.Limits = [0 0.7];
-            gui.labelTimeStep = uilabel(gui.subgridEgoVehicle, 'Text', 'Ts');
             
-            gui.sliderNrSteps = uislider(gui.subgridEgoVehicle, 'Value', obj.nrSteps, ...
+            % Subgrid for interaction elements
+            gui.subgridEgoInteraction = uigridlayout(gui.gridEgoPanel, 'RowHeight', {'fit','fit','fit','fit','fit','fit','fit','fit','fit',20}, ...
+                                                                      'ColumnWidth', {'fit','fit','fit','fit'});
+            
+            gui.interactionTimeStep = obj.generateInteractionElement(gui.subgridEgoInteraction, obj.ts, 'Ts', 0.7);
+                                                                  
+                                                                  %TODO: clean this up
+            gui.sliderTimeStep = uislider(gui.subgridEgoVehicle, 'Value', obj.ts, ...
+                                                                 'ValueChangedFcn',@(sld,event) obj.timeStepSliderCallback(sld));
+            gui.sliderTimeStep.Layout.Column = 1;
+            gui.sliderTimeStep.Limits = [0 0.7];
+            
+            
+            % Edit fields
+            gui.fieldTimeStep = uieditfield(gui.subgridEgoVehicle,'numeric', ...
+                                                                'ValueDisplayFormat', '%.2f s', ...
+                                                                'Limits', [0 inf], ...
+                                                                'LowerLimitInclusive', false, ...
+                                                                'Value', obj.ts, ...
+                                                                'ValueChangedFcn',@(txt,event) obj.editTimeStepCallback(txt));
+            gui.fieldTimeStep.Layout.Column = [2,3];
+                                                            
+            gui.labelTimeStep = uilabel(gui.subgridEgoVehicle, 'Text', 'Ts');
+                                                            
+            gui.sliderNrSteps = uislider(gui.subgridEgoVehicle, 'Value', obj.k, ...
                                                                  'ValueChangedFcn',@(sld,event) obj.nrStepsSliderCallback(sld));
             gui.sliderNrSteps.Layout.Column = [1,3];
             gui.sliderNrSteps.Limits = [0 50];
@@ -241,12 +263,7 @@ classdef VehicleAnalysingWindow < handle
             % Plotters
             gui.outlinePlotter = outlinePlotter(gui.bep); % plots oultline of cars
             gui.lanePlotter = laneBoundaryPlotter(gui.bep); % plots road lanes
-            
-            % Coverage areas TODO: dont use coverage area for em brake
-            %gui.covAreaEmBrake = CoverageArea(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, ... % start position
-            %                                               obj.egoVehicle.physics.size(2), 0, ... % dimensions
-            %                                               'cyan', 'blue'); % colors
-            
+                        
             % Arrows
             gui.vecEgoVelocity = Arrow(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, ... % start position
                                                     'black'); % color
@@ -259,7 +276,7 @@ classdef VehicleAnalysingWindow < handle
             
             % Prediction Box
             colors = ["blue" "green" "green" "blue"];
-            labels = ["u=2" "u=0" "u=-1" "u=-3"];
+            labels = ["a=2" "a=0" "a=-1" "a=-3"];
             gui.predictionBox = PredictionBox(gui.axesBep, obj.egoVehicle.physics.size(3)/2, 0, 7, colors, labels, true);
             gui.entryPredictionBox.cb.Value = true; % TODO: remove after testing
             
@@ -304,6 +321,26 @@ classdef VehicleAnalysingWindow < handle
             end
         end
         
+        function interactionElement = generateInteractionElement(obj, parent, variable, variableName, upperLimitSlider)
+            % generate a interaction element showing the variable name, an
+            % edit field and a slider for changing
+            % Name field
+            interactionElement.lbl = uilabel(parent, 'Text',variableName);
+            
+            % Edit field
+            interactionElement.editField = uieditfield(parent,'numeric', ...
+                                                              'ValueDisplayFormat', '%.2f s', ...
+                                                              'Limits', [0 inf], ... % TODO: think about setting this limits
+                                                              'LowerLimitInclusive', false, ...
+                                                              'Value', variable, ...
+                                                              'ValueChangedFcn',@(txt,event) obj.editTimeStepCallback(txt)); % TODO: evtl. input callback or use setter from variable
+            % Slider
+            interactionElement.slider = uislider(parent, 'Value', variable, ...
+                                                         'ValueChangedFcn',@(sld,event) obj.timeStepSliderCallback(sld)); % TODO: evtl. input callback or use setter from variable
+            interactionElement.slider.Limits = [0 upperLimitSlider]; % TODO: is only upper limit ok?
+            
+        end
+        
         function areaVelocity = generateAreaVelocity(~, axes, minDeceleration, safeDistance, color)
             % generate an area showing the velocities that still allow the
             % vehicle to slow down to zero with:
@@ -340,12 +377,15 @@ classdef VehicleAnalysingWindow < handle
         end
         
         %% Update functions
-        function update(obj)
-            % update gui
-
-            %% Get information
-            % get new simulation time
-            obj.getCurrentSimTime();
+        function update(obj, currentSimTime)
+            % update gui, this method should be accessible from outside the
+            % class
+            
+            % Optional inputs
+            if nargin == 2 % TODO: use arguments
+                % update with a new simulation time
+                obj.setCurrentSimTime(currentSimTime);
+            end
             
             % get information about the vehicle in front of the ego vehicle
             obj.getLeadingVehicleInfo();
@@ -370,12 +410,6 @@ classdef VehicleAnalysingWindow < handle
             % check if simulation should pause
             obj.checkTimeToPause();
              
-        end
-        
-        function getCurrentSimTime(obj)
-            % Get current simulation time
-            
-            obj.currentSimTime = get_param(obj.modelName,'SimulationTime');
         end
         
         function getLeadingVehicleInfo(obj)
@@ -432,7 +466,7 @@ classdef VehicleAnalysingWindow < handle
             obj.gui.pointActualSet.XData = obj.relativeDistance;
             obj.gui.pointActualSet.YData = obj.relativeSpeed;
             
-            %% predicted sets
+            %% predicted sets TODO: use new ts and k
             nrSteps = obj.safeSpace.nrSteps;
             Ts = obj.safeSpace.ts; % time step
             deltaX = obj.gui.pointActualSet.XData;
@@ -470,13 +504,7 @@ classdef VehicleAnalysingWindow < handle
             %% update roads
             % redraw roads from ego vehicle pose
             rb = roadBoundaries(obj.scenario.Actors(obj.egoVehicle.id)); % Maybe use laneBoundaries and only show a part of the map
-            plotLaneBoundary(obj.gui.lanePlotter,rb);
-
-           
-            
-            %% Coverage areas
-            %.gui.covAreaEmBrake.update(obj.egoVehicle.physics.size(3)/2, obj.egoVehicle.physics.size(3)/2+obj.emergencyBrakeDistance);
-           
+            plotLaneBoundary(obj.gui.lanePlotter,rb);           
             
             %% Arrows
             obj.gui.vecEgoVelocity.update(obj.egoVehicle.dynamics.speed);
@@ -490,11 +518,11 @@ classdef VehicleAnalysingWindow < handle
             
             %% Prediction box
             % Test predict motion parameters TODO: move this part!
-            i=1:obj.nrSteps;
-            futureDistance1 = obj.predictMotion(obj.timeStep, i*2, 0, obj.egoVehicle.dynamics.speed);
-            futureDistance2 = obj.predictMotion(obj.timeStep, i*0, 0, obj.egoVehicle.dynamics.speed);
-            futureDistance3 = obj.predictMotion(obj.timeStep, i*-1, 0, obj.egoVehicle.dynamics.speed);
-            futureDistance4 = obj.predictMotion(obj.timeStep, i*-3, 0, obj.egoVehicle.dynamics.speed);
+            i=1:obj.ts;
+            futureDistance1 = obj.predictMotion(obj.ts, i*2, 0, obj.egoVehicle.dynamics.speed);
+            futureDistance2 = obj.predictMotion(obj.ts, i*0, 0, obj.egoVehicle.dynamics.speed);
+            futureDistance3 = obj.predictMotion(obj.ts, i*-1, 0, obj.egoVehicle.dynamics.speed);
+            futureDistance4 = obj.predictMotion(obj.ts, i*-3, 0, obj.egoVehicle.dynamics.speed);
             
             obj.gui.predictionBox.update([futureDistance1 futureDistance2 futureDistance3 futureDistance4]);
             
@@ -583,6 +611,10 @@ classdef VehicleAnalysingWindow < handle
             n=1:nrSteps; % first value is 1 instead of 0 because of matlab indexing
             futureDistance = curDistance + tStep*nrSteps*curSpeed + ...
                              tStep^2/2*sum(accelerations(n).*(2*nrSteps+1-2*n));
+                         
+            % restrict motion parameters, vehicle should not move backwards
+            if futureSpeed < 0, futureSpeed = 0; end
+            if futureDistance < 0, futureDistance = 0; end
         end
         
         %% Callbacks
@@ -632,30 +664,36 @@ classdef VehicleAnalysingWindow < handle
             % Callback for the edit field for changing the time step of
             % safe space
             
-            obj.safeSpace.ts = txt.Value;
-            obj.updateSafeSpace();
+            obj.ts = txt.Value;
+            obj.updateSafeSpace(); % TODO: not only safe space, now also bep
         end
         
         function editNrStepsCallback(obj, txt)
             % Callback for the edit field for changing the number of steps
             % to predict at safe space
             
-            obj.safeSpace.nrSteps = txt.Value;
+            obj.safeSpace.k = txt.Value;
             obj.updateSafeSpace();
         end
         
         function timeStepSliderCallback(obj, sld)
             % Callback of the time step changing slider
-            obj.timeStep=sld.Value;
+            obj.ts=sld.Value;
             obj.updateBep();
         end
         
         function nrStepsSliderCallback(obj, sld)
             % Callback of the number of steps changing slider
-            obj.nrSteps=sld.Value;
+            obj.k=sld.Value;
             obj.updateBep();
         end
-        %% Setter/Getter
+        %% Setter/Getter 
+                
+        function setCurrentSimTime(obj, currentSimTime)
+            % Set current simulation time
+            
+            obj.currentSimTime = currentSimTime;
+        end
         
         function setTimeToPause(obj, time)
             % set the time to pause simulation

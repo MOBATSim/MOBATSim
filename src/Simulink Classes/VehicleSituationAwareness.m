@@ -24,7 +24,7 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
     methods(Access = protected)
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base',strcat('Vehicle',int2str(obj.Vehicle_id)));
+            obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
         
         function [leaderDistance,emergencyCase] = stepImpl(obj, FrontSensorData)
