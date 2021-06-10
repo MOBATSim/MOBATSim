@@ -113,10 +113,15 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 if (obj.vehicle.pathInfo.routeEndDistance> obj.vehicle.dynamics.speed*obj.vehicle.decisionUnit.LaneSwitchTime)
                     allowed = 1;
                 else
-                    % Check if there is enough distance if the next route is also double lane
-                    plannedNextRoute = obj.vehicle.map.getRouteIDfromPath(obj.vehicle.pathInfo.path([2 3]));
-                    if ~isempty(plannedNextRoute) && ~(obj.vehicle.map.get_lane_number_from_route(plannedNextRoute)==1)
-                        allowed = 1;
+                    % Check if there is a next route
+                    if length(obj.vehicle.pathInfo.path)>=3
+                        % Check if there is enough distance if the next route is also double lane
+                        plannedNextRoute = obj.vehicle.map.getRouteIDfromPath(obj.vehicle.pathInfo.path([2 3]));
+                        if ~isempty(plannedNextRoute) && ~(obj.vehicle.map.get_lane_number_from_route(plannedNextRoute)==1)
+                            allowed = 1;
+                        else
+                            allowed = 0;
+                        end
                     else
                         allowed = 0;
                     end
