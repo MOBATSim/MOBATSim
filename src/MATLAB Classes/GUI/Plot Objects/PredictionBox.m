@@ -12,39 +12,50 @@ classdef PredictionBox < ActivatablePlotObject
     %                |___|       
     % y-Axis <-                   
     %              
-       
+  
+    properties (Access = public)
+        origin      % position of origin [x y]
+        width       % width of prediction box
+    end
+    
     properties (Access = private)
-        bars            % array of object Bar
-        coverageArea    % object Coverage Area
-        origin     % origin of the where the x-distance to the line is measured from
+        bars            (:,:) Bar    % array of object Bar
+        coverageArea            % object Coverage Area
     end
     
     methods
-        function obj = PredictionBox(axes, xPos, yPos, width, colors, labels, active)
+        function obj = PredictionBox(axes, origin, width, option)
             %PredictionBox Construct an instance with origin at xPos,yPos and
             %distance in x direction
             %   Detailed explanation goes here
-            
-            % set active
-            if nargin < 7
-                active = false;
-            end            
+            arguments
+                axes                (1,1) matlab.ui.control.UIAxes
+                origin              (1,2) double = [0 0]        % [x y]
+                width               (1,1) double = 3
+                option.colors       (:,:) = 'blue'              % one bar for every color-label pair
+                option.labels       (1,:) string = ''           % one bar for every color-label pair
+                option.active       (1,1) logical = false       % object active after generation
+            end         
           
-            % set origin
-            obj.origin = [xPos yPos];
+            % set properties
+            obj.origin = origin;
+            obj.width = width;
+            
             % construct all bars
-            for i=1:min([length(colors) length(labels)]) % one bar for every color-label pair
-                obj.bars = [obj.bars Bar(axes, xPos, yPos, width, colors(i), labels(i), active)];
+            for i=1:min([length(option.colors) length(option.labels)]) % one bar for every color-label pair
+                obj.bars(end+1) = Bar(axes, origin, width, 'color',option.colors(i), 'labelText',option.labels(i), 'active',option.active);
             end
             % construct coverage area
-            obj.coverageArea = CoverageArea(axes, xPos, yPos, ... % start position
-                                                  width, 0, ... % dimensions
-                                                  'green', 0.15, ... % inner color
-                                                  'green', 0.15, ... % edge color
-                                                  active);
+            obj.coverageArea = CoverageArea(axes, origin, ... % start position
+                                                  [width 0], ...
+                                                  'faceColor', [0 1 0], ... % green
+                                                  'faceAlpha', 0.15, ...
+                                                  'edgeColor', [0 1 0], ... % green
+                                                  'edgeAlpha', 0.15, ...
+                                                  'active', option.active);
             
             % set super class properties
-            obj.initialize(active);
+            obj.initialize(option.active);
         end
         
         function update(obj, distances)

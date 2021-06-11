@@ -11,41 +11,55 @@ classdef Ruler < ActivatablePlotObject
     %                 | label        
     % y-Axis <-      _|_             
     %              
-       
+    properties (Access = public)
+        origin      % position of origin [x y]
+        width       % width of ruler
+        labelText   % text for describing the ruler measurement
+    end
+    
     properties (Access = private)
         lowerEnd    % lower cross beam
         middle      % middle connection part
         upperEnd    % upper cross beam
-        label       % label that shows content near the middle part of the ruler
-        labelText   % text for describing the ruler measurement
+        label       % label that shows content near the middle part of the ruler       
     end
     
     methods
-        function obj = Ruler(axes, xPos, yPos, width, labelText, active)
+        function obj = Ruler(axes, origin, width, option)
             %RULER Construct an instance with origin at center lower end
             %and plot it into the parent axis component
             %   Detailed explanation goes here
-            
-                        % set active
-            if nargin < 6
-                active = false;
-            end 
-            
-            length = 20; % default value
+            arguments
+                axes                (1,1) matlab.ui.control.UIAxes
+                origin              (1,2) double = [0 0]        % [x y]
+                width               (1,1) double = 3
+                option.length       (1,1) double = 20
+                option.labelText    (1,1) string = ''
+                option.color        (1,:)  = 'black'
+                option.active       (1,1) logical = false       % object active after generation
+            end
+
+             % set properties
+            obj.origin = origin;
+            obj.width = width;
+            obj.labelText = option.labelText;
+
             % position lines to draw a ruler
+            xPos = obj.origin(1);
+            yPos = obj.origin(2);
             obj.lowerEnd = line(axes,[xPos xPos],[yPos-width/2 yPos+width/2]);
-            obj.middle = line(axes,[xPos xPos+length],[yPos yPos]);
-            obj.upperEnd = line(axes,[xPos+length xPos+length],[yPos-width/2 yPos+width/2]);
+            obj.middle = line(axes,[xPos xPos+option.length],[yPos yPos]);
+            obj.upperEnd = line(axes,[xPos+option.length xPos+option.length],[yPos-width/2 yPos+width/2]);
             % change line width
             obj.lowerEnd.LineWidth = 1;
             obj.middle.LineWidth = 1;
             obj.upperEnd.LineWidth = 1;
             % add label
-            obj.labelText = string(labelText);
-            obj.label = text(axes, xPos+length/2, yPos-0.5, obj.labelText);
+            obj.labelText = string(option.labelText);
+            obj.label = text(axes, xPos+option.length/2, yPos-0.5, option.labelText);
                        
             % set super class properties
-            obj.initialize(active);
+            obj.initialize(option.active);
         end
         
         function update(obj, length)

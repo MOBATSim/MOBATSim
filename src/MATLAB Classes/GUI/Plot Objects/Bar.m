@@ -10,39 +10,50 @@ classdef Bar < ActivatablePlotObject
     %                
     %                       
     % y-Axis <-                   
-    %              
+    %
+    
+    properties (Access = public)
+        origin      % position of origin [x y]
+        width       % width of bar
+    end
        
     properties (Access = private)
         hLine       % graphical horizontal line
-        origin      % origin of the where the x-distance to the line is measured from
         label       % label that shows content
     end
     
     methods
-        function obj = Bar(axes, xPos, yPos, width, color, labelText, active)
-            %BAR Construct an instance with origin at xPos,yPos and
-            %distance in x direction
+        function obj = Bar(axes, origin, width, option)
+            %BAR Construct an instance with origin, defined width and at
+            %least a label next to bar
             %   Detailed explanation goes here
+            arguments
+                axes                (1,1) matlab.ui.control.UIAxes
+                origin              (1,2) double = [0 0]        % [x y]
+                width               (1,1) double = 3
+                option.labelText    (1,1) string = ''
+                option.color        (1,:)  = 'green'
+                option.active       (1,1) logical = false       % object active after generation
+            end
+
+            % set properties
+            obj.origin = origin;
+            obj.width = width;             
             
-            % set active
-            if nargin < 7
-                active = false;
-            end 
             
-            distance = 0; % default value
-            % set origin
-            obj.origin = [xPos yPos];
             % position the bar
-            obj.hLine = line(axes,[xPos+distance xPos+distance],[yPos-width/2 yPos+width/2]);
+            xPos = obj.origin(1);
+            yPos = obj.origin(2);
+            obj.hLine = line(axes,[xPos xPos],[yPos-width/2 yPos+width/2]);
             % change line width
             obj.hLine.LineWidth = 1;
             % set color
-            obj.hLine.Color = color;
+            obj.hLine.Color = option.color;
             % add label
-            obj.label = text(axes, xPos+distance, yPos-width/2-0.5, string(labelText));
+            obj.label = text(axes, xPos, yPos-width/2-0.5, option.labelText);
             
             % set super class properties
-            obj.initialize(active);
+            obj.initialize(option.active);
         end
         
         function update(obj, distance)
