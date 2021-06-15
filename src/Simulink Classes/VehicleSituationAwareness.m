@@ -29,7 +29,7 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
             obj.Vehicles = evalin('base','Vehicles');
         end
         
-        function [leaderSpeed, leaderDistance,emergencyCase] = stepImpl(obj, FrontSensorData)
+        function [leaderSpeed, leaderDistance,emergencyCase] = stepImpl(obj, detectionFrontSensor)
             %This block shouldn't run if the vehicle has reached its
             %destination
             if obj.vehicle.pathInfo.destinationReached
@@ -41,10 +41,10 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
                 leaderSpeed = obj.getLeaderSpeedifExists(obj.Vehicles,obj.Vehicles(obj.Vehicle_id).sensors.vehicleInFrontId);
                 
                 % Output 2: distance to the leading vehicle
-                leaderDistance = FrontSensorData;
+                leaderDistance = detectionFrontSensor; %obj.vehicle.sensors.frontDistance
                 
                 % Output 3: Emergency case signal
-                emergencyCase=obj.determineEmergencyCase(obj.vehicle,FrontSensorData);
+                emergencyCase=obj.determineEmergencyCase(obj.vehicle,leaderDistance);
                 obj.vehicle.setEmergencyCase(emergencyCase);
             end
         end
@@ -67,8 +67,8 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
                 emergencyCase = 2;
                 
             elseif frontDistance < 0
-                % TODO: Check if this happens Level BUG
-                emergencyCase = 2;
+                % May happen with Lane Changing
+                emergencyCase = 0;
             end
         end
         

@@ -32,31 +32,31 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         end
         
         
-        function [V2VcommIDs, ObjectinFront] = stepImpl(obj)
+        function [V2VcommIDs, detectionFrontSensor] = stepImpl(obj)
 
-            frontVehicleID = -1;
+            % Get V2V Data Links (0,1)
+            V2VcommIDs = obj.vehicle.V2VdataLink;
             
             if obj.vehicle.pathInfo.destinationReached %Skip function if the vehicle has reached its destination
                 % 2 Outputs: Vehicle in front id, Distance to the vehicle in front
-                V2VcommIDs = ones(1,10);
-                ObjectinFront = -1;
+                detectionFrontSensor = 1000;
                 % 2 variables needed to register % TODO check if it should be also output of the function
                 rearVehicleID = -1;
                 ObjectBehind = -1;
+                frontVehicleID = -1; % Default value for no detection
                 % Break out
                 
             else
                 % Detect Vehicles around if the ego vehicle is not on halt
                 if obj.vehicle.status.stop ==0 && ~isempty(obj.vehicle.pathInfo.currentTrajectory)
                     % Detection function
-                    [frontVehicleID, ObjectinFront, rearVehicleID, ObjectBehind] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
-                    V2VcommIDs = ones(1,10);         
+                    [frontVehicleID, detectionFrontSensor, rearVehicleID, ObjectBehind] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
                 else
                     % No detection value if the ego vehicle is on halt
-                    V2VcommIDs = ones(1,10);
-                    ObjectinFront = -1;
+                    detectionFrontSensor = 1000;
                     rearVehicleID = -1;
                     ObjectBehind = -1;
+                    frontVehicleID = -1; % Default value for no detection
                 end
                 
             end
@@ -64,7 +64,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             
             % Output1 : V2VcommIDs      -> Vehicle in front id
             % Output2 : ObjectinFront   -> Distance to the vehicle in front
-            obj.vehicle.setVehicleSensorDetection(frontVehicleID,ObjectinFront,rearVehicleID, ObjectBehind)
+            obj.vehicle.setVehicleSensorDetection(frontVehicleID,detectionFrontSensor,rearVehicleID, ObjectBehind)
         end
         
         
