@@ -30,20 +30,17 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
             obj.vehicle = obj.Vehicles(obj.Vehicle_id);
         end
         
-        function [OtherVehiclesFutureData,LeaderSpeed] = stepImpl(obj,CommunicationID)
+        function OtherVehiclesFutureData = stepImpl(obj,CommunicationID)
             %This block shouldn't run if the vehicle has reached its
             %destination
             if obj.vehicle.pathInfo.destinationReached
-                % Output1: Get lead vehicle speed if there is any
-                LeaderSpeed = -1;               
-                % Output2: Collect Future Data
+           
+                % Output: Collect Future Data
                 OtherVehiclesFutureData = -1;
                 
             else
-                % Output1: Get lead vehicle speed if there is any
-                LeaderSpeed = obj.getLeaderSpeedifExists(obj.Vehicles,CommunicationID);
                 
-                % Output2: Collect Future Data
+                % Output: Collect Future Data
                 OtherVehiclesFutureData = obj.CollectFutureData(obj.vehicle, obj.Vehicles);
             end
         end
@@ -57,15 +54,7 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
             futureData =cat(1,cat(1,[Vehicles(i).decisionUnit]).futureData);
 
         end
-        
-        function LeaderSpeed = getLeaderSpeedifExists(~, Vehicles,CommunicationID)
-            
-            if CommunicationID>0
-                LeaderSpeed = Vehicles(CommunicationID).dynamics.speed;
-            else
-                LeaderSpeed = 0;
-            end
-        end
+
         
     %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
@@ -118,36 +107,32 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
             flag = true;
         end
 
-        function [out,out2] = getOutputSizeImpl(~)
+        function out = getOutputSizeImpl(~)
             % Return size for each output port
             out = [8000 6];
-            out2 = [1 1];
 
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
         end
 
-        function [out,out2] = getOutputDataTypeImpl(~)
+        function out = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
-            out2 = 'double';
 
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
 
-        function [out,out2] = isOutputComplexImpl(~)
+        function out = isOutputComplexImpl(~)
             % Return true for each output port with complex data
             out = false;
-            out2 = false;
             % Example: inherit complexity from first input port
             % out = propagatedInputComplexity(obj,1);
         end
 
-        function [out,out2] = isOutputFixedSizeImpl(~)
+        function out = isOutputFixedSizeImpl(~)
             % Return true for each output port with fixed size
             out = false;
-            out2 = true;
 
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
