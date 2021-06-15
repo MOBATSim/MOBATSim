@@ -41,15 +41,15 @@ classdef VehicleCommunication_v2v < matlab.System & handle & matlab.system.mixin
             else
                 
                 % Output: Collect Future Data
-                OtherVehiclesFutureData = obj.CollectFutureData(obj.vehicle, obj.Vehicles);
+                OtherVehiclesFutureData = obj.CollectFutureData(obj.Vehicles, CommunicationID);
             end
         end
         
-        function futureData = CollectFutureData(~,car, Vehicles)
+        function futureData = CollectFutureData(obj, Vehicles, CommunicationID)
             i = 1:length(Vehicles);
             
-            i = i(car.V2VdataLink==1); % Remove the vehicles that don't have V2V connection to the car
-            i(car.id)=[]; % Remove the car with the same id
+            i = i(CommunicationID==1); % Remove the vehicles that don't have V2V connection to the car
+            i(obj.vehicle.id)=[]; % Remove the car with the same id
 
             futureData =cat(1,cat(1,[Vehicles(i).decisionUnit]).futureData);
 

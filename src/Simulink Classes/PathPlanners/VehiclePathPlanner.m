@@ -66,6 +66,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     % Build the future plan by deriving the next routes and building the path
                     FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
                     waypointReached =1;                                 %Output 2: Waypoint Reached enabler
+                    obj.vehicle.decisionUnit.futureData = FuturePlan;
                     
                     %% ------------------------------ FuturePlan Structure ------------------------------ nx6 --------------- 
                     % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | PlannerType

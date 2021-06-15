@@ -12,8 +12,8 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
     
     % Pre-computed constants
     properties(Access = private)
-        vehicle     %Ego Vehicle
-        Vehicles    %Other Vehicles (Used to generate the distance value)
+        vehicle  %Ego Vehicle
+        Vehicles= evalin('base','Vehicles');    %Other Vehicles (Used to generate the distance value)
     end
     
     methods
@@ -28,19 +28,20 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.Vehicles = evalin('base','Vehicles');
             obj.vehicle = obj.Vehicles(obj.Vehicle_id);
         end
         
         
         function [V2VcommIDs, ObjectinFront] = stepImpl(obj)
 
+            frontVehicleID = -1;
+            
             if obj.vehicle.pathInfo.destinationReached %Skip function if the vehicle has reached its destination
                 % 2 Outputs: Vehicle in front id, Distance to the vehicle in front
-                V2VcommIDs = -1;
+                V2VcommIDs = ones(1,10);
                 ObjectinFront = -1;
                 % 2 variables needed to register % TODO check if it should be also output of the function
-                V2VcommID_back = -1;
+                rearVehicleID = -1;
                 ObjectBehind = -1;
                 % Break out
                 
@@ -48,13 +49,13 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 % Detect Vehicles around if the ego vehicle is not on halt
                 if obj.vehicle.status.stop ==0 && ~isempty(obj.vehicle.pathInfo.currentTrajectory)
                     % Detection function
-                    [V2VcommIDs, ObjectinFront, V2VcommID_back, ObjectBehind] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
-                                  
+                    [frontVehicleID, ObjectinFront, rearVehicleID, ObjectBehind] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
+                    V2VcommIDs = ones(1,10);         
                 else
                     % No detection value if the ego vehicle is on halt
-                    V2VcommIDs = -1;
+                    V2VcommIDs = ones(1,10);
                     ObjectinFront = -1;
-                    V2VcommID_back = -1;
+                    rearVehicleID = -1;
                     ObjectBehind = -1;
                 end
                 
@@ -63,7 +64,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             
             % Output1 : V2VcommIDs      -> Vehicle in front id
             % Output2 : ObjectinFront   -> Distance to the vehicle in front
-            obj.vehicle.setVehicleSensorDetection(V2VcommIDs,ObjectinFront,V2VcommID_back, ObjectBehind)
+            obj.vehicle.setVehicleSensorDetection(frontVehicleID,ObjectinFront,rearVehicleID, ObjectBehind)
         end
         
         
@@ -348,9 +349,9 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             % Initialize / reset discrete-state properties
         end
         
-        function [out,out2] = getOutputSizeImpl(~)
+        function [out,out2] = getOutputSizeImpl(obj)
             % Return size for each output port
-            out = [1 1];
+            out = [1 length(obj.Vehicles)];
             out2 = [1 1];
             
             % Example: inherit size from first input port
