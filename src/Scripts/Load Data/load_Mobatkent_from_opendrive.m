@@ -1,13 +1,12 @@
-function [Route_LaneNumber, mapName, waypoints, connections_translation, connections_circle, ...
+function [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
           startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive(convert)
+      %% Map Data for Mobatkent Map
+      
       arguments
           convert (1,1) logical = false
       end
-      
-    %load the new mobatkent map from drivingScenarioDesigner
-    mapName = 'Mobatkent';
     
-    % Run new_map_for_mobatsim.m % this one test the transformation script
+    % Run new_map_for_mobatsim.m % this one test the transformation script of Mobatkent Map from drivingScenarioDesigner
     if convert
         [Route_LaneNumber, waypoints, connections_translation, connections_circle] = map_extend_v1();
     else
