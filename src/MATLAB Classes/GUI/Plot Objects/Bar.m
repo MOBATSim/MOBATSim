@@ -62,8 +62,7 @@ classdef Bar < ActivatablePlotObject
             
             
             if ~obj.Active
-                % deactivate component
-                obj.setVisibility(false);
+                % dont update when not active
                 return;
             end
                 

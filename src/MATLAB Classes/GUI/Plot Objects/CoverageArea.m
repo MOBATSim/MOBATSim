@@ -65,8 +65,7 @@ classdef CoverageArea < ActivatablePlotObject
             % update the x start and end positions
                         
             if ~obj.Active
-                % deactivate component
-                obj.setVisibility(false);
+                % dont update when not active
                 return;
             end
             

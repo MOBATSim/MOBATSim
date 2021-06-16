@@ -12,15 +12,15 @@ classdef Car < ActivatablePlotObject
         position    % position of origin [x y]
         dimension   % dimensions of object [width length]
         yaw         % angle in rad of car in x,y-plane
-        originOffset% offset of the origin from the middle
+        offset      % offset of the origin from the lower left edge             
     end
     
     properties (Access = private)
-        polygon     % plotted polygon showing the car area      
+       polygon     % plotted polygon showing the car area
     end
     
     methods
-        function obj = Car(axes, position, dimension, yaw, option)
+        function obj = Car(axes, position, yaw, dimension,  option)
             %CAR generate an area that displays a car in the plot
             %   xPos, yPos      % origin, located at lower end of x axis and middle of the
             %                   % y axis of the component
@@ -28,12 +28,12 @@ classdef Car < ActivatablePlotObject
             %   active          % activated at start?
             arguments
                 axes                (1,1) matlab.ui.control.UIAxes
-                position            (1,2) double = [0 0]        % [x y]
-                dimension           (1,2) double = [0.1 0.1]    % [width length]
+                position            (1,2) double = [0 0]        % [x y]                
                 yaw                 (1,1) double = 0            % angle in rad of car in x,y-plane
-                option.faceColor    (1,3) double = 'orange'
+                dimension           (1,2) double = [0.1 0.1]    % [width length]
+                option.faceColor    (:,:)        = 'magenta'
                 option.faceAlpha    (1,1) double = 1
-                option.edgeColor    (1,3) double = 'orange' 
+                option.edgeColor    (:,:)        = 'magenta'
                 option.edgeAlpha    (1,1) double = 1
                 option.originOffset (1,2) double = [0 0]        % offset of the rotation center from geometric center
                 option.active       (1,1) logical = false       % object active after generation
@@ -42,22 +42,25 @@ classdef Car < ActivatablePlotObject
             % Set properties
             obj.position = position;
             obj.dimension = dimension;
-            obj.yaw = yaw;
-            obj.originOffset = option.originOffset;
-            
+            obj.yaw = yaw;            
             
             width = dimension(1);
             length = dimension(2);
-            % make a polygon for the car
-            poly = polyshape([0 -width/2; ...
-                               0 width/2; ...
-                               length width/2; ...
-                               length -width/2]);
+            % calculate offset from left lower edge to origin of the car
+            % (rotation center)
+            offset = [length/2+option.originOffset(1) width/2+option.originOffset(2)];
+            % make a polygon with origin at (0,0)
+            poly = polyshape([-offset(1) -offset(2); ...
+                              -offset(1)  offset(2); ...
+                               offset(1)  offset(2); ...
+                               offset(1) -offset(2)]);
+            obj.offset = offset; 
+
             % move to x,y - position
-            poly = translate(poly, position);
+            poly = translate(poly, position); 
             % rotate with yaw angle around the rotation center (geometric
             % center + offset)
-            poly = rotate(poly, rad2deg(yaw), [width/2+option.originOffset(1) length/2+option.originOffset(2)]);
+            poly = rotate(poly, rad2deg(yaw), position+offset);
             % Create colored coverage area
             hold(axes, 'on');
             obj.polygon = plot(axes, poly, ...
@@ -70,32 +73,27 @@ classdef Car < ActivatablePlotObject
             obj.initialize(option.active);
         end
         
-        function update(obj, position, yaw)
-            % update the x start and end positions
+        function update(obj, newPosition, newYaw)
+            % update the position and angle
                         
             if ~obj.Active
-                % deactivate component
-                obj.setVisibility(false);
+                % dont update when not active
                 return;
             end
+                   
+            % repaint at new position
+            obj.polygon.Shape = polyshape([newPosition(1)-obj.offset(1) newPosition(2)-obj.offset(2); ...
+                newPosition(1)-obj.offset(1) newPosition(2)+obj.offset(2); ...
+                newPosition(1)+obj.offset(1) newPosition(2)+obj.offset(2); ...
+                newPosition(1)+obj.offset(1) newPosition(2)-obj.offset(2)]);
+            obj.position = newPosition;
             
-            deltaPosition = obj.position-position;
-            deltaYaw = obj.yaw-yaw;
-            
-            
-            if deltaPosition ~= 0
-                % translate to new position
-                translate(obj.polygon.Shape, deltaPosition);
-            end
-            if deltaYaw ~= 0
-                % rotate to new angle around origin in the middle
-                rotate(obj.polygon.Shape, rad2deg(yaw), [obj.dimension(1)/2+obj.originOffset(1) ...
-                                                         obj.dimension(2)/2+obj.originOffset(2)]);
-            end
-            
-            % Show all components
-            obj.setVisibility(true);
+            % rotate to new angle around origin
+            obj.polygon.Shape = rotate(obj.polygon.Shape, rad2deg(newYaw), newPosition+obj.offset);
+            obj.yaw = newYaw;
+         
         end
+
         
     end
     
