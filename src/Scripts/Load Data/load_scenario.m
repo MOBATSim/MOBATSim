@@ -8,9 +8,9 @@ function [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_sc
            %destinationPoints = [83 51 14 14  14  14 14 14 14 14];
            %maxSpeeds = [7 20 8 10 14 20 10 12 10 10];
 
-            startingPoints =    [46 47 85 3 53 52 64 57 4 63];
-            destinationPoints = [54 54 78 26  3  27 42 25 3 47];
-            maxSpeeds = [3 15 6 7 14 20 10 12 10 10];
+%             startingPoints =    [46 47 85 3 53 52 64 57 4 63];
+%             destinationPoints = [54 54 78 26  3  27 42 25 3 47];
+%             maxSpeeds = [3 15 6 7 14 20 10 12 10 10];
          %% test scenario Qianwei
              %V4 and V3 on the same road testing front collision
             %startingPoints =    [46 47 7 27 85 52 64 57 15 63];
@@ -18,9 +18,9 @@ function [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_sc
             %maxSpeeds = [3 15 50 1 6 10 10 12 10 10];
 
            %V4 go straight, v3 tries to merge， collision
-           %startingPoints =    [46 47 6 7 85 52 64 57 15 63];
-           %destinationPoints = [54 51 27 26  27  78 42 25 49 47];
-           %maxSpeeds = [3 15 30 10 6 10 10 12 10 10];
+           startingPoints =    [46 47 6 7 85 52 64 57 15 63];
+           destinationPoints = [54 51 27 26  27  78 42 25 49 47];
+           maxSpeeds = [3 15 17.85 10 6 10 10 12 10 10];
 
             %% Complex crossroad scenario
     %         startingPoints =    [8  46 29 18 53 52 64 6 15 63];
