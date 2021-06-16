@@ -1,6 +1,6 @@
-function [Route_LaneNumber, mapName, waypoints, connections_circle, connections_translation, ...
+function [Route_LaneNumber, waypoints, connections_circle, connections_translation, ...
           startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Crossmap()
-    mapName = 'Crossmap';
+    %% Map Data for CrossMap
 
     waypoints = [[10 0 -50]
         [10 0 -275]

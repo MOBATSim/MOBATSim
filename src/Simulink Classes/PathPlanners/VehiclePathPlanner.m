@@ -45,15 +45,17 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             obj.inCrossroad = [0 0];
         end
         
-        function [FuturePlan, waypointReached] = stepImpl(obj,OtherVehiclesFutureData)
+        function waypointReached = stepImpl(obj,CommunicationIDs)
             %% Check if destination is reached
             if obj.vehicle.checkifDestinationReached() % If true vehicle stops
                 FuturePlan = obj.vehicle.decisionUnit.futureData;   %Output 1: Future plan of the vehicle
                 waypointReached=1;                                  %Output 2: Waypoint Reached enabler
-            else
+            else            
                 %% Check if the vehicle has reached a waypoint / Then it should reupdate its plan
                 if obj.vehicle.pathInfo.routeCompleted == 1 
 
+                    OtherVehiclesFutureData = obj.CollectFutureData(obj.Map.Vehicles, CommunicationIDs);
+                    
                     obj.vehicle.logWaypointArrivalTimeStamps(get_param(obj.modelName,'SimulationTime')); % Log Time Stamps
 
                     obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false
@@ -66,6 +68,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     % Build the future plan by deriving the next routes and building the path
                     FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
                     waypointReached =1;                                 %Output 2: Waypoint Reached enabler
+                    obj.vehicle.decisionUnit.futureData = FuturePlan;
                     
                     %% ------------------------------ FuturePlan Structure ------------------------------ nx6 --------------- 
                     % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | PlannerType
@@ -122,6 +125,16 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 car.pathInfo.stopAt = 0;
             end
             
+            
+        end
+        
+        function futureData = CollectFutureData(obj, Vehicles, CommunicationIDs)
+            i = 1:length(Vehicles);
+            
+            i = i(CommunicationIDs==1); % Remove the vehicles that don't have V2V connection to the car
+            i(obj.vehicle.id)=[]; % Remove the car with the same id
+            
+            futureData =cat(1,cat(1,[Vehicles(i).decisionUnit]).futureData);
             
         end
         
@@ -244,40 +257,36 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         function flag = isInputSizeLockedImpl(~,~)
             % Return true if input size is not allowed to change while
             % system is running
-            flag = false;
+            flag = true;
         end
         
-        function [out,out2] = getOutputSizeImpl(~)
+        function out = getOutputSizeImpl(~)
             % Return size for each output port
-            out = [4999 6]; % nx6 FutureData
-            out2 = [1 1];
+            out = [1 1];
             
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
         end
         
-        function [out,out2] = getOutputDataTypeImpl(~)
+        function out = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
-            out2 = 'double';
             
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
         
-        function [out,out2] = isOutputComplexImpl(~)
+        function out = isOutputComplexImpl(~)
             % Return true for each output port with complex data
             out = false;
-            out2 = false;
             
             % Example: inherit complexity from first input port
             % out = propagatedInputComplexity(obj,1);
         end
         
-        function [out,out2] = isOutputFixedSizeImpl(~)
+        function out = isOutputFixedSizeImpl(~)
             % Return true for each output port with fixed size
-            out = false;
-            out2 = true;
+            out = true;
             
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);

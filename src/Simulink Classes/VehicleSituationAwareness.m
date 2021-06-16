@@ -11,6 +11,7 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
     % Pre-computed constants
     properties(Access = private)
         vehicle
+        Vehicles
     end
     
     methods
@@ -25,20 +26,25 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
+            obj.Vehicles = evalin('base','Vehicles');
         end
         
-        function [leaderDistance,emergencyCase] = stepImpl(obj, FrontSensorData)
+        function [leaderSpeed, leaderDistance,emergencyCase] = stepImpl(obj, detectionFrontSensor)
             %This block shouldn't run if the vehicle has reached its
             %destination
             if obj.vehicle.pathInfo.destinationReached
                 emergencyCase = -1;
                 leaderDistance = -1;
+                leaderSpeed = -1;
             else
-                % Output 1: distance to the leading vehicle
-                leaderDistance = FrontSensorData;
+                % Output 1: speed of the leading vehicle
+                leaderSpeed = obj.getLeaderSpeedifExists(obj.Vehicles,obj.Vehicles(obj.Vehicle_id).sensors.vehicleInFrontId);
                 
-                % Output 2: Emergency case signal
-                emergencyCase=obj.determineEmergencyCase(obj.vehicle,FrontSensorData);
+                % Output 2: distance to the leading vehicle
+                leaderDistance = detectionFrontSensor; %obj.vehicle.sensors.frontDistance
+                
+                % Output 3: Emergency case signal
+                emergencyCase=obj.determineEmergencyCase(obj.vehicle,leaderDistance);
                 obj.vehicle.setEmergencyCase(emergencyCase);
             end
         end
@@ -61,8 +67,17 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
                 emergencyCase = 2;
                 
             elseif frontDistance < 0
-                % TODO: Check if this happens Level BUG
-                emergencyCase = 2;
+                % May happen with Lane Changing
+                emergencyCase = 0;
+            end
+        end
+        
+        function LeaderSpeed = getLeaderSpeedifExists(~, Vehicles,CommunicationID)
+            
+            if CommunicationID>0
+                LeaderSpeed = Vehicles(CommunicationID).dynamics.speed;
+            else
+                LeaderSpeed = 0;
             end
         end
         
@@ -119,39 +134,39 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
             flag = true;
         end
         
-        function [out,out2] = getOutputSizeImpl(~)
+        function [out,out2,out3] = getOutputSizeImpl(~)
             % Return size for each output port
             out = [1 1];
             out2 = [1 1];
-            
+            out3 = [1 1];
             
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
         end
         
-        function [out,out2] = getOutputDataTypeImpl(~)
+        function [out,out2,out3] = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
             out2 = 'double';
-            
+            out3 = 'double';
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
         
-        function [out,out2] = isOutputComplexImpl(~)
+        function [out,out2,out3] = isOutputComplexImpl(~)
             % Return true for each output port with complex data
             out = false;
             out2 = false;
-            
+            out3 = false;
             % Example: inherit complexity from first input port
             % out = propagatedInputComplexity(obj,1);
         end
         
-        function [out,out2] = isOutputFixedSizeImpl(~)
+        function [out,out2,out3] = isOutputFixedSizeImpl(~)
             % Return true for each output port with fixed size
             out = true;
             out2 = true;
-            
+            out3 = true;
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
         end

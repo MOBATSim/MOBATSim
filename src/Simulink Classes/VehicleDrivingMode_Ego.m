@@ -27,7 +27,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
         
-        function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop, laneChange, destReached] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
+        function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop, laneChange] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
             %This block shouldn't run if the ego vehicle has reached its destination
             if obj.vehicle.pathInfo.destinationReached
                 SpeedReference=0;
@@ -36,10 +36,8 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 DrivingMode = 1;
                 Dist2Stop = -1;
                 laneChange = 0;
-                destReached =1;
                 return;
             end
-            destReached = 0;
             
             % Evaluation of lane-changing maneuver
             laneChange = switch_decision(obj);
@@ -183,7 +181,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             flag = true;
         end
         
-        function [out,out2,out3,out4,out5,out6,out7] = getOutputDataTypeImpl(~)
+        function [out,out2,out3,out4,out5,out6] = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
             out2 = 'double';
@@ -191,14 +189,13 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             out4 = 'double';
             out5 = 'double';
             out6 = 'double';
-            out7 = 'double';
             
             
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
         
-        function [out,out2,out3,out4,out5,out6,out7] = isOutputComplexImpl(~)
+        function [out,out2,out3,out4,out5,out6] = isOutputComplexImpl(~)
             % Return true for each output port with complex data
             out = false;
             out2 = false;
@@ -206,12 +203,11 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             out4 = false;
             out5 = false;
             out6 = false;
-            out7 = false;
             % Example: inherit complexity from first input port
             % out = propagatedInputComplexity(obj,1);
         end
         
-        function [out,out2,out3,out4,out5,out6,out7] = isOutputFixedSizeImpl(~)
+        function [out,out2,out3,out4,out5,out6] = isOutputFixedSizeImpl(~)
             % Return true for each output port with fixed size
             out = true;
             out2 = true;
@@ -219,12 +215,11 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             out4 = true;
             out5 = true;
             out6 = true;
-            out7 = true;
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
         end
         
-        function [out,out2,out3,out4,out5,out6,out7] = getOutputSizeImpl(~)
+        function [out,out2,out3,out4,out5,out6] = getOutputSizeImpl(~)
             % Return size for each output port
             out = [1 1];
             out2 = [1 1];
@@ -232,7 +227,6 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             out4 = [1 1];
             out5 = [1 1];
             out6 = [1 1];
-            out7 = [1 1];
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
         end

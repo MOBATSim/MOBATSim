@@ -36,34 +36,34 @@ function prepare_simulator(options)
 
 
     %% GUI Scenario Config Defaults % TODO: change this part when GUI is changed, does not check base workspace
-    if ~exist('mapSelection','var')
-        mapSelection = 'Mobatkent'; % Default map selection
+    if ~exist('mapName','var')
+        mapName = 'Mobatkent'; % Default map selection
     end
     if ~exist('scenarioSelection','var')&&~exist('CustomScenarioGenerated','var')&&(~exist('RandomScenarioGenerated','var'))
         scenarioSelection = 'Urban City Traffic'; % Default scenario selection
     end
 
     %% Load the Map
-    switch mapSelection  
+    switch mapName  
         case 'Mobatkent'
             %[mapName, waypoints, connections_circle, connections_translation, ...
             %  startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent();
-            [Route_LaneNumber, mapName, waypoints, connections_translation, connections_circle, ...
+            [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
               startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
         case 'Highway'
             open_system('Platoon_Event')
             return
 
         case 'Crossmap'
-            [Route_LaneNumber, mapName, waypoints, connections_circle, connections_translation, ...
+            [Route_LaneNumber, waypoints, connections_circle, connections_translation, ...
               startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Crossmap();             
     end
 
     %% Generate the 2D Map and the instance from the Map class
     if configs.MapType == MapTypes.GridMap
-        Map = GridMap(mapSelection,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
+        Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
     else
-        Map = DigraphMap(mapSelection,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
+        Map = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
     end
     
      assignin('base','Map',Map);
@@ -101,7 +101,6 @@ function prepare_simulator(options)
 
     assignin('base','MapType',MapType);    
     assignin('base','configs',configs);
-    assignin('base','mapSelection',mapSelection);
     assignin('base','scenarioSelection',scenarioSelection);
     assignin('base','mapName',mapName);
     assignin('base','Map',Map);
