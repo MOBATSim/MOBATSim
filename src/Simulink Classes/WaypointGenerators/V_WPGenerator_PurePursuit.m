@@ -130,7 +130,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
         
         
         function [cand_trajPolynom, costTraj]=generateMinJerkTrajectory(obj,car,deltaTfactor)
-            obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
+            obj.laneSwitchStartTime = obj.getCurrentTime;
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];%logging lane-switch start time
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];%coordinates conversion
             T = car.decisionUnit.LaneSwitchTime*deltaTfactor;%delta_T
@@ -386,7 +386,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             car.pathInfo.s = s;% drived length
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
             %             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-            %                 t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
+            %                 t=obj.getCurrentTime-obj.laneSwitchStartTime;
             %                 [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
             %                 if t<=obj.laneSwitchTime%lane-changing is not finished
             %                     obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
@@ -399,7 +399,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             %                         car.pathInfo.laneId = car.pathInfo.laneId-1;
             %                     end
             %                     car.status.canLaneSwitch = 0;%reset flag
-            %                     car.dataLog.laneSwitchEndTime=[car.dataLog.laneSwitchEndTime get_param('MOBATSim','SimulationTime')];%logging endtime
+            %                     car.dataLog.laneSwitchEndTime=[car.dataLog.laneSwitchEndTime obj.getCurrentTime];%logging endtime
             %                     obj.trajPolynom={};%reset polynomial
             %
             %                 end
@@ -432,7 +432,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
             %% apply lane-changing trajectory
 %             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-%                 t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
+%                 t=obj.getCurrentTime-obj.laneSwitchStartTime;
 %                 [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
 %                 if t<=obj.laneSwitchTime%lane-changing is not finished
 %                     obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
@@ -472,7 +472,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             car.pathInfo.s = s;% Arc length
             car.pathInfo.routeEndDistance = routeLength-s;%distance to the current route's endpoint
 %             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-%                 t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
+%                 t=obj.getCurrentTime-obj.laneSwitchStartTime;
 %                 [a0,a1,a2,a3,a4,a5]=deal(obj.trajPolynom{:});% read polynomials
 %                 if t<=obj.laneSwitchTime%lane-changing is not finished
 %                     obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d

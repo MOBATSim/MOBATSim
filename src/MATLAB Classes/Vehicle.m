@@ -60,7 +60,6 @@ classdef Vehicle < handle
         V2VdataLink
         V2IdataLink
         map
-        modelName
     end
     
     methods
@@ -148,8 +147,6 @@ classdef Vehicle < handle
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
             obj.V2I = V2I(id, dataLinkV2I);
-            
-            obj.modelName = evalin('base','modelName');
             
             obj.setPosition(obj.map.get_coordinates_from_waypoint(startingPoint));
             obj.setYawAngle(obj.map.getInitialYawAnglefromWaypoint(startingPoint));
@@ -433,7 +430,7 @@ classdef Vehicle < handle
             car.setRouteCompleted(bool);
             
             if bool
-                car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
+                car.dataLog.totalTravelTime = obj.getCurrentTime;
             else
                 car.dataLog.totalTravelTime = 0;
             end
