@@ -121,7 +121,8 @@ function prepare_simulator(options)
     close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow')); % close analysing window
     
     if options.Analysing
-        vehicleAnalysingWindow_Gui = VehicleAnalysingWindow_Gui(Vehicles, 2);
+        prediction = Prediction(Vehicles, 2); % part for all calculations and stuff shown on vehicle analysing window
+        vehicleAnalysingWindow_Gui = VehicleAnalysingWindow_Gui(prediction);
     else
         vehicleAnalysingWindow_Gui = false;
     end
