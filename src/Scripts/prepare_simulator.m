@@ -2,7 +2,10 @@ function prepare_simulator(options)
     % This function prepares the simulation
     %   After calling this method the simulation can run
     arguments
+
         options.Analysing (1,1) logical = false
+        options.FI_id (1,1) double = 1
+        options.FI_value (1,1) double = 0
     end
     
     %% Init file for MOBATSim
@@ -26,7 +29,7 @@ function prepare_simulator(options)
     
     simSpeed = 1; % For scaling the simulation speed
     Sim_Ts = 0.02; % Sample time of the simulation (may not be stable if changed)
-    Sim_t = 30; % set simulation time
+    Sim_t = 15; % set simulation time
 
     assignin('base','simSpeed',simSpeed);
     assignin('base','Sim_Ts',Sim_Ts);
@@ -75,6 +78,10 @@ function prepare_simulator(options)
     %uncomment line below to undo
     % [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenarioSelection); % default on - for Monte Carlo experiments comment out
 
+    
+    %% TODO: Write here the Function to manipulate the initial maxSpeeds for experiments
+    maxSpeeds = changeMaxSpeedofAVehicle(maxSpeeds,options.FI_id,options.FI_value);
+    
     % Load Vehicles
     Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, simSpeed); % default on - for Monte Carlo experiments comment out
 
@@ -123,4 +130,10 @@ function prepare_simulator(options)
     
     %sim(modelName); % Uncomment this line for a single button execution
 
+end
+
+%% TODO: Move this function to the report generator folder
+function maxSpeed = changeMaxSpeedofAVehicle(maxSpeed,vehicleid,FiVal)
+% Change the corresponding vehicle's maxSpeed
+  maxSpeed(vehicleid) = maxSpeed(vehicleid) + FiVal;
 end
