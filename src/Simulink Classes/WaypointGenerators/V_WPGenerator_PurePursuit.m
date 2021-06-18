@@ -82,7 +82,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             
             % ISSUE 1: runs on straight road as well and becomes inf
             % ISSUE 2: sets the vehicle's maximum speed
-            obj.vehicle.dynamics.maxSpeed = sqrt(0.7*10/obj.curvature);%function of calculating maximum allowed speed on a curved road
+           % obj.vehicle.dynamics.maxSpeed = sqrt(0.7*10/obj.curvature);%function of calculating maximum allowed speed on a curved road
             
         end
         
