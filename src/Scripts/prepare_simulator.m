@@ -29,7 +29,7 @@ function prepare_simulator(options)
     
     simSpeed = 1; % For scaling the simulation speed
     Sim_Ts = 0.02; % Sample time of the simulation (may not be stable if changed)
-    Sim_t = 15; % set simulation time
+    Sim_t = 20; % set simulation time
 
     assignin('base','simSpeed',simSpeed);
     assignin('base','Sim_Ts',Sim_Ts);
