@@ -1,5 +1,5 @@
-classdef Prediction < handle
-    %PREDICITION Makes all the predictions used by Vehicle Analysing Window
+classdef VehiclePredictor < handle
+    %VEHICLEPREDICTOR Makes all the predictions used by Vehicle Analysing Window
     %   Detailed explanation goes here 
     
     properties
@@ -35,8 +35,8 @@ classdef Prediction < handle
     end
     
     methods
-        function obj = Prediction(vehicles, egoVehicleId)
-            %PREDICTION Construct an instance of this class
+        function obj = VehiclePredictor(vehicles, egoVehicleId)
+            %VEHICLEPREDICTOR Construct an instance of this class
             %   Detailed explanation goes here
             
             % set properties
@@ -122,27 +122,6 @@ classdef Prediction < handle
         end
         
         %% Prediction functions
-        
-        function [predictedDistance, predictedSpeed] = predictMovement(~, tStep, accelerations, curDistance, curSpeed)
-            % predict distance and speed with given future accelerations
-            %
-            %   tStep               % time between two acceleration values in s
-            %   accelerations       % row vector of actual and future acceleration values
-            %   curDistance         % current distance covered
-            %   curSpeed            % current speed
-            %
-            % the math of this formulars can be found in DA Pintscher
-            
-            k = length(accelerations)-1; % number of steps to predict, k = 0 means only one step
-            
-            % future speed calculation
-            predictedSpeed = curSpeed + tStep*sum(accelerations);
-            
-            % future distance calculation
-            n=0:k;
-            predictedDistance = curDistance + tStep*(k+1)*curSpeed + ...
-                                tStep^2/2*sum(accelerations(n+1).*(2*k+1-2*n)); % n+1 because of matlab indexing
-        end
         
         function predictedPositions = predictMovementEgoVehicle(obj, accelerations, nrStepsPredict, timeStep )
             % Calculate one prediction for every acceleration profile with
@@ -232,10 +211,10 @@ classdef Prediction < handle
             leadingVehicle = obj.egoVehicle.sensors.leadingVehicle;
             
             % Relative distance
-            if obj.egoVehicle.sensors.frontSensorRange < obj.egoVehicle.sensors.frontDistance
+            if obj.egoVehicle.sensors.frontSensorRange < obj.egoVehicle.sensors.distanceToLeadingVehicle
                 deltaDistance = inf;
             else
-                deltaDistance = obj.egoVehicle.sensors.frontDistance;
+                deltaDistance = obj.egoVehicle.sensors.distanceToLeadingVehicle;
             end
             
             % Relative speed
@@ -283,6 +262,31 @@ classdef Prediction < handle
             % Vehicles
             % get all vehicles and their poses, that are close as 150m to ego vehicle
             [obj.nearVehicles, obj.positionsToEgo, obj.yawToEgo] = obj.getVehiclesNearByEgo(150);
+        end
+    end
+    
+    methods(Static)
+        %% Prediction functions
+        
+        function [predictedDistance, predictedSpeed] = predictMovement(tStep, accelerations, curDistance, curSpeed)
+            % predict distance and speed with given future accelerations
+            %
+            %   tStep               % time between two acceleration values in s
+            %   accelerations       % row vector of actual and future acceleration values
+            %   curDistance         % current distance covered
+            %   curSpeed            % current speed
+            %
+            % the math of this formulars can be found in DA Pintscher
+            
+            k = length(accelerations)-1; % number of steps to predict, k = 0 means only one step
+            
+            % future speed calculation
+            predictedSpeed = curSpeed + tStep*sum(accelerations);
+            
+            % future distance calculation
+            n=0:k;
+            predictedDistance = curDistance + tStep*(k+1)*curSpeed + ...
+                                tStep^2/2*sum(accelerations(n+1).*(2*k+1-2*n)); % n+1 because of matlab indexing
         end
     end
 end
