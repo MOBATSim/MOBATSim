@@ -27,6 +27,14 @@ classdef VehiclePredictor < handle
         nearVehicles            (1,:) logical       % list containing information if vehicle is near by ego vehicle
         positionsToEgo          (:,2) double        % positions of vehicles to ego vehicle
         yawToEgo                (:,1) double        % angle of vehicles to ego vehicle
+        % Prediction error table
+        predictionErrorTable                        % table containing test data for checking prediction quality
+        tableTimeStamp          (:,1) = []          % logged timestamps
+        tableCurvedRoad         (:,1) = []          % is vehicle on curved road at this moment
+        tablePosition           (:,1) = []          % logged positions
+        tablePredictedPosition  (:,1) = NaN         % predicted position for this time
+        tablePositionError      (:,1) = []          % position error for this time stamp
+        simTs                   (1,1) = evalin('base','Sim_Ts')
     end
     
     properties
@@ -225,6 +233,47 @@ classdef VehiclePredictor < handle
             end
         end
         
+        %% Test functions
+        
+        function testPredictionError(obj)
+            % log predicted data, real data and compare
+            
+            if abs(obj.egoVehicle.dynamics.targetAcceleration) < 0.1 ... % only measure when acc = 0 or near 0
+               && (isempty(obj.tableTimeStamp) ...                      % and at start when empty
+               ||(obj.tableTimeStamp(end) ~= obj.currentSimTime)) % or simulation time changed
+                % New time entry
+                obj.tableTimeStamp(end+1) = obj.currentSimTime;
+                
+                % Annotation about curved road
+                % TODO app.tableCurvedRoad(end+1) = % TODO: add steering angle
+                
+                % Actual position
+                obj.tablePosition(end+1) = obj.egoVehicle.dynamics.position(1); % first only on x-Axis TODO: measure distance not one coordinate
+                
+                % Predicted value
+                entryForPrediction = length(obj.tableTimeStamp) + obj.nrStepsPredict*obj.timeSteps/obj.simTs; % actual time entry plus future entries
+                obj.tablePredictedPosition(entryForPrediction) = obj.predictMovement(obj.timeSteps, (1:obj.nrStepsPredict)*0, obj.tablePosition(end), obj.egoVehicle.dynamics.speed);
+            end
+            
+            % Remove all future predicted entries when time jump happend
+            if length(obj.tableTimeStamp) > 1 && ... % at least two table entries
+                (obj.tableTimeStamp(end)-obj.tableTimeStamp(end-1)) > 2*obj.simTs % time jump (two times for preventing rounding errors)
+                % Set future predicted entries except the new one to NaN
+                obj.tablePredictedPosition(length(obj.tableTimeStamp):end-1) = NaN;
+            end
+            
+            if obj.currentSimTime == 15
+                varNames = {'Time','Position','Predicted Position','Position Error'};
+                % resize
+                obj.tablePredictedPosition = obj.tablePredictedPosition(1:length(obj.tableTimeStamp),1);
+                   
+                obj.predictionErrorTable = table(obj.tableTimeStamp, ...
+                                                 obj.tablePosition, ...
+                                                 obj.tablePredictedPosition, ...
+                                                 (obj.tablePosition - obj.tablePredictedPosition), ...
+                                                 'VariableNames', varNames);               
+            end 
+        end
         
         
         %% Update functions
@@ -255,9 +304,10 @@ classdef VehiclePredictor < handle
             obj.roadNetworkEgo = obj.transformToEgoCoord(obj.roadNetwork);
             
             % Prediction
-            % predict delta distances for number of steps in the future
-            % assuming an emergency stop
+            % Emergency stop
             [obj.predictedDeltaDistances, obj.predictedDeltaSpeeds] = obj.predictEgoEmergencyStop();
+            % Test prediction error
+            obj.testPredictionError();
             
             % Vehicles
             % get all vehicles and their poses, that are close as 150m to ego vehicle
