@@ -14,7 +14,6 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         vehicle  %Ego Vehicle
         Vehicles= evalin('base','Vehicles');    %Other Vehicles (Used to generate the distance value)
-        failureRate = evalin('base','V3_FailureRate');
     end
     
     methods
@@ -50,18 +49,8 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             else
                 % Detect Vehicles around if the ego vehicle is not on halt
                 if obj.vehicle.status.stop ==0 && ~isempty(obj.vehicle.pathInfo.currentTrajectory)
-                    %% Fault injection for vehicle 3
-                    if (obj.vehicle.id == 3 && rand()< obj.failureRate) 
-                        detectionFrontSensor = 1000;
-                        rearVehicleID = -1;
-                        ObjectBehind = -1;
-                        frontVehicleID = -1;
-                    %% 
-                    else
-                        % Detection function
-                        [frontVehicleID, detectionFrontSensor, rearVehicleID, ObjectBehind] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
-                    end
-                    
+                    % Detection function
+                    [frontVehicleID, detectionFrontSensor, rearVehicleID, ObjectBehind] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
                 else
                     % No detection value if the ego vehicle is on halt
                     detectionFrontSensor = 1000;

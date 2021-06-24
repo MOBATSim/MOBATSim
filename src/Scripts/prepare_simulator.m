@@ -81,7 +81,6 @@ function prepare_simulator(options)
     
     %% TODO: Write here the Function to manipulate the initial maxSpeeds for experiments
     maxSpeeds = changeMaxSpeedofAVehicle(maxSpeeds,options.FI_id,options.FI_value);
-    %% TODO: add other paremeters here
     
     % Load Vehicles
     Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, simSpeed); % default on - for Monte Carlo experiments comment out
