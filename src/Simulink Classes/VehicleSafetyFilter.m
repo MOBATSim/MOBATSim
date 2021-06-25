@@ -1,5 +1,5 @@
 classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Propagates
-    % Untitled Add summary here
+    % VEHICLESAFETYFILTER Limit target acceleration and steering angle
     %
     % This template includes the minimum set of functions required
     % to define a System object with discrete state.
@@ -37,6 +37,9 @@ classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Prop
                 Stop = 0;
             end
             
+            % safe values in vehicle properties
+            obj.vehicle.dynamics.targetAcceleration = Acc;
+            obj.vehicle.dynamics.targetSteeringAngle = Steering;
         end
 
         function resetImpl(obj)

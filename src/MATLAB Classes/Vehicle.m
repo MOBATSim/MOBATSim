@@ -19,16 +19,20 @@ classdef Vehicle < handle
         %         directionVector
         %         cornering
         %         minDeceleration
+        %         targetAcceleration
+        %         targetSteeringAngle
         sensors
         %         frontSensorRange
         %         AEBdistance
-        %         frontDistance
-        %         vehicleInFrontId
+        %         leadingVehicleId
+        %         distanceToLeadingVehicle
+        %         leadingVehicleSpeed       
         status
         %         emergencyCase
         %         drivingMode
         %         stop
         %         collided
+        %         ttc                           time to collision
         pathInfo
         %         startingTime
         %         currentRoute
@@ -60,7 +64,6 @@ classdef Vehicle < handle
         V2VdataLink
         V2IdataLink
         map
-        modelName
     end
     
     methods
@@ -82,18 +85,21 @@ classdef Vehicle < handle
             obj.dynamics.cornering.iterator = 1;
             obj.dynamics.orientation = [0 1 0 0];
             obj.dynamics.minDeceleration = minDeceleration;
+            obj.dynamics.targetAcceleration = 0;
+            obj.dynamics.targetSteeringAngle = 0;
             
-            obj.sensors.frontSensorRange= frontSensorRange;
-            obj.sensors.AEBdistance = AEBdistance;
-            obj.sensors.frontDistance = 1000;
-            obj.sensors.vehicleInFrontId =0;
+            
+            obj.sensors.frontSensorRange            = frontSensorRange;
+            obj.sensors.AEBdistance                 = AEBdistance;
+            obj.sensors.leadingVehicleId            = 0;
+            obj.sensors.distanceToLeadingVehicle    = 1000;
+            %obj.sensors.leadingVehicleSpeed          TODO: implement this variable
+            % TODO: check following, if they are needed
             obj.sensors.leadingVehicle = []; % Check where they are set and get
-            obj.sensors.behindVehicle = []; % Check where they are set and get
-            obj.sensors.onDoubleLane = 0; % Check where they are set and get
-            obj.sensors.ttc = 1000; % Check where they are set and get
-            obj.sensors.time2surpass = 1000; % Check where they are set and get
-            obj.sensors.behindVehicleDistance = 1000; % Check where they are set and get
+            obj.sensors.behindVehicle = []; % Check where they are set and get % TODO: name it to rearVehicle         
             obj.sensors.behindVehicleSafetyMargin = 1000; % Check where they are set and get
+            obj.sensors.behindVehicleDistance = 1000; % Check where they are set and get
+            
             
             
             obj.setEmergencyCase(0); % no emergency case appears
@@ -102,6 +108,7 @@ classdef Vehicle < handle
             obj.setCollided(false); % vehicle has no collision
             obj.status.canLaneSwitch = 0; % Check where they are set and get
             obj.status.laneSwitchFinish = 0; % Check where they are set and get
+            obj.status.ttc = 1000;
             
             obj.pathInfo.startingTime = startingTime;
             obj.pathInfo.currentTrajectory = [];
@@ -148,8 +155,6 @@ classdef Vehicle < handle
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
             obj.V2I = V2I(id, dataLinkV2I);
-            
-            obj.modelName = evalin('base','modelName');
             
             obj.setPosition(obj.map.get_coordinates_from_waypoint(startingPoint));
             obj.setYawAngle(obj.map.getInitialYawAnglefromWaypoint(startingPoint));
@@ -369,24 +374,24 @@ classdef Vehicle < handle
             car.pathInfo.path = newPath;
         end
         
-        function setVehicleSensorDetection(car,V2VcommID_front, ObjectinFront, V2VcommID_back, ObjectBehind)
-            car.sensors.vehicleInFrontId = V2VcommID_front;
-            car.sensors.frontDistance = ObjectinFront;
+        function setVehicleSensorDetection(car,leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear)
+            car.sensors.leadingVehicleId = leadingVehicleID;
+            car.sensors.distanceToLeadingVehicle = distanceToLeading;
             %% Temp -> TODO: Carry these into Situation Awareness Block
-            if ~(V2VcommID_front==-1) % Register Front Vehicle
-                car.sensors.leadingVehicle = car.map.Vehicles(V2VcommID_front);
+            if ~(leadingVehicleID==-1) % Register Front Vehicle
+                car.sensors.leadingVehicle = car.map.Vehicles(leadingVehicleID);
                 relSpeed = car.dynamics.speed - car.sensors.leadingVehicle.dynamics.speed;
-                car.sensors.ttc = ObjectinFront/relSpeed;
+                car.status.ttc = distanceToLeading/relSpeed;
             else
                 car.sensors.leadingVehicle = [];
-                car.sensors.ttc = inf;
+                car.status.ttc = inf;
                 
             end
             
-            if ~(V2VcommID_back==-1) % Register Behind Vehicle if exists
-                car.sensors.behindVehicle = car.map.Vehicles(V2VcommID_back);
+            if ~(rearVehicleID==-1) % Register Behind Vehicle if exists
+                car.sensors.behindVehicle = car.map.Vehicles(rearVehicleID);
                 relSpeed = car.sensors.behindVehicle.dynamics.speed-car.dynamics.speed;
-                car.sensors.behindVehicleSafetyMargin = ObjectBehind/relSpeed;
+                car.sensors.behindVehicleSafetyMargin = distanceToRear/relSpeed;
             else
                 car.sensors.behindVehicle = [];
                 car.sensors.behindVehicleSafetyMargin = inf;
@@ -433,7 +438,7 @@ classdef Vehicle < handle
             car.setRouteCompleted(bool);
             
             if bool
-                car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
+                car.dataLog.totalTravelTime = obj.getCurrentTime;
             else
                 car.dataLog.totalTravelTime = 0;
             end

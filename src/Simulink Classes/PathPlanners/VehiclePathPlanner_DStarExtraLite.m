@@ -160,7 +160,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             car.setStopStatus(true);
             car.setRouteCompleted(true);
             car.updateActualSpeed(0);
-            car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
+            car.dataLog.totalTravelTime = obj.getCurrentTime;
             car.V2VdataLink(car.V2VdataLink==1) =0;
         end
         
@@ -807,7 +807,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)            
             
-            FuturePlan = obj.dStarExtraLite(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+            FuturePlan = obj.dStarExtraLite(obj.getCurrentTime,OtherVehiclesFutureData);
             
             if size(FuturePlan,2) < 6 % Check if the "-2" tag has already been added
                 FuturePlan = [FuturePlan ones(size(FuturePlan,1),1)*-2]; % TODO: to make it nx6 for now

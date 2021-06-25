@@ -32,56 +32,45 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         end
         
         
-        function [V2VcommIDs, detectionFrontSensor] = stepImpl(obj)
+        function [V2VcommIDs, distanceToLeading] = stepImpl(obj)
 
             % Get V2V Data Links (0,1)
             V2VcommIDs = obj.vehicle.V2VdataLink;
+            % TODO check outputs of this function
             
-            if obj.vehicle.pathInfo.destinationReached %Skip function if the vehicle has reached its destination
-                % 2 Outputs: Vehicle in front id, Distance to the vehicle in front
-                detectionFrontSensor = 1000;
-                % 2 variables needed to register % TODO check if it should be also output of the function
-                rearVehicleID = -1;
-                ObjectBehind = -1;
-                frontVehicleID = -1; % Default value for no detection
-                % Break out
-                
+            
+            if ~obj.vehicle.pathInfo.destinationReached ...         % Detect when destination is not reached
+               && obj.vehicle.status.stop == 0 ...                  % and the ego vehicle is not on halt
+               && ~isempty(obj.vehicle.pathInfo.currentTrajectory)  % and on a trajectory              
+                % Detection function
+                [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = obj.detectVehicles(obj.vehicle,obj.Vehicles);               
             else
-                % Detect Vehicles around if the ego vehicle is not on halt
-                if obj.vehicle.status.stop ==0 && ~isempty(obj.vehicle.pathInfo.currentTrajectory)
-                    % Detection function
-                    [frontVehicleID, detectionFrontSensor, rearVehicleID, ObjectBehind] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
-                else
-                    % No detection value if the ego vehicle is on halt
-                    detectionFrontSensor = 1000;
-                    rearVehicleID = -1;
-                    ObjectBehind = -1;
-                    frontVehicleID = -1; % Default value for no detection
-                end
-                
-            end
-            
+                % Default value for no detection 
+                leadingVehicleID = -1;
+                distanceToLeading = 1000;
+                rearVehicleID = -1;
+                distanceToRear = -1;               
+            end          
             
             % Output1 : V2VcommIDs      -> Vehicle in front id
             % Output2 : ObjectinFront   -> Distance to the vehicle in front
-            obj.vehicle.setVehicleSensorDetection(frontVehicleID,detectionFrontSensor,rearVehicleID, ObjectBehind)
+            obj.vehicle.setVehicleSensorDetection(leadingVehicleID,distanceToLeading,rearVehicleID, distanceToRear)
         end
+         
         
-        
-        
-        function [V2VcommIDs, ObjectinFront, V2VcommID_back, ObjectBehind] = detectVehicles(~ ,car, Vehicles)
-                %% Detect vehicles ahead
-                %[ttc, leadingVehicle] = check_leadingVehicle(obj); %new function from Qihang
-                %% Detect vehicles behind
-                %[behindVehicleSafetyMargin, behindVehicle] = check_behindVehicle(obj); %new function from Qihang
-                
-                %% Default values for the outputs %we can also assign an arbitrary value % TODO remove redundant variables
-                V2VcommIDs = -1;
-                ObjectinFront = 1000;
-                
-                V2VcommID_back = -1;
-                distance_back = 1000; % Redundant variable for ObjectBehind to avoid sending empty assignment at the end of the function
-
+        function [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = detectVehicles(~ ,car, Vehicles)
+            %% Detect vehicles ahead
+            %[ttc, leadingVehicle] = check_leadingVehicle(obj); %new function from Qihang
+            %% Detect vehicles behind
+            %[behindVehicleSafetyMargin, behindVehicle] = check_behindVehicle(obj); %new function from Qihang
+            
+            %% Default values for the outputs %we can also assign an arbitrary value % TODO remove redundant variables
+            leadingVehicleID = -1;
+            distanceToLeading = 1000;
+            
+            rearVehicleID = -1;
+            distance_back = 1000; % Redundant variable for ObjectBehind to avoid sending empty assignment at the end of the function
+            
             %% Sensor information about front and behinds vehicle nearby (on the same route)
             id_distance = [];
             id_distance_back = [];
@@ -111,11 +100,11 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                         id_distance = [id_distance; [id_ relativedistance]];
                         
                     elseif (c_distancetoDestination <= v_distancetoDestination)
-                        % If the "egoVehicle" is ahead of the "vehicle"            
+                        % If the "egoVehicle" is ahead of the "vehicle"
                         distance_back = norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
                         
-                        V2VcommID_back = vehicle_.id; % ID of the vehicle behind                        
-                        id_distance_back = [id_distance_back; [V2VcommID_back distance_back]];
+                        rearVehicleID = vehicle_.id; % ID of the vehicle behind
+                        id_distance_back = [id_distance_back; [rearVehicleID distance_back]];
                     end
                     
                 end
@@ -137,7 +126,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     
                 end
             end
-
+            
             if ~isempty(id_distance)
                 % Front sensor perceives a vehicle in front if it is in range
                 if min(id_distance(:,2)) <= car.sensors.frontSensorRange
@@ -145,19 +134,19 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     rowId = id_distance(:,2)== min(id_distance(:,2));
                     
                     % Register the detected vehicles
-                    V2VcommIDs = id_distance(rowId,1);
-                    ObjectinFront = min(id_distance(:,2));
-                    ObjectBehind = id_distance_back;                    
+                    leadingVehicleID = id_distance(rowId,1);
+                    distanceToLeading = min(id_distance(:,2));
+                    distanceToRear = id_distance_back;
                     return;
                 else
                     % There is a vehicle in front actually but not in the range of the front sensor
-                    ObjectBehind = distance_back;
+                    distanceToRear = distance_back;
                     return;
                 end
                 
             else
                 % There is no vehicle in front, nor any perceived
-                ObjectBehind = distance_back;
+                distanceToRear = distance_back;
                 return;
             end
             
@@ -165,7 +154,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         
        
       %% Will be removed after checking the main function  
-        function [ttc,leadingVehicle] = check_leadingVehicle(obj) 
+        function [ttc,leadingVehicle] = check_leadingVehicle(obj)            
             %this function checks if there's a leading vehicle ahead, if
             %multiple leading vehicles exist, set nearest vehicle to be the
             %leading vehicle
@@ -174,7 +163,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             
 
             %%
-            %traverse leading Vehicle on current route
+            %get nearest leading Vehicle on current route
             for vehicle_ = obj.Vehicles
                 if vehicle_.id == obj.vehicle.id
                     break;

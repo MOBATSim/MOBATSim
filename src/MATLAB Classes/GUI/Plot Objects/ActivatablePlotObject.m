@@ -3,11 +3,23 @@ classdef (Abstract) ActivatablePlotObject < handle
     %be activated to allow showing them
     %   Detailed explanation goes here
     properties
-        Active          % allows the object to be shown
+        Active (1,1) logical = false   % allows the object to be shown
     end
         
-    methods (Access = protected) 
-        % Every plot object needs an function to change visiblity
+    methods      
+        %% setters
+        function set.Active(obj, active)
+            % trigger visibility when property value is changed
+            
+            if obj.Active ~= active
+                obj.setVisibility(active);
+                obj.Active = active;
+            end
+        end
+        
+    end
+           
+    methods (Access = protected)
         function initialize(obj, active)
             % init plot object
             
@@ -15,6 +27,7 @@ classdef (Abstract) ActivatablePlotObject < handle
             obj.Active = active;
             obj.setVisibility(active);
         end
+   
     end
     
     methods (Abstract)
