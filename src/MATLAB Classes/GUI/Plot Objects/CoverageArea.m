@@ -7,56 +7,65 @@ classdef CoverageArea < ActivatablePlotObject
     %   |  |            ^ x
     %   |__|            |
     %               y <- 
-    
+    properties (Access = public)
+        origin      % position of origin [x y]
+        dimension   % dimensions of object [width length]
+    end
     properties (Access = private)
         polygon     % plotted polygon showing the coverage area
-        width       % width of the plotted polygon
     end
     
     methods
-        function obj = CoverageArea(axes,xPos, yPos, width, length, faceColor, faceAlpha, edgeColor, edgeAlpha, active)
+        function obj = CoverageArea(axes, origin, dimension, option)
             %COVERAGEAREA generate an area that shows the coverage specified by
             % distance in front of the ego vehicle
-            %   xPos, yPos      % origin, located at lower end of x axis and middle of the
-            %                   % y axis of the component
-            %   width, length   % dimensions of coverage area
-            %   active          % activated at start?
-            
-            % set active when not an input
-            if nargin < 10
-                 active = false;
+            arguments
+                axes                (1,1) matlab.ui.control.UIAxes
+                origin              (1,2) double = [0 0]        % [x y]
+                dimension           (1,2) double = [0.1 0.1]    % [width length]
+                option.faceColor    (1,:)  = 'cyan'
+                option.faceAlpha    (1,1) double = 0.3
+                option.edgeColor    (1,:)  = 'cyan'
+                option.edgeAlpha    (1,1) double = 0.3
+                option.active       (1,1) logical = false       % object active after generation
             end
             
-            % polygons with no width or length are not generated properly
-            if width == 0, width = 0.1; end
-            if length == 0, length = 0.1; end
+            % set properties
+            obj.origin = origin;
+            obj.dimension = dimension;
             
             % make a polygon for the coverage area
+            width = dimension(1);
+            length = dimension(2);
+            % dont generate a polygon without area, does not work
+            if width == 0, width = 0.1; end
+            if length == 0, length = 0.1; end
             poly = polyshape([0 -width/2; ...
                                0 width/2; ...
                                length width/2; ...
                                length -width/2]);
-            obj.width = width;
+                           
             % move to x,y - position
+            xPos = obj.origin(1);
+            yPos = obj.origin(2);
             poly = translate(poly, [xPos, yPos]);            
             % Create colored coverage area
             hold(axes, 'on');
             obj.polygon = plot(axes, poly, ...
-                                     'FaceColor', faceColor, ...
-                                     'EdgeColor', edgeColor, ...
-                                     'FaceAlpha', faceAlpha, ...
-                                     'EdgeAlpha', edgeAlpha);
+                                     'FaceColor', option.faceColor, ...
+                                     'EdgeColor', option.edgeColor, ...
+                                     'FaceAlpha', option.faceAlpha, ...
+                                     'EdgeAlpha', option.edgeAlpha);
             
             % set super class properties
-            obj.initialize(active);
+            obj.initialize(option.active);
         end
         
         function update(obj, xStart, xEnd)
             % update the x start and end positions
                         
             if ~obj.Active
-                % deactivate component
-                obj.setVisibility(false);
+                % dont update when not active
                 return;
             end
             
@@ -66,10 +75,11 @@ classdef CoverageArea < ActivatablePlotObject
             else
                 % Draw with new points (dont change the vertices, this is
                 % buggy with small numbers)
-                obj.polygon.Shape = polyshape([xStart -obj.width/2; ...
-                               xStart obj.width/2; ...
-                               xEnd obj.width/2; ...
-                               xEnd -obj.width/2]);
+                width = obj.dimension(1);
+                obj.polygon.Shape = polyshape([xStart -width/2; ...
+                               xStart width/2; ...
+                               xEnd width/2; ...
+                               xEnd -width/2]);
 
                 % Show all components
                 obj.setVisibility(true);

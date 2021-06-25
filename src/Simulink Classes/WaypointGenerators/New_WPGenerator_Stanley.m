@@ -117,7 +117,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         
         
         function trajPolynom=generateMinJerkTrajectory(obj,car,T)
-            obj.laneSwitchStartTime = get_param('MOBATSim','SimulationTime');
+            obj.laneSwitchStartTime = obj.getCurrentTime;
             car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];%logging lane-switch start time
             obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];%coordinates conversion
             
@@ -253,7 +253,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         end
 
         function generateLaneChanging_WPs(obj, car) 
-            t=get_param('MOBATSim','SimulationTime')-obj.laneSwitchStartTime;
+            t=obj.getCurrentTime-obj.laneSwitchStartTime;
             
             % Unfortunately there is no better way than this, double2cell -> deal is slower
             a0=obj.trajPolynom(1);% a0

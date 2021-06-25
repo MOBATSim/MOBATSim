@@ -13,7 +13,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         Map = evalin('base','Map');
         accelerationPhase;
         simSpeed = evalin('base','simSpeed');
-        modelName = evalin('base','modelName');
         futureData
         breakingFlag
         inCrossroad % [crossroadId crossroadZone]
@@ -56,7 +55,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
 
                     OtherVehiclesFutureData = obj.CollectFutureData(obj.Map.Vehicles, CommunicationIDs);
                     
-                    obj.vehicle.logWaypointArrivalTimeStamps(get_param(obj.modelName,'SimulationTime')); % Log Time Stamps
+                    obj.vehicle.logWaypointArrivalTimeStamps(obj.getCurrentTime); % Log Time Stamps
 
                     obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false
                     %% OtherVehiclesFutureData Processing
@@ -84,7 +83,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 obj.crossroadCheck(obj.vehicle);
             end
             %% Grid path generation
-            if mod(get_param(obj.modelName,'SimulationTime'),0.2) == 0 % Plotting can decrease performance (update at every 0.2 seconds)
+            if mod(obj.getCurrentTime,0.2) == 0 % Plotting can decrease performance (update at every 0.2 seconds)
                 if isa(obj.Map,'GridMap') % BOGPath is only generated if the Map type is GridMap
                     obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
                 end
@@ -109,7 +108,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 end
                 
                 if car.map.crossroadUnits(crossroadId).params.conventionalTrafficLights == 1
-                    car.map.crossroadUnits(crossroadId).updateTrafficStateFromConventionalSystem(get_param(obj.modelName,'SimulationTime'));
+                    car.map.crossroadUnits(crossroadId).updateTrafficStateFromConventionalSystem(obj.getCurrentTime);
                 end
                 
                 if crossroadZone == 2

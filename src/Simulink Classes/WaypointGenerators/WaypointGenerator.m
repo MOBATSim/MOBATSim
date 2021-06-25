@@ -11,7 +11,6 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         vehicle
         map = evalin('base','Map');
         simSpeed = evalin('base','simSpeed');
-        modelName = evalin('base','modelName');
         
         laneWidth = 3.7; % Standard road width
         curvature = 0;%curvature of the current road

@@ -23,7 +23,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             starting_point = obj.vehicle.pathInfo.lastWaypoint;
             ending_point = obj.vehicle.pathInfo.destinationPoint;
             
-            [Path,newFutureData] = obj.AStarPathfinder(obj.vehicle, starting_point, ending_point, get_param(obj.modelName,'SimulationTime'), OtherVehiclesFutureData);
+            [Path,newFutureData] = obj.AStarPathfinder(obj.vehicle, starting_point, ending_point, obj.getCurrentTime, OtherVehiclesFutureData);
             
             obj.vehicle.setPath(Path);
             FuturePlan = newFutureData; 

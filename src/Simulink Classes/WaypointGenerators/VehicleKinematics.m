@@ -12,7 +12,6 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
         vehicle
         map = evalin('base','Map');
         simSpeed = evalin('base','simSpeed');
-        modelName = evalin('base','modelName');
     end
     
     methods(Access = protected)

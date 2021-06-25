@@ -38,10 +38,10 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
                 leaderSpeed = -1;
             else
                 % Output 1: speed of the leading vehicle
-                leaderSpeed = obj.getLeaderSpeedifExists(obj.Vehicles,obj.Vehicles(obj.Vehicle_id).sensors.vehicleInFrontId);
+                leaderSpeed = obj.getLeaderSpeedifExists(obj.Vehicles,obj.Vehicles(obj.Vehicle_id).sensors.leadingVehicleId);
                 
                 % Output 2: distance to the leading vehicle
-                leaderDistance = detectionFrontSensor; %obj.vehicle.sensors.frontDistance
+                leaderDistance = detectionFrontSensor; %obj.vehicle.sensors.distanceToLeadingVehicle
                 
                 % Output 3: Emergency case signal
                 emergencyCase=obj.determineEmergencyCase(obj.vehicle,leaderDistance);
@@ -49,24 +49,24 @@ classdef VehicleSituationAwareness < matlab.System & handle & matlab.system.mixi
             end
         end
         
-        function emergencyCase = determineEmergencyCase(~, car, frontDistance)
+        function emergencyCase = determineEmergencyCase(~, car, distanceToLeadingVehicle)
             if car.status.collided
                 % Level 3 = Vehicle collided
                 emergencyCase = 3;
                 
-            elseif frontDistance > car.sensors.frontSensorRange
+            elseif distanceToLeadingVehicle > car.sensors.frontSensorRange
                 % Level 0 = Safe
                 emergencyCase = 0;
                 
-            elseif frontDistance > car.sensors.AEBdistance
+            elseif distanceToLeadingVehicle > car.sensors.AEBdistance
                 % Level 1 = Vehicle platooning mode
                 emergencyCase = 1;
                 
-            elseif frontDistance > 0
+            elseif distanceToLeadingVehicle > 0
                 % Level 2 = Emergency Brake
                 emergencyCase = 2;
                 
-            elseif frontDistance < 0
+            elseif distanceToLeadingVehicle < 0
                 % May happen with Lane Changing
                 emergencyCase = 0;
             end

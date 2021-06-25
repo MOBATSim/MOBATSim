@@ -350,7 +350,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             car.setStopStatus(true);
             % car.setRouteCompleted(true); % TODO - needs to be removed, keeping it for now just in case
             car.updateActualSpeed(0);
-            car.dataLog.totalTravelTime = get_param(car.modelName,'SimulationTime');
+            car.dataLog.totalTravelTime = obj.getCurrentTime;
             car.V2VdataLink(car.V2VdataLink==1) =0;
         end
       
@@ -388,7 +388,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
         end
         
         function FuturePlan = findPath(obj,OtherVehiclesFutureData)
-            FuturePlan = obj.gridAStar(get_param(obj.modelName,'SimulationTime'),OtherVehiclesFutureData);
+            FuturePlan = obj.gridAStar(obj.getCurrentTime,OtherVehiclesFutureData);
             
             FuturePlan = obj.checkEmptyFutureData(FuturePlan); % TODO: A rare bug occurs when GridA* vehicle arrives last
             FuturePlan(1,6) = -FuturePlan(1,6);% TODO: find the source of the problem rather than this work around
