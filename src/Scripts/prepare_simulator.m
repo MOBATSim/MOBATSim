@@ -6,6 +6,7 @@ function prepare_simulator(options)
         options.Analysing (1,1) logical = false
         options.FI_id (1,1) double = 1
         options.FI_value (1,1) double = 0
+        options.FI_delay (1,1) double = 0
     end
     
     %% Init file for MOBATSim
@@ -82,6 +83,8 @@ function prepare_simulator(options)
     %% TODO: Write here the Function to manipulate the initial maxSpeeds for experiments
     maxSpeeds = changeMaxSpeedofAVehicle(maxSpeeds,options.FI_id,options.FI_value);
     
+    delayTimeV3 = options.FI_delay; % set the delay time of driving mode change for V3 
+    
     % Load Vehicles
     Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, simSpeed); % default on - for Monte Carlo experiments comment out
 
@@ -115,6 +118,7 @@ function prepare_simulator(options)
     assignin('base','FI_distance',FI_distance);
     assignin('base','FI_speed',FI_speed);
     assignin('base','SafeDistance',SafeDistance);
+    assignin('base','delayTimeV3',delayTimeV3);
 
     %% Initalize analysing
     % close vehicle analysing window

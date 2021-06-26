@@ -101,7 +101,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                  TestData(5, i) = obj.Vehicles(1,i).sensors.AEBdistance;
                  TestData(6, i) = obj.Vehicles(1,i).sensors.frontSensorRange;
                  TestData(7, i) = obj.Vehicles(1,i).status.ttc;
-                 TestData(8, i) = obj.Vehicles(1,i).sensors.frontDistance;                 
+                 TestData(8, i) = obj.Vehicles(1,i).sensors.distanceToLeadingVehicle;                 
              end
          end
   %%      
