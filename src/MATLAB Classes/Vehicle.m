@@ -1,12 +1,42 @@
 classdef Vehicle < handle
-    %VEHICLE Summary of this class goes here
-    
-    %   Detailed explanation goes here
-    
+    %VEHICLE Vehicle Class is used to generate Vehicle instances for each vehicle in the simulation.
+    %
+    % VEHICLE Methods:
+    %    Vehicle - Constructer Method
+    %    checkCollision - Checks if a collision has happened with another vehicle
+    %    getHitbox - Gets the hitbox of vehicles to check for collision
+    %    vehiclesCollide - Stops the vehicles if a collision has happened
+    %    checkIntersection - Checks if hitboxes intersect to raise the collision flag
+    %    checkifDestinationReached - Checks if the vehicle has reached its destination waypoint
+    %    logWaypointArrivalTimeStamps - (TODO: Check in detail)
+    %    calculateEstimatedTimeOfArrival - (TODO: Check in detail)
+    %    getAverageAcceleration - (TODO: Check in detail)
+    %    getAccelerationDistance - (TODO: Check in detail)
+    %    timeToReachNextWaypointInAccelerationPhase - (TODO: Check in detail)
+    % SET Methods:
+    %    setDestination - Sets the destination waypoint
+    %    setStopStatus - Stops the vehicle
+    %    setCurrentRoute
+    %    setPath
+    %    setVehicleSensorDetection
+    %    setEmergencyCase
+    %    setDrivingMode
+    %    setCollided
+    %    setCurrentTrajectory
+    %    updateActualSpeed
+    %    updateVehicleFrenetPosition
+    %    setLastWaypoint
+    %    setRouteCompleted
+    %    setDestinationReached
+    %    setCorneringValues - (TODO: Check in detail)
+    %    setRotationAngle
+    %    setYawAngle
+    %    setPosition
+
     properties
-        id
-        simSpeed
-        name
+        id              %    id - Unique id of a vehicle
+        simSpeed        %    simSpeed - X Speed of the simulation (TODO: might be obsolete)
+        name            %    name - A custom name for a vehicle
         drivingBehavior % Check where they are set and get
         physics
         %         size
@@ -26,7 +56,7 @@ classdef Vehicle < handle
         %         AEBdistance
         %         leadingVehicleId
         %         distanceToLeadingVehicle
-        %         leadingVehicleSpeed       
+        %         leadingVehicleSpeed
         status
         %         emergencyCase
         %         drivingMode
@@ -96,7 +126,7 @@ classdef Vehicle < handle
             %obj.sensors.leadingVehicleSpeed          TODO: implement this variable
             % TODO: check following, if they are needed
             obj.sensors.leadingVehicle = []; % Check where they are set and get
-            obj.sensors.behindVehicle = []; % Check where they are set and get % TODO: name it to rearVehicle         
+            obj.sensors.behindVehicle = []; % Check where they are set and get % TODO: name it to rearVehicle
             obj.sensors.behindVehicleSafetyMargin = 1000; % Check where they are set and get
             obj.sensors.behindVehicleDistance = 1000; % Check where they are set and get
             
@@ -137,7 +167,7 @@ classdef Vehicle < handle
             obj.dataLog.platooning = [];
             obj.dataLog.laneSwitchStartTime = []; % Check where they are set and get
             obj.dataLog.laneSwitchEndTime = []; % Check where they are set and get
-            obj.dataLog.MinJerkTrajPolynom = {};% Check where they are set and get 
+            obj.dataLog.MinJerkTrajPolynom = {};% Check where they are set and get
             
             
             obj.map = evalin('base','Map');
@@ -159,7 +189,7 @@ classdef Vehicle < handle
             obj.setPosition(obj.map.get_coordinates_from_waypoint(startingPoint));
             obj.setYawAngle(obj.map.getInitialYawAnglefromWaypoint(startingPoint));
         end %Constructor
-                
+        
         function car = setDestination(car, destination, global_timesteps)
             
             car.pathInfo.destinationPoint = destination;
@@ -167,7 +197,7 @@ classdef Vehicle < handle
             car.setStopStatus(false);
             car.destinationReached = false;
         end
-   
+        
         function checkCollision(vehicle,car)
             %this function should be seperate from the sensor because sensor can be faulty but collision will appear as
             %an accident so to create the conditions for instant stop we need to keep it as a seperate function
@@ -178,26 +208,16 @@ classdef Vehicle < handle
                 % Collision occurs
                 vehicle.vehiclesCollide(car);
             end
-
-        end
             
-        
-        function vehiclesCollide(car1,car2)
-            % set collision on both vehicles and stop them
-            car1.setCollided(true);
-            car1.setStopStatus(true);
-            
-            car2.setCollided(true);
-            car2.setStopStatus(true);     
         end
         
         function Hitbox = getHitbox(car)
-                    
+            
             centerP = [car.dynamics.position(1); -car.dynamics.position(3)];
             angle = car.dynamics.orientation(4); % it isn't always correct on corners
             
             a = car.physics.size(3)/2; % Half length of a vehicle
-            b = car.physics.size(2)/2; % Half width of a vehicle          
+            b = car.physics.size(2)/2; % Half width of a vehicle
             
             p1 =[a; b];
             p2 =[a; -b];
@@ -217,6 +237,15 @@ classdef Vehicle < handle
             
         end
         
+        function vehiclesCollide(car1,car2)
+            % set collision on both vehicles and stop them
+            car1.setCollided(true);
+            car1.setStopStatus(true);
+            
+            car2.setCollided(true);
+            car2.setStopStatus(true);
+        end
+              
         function CollisionFlag = checkIntersection(~,BoxA,BoxB)
             
             CornersAx = transpose(BoxA(1,:));
@@ -238,7 +267,7 @@ classdef Vehicle < handle
                     return;
                 else
                     CollisionFlag = false;
-                    return;                 
+                    return;
                 end
                 
             end
@@ -262,8 +291,8 @@ classdef Vehicle < handle
                     reached = true;
                 else
                     reached = false; %This case should never happen
-                end   
-            end            
+                end
+            end
         end
         
         function logWaypointArrivalTimeStamps(car,TimeStamp)
@@ -275,8 +304,8 @@ classdef Vehicle < handle
         function timeToReach = calculateEstimatedTimeOfArrival(obj,stoppingNode,ETAcarInFront,platooningTimeBehind,global_timesteps)
             distToConflictZone = norm(obj.dynamics.position -  obj.map.get_coordinates_from_waypoint(stoppingNode)) + 100;
             % if vehicle is in acceleration phase
-            if abs(obj.dynamics.speed - obj.dynamics.maxSpeed)>1 
-                averageAcceleration = obj.simSpeed^2 * NN_acceleration([obj.dynamics.speed; obj.dynamics.maxSpeed-obj.dynamics.speed]); % NN_acceleration -> can be replaced by getAverageAcceleration(speedFrom, speedTo) 
+            if abs(obj.dynamics.speed - obj.dynamics.maxSpeed)>1
+                averageAcceleration = obj.simSpeed^2 * NN_acceleration([obj.dynamics.speed; obj.dynamics.maxSpeed-obj.dynamics.speed]); % NN_acceleration -> can be replaced by getAverageAcceleration(speedFrom, speedTo)
                 accelerationDistance =  obj.simSpeed * getAccelerationDistance(obj, averageAcceleration, obj.dynamics.speed, obj.dynamics.maxSpeed);
                 
                 if accelerationDistance < distToConflictZone
@@ -314,7 +343,7 @@ classdef Vehicle < handle
             
             % this is the alternative to the neural network for the
             % acceleration phase. This calculation is based on a polynom,
-            % derived by curve fitting on acceleration measurements. 
+            % derived by curve fitting on acceleration measurements.
             x = speedFrom;
             y = abs(speedTo-speedFrom);
             p00 =      0.1091  ;
@@ -352,24 +381,24 @@ classdef Vehicle < handle
         end
         
         %% SET/GET Functions to control the changes in the properties
-
+        
         function setStopStatus(car, stop)
             car.status.stop = stop;
             if stop % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
-                car.updateActualSpeed(0);               
+                car.updateActualSpeed(0);
             end
         end
         
         function logInitialFuturePlan(car,newFutureData,global_timesteps)
             if global_timesteps == 0 % save the future data at the beginning of the simulation for validation after simulation
                 car.decisionUnit.initialFutureData = newFutureData;
-            end            
+            end
         end
         
         function setCurrentRoute(car, RouteID)
             car.pathInfo.currentRoute = RouteID;
         end
-            
+        
         function setPath(car, newPath)
             car.pathInfo.path = newPath;
         end
@@ -396,19 +425,19 @@ classdef Vehicle < handle
                 car.sensors.behindVehicle = [];
                 car.sensors.behindVehicleSafetyMargin = inf;
             end
-           
+            
         end
         
         function setEmergencyCase(car, EmergencyCase)
-            car.status.emergencyCase = EmergencyCase;         
+            car.status.emergencyCase = EmergencyCase;
         end
         
         function setDrivingMode(car, DrivingMode)
-            car.status.drivingMode = DrivingMode;         
+            car.status.drivingMode = DrivingMode;
         end
         
         function setCollided(car, collided)
-            car.status.collided = collided;         
+            car.status.collided = collided;
         end
         
         function setCurrentTrajectory(car, currentTrajectory)
@@ -449,7 +478,7 @@ classdef Vehicle < handle
             car.dynamics.cornering.angles = 0;
             car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
             car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
-            car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3); 
+            car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
         end
         
         function setRotationAngle(car, step_length)
@@ -469,7 +498,7 @@ classdef Vehicle < handle
             car.dynamics.position = newPosition;
         end
         
-
+        
     end
 end
 
