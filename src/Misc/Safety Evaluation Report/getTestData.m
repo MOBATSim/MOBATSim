@@ -64,7 +64,7 @@ switch testGoal
     case 'M1drivingModeDelay'
         % Delete the previous data
          load('.\src\Misc\Safety Evaluation Report\test_noColiM1.mat');
-         T_noColiM1(1:10,:)=[];
+         T_noColiM1(1:15,:)=[];
          save('.\src\Misc\Safety Evaluation Report\test_noColiM1','T_noColiM1');
          
         nr_Simulations = 5;
@@ -125,8 +125,8 @@ switch testGoal
         
         % Create the matrix of the loops, if we use two layers loop, k in firs layer will be cleared in prepare_simulations()
         loops_M2 = []; %[nr_failure, nr_Simulations]
-        for j =0.3:0.2: nr_failure
-            for k = 1:nr_Simulations
+        for k = 1:nr_Simulations
+            for j =0.3:0.2: nr_failure
                 loops_M2 = [loops_M2; j, k];
             end
         end
@@ -173,7 +173,7 @@ switch testGoal
     case 'L1ConsDrivingModeDelay'
         % Delete the previous data
         load('.\src\Misc\Safety Evaluation Report\test_noColiL1.mat');
-        T_noColiL1(1:4,:)=[];
+        T_noColiL1(1:5,:)=[];
         save('.\src\Misc\Safety Evaluation Report\test_noColiL1','T_noColiL1');
          
         nr_Simulations = 5;
