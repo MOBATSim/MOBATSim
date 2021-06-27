@@ -81,13 +81,13 @@ function prepare_simulator(options)
     % [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenarioSelection); % default on - for Monte Carlo experiments comment out
 
     
-    %% TODO: Write here the Function to manipulate the initial maxSpeeds for experiments
+    %% (Will be moved from here) Fault Injection Parameters
     maxSpeeds = changeMaxSpeedofAVehicle(maxSpeeds,options.FI_id,options.FI_value);
     
     delayTimeV3 = options.FI_delay; % delay time of driving mode change for V3 
-    V3_FailureRate = options.FI_failure; % failure rate of the sensor of V3
+    V3_FailureRate = options.FI_failure; % failure rate of the sensor of V3 
     
-    % Load Vehicles
+    %% Load Vehicles
     Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, simSpeed); % default on - for Monte Carlo experiments comment out
 
     %MonteCarlo_scenarios(); % default off - for Monte Carlo experiments uncomment
