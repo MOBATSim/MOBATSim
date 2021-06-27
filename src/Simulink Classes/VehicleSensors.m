@@ -34,39 +34,39 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         
         
         function [V2VcommIDs, distanceToLeading] = stepImpl(obj)
-
+            
             % Get V2V Data Links (0,1)
             V2VcommIDs = obj.vehicle.V2VdataLink;
             % TODO check outputs of this function
             
             
             if ~obj.vehicle.pathInfo.destinationReached ...         % Detect when destination is not reached
-               && obj.vehicle.status.stop == 0 ...                  % and the ego vehicle is not on halt
-               && ~isempty(obj.vehicle.pathInfo.currentTrajectory)  % and on a trajectory              
-                %% Fault injection for vehicle 3
+                    && obj.vehicle.status.stop == 0 ...                  % and the ego vehicle is not on halt
+                    && ~isempty(obj.vehicle.pathInfo.currentTrajectory)  % and it has a planned trajectory
+                %% (TODO: Remove later)Fault injection for vehicle 3
                 if (obj.vehicle.id ==3 && rand()< obj.failureRate)
                     leadingVehicleID = -1;
                     distanceToLeading = 1000;
                     rearVehicleID = -1;
                     distanceToRear = -1;
-                %%    
-                else  
+                    %%
+                else
                     % Detection function
-                    [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = obj.detectVehicles(obj.vehicle,obj.Vehicles);  
+                    [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
                 end
             else
-                % Default value for no detection 
+                % Default value for no detection
                 leadingVehicleID = -1;
                 distanceToLeading = 1000;
                 rearVehicleID = -1;
-                distanceToRear = -1;               
-            end          
+                distanceToRear = -1;
+            end
             
             % Output1 : V2VcommIDs      -> Vehicle in front id
             % Output2 : ObjectinFront   -> Distance to the vehicle in front
             obj.vehicle.setVehicleSensorDetection(leadingVehicleID,distanceToLeading,rearVehicleID, distanceToRear)
         end
-         
+        
         
         function [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = detectVehicles(~ ,car, Vehicles)
             %% Detect vehicles ahead
@@ -162,16 +162,16 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             
         end
         
-       
-      %% Will be removed after checking the main function  
-        function [ttc,leadingVehicle] = check_leadingVehicle(obj)            
+        
+        %% Will be removed after checking the main function
+        function [ttc,leadingVehicle] = check_leadingVehicle(obj)
             %this function checks if there's a leading vehicle ahead, if
             %multiple leading vehicles exist, set nearest vehicle to be the
             %leading vehicle
             leadingVehicle = [];
             ego_route = obj.vehicle.pathInfo.currentRoute;% Search vehicle on this route
             
-
+            
             %%
             %get nearest leading Vehicle on current route
             for vehicle_ = obj.Vehicles
@@ -204,7 +204,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     if nextRoute == obj.vehicle.pathInfo.currentRoute || vehicle_.id == obj.vehicle.id
                         break;
                     end
-
+                    
                     if isequal(vehicle_.pathInfo.currentRoute,nextRoute)
                         if isempty(leadingVehicle)
                             leadingVehicle = vehicle_;
