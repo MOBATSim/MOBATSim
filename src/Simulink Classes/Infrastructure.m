@@ -92,7 +92,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         end
         %% load test data for safety evaluation
          function TestData = logTestData(obj)
-             TestData = zeros(8, length(obj.Vehicles));
+             TestData = zeros(9, length(obj.Vehicles));
              for i = 1:length(obj.Vehicles)
                  TestData(1, i) = obj.Vehicles(1,i).dynamics.speed;
                  TestData(2, i) = obj.Vehicles(1,i).dynamics.minDeceleration;
@@ -101,7 +101,8 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                  TestData(5, i) = obj.Vehicles(1,i).sensors.AEBdistance;
                  TestData(6, i) = obj.Vehicles(1,i).sensors.frontSensorRange;
                  TestData(7, i) = obj.Vehicles(1,i).status.ttc;
-                 TestData(8, i) = obj.Vehicles(1,i).sensors.distanceToLeadingVehicle;                 
+                 TestData(8, i) = obj.Vehicles(1,i).sensors.distanceToLeadingVehicle;  
+                 TestData(9, i) = obj.Vehicles(1,i).status.emergencyCase;
              end
          end
   %%      
