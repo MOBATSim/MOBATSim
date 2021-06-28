@@ -93,18 +93,27 @@ car10 = vehicle(MOBATKent_Scenario, ...
     
     %% Open the scenario in drivingScenarioDesigner (This way it can be also edited or simulated 3D in Unreal Engine)
     drivingScenarioDesigner(MOBATKent_Scenario)
-
-function car = defineTrajectory(car, waypoints, speed)
-try
-    trajectory(car, waypoints, speed)
-catch
-    [~,I,~] = unique(waypoints, 'rows','stable');
-    waypoints = waypoints(I,:,:);
-    speed = speed(I,:,:);
-    trajectory(car, waypoints, speed);
-end
-
-end
+    
+    function car = defineTrajectory(car, waypoints, speed)
+    try
+        trajectory(car, waypoints, speed)
+    catch
+        [~,I,~] = unique(waypoints, 'rows','stable');
+        waypoints = waypoints(I,:,:);
+        speed = speed(I,:,:);
+        try
+            trajectory(car, waypoints, speed)
+        catch
+            idx =(speed~=0);
+            speed = (speed(idx));
+            waypoints = waypoints(idx,:,:);
+            
+            trajectory(car, waypoints, speed);
+        end
+        
+    end
+    
+    end
 
 
     

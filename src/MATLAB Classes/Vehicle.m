@@ -467,7 +467,7 @@ classdef Vehicle < handle
             car.setRouteCompleted(bool);
             
             if bool
-                car.dataLog.totalTravelTime = obj.getCurrentTime;
+                car.dataLog.totalTravelTime = get_param('MOBATSim','SimulationTime'); % TODO: Check how we can send the time into this function
             else
                 car.dataLog.totalTravelTime = 0;
             end
