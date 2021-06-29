@@ -238,7 +238,7 @@ classdef VehiclePredictor < handle
         function testPredictionError(obj)
             % log predicted data, real data and compare
             
-            if abs(obj.egoVehicle.dynamics.targetAcceleration) < 0.1 ... % only measure when acc = 0 or near 0
+            if abs(obj.egoVehicle.dynamics.acceleration) < 0.1 ... % only measure when acc = 0 or near 0
                && (isempty(obj.tableTimeStamp) ...                      % and at start when empty
                ||(obj.tableTimeStamp(end) ~= obj.currentSimTime)) % or simulation time changed
                 % New time entry
