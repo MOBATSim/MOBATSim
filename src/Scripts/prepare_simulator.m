@@ -134,7 +134,9 @@ function prepare_simulator(options)
         vehicleAnalysingWindow_Gui = false;
     end
     
+    assignin('base','vehiclePredictor',vehiclePredictor);
     assignin('base','vehicleAnalysingWindow_Gui',vehicleAnalysingWindow_Gui);
+    
     
     %sim(modelName); % Uncomment this line for a single button execution
 
