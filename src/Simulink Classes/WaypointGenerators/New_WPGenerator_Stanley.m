@@ -68,10 +68,8 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
                     obj.vehicle.setRouteCompleted(false);                % Vehicle - Set Functions
                     
                 end
-                
-                speedAccordingtoSimulation = speed*0.01*obj.simSpeed;%speed limit on curved road
                                 
-                obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory);
+                obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory);
             
             end
             
@@ -81,7 +79,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         end
         
 
-        function takeRoute(obj,car,speed,refRoute)
+        function takeRoute(obj,car,refRoute)
             RotationVector = refRoute(3,:);
             
             %% Generate lane switching trajectory if commanded
@@ -93,17 +91,17 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             
             %% Generate forward waypoints
             if (RotationVector(1) == 0) %Straight motion
-                obj.move_straight(car,speed,refRoute(2,:));
+                obj.move_straight(car,refRoute(2,:));
                 
             else %Rotational motion
                 P_final = refRoute(2,:);
                 
                 %Determine rotation direction: left or right
                 if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
-                    obj.rotate_left(car,speed,P_final);
+                    obj.rotate_left(car,P_final);
                     
                 elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
-                    obj.rotate_right(car,speed,P_final);
+                    obj.rotate_right(car,P_final);
                 end
             end
             

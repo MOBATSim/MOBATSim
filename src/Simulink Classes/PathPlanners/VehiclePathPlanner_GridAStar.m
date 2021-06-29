@@ -90,7 +90,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                 openList.remove(currentKey);
                 % calculate time over currentGrid
                 [nextSpeed,travelTime] = obj.checkACCOnGrid(currentGrid,currentGrid.speedVector(carID));
-                currentGrid = obj.correctTimeWithFD(carID,nextSpeed,obj.simSpeed,travelTime,currentGrid,futureData);
+                currentGrid = obj.correctTimeWithFD(carID,nextSpeed,travelTime,currentGrid,futureData);
                 %now we can push the currentGrid  to the closed list
                 closedList(currentKey) = currentGrid;  
                 %% for every successor
@@ -106,7 +106,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                     successorGrid = obj.Map.gridLocationMap(successorKey);
                     %% regular search step
                     %if we have yet to reach the goal, we continue the search
-                    successorGrid = obj.getGLCosts(carID,currentGrid.speedVector(carID),currentGrid.timeVector(carID),obj.simSpeed,obj.vehicle.dynamics.maxSpeed,currentGrid.gValue,currentGrid.totalDistance,currentGrid.distance,successorGrid,goalCoordinates);
+                    successorGrid = obj.getGLCosts(carID,currentGrid.speedVector(carID),currentGrid.timeVector(carID),obj.vehicle.dynamics.maxSpeed,currentGrid.gValue,currentGrid.totalDistance,currentGrid.distance,successorGrid,goalCoordinates);
                     %% if we found the goal
                     if strcmp(successorKey , goalKey)
                         %we found the goal node
@@ -203,7 +203,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             end
         end
         
-        function curGL = correctTimeWithFD(~,carID,nextSpeed,simSpeed,travelTime,curGL,futureData)
+        function curGL = correctTimeWithFD(~,carID,nextSpeed,travelTime,curGL,futureData)
             %to know how long we actually took, we need to keep future data
             %in mind
             %FD [carID, coordinates of GL x, y, speed, time, deviation]
@@ -231,7 +231,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                     if curGL.probabilityVector(car) > 0.3 && curGL.speedVector(car) < nextSpeed
                         %% disturbing car on same route
                         nextSpeed = curGL.speedVector(car);
-                        travelTime = (1/ simSpeed) *curGL.distance * (1/ nextSpeed);% 
+                        travelTime = curGL.distance * (1/ nextSpeed);% 
                     end
                 end
                 curGL.timeVector(carID) = travelTime;
@@ -239,13 +239,13 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             end
         end
         
-        function succGL = getGLCosts(~,carID,nextSpeed,travelTime,simSpeed,maxSpeed,curG,curTotalDistance,curDistance,succGL,goalCoordinates)
+        function succGL = getGLCosts(~,carID,nextSpeed,travelTime,maxSpeed,curG,curTotalDistance,curDistance,succGL,goalCoordinates)
             %this function calculates the cost to get through curGL to succGL            
             %% now calculate the g and f values
             succGL.gValue = curG + travelTime;%we need this much time to go to succGL
             succGL.totalDistance = curTotalDistance + curDistance;%we travelled so much so far
             succGL.speedVector(carID) = nextSpeed;%this will be our speed on this GL
-            h = (1/ simSpeed) * (1/maxSpeed) * norm(goalCoordinates - succGL.coordinates);
+            h = 1/maxSpeed * norm(goalCoordinates - succGL.coordinates);
             succGL.fValue = succGL.gValue + h;
             %% calculate deviation
             %deviation d(speed,totalDistance)
@@ -368,13 +368,13 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                 currentTotalDistance = currentGL.totalDistance;
                 if ((currentTotalDistance + distance - accelerationDistance) < 0)
                     % whole route in acceleration phase
-                    timeToReach = (1/ obj.simSpeed) * (-currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration));
-                    nextSpeed = currentSpeed + averageAcceleration*timeToReach * obj.simSpeed;
+                    timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
+                    nextSpeed = currentSpeed + averageAcceleration*timeToReach;
                 else
                     % route is divided in acceleration phase (t1)
                     % and constant speed phase (t2)
-                    t1 = (1/ obj.simSpeed) * (-currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*(accelerationDistance - currentTotalDistance)/averageAcceleration));
-                    t2 =  (1/ obj.simSpeed) * (currentTotalDistance+ distance - accelerationDistance)/ currentGL.speedLimit(obj.vehicle.id);
+                    t1 = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*(accelerationDistance - currentTotalDistance)/averageAcceleration);
+                    t2 = (currentTotalDistance+ distance - accelerationDistance)/ currentGL.speedLimit(obj.vehicle.id);
                     timeToReach = t1+t2;
                     nextSpeed = obj.accelerationPhase(3);
                     obj.accelerationPhase = zeros(1,5); %set acceleration phase to zero
@@ -382,7 +382,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
                 end
                 
             else
-                timeToReach =  (1/ obj.simSpeed) * distance* (1/ currentSpeed); %timesteps to reach neighbour
+                timeToReach = distance* (1/ currentSpeed); %timesteps to reach neighbour
                 nextSpeed = currentSpeed;
             end
         end

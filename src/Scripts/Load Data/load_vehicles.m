@@ -1,4 +1,4 @@
-function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, simSpeed)
+function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes)
     
     % To add a vehicle just add a new name to VehicleNames
     VehicleNames = [{'V1 - Sally Carrera'} ...
@@ -35,7 +35,7 @@ function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, 
         % Generate vehicle
         NewVehicle = Vehicle(j,VehicleNames{j},startingPoints(j),destinationPoints(j),...
         startingTimes(j),maxSpeeds(j),sizes(j,:),dataLinksV2V(j,:),dataLinksV2I(j),masses(j),...
-        simSpeed,frontSensorRange(j),AEBdistance(j),minDeceleration(j));
+        frontSensorRange(j),AEBdistance(j),minDeceleration(j));
     
         % Add to vehicle array
         Vehicles = [Vehicles NewVehicle];

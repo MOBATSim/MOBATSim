@@ -72,14 +72,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                     
                 end
                 
-                speedAccordingtoSimulation = speed*0.01*obj.simSpeed;%speed limit on curved road
-                %Gámez Serna, C., & Ruichek, Y. (2017). Dynamic Speed Adaptation for Path Tracking Based on Curvature Information and Speed Limits. 
-                %Sensors (Basel, Switzerland), 17(6), 1383. https://doi.org/10.3390/s17061383
-                %equation 15
-                
-                %0.01 is the sample time -> obj.getSampleTime.SampleTime creates a huge overhead
-                
-                obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory);
+                obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory);
                 %Output 1: Position of the vehicle
                 %Output 2: Rotation angle of the vehicle
                 
@@ -97,13 +90,13 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
         end
         
 
-        function takeRoute(obj,car,speed,refRoute)
+        function takeRoute(obj,car,refRoute)
             RotationVector = refRoute(3,:);
             
             obj.checkLaneSwitch(car);
 
             if (RotationVector(1) == 0) %Straight motion
-                obj.move_straight(car,speed,refRoute(2,:));
+                obj.move_straight(car,refRoute(2,:));
                 
             else %Rotational motion
 
@@ -111,10 +104,10 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 
                 %Determine rotation direction: left or right
                 if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
-                    obj.rotate_left(car,speed,P_final);
+                    obj.rotate_left(car,P_final);
                     
                 elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
-                    obj.rotate_right(car,speed,P_final);
+                    obj.rotate_right(car,P_final);
                 end
             end
             

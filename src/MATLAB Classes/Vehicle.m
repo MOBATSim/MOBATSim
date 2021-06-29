@@ -35,7 +35,6 @@ classdef Vehicle < handle
 
     properties
         id              %    id - Unique id of a vehicle
-        simSpeed        %    simSpeed - X Speed of the simulation (TODO: might be obsolete)
         name            %    name - A custom name for a vehicle
         drivingBehavior % Check where they are set and get
         physics
@@ -97,9 +96,8 @@ classdef Vehicle < handle
     end
     
     methods
-        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,startingTime,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,simSpeed,frontSensorRange,AEBdistance,minDeceleration)
+        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,startingTime,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration)
             obj.id = id;
-            obj.simSpeed = simSpeed;
             obj.name = car_name;
             
             obj.drivingBehavior.safetyTime = 2; % Check where they are set and get
@@ -174,7 +172,6 @@ classdef Vehicle < handle
             
             %obj.decisionUnit = DecisionUnit;
             obj.decisionUnit.Map = evalin('base','Map');
-            obj.decisionUnit.simSpeed = evalin('base','simSpeed');
             obj.decisionUnit.accelerationPhase = zeros(1,5);
             obj.decisionUnit.initialFutureData = [];
             obj.decisionUnit.futureData = [];
@@ -305,28 +302,28 @@ classdef Vehicle < handle
             distToConflictZone = norm(obj.dynamics.position -  obj.map.get_coordinates_from_waypoint(stoppingNode)) + 100;
             % if vehicle is in acceleration phase
             if abs(obj.dynamics.speed - obj.dynamics.maxSpeed)>1
-                averageAcceleration = obj.simSpeed^2 * NN_acceleration([obj.dynamics.speed; obj.dynamics.maxSpeed-obj.dynamics.speed]); % NN_acceleration -> can be replaced by getAverageAcceleration(speedFrom, speedTo)
-                accelerationDistance =  obj.simSpeed * getAccelerationDistance(obj, averageAcceleration, obj.dynamics.speed, obj.dynamics.maxSpeed);
+                averageAcceleration = NN_acceleration([obj.dynamics.speed; obj.dynamics.maxSpeed-obj.dynamics.speed]); % NN_acceleration -> can be replaced by getAverageAcceleration(speedFrom, speedTo)
+                accelerationDistance = getAccelerationDistance(obj, averageAcceleration, obj.dynamics.speed, obj.dynamics.maxSpeed);
                 
                 if accelerationDistance < distToConflictZone
                     % if the acceleration distance is below the distance to
                     % the conflict zone we have to calculate t1 (time in
                     % accleration phase) and t2 (time in constant speed
                     % phase)
-                    t1 = timeToReachNextWaypointInAccelerationPhase(obj, obj.dynamics.speed, averageAcceleration, accelerationDistance/obj.simSpeed);
-                    t2 = 1/obj.simSpeed * (distToConflictZone-accelerationDistance)/obj.dynamics.maxSpeed;
+                    t1 = timeToReachNextWaypointInAccelerationPhase(obj, obj.dynamics.speed, averageAcceleration, accelerationDistance);
+                    t2 = (distToConflictZone-accelerationDistance)/obj.dynamics.maxSpeed;
                     timeToReach = t1+t2+global_timesteps;
                 else
                     % if the acceleration distance is above the distance to
                     % the conflict zone we can immediately calculate the
                     % time to reach
-                    timeToReach = timeToReachNextWaypointInAccelerationPhase(obj, obj.dynamics.speed, averageAcceleration, distToConflictZone/obj.simSpeed)+global_timesteps;
+                    timeToReach = timeToReachNextWaypointInAccelerationPhase(obj, obj.dynamics.speed, averageAcceleration, distToConflictZone)+global_timesteps;
                     
                 end
             else
                 % if vehicle is not in accleration phase simple constant
                 % speed phase calculation
-                timeToReach = 1/obj.simSpeed * distToConflictZone/obj.dynamics.speed + global_timesteps;
+                timeToReach = distToConflictZone/obj.dynamics.speed + global_timesteps;
             end
             
             
@@ -371,12 +368,12 @@ classdef Vehicle < handle
             
         end
         
-        function accelerationDistance = getAccelerationDistance(obj, averageAcceleration, currentSpeed, speedTo)
+        function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
             delta_v = speedTo-currentSpeed;
             accelerationDistance = delta_v^2/(2*averageAcceleration)+currentSpeed*delta_v/averageAcceleration;
         end
         %% Eigenvalues of Equation 8 in NecSys Paper
-        function timeToReach = timeToReachNextWaypointInAccelerationPhase(obj, currentSpeed, averageAcceleration, distance)
+        function timeToReach = timeToReachNextWaypointInAccelerationPhase(~, currentSpeed, averageAcceleration, distance)
             timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
         end
         

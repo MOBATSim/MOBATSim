@@ -5,7 +5,6 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     % Public, tunable properties
     properties(Access = private)
         map = evalin('base','Map');
-        modelName = evalin('base','modelName');
         Vehicles = evalin('base','Vehicles'); % prepare for logging test data
         Sim_t = evalin('base','Sim_t')% simulation time
     end

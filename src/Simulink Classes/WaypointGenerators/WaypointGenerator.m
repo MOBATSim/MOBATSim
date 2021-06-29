@@ -10,7 +10,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
     properties(Access = protected)
         vehicle
         map = evalin('base','Map');
-        simSpeed = evalin('base','simSpeed');
+        sim_Ts = evalin('base','Sim_Ts');
         
         laneWidth = 3.7; % Standard road width
         curvature = 0;%curvature of the current road
@@ -46,7 +46,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
         
-                function move_straight(obj,car,speed,Destination)
+                function move_straight(obj,car,Destination)
             %% Reference Waypoint Generation
             obj.generateStraightWaypoints(car)
             %%
@@ -66,7 +66,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
 
         end
         
-        function rotate_left(obj ,car, speed,Destination)
+        function rotate_left(obj, car, Destination)
             %% Reference Waypoint Generation
             obj.generateLeftRotationWaypoints(car);
             %%
@@ -87,7 +87,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             
         end
         
-        function rotate_right(obj ,car,speed,Destination)
+        function rotate_right(obj, car, Destination)
             %% Reference Waypoint Generation
             obj.generateRightRotationWaypoints(car);
             %%
@@ -140,7 +140,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
          end
         
               
-        function [position_Cart,orientation_Cart] = Frenet2Cartesian(obj,route,s,d,radian)
+        function [position_Cart,orientation_Cart] = Frenet2Cartesian(~,route,s,d,radian)
             
             %this function transfer a position in Frenet coordinate into Cartesian coordinate
             %input:

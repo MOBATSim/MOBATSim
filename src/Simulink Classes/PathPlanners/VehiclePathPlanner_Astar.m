@@ -88,20 +88,20 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                         averageAcceleration = obj.accelerationPhase(5);
                         if ((currentTotalDistance + distances(currentRoute) - accelerationDistance) < 0)
                             % Whole route in acceleration phase
-                            timeToReach = 1/ obj.simSpeed * obj.timeToReachNextWaypointInAccelerationPhase( currentSpeed, averageAcceleration, distances(currentRoute));
-                            nextSpeed = currentSpeed + averageAcceleration*timeToReach * obj.simSpeed;
+                            timeToReach = obj.timeToReachNextWaypointInAccelerationPhase( currentSpeed, averageAcceleration, distances(currentRoute));
+                            nextSpeed = currentSpeed + averageAcceleration*timeToReach;
                         else
                             % The route is divided in two phases: First acceleration phase (t1)
                             % and the second: Constant speed phase (t2)
-                            t1 = 1/ obj.simSpeed * obj.timeToReachNextWaypointInAccelerationPhase(currentSpeed, averageAcceleration, accelerationDistance - currentTotalDistance);
-                            t2 =  1/ obj.simSpeed * (currentTotalDistance+ distances(currentRoute) - accelerationDistance)/ currentMaxSpeedRoutes(currentRoute);
+                            t1 = obj.timeToReachNextWaypointInAccelerationPhase(currentSpeed, averageAcceleration, accelerationDistance - currentTotalDistance);
+                            t2 = (currentTotalDistance+ distances(currentRoute) - accelerationDistance)/ currentMaxSpeedRoutes(currentRoute);
                             timeToReach = t1+t2;
                             nextSpeed = obj.accelerationPhase(3);
                             obj.accelerationPhase = zeros(1,5); % Set acceleration phase data to zero
                         end
                         
                     else
-                        timeToReach =  1/ obj.simSpeed * distances(currentRoute)/ currentMaxSpeedRoutes(currentRoute); %timesteps to reach neighbour
+                        timeToReach = distances(currentRoute)/ currentMaxSpeedRoutes(currentRoute); %timesteps to reach neighbour
                         nextSpeed = currentSpeed;
                     end
                     %% check for other cars on same route (using merged future data)
@@ -124,7 +124,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                         %differnce = current car exit time - other car exit time
                         timeDifference = (currentTime + timeToReach) - timeToReachDisturbingVehicle ;
                         
-                        spacingTime = 6 * 1/obj.simSpeed;
+                        spacingTime = 6;
                         if (timeDifference < spacingTime)
                             timeToReach = timeToReachDisturbingVehicle + spacingTime - currentTime;
                             nextSpeed = speedDisturbingVehicle;
@@ -137,7 +137,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                     costs = timeToReach;
                     
                     %% calculate heuristic (Luftlinie)
-                    heuristicCosts = 1/ obj.simSpeed * 1/maxSpeed * norm(get_coordinates_from_waypoint(obj.Map, neighbourNode_Route(1))-get_coordinates_from_waypoint(obj.Map, endingPoint));
+                    heuristicCosts = 1/maxSpeed * norm(get_coordinates_from_waypoint(obj.Map, neighbourNode_Route(1))-get_coordinates_from_waypoint(obj.Map, endingPoint));
                     
                     
                     %% update waypoints array

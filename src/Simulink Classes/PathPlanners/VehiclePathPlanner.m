@@ -12,7 +12,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         vehicle
         Map = evalin('base','Map');
         accelerationPhase;
-        simSpeed = evalin('base','simSpeed');
         futureData
         breakingFlag
         inCrossroad % [crossroadId crossroadZone]
@@ -39,7 +38,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
             
             obj.accelerationPhase =  zeros(1,5);
-            obj.simSpeed = evalin('base','simSpeed');
             obj.breakingFlag = 0;
             obj.inCrossroad = [0 0];
         end
@@ -187,7 +185,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         function accelerationPhaseData = setAccelerationPhase(obj,currentSpeed,maxSpeed)
             
             % Neural Network is used to get average acceleration value
-            averageAcceleration = obj.simSpeed^2 * NN_acceleration([currentSpeed; maxSpeed-currentSpeed]);
+            averageAcceleration = NN_acceleration([currentSpeed; maxSpeed-currentSpeed]);
             accelerationDistance = obj.getAccelerationDistance(averageAcceleration, currentSpeed, maxSpeed);
             accelerationPhaseData = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
             

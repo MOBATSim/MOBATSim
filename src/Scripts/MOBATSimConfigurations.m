@@ -3,15 +3,13 @@ classdef MOBATSimConfigurations
     %   Detailed explanation goes here
     properties
         modelName
-        simSpeed
         MapType
         Sim_Ts
     end
     
     methods
-        function obj = MOBATSimConfigurations(modelName,simSpeed,Sim_Ts,MapType)
+        function obj = MOBATSimConfigurations(modelName,Sim_Ts,MapType)
             obj.modelName = modelName;
-            obj.simSpeed = simSpeed;
             obj.Sim_Ts = Sim_Ts;
             obj.MapType = MapType;
             
