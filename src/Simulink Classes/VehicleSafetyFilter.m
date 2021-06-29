@@ -38,8 +38,8 @@ classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Prop
             end
             
             % safe values in vehicle properties
-            obj.vehicle.dynamics.targetAcceleration = Acc;
-            obj.vehicle.dynamics.targetSteeringAngle = Steering;
+            obj.vehicle.dynamics.acceleration = Acc;
+            obj.vehicle.dynamics.steeringAngle = Steering;
         end
 
         function resetImpl(obj)

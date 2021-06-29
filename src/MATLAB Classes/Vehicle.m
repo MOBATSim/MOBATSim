@@ -49,8 +49,8 @@ classdef Vehicle < handle
         %         directionVector
         %         cornering
         %         minDeceleration
-        %         targetAcceleration
-        %         targetSteeringAngle
+        %         acceleration                  acceleration applied to model        
+        %         steeringAngle                 steering angle applied to model
         sensors
         %         frontSensorRange
         %         AEBdistance
@@ -115,8 +115,8 @@ classdef Vehicle < handle
             obj.dynamics.cornering.iterator = 1;
             obj.dynamics.orientation = [0 1 0 0];
             obj.dynamics.minDeceleration = minDeceleration;
-            obj.dynamics.targetAcceleration = 0;
-            obj.dynamics.targetSteeringAngle = 0;
+            obj.dynamics.acceleration = 0;
+            obj.dynamics.steeringAngle = 0;
             
             
             obj.sensors.frontSensorRange            = frontSensorRange;
