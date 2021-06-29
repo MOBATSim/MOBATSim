@@ -63,14 +63,12 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
                     obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
                 end
                 
-                speedAccordingtoSimulation = speed*0.01*obj.simSpeed;%speed limit on curved road
+                speedAccordingtoSimulation = speed*obj.sim_Ts;%speed limit on curved road
                 %Gámez Serna, C., & Ruichek, Y. (2017). Dynamic Speed Adaptation for Path Tracking Based on Curvature Information and Speed Limits.
                 %Sensors (Basel, Switzerland), 17(6), 1383. https://doi.org/10.3390/s17061383
                 %equation 15
                 
-                %0.01 is the sample time -> obj.getSampleTime.SampleTime creates a huge overhead
-                
-                [~, ~] = obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory);
+                [~, ~] = obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory); % TODO: why is this called? could this be removed?
                 %Output 1: Position of the vehicle
                 %Output 2: Rotation angle of the vehicle
                 

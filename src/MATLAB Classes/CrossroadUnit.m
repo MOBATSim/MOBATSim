@@ -11,7 +11,6 @@ classdef CrossroadUnit < handle
         stoppingNodes
         leavingNodes
         trafficStateLookupTable
-        simSpeed
         params
              % deltaStatePriority
              % alpha
@@ -40,7 +39,6 @@ classdef CrossroadUnit < handle
     methods
         function obj = CrossroadUnit(id,startingNodes,breakingNodes,stoppingNodes,leavingNodes)
             obj.id = id;
-            obj.simSpeed = evalin('base','simSpeed');
             obj.trafficStateLookupTable = obj.generateLookupTable(startingNodes);
             obj.startingNodes = startingNodes;
             obj.breakingNodes = breakingNodes;
@@ -180,7 +178,7 @@ classdef CrossroadUnit < handle
             if obj.params.intelligentDecision == 0
                     arrivingDirection = find(breakingNode == obj.breakingNodes);
                     leavingDirection = find(car.pathInfo.path(3) == obj.leavingNodes);
-                    TTR = 1/obj.simSpeed * 190/car.dynamics.speed + global_timesteps;
+                    TTR = 190/car.dynamics.speed + global_timesteps;
 
                     obj.arrivingQueue = [obj.arrivingQueue ;[car.id arrivingDirection leavingDirection TTR]];
              

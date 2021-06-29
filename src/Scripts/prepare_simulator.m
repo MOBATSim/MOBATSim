@@ -25,19 +25,14 @@ function prepare_simulator(options)
 
 
     %% MOBATSim Configurations
-    modelName = 'MOBATSim';
-    
-    assignin('base','modelName',modelName);
-    
-    simSpeed = 1; % For scaling the simulation speed
+    modelName = 'MOBATSim';    
     Sim_Ts = 0.02; % Sample time of the simulation (may not be stable if changed)
     Sim_t = 20; % set simulation time
 
-    assignin('base','simSpeed',simSpeed);
     assignin('base','Sim_Ts',Sim_Ts);
     assignin('base','Sim_t',Sim_t);
     
-    configs = MOBATSimConfigurations(modelName,simSpeed,Sim_Ts,MapType); % MapType: 'GridMap' or 'DigraphMap'
+    configs = MOBATSimConfigurations(modelName,Sim_Ts,MapType); % MapType: 'GridMap' or 'DigraphMap'
 
 
     %% GUI Scenario Config Defaults % TODO: change this part when GUI is changed, does not check base workspace
@@ -88,7 +83,7 @@ function prepare_simulator(options)
     V3_FailureRate = options.FI_failure; % failure rate of the sensor of V3 
     
     %% Load Vehicles
-    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, simSpeed); % default on - for Monte Carlo experiments comment out
+    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes); % default on - for Monte Carlo experiments comment out
 
     %MonteCarlo_scenarios(); % default off - for Monte Carlo experiments uncomment
 
@@ -111,6 +106,7 @@ function prepare_simulator(options)
 
     %% Assign all needed variables to base workspace TODO: check if they all needed in base workspace
 
+    assignin('base','modelName',modelName); % used by the run_Sim script
     assignin('base','MapType',MapType);    
     assignin('base','configs',configs);
     assignin('base','scenarioSelection',scenarioSelection);
@@ -121,7 +117,7 @@ function prepare_simulator(options)
     assignin('base','FI_speed',FI_speed);
     assignin('base','SafeDistance',SafeDistance);
     assignin('base','delayTimeV3',delayTimeV3);
-    assignin('base','V3_FailureRate',V3_FailureRate)
+    assignin('base','V3_FailureRate',V3_FailureRate);
 
     %% Initalize analysing
     % close vehicle analysing window
@@ -130,11 +126,12 @@ function prepare_simulator(options)
     if options.Analysing
         vehiclePredictor = VehiclePredictor(Vehicles, 2); % part for all calculations and stuff shown on vehicle analysing window
         vehicleAnalysingWindow_Gui = VehicleAnalysingWindow_Gui(vehiclePredictor);
+        assignin('base','vehiclePredictor',vehiclePredictor);
     else
         vehicleAnalysingWindow_Gui = false;
     end
     
-    assignin('base','vehiclePredictor',vehiclePredictor);
+    
     assignin('base','vehicleAnalysingWindow_Gui',vehicleAnalysingWindow_Gui);
     
     

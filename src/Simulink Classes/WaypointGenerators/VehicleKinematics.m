@@ -11,7 +11,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
     properties(Access = private)
         vehicle
         map = evalin('base','Map');
-        simSpeed = evalin('base','simSpeed');
+        sim_Ts = evalin('base','Sim_Ts');
     end
     
     methods(Access = protected)
@@ -41,8 +41,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
                     obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
                 end
                 
-                speedAccordingtoSimulation = speed*0.01*obj.simSpeed;
-                %0.01 is the sample time -> obj.getSampleTime.SampleTime creates a huge overhead
+                speedAccordingtoSimulation = speed*obj.sim_Ts;
                 
                 [position, rotation] = obj.takeRoute(obj.vehicle,speedAccordingtoSimulation,obj.vehicle.pathInfo.currentTrajectory);
                 %Output 1: Position of the vehicle

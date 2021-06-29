@@ -76,7 +76,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             obj.maxEdgeSpeed = speedRoutes;
             distances = obj.Map.connections.distances;
             %calculate costs
-            obj.edgesCost = (1/ obj.simSpeed) .* distances .* (1./ speedRoutes);
+            obj.edgesCost = distances .* (1./ speedRoutes);
             
             %rest
             %visited(sgoal)=true
@@ -478,13 +478,13 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
 %                             nextSpeed = obj.maxEdgeSpeed(curEdge);
 %                         end
 %                         distance = obj.Map.connections.distances(curEdge);
-%                         newCost = (1/ obj.simSpeed) * distance * (1/ nextSpeed);
+%                         newCost = distance * (1/ nextSpeed);
 
                         [timeToReachDisturbingVehicle ,index] = max(currentFutureData(:,5));                       
                         speedDisturbingVehicle =  currentFutureData(index,3);
                         timeDifference = (currentEntryTime + obj.edgesCost(curEdge)) - timeToReachDisturbingVehicle ;
                         
-                        spacingTime = 6 * 1/obj.simSpeed;
+                        spacingTime = 6;
                         if (timeDifference < spacingTime)
                             newCost = timeToReachDisturbingVehicle + spacingTime - currentEntryTime;
                             nextSpeed = speedDisturbingVehicle;
@@ -514,7 +514,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
         function h = h(obj,start,goal)
             %time travel euclidian distance
             %h is time, to make it comparable with edge time(cost)
-            h = (1/ obj.simSpeed) * (1/obj.vehicle.dynamics.maxSpeed) * norm(get_coordinates_from_waypoint(obj.Map, start)-get_coordinates_from_waypoint(obj.Map, goal));
+            h = 1/obj.vehicle.dynamics.maxSpeed * norm(get_coordinates_from_waypoint(obj.Map, start)-get_coordinates_from_waypoint(obj.Map, goal));
         end
         function edge = getEdge(obj,start,goal)
             %returns edge between start and goal
@@ -773,13 +773,13 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 currentTotalDistance = obj.nodesGlobalDistance(currentNode);
                 if ((currentTotalDistance + distance - accelerationDistance) < 0)
                     % whole route in acceleration phase
-                    timeToReach = (1/ obj.simSpeed) * (-currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration));
-                    nextSpeed = currentSpeed + averageAcceleration*timeToReach * obj.simSpeed;
+                    timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
+                    nextSpeed = currentSpeed + averageAcceleration*timeToReach;
                 else
                     % route is divided in acceleration phase (t1)
                     % and constant speed phase (t2)
-                    t1 = (1/ obj.simSpeed) * (-currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*(accelerationDistance - currentTotalDistance)/averageAcceleration));
-                    t2 =  (1/ obj.simSpeed) * (currentTotalDistance+ distance - accelerationDistance)/ currentMaxSpeedRoutes(currentRoute);
+                    t1 = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*(accelerationDistance - currentTotalDistance)/averageAcceleration);
+                    t2 = (currentTotalDistance+ distance - accelerationDistance)/ currentMaxSpeedRoutes(currentRoute);
                     timeToReach = t1+t2;
                     nextSpeed = obj.accelerationPhase(3);
                     obj.accelerationPhase = zeros(1,5); %set acceleration phase to zero
@@ -787,7 +787,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 end
                 
             else
-                timeToReach =  (1/ obj.simSpeed) * distance* (1/ currentMaxSpeedRoutes(currentRoute)); %timesteps to reach neighbour
+                timeToReach = distance* (1/ currentMaxSpeedRoutes(currentRoute)); %timesteps to reach neighbour
                 nextSpeed = currentSpeed;
             end
         end
