@@ -27,7 +27,7 @@ function prepare_simulator(options)
     %% MOBATSim Configurations
     modelName = 'MOBATSim';    
     Sim_Ts = 0.02; % Sample time of the simulation (may not be stable if changed)
-    Sim_t = 20; % set simulation time
+    Sim_t = 40; % set simulation time
 
     assignin('base','Sim_Ts',Sim_Ts);
     assignin('base','Sim_t',Sim_t);
