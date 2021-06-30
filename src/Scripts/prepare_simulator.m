@@ -65,8 +65,6 @@ function prepare_simulator(options)
     else
         Map = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
     end
-    
-     assignin('base','Map',Map);
 
     %% Load Scenario and Vehicles
     if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % TODO: change this part when GUI is changed, does not check base workspace
@@ -83,7 +81,7 @@ function prepare_simulator(options)
     V3_FailureRate = options.FI_failure; % failure rate of the sensor of V3 
     
     %% Load Vehicles
-    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes); % default on - for Monte Carlo experiments comment out
+    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, Map); % default on - for Monte Carlo experiments comment out
 
     %MonteCarlo_scenarios(); % default off - for Monte Carlo experiments uncomment
 
@@ -111,7 +109,7 @@ function prepare_simulator(options)
     assignin('base','configs',configs);
     assignin('base','scenarioSelection',scenarioSelection);
     assignin('base','mapName',mapName);
-    assignin('base','Map',Map);
+    assignin('base','Map',Map); % only used by Infrastructure.m
     assignin('base','Vehicles',Vehicles);  
     assignin('base','FI_distance',FI_distance);
     assignin('base','FI_speed',FI_speed);

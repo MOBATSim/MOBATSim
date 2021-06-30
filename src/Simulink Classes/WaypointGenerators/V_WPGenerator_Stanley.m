@@ -41,7 +41,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
            
             
-            obj.vehicle.setPosition(obj.map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
+            obj.vehicle.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
             obj.vehicle.setYawAngle(pose(3));                               % Sets the vehicle yaw angle (4th column of orientation)
             
              pose(3)=pose(3)*180/pi; % rad to deg

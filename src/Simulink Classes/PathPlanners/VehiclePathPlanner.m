@@ -10,7 +10,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
     % Pre-computed constants
     properties(Access = protected)
         vehicle
-        Map = evalin('base','Map');
+        Map
         accelerationPhase;
         futureData
         breakingFlag
@@ -36,6 +36,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
+            obj.Map = obj.vehicle.map;
             
             obj.accelerationPhase =  zeros(1,5);
             obj.breakingFlag = 0;
