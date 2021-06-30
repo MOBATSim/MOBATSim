@@ -9,8 +9,6 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
     % Pre-computed constants
     properties(Access = protected)
         vehicle
-        map = evalin('base','Map');
-        sim_Ts = evalin('base','Sim_Ts');
         
         laneWidth = 3.7; % Standard road width
         curvature = 0;%curvature of the current road

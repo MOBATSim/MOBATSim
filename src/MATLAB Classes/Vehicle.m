@@ -96,7 +96,7 @@ classdef Vehicle < handle
     end
     
     methods
-        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,startingTime,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration)
+        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,startingTime,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration, map)
             obj.id = id;
             obj.name = car_name;
             
@@ -168,10 +168,10 @@ classdef Vehicle < handle
             obj.dataLog.MinJerkTrajPolynom = {};% Check where they are set and get
             
             
-            obj.map = evalin('base','Map');
+            obj.map = map;
             
             %obj.decisionUnit = DecisionUnit;
-            obj.decisionUnit.Map = evalin('base','Map');
+            obj.decisionUnit.Map = map;
             obj.decisionUnit.accelerationPhase = zeros(1,5);
             obj.decisionUnit.initialFutureData = [];
             obj.decisionUnit.futureData = [];
@@ -181,7 +181,7 @@ classdef Vehicle < handle
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
-            obj.V2I = V2I(id, dataLinkV2I);
+            obj.V2I = V2I(id, dataLinkV2I, map);
             
             obj.setPosition(obj.map.get_coordinates_from_waypoint(startingPoint));
             obj.setYawAngle(obj.map.getInitialYawAnglefromWaypoint(startingPoint));

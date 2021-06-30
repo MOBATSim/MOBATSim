@@ -65,7 +65,7 @@ for j=1:length(VehicleNames)
     VehicleVariable = strcat('Vehicle',num2str(j));
     assignin('caller',VehicleVariable,Vehicle(j,VehicleNames{j},startingPoints(j),destinationPoints(j),...
     startingTimes(j),maxSpeeds(j),sizes(j,:),dataLinksV2V(j,:),dataLinksV2I(j),mass(j),...
-    frontSensorRange(j),AEBdistance(j),minDeceleration(j)) );
+    frontSensorRange(j),AEBdistance(j),minDeceleration(j),Map) );
     NewVehicle = evalin('base',strcat('Vehicle',int2str(j)));
     Vehicles =[Vehicles NewVehicle];
 end

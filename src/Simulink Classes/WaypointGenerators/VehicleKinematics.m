@@ -10,7 +10,6 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
     % Pre-computed constants
     properties(Access = private)
         vehicle
-        map = evalin('base','Map');
         sim_Ts = evalin('base','Sim_Ts');
     end
     

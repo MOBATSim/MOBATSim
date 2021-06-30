@@ -14,7 +14,7 @@ classdef I2V < matlab.System & matlab.system.mixin.CustomIcon
 
     % Pre-computed constants
     properties(Access = private)
-        map = evalin('base','Map');
+        Vehicles = evalin('base','Vehicles');
     end
 
     methods(Access = protected)
@@ -24,7 +24,7 @@ classdef I2V < matlab.System & matlab.system.mixin.CustomIcon
             if isempty(Flags)
             else
                 % If there are flags for stopping and passing
-                for vehicle = obj.map.Vehicles
+                for vehicle = obj.Vehicles
                     % If the vehicle's id is in the first column of Flags
                     if ismember(vehicle.id,Flags(:,1))
                         % find which row of the Flags refer to the current vehicle

@@ -25,7 +25,6 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
     % Pre-computed constants
     properties(Access = private)
         vehicle
-        Map = evalin('base','Map');
         accelerationPhase;
         futureData
         breakingFlag
@@ -71,24 +70,12 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                 end
                 
             end
-        end
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        end      
         
         function V2Idata = checkCrossroadActions(obj,car,current_point)
             % check for crossroad actions
-            if nnz(obj.Map.crossroads.startingNodes==current_point)>0
-                crossroadId = find(any(obj.Map.crossroads.startingNodes==current_point,2));
+            if nnz(car.map.crossroads.startingNodes==current_point)>0
+                crossroadId = find(any(car.map.crossroads.startingNodes==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 1];
                                 
                 if obj.vehicle.V2IdataLink==1
@@ -100,8 +87,8 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                     end
                 end
                 
-            elseif nnz(obj.Map.crossroads.breakingNodes==current_point)>0 % car reaches Breaking Point 
-                crossroadId = find(any(obj.Map.crossroads.breakingNodes==current_point,2));
+            elseif nnz(car.map.crossroads.breakingNodes==current_point)>0 % car reaches Breaking Point 
+                crossroadId = find(any(car.map.crossroads.breakingNodes==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 2];
                 
                 if obj.vehicle.V2IdataLink==1
@@ -112,13 +99,13 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                         % if car is not registered yet in the IM yet, it has to
                         % be done before
 
-                        %any(obj.Map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id) == 0 %check if it works
+                        %any(car.map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id) == 0 %check if it works
                         %like below
-                        if ~any(obj.Map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id)
+                        if ~any(car.map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id)
                             
                             %get startingNode to register vehicle correctly
-                            arrivingDirection = breakingPoint == obj.Map.crossroadUnits(crossroadId).breakingNodes;
-                            startingNode = obj.Map.crossroadUnits(crossroadId).startingNodes(arrivingDirection);
+                            arrivingDirection = breakingPoint == car.map.crossroadUnits(crossroadId).breakingNodes;
+                            startingNode = car.map.crossroadUnits(crossroadId).startingNodes(arrivingDirection);
                             
                             fallbackVehicle.V2I.carReachesCrossroadV2I(car,startingNode,global_timesteps,crossroadId)
                         end
@@ -126,13 +113,13 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                     end  
                 end
                 
-            elseif nnz(obj.Map.crossroads.stoppingNodes==current_point)>0 % car reaches Stopping Point
-                crossroadId = find(any(obj.Map.crossroads.stoppingNodes==current_point,2));
+            elseif nnz(car.map.crossroads.stoppingNodes==current_point)>0 % car reaches Stopping Point
+                crossroadId = find(any(car.map.crossroads.stoppingNodes==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 3];
                 V2Idata = [crossroadId 3];
                 
-            elseif nnz(obj.Map.crossroads.leavingNodes==current_point)>0 % car leaves crossroad
-                crossroadId = find(any(obj.Map.crossroads.leavingNodes==current_point,2));
+            elseif nnz(car.map.crossroads.leavingNodes==current_point)>0 % car leaves crossroad
+                crossroadId = find(any(car.map.crossroads.leavingNodes==current_point,2));
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 4];
                 else
