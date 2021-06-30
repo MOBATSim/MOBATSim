@@ -7,8 +7,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
 
         %  laneSwitchWayPoints = [];% Trajectory for pure pursuit controller
         
-
-        
+        sim_Ts = evalin('base','Sim_Ts');       
         
         referenceWaypoints = zeros(10,3);
         adaptiveGain = 1;%adaptive control law G for the Stanley controller
