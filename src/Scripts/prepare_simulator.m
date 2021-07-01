@@ -2,12 +2,17 @@ function prepare_simulator(options)
     % This function prepares the simulation
     %   After calling this method the simulation can run
     arguments
-
-        options.Analysing (1,1) logical = false
-        options.FI_id (1,1) double = 1
-        options.FI_value (1,1) double = 0
-        options.FI_delay (1,1) double = 0
-        options.FI_failure(1,1) double = 0
+        options.Analysing   (1,1) logical   = false                 % activate the analysing functions
+        options.modelName   (1,1) string    = 'MOBATSim'            % name of the simulink model
+        options.simStopTime (1,1) double    = 40                    % simulation stop time in seconds
+        options.simTs       (1,1) double    = 0.02                  % simulation time step: sample time of the simulation (may not be stable if changed)
+        options.mapType     (1,1) MapTypes  = MapTypes.GridMap      % 'GridMap' or 'DigraphMap'
+        options.mapName     (1,1) string    = 'Mobatkent'           % Mobatkent, Highway, Crossmap
+        options.scenarioName(1,1) string    = 'Urban City Traffic'
+        options.FI_id       (1,1) double = 1
+        options.FI_value    (1,1) double = 0
+        options.FI_delay    (1,1) double = 0
+        options.FI_failure  (1,1) double = 0
     end
     
     %% Init file for MOBATSim
@@ -18,35 +23,23 @@ function prepare_simulator(options)
     if evalin('base','exist(''Map'',''var'')') 
         evalin('base','clear all'); %TODO: needs to be off in order not to delete the variables assigned from the GUI
         evalin('base','close all'); %to avoid some problems with the deleted handles TODO: Try -> close('all', 'hidden')
-        MapType = MapTypes.GridMap;
-    elseif ~evalin('base','exist(''MapType'',''var'')')
-        MapType = MapTypes.GridMap;
     end
-
-
-    %% MOBATSim Configurations
-    modelName = 'MOBATSim';    
-    Sim_Ts = 0.02; % Sample time of the simulation (may not be stable if changed)
-    Sim_t = 40; % set simulation time
-
-    assignin('base','Sim_Ts',Sim_Ts);
-    assignin('base','Sim_t',Sim_t);
     
-    configs = MOBATSimConfigurations(modelName,Sim_Ts,MapType); % MapType: 'GridMap' or 'DigraphMap'
 
+    %% MOBATSim Configurations  
+      
+    configs = MOBATSimConfigurations(options.modelName, ...
+                                     options.simStopTime, ...
+                                     options.simTs, ...
+                                     options.mapType, ...
+                                     options.mapName, ...
+                                     options.scenarioName);
 
-    %% GUI Scenario Config Defaults % TODO: change this part when GUI is changed, does not check base workspace
-    if ~exist('mapName','var')
-        mapName = 'Mobatkent'; % Default map selection
-    end
-    if ~exist('scenarioSelection','var')&&~exist('CustomScenarioGenerated','var')&&(~exist('RandomScenarioGenerated','var'))
-        scenarioSelection = 'Urban City Traffic'; % Default scenario selection
-    end
 
     %% Load the Map
-    switch mapName  
+    switch options.mapName  
         case 'Mobatkent'
-            %[mapName, waypoints, connections_circle, connections_translation, ...
+            %[options.mapName, waypoints, connections_circle, connections_translation, ...
             %  startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent();
             [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
               startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
@@ -60,18 +53,18 @@ function prepare_simulator(options)
     end
 
     %% Generate the 2D Map and the instance from the Map class
-    if configs.MapType == MapTypes.GridMap
-        Map = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
+    if configs.mapType == MapTypes.GridMap
+        Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
     else
-        Map = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
+        Map = DigraphMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
     end
 
     %% Load Scenario and Vehicles
     if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % TODO: change this part when GUI is changed, does not check base workspace
-        [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenarioSelection); % default on - for Monte Carlo experiments comment out
+        [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out
     end
     %uncomment line below to undo
-    % [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenarioSelection); % default on - for Monte Carlo experiments comment out
+    % [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out
 
     
     %% (Will be moved from here) Fault Injection Parameters
@@ -81,6 +74,7 @@ function prepare_simulator(options)
     V3_FailureRate = options.FI_failure; % failure rate of the sensor of V3 
     
     %% Load Vehicles
+    
     Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, Map); % default on - for Monte Carlo experiments comment out
 
     %MonteCarlo_scenarios(); % default off - for Monte Carlo experiments uncomment
@@ -89,52 +83,52 @@ function prepare_simulator(options)
     Map.Vehicles = Vehicles;
     Map.initCarDescriptionPlot();
 
-    if configs.MapType == MapTypes.GridMap
+    if configs.mapType == MapTypes.GridMap
         %create BOG
         [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
     end
     
     % Open MOBATSim Simulink Model
-    open_system(modelName)
+    open_system(options.modelName)
 
     %% Fault Injection properties (TODO: To be implemented soon)
     FI_distance = 0;
     FI_speed = 0;
     SafeDistance =18;
 
-    %% Assign all needed variables to base workspace TODO: check if they all needed in base workspace
-
-    assignin('base','modelName',modelName); % used by the run_Sim script
-    assignin('base','MapType',MapType);    
-    assignin('base','configs',configs);
-    assignin('base','scenarioSelection',scenarioSelection);
-    assignin('base','mapName',mapName);
-    assignin('base','Map',Map); % only used by Infrastructure.m
-    assignin('base','Vehicles',Vehicles);  
-    assignin('base','FI_distance',FI_distance);
-    assignin('base','FI_speed',FI_speed);
-    assignin('base','SafeDistance',SafeDistance);
-    assignin('base','delayTimeV3',delayTimeV3);
-    assignin('base','V3_FailureRate',V3_FailureRate);
-
     %% Initalize analysing
+    
     % close vehicle analysing window
     close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow')); % close analysing window
     
+    % generate analysing classes
     if options.Analysing
         vehiclePredictor = VehiclePredictor(Vehicles, 2); % part for all calculations and stuff shown on vehicle analysing window
         vehicleAnalysingWindow_Gui = VehicleAnalysingWindow_Gui(vehiclePredictor);
         assignin('base','vehiclePredictor',vehiclePredictor);
     else
         vehicleAnalysingWindow_Gui = false;
-    end
+    end   
     
     
+    %% Assign all needed variables to base workspace TODO: check if they all needed in base workspace
+    
+    assignin('base','Sim_Ts',options.simTs); % used by the model and in VehicleKinematics and V_WPGenerator_PurePursuit
+    assignin('base','Sim_t',options.simStopTime); % used by Infrastructure for a test and in the model as StopTime
+    assignin('base','configs',configs);
+    assignin('base','Map',Map); % only used by Infrastructure.m
+    assignin('base','Vehicles',Vehicles); % used by many instances
     assignin('base','vehicleAnalysingWindow_Gui',vehicleAnalysingWindow_Gui);
+    assignin('base','FI_distance',FI_distance);
+    assignin('base','FI_speed',FI_speed);
+    assignin('base','SafeDistance',SafeDistance);
+    assignin('base','delayTimeV3',delayTimeV3);
+    assignin('base','V3_FailureRate',V3_FailureRate);
     
+    %% Single button execution
     
-    %sim(modelName); % Uncomment this line for a single button execution
-
+    %sim(options.modelName); % Uncomment this line for a single button execution
+    
 end
 
 %% TODO: Move this function to the report generator folder
