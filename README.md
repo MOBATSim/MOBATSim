@@ -27,7 +27,7 @@ MOBATSim has a project file which includes the Simulink files and their paths. A
 uiopen('\MOBATSim.prj',1)
 ```
 
-Author
+Authors
 ---
 Main Author: Mustafa Saraoglu
 
