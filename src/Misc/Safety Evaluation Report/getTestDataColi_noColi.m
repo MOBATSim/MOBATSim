@@ -63,30 +63,42 @@ for k = 1:nr_Simulations
     idx_nocoli = height(T_noColi);
     idx_coli = height(T_Coli);
        
-    % Log Data + Add Data to Table
-    if Vehicles(1,3).dynamics.position(1) < Vehicles(1,4).dynamics.position(1)
-        front_vehicleID = Vehicles(4).id;
-        rear_vehicleID = Vehicles(3).id;
-        maxspeed_rearVehicle = Vehicles(3).dynamics.maxSpeed;
-    end
+    % Log Data + Add Data to Table   
     has_collision = Vehicles(3).status.collided;
-    %                 AEBdistance_rearVehicle = Vehicles(3).sensors.AEBdistance;
-    %                 sensorRange_rearVehicle = Vehicles(3).sensors.frontSensorRange;
-    %                 minDec_rearVehicle = Vehicles(3).dynamics.minDeceleration;
+    maxspeed_testVehicle = Vehicles(3).dynamics.maxSpeed; 
     % judge if there are is collision
     if has_collision ==0
+        % the final emergency case of the test vehicle is braking mode or platonning mode
+        if (Vehicles(1,3).status.emergencyCase ==2)||(Vehicles(1,3).status.emergencyCase ==1) 
+            front_vehicleID = Vehicles(1,3).sensors.leadingVehicleId;
+            rear_vehicleID = Vehicles(3).id;
+         % try to find if the front vehicle is detected in the whole simulation, when there is no platooning mode at last second  
+        elseif Vehicles(1,3).status.emergencyCase ==0 
+            front_vehicleID = max(allTestData(10,3,:));
+            rear_vehicleID = Vehicles(3).id;
+        end
         min_distance = min(allTestData(8,3,:));
         filtTTC = allTestData(7,3,:);  %filter out the negative TTC
         filtTTC(find(filtTTC<0)) = 1000;
         [min_TTC,min_TTCidx]= min(filtTTC); %[minimum TTC, index]
         min_TTCtime = min_TTCidx*Sim_Ts;
         
-        T_noColi(idx_nocoli+1,:) = {front_vehicleID, rear_vehicleID, maxspeed_rearVehicle, has_collision, min_distance, min_TTC, min_TTCtime};
+        T_noColi(idx_nocoli+1,:) = {front_vehicleID, rear_vehicleID, maxspeed_testVehicle, has_collision, min_distance, min_TTC, min_TTCtime};
         save('.\src\Misc\Safety Evaluation Report\test_noColiNormal.mat','T_noColi');
-        
+     
     elseif has_collision ==1
-        %load speed of v3 and v4
+        % if the vehicle onece has emergency case 2 (platooning mode)
+        if ismember(2,allTestData(9,3,:))==1
+            front_vehicleID = max(allTestData(10,3,:));
+            rear_vehicleID = Vehicles(3).id;
+            % not generalized, only works if collision happens directly without
+            % emegrency brake and vehicles moved to the right.
+        elseif Vehicles(1,3).dynamics.position(1) < Vehicles(1,4).dynamics.position(1)
+            front_vehicleID = Vehicles(4).id;
+            rear_vehicleID = Vehicles(3).id;
+        end
         
+        %load speed of v3 and v4
         load('.\src\Misc\Safety Evaluation Report\SpeedPlotV3V4.mat');
         relaSpeed_calcu = [allTestData(1,3,:), allTestData(1,4,:)]; %[speed_v3,speed_v4]
         speedV3V4 = [speedV3V4; relaSpeed_calcu]; % speed of v3 and v4 for plotting
@@ -102,8 +114,8 @@ for k = 1:nr_Simulations
         speedColi_V4 = speedV3V4(end,2,i); % the speed of v4 at collision time
         collisionTime = i*Sim_Ts;
         rela_impactSpeed = speedColi_V3 - speedColi_V4;
-    
-        T_Coli(idx_coli+1,:) = {front_vehicleID, rear_vehicleID, maxspeed_rearVehicle, has_collision, rela_impactSpeed, collisionTime};
+        
+        T_Coli(idx_coli+1,:) = {front_vehicleID, rear_vehicleID, maxspeed_testVehicle, has_collision, rela_impactSpeed, collisionTime};
         save('.\src\Misc\Safety Evaluation Report\test_ColiNormal.mat','T_Coli');
     end
 end
@@ -133,22 +145,37 @@ for i = 1:size(loops_M1,1)
     idx_nocoliM1 = height(T_noColiM1);
     idx_coliM1 = height(T_ColiM1);
     
-    if Vehicles(1,3).dynamics.position(1) < Vehicles(1,4).dynamics.position(1)
-        delay_time = delayTimeV3; % delay time of the driving mode which is set in longitudinal control of vehicle 3
-        front_vehicleID = Vehicles(3).id;
-        rear_vehicleID = Vehicles(4).id;
-        maxspeed_rearVehicle = Vehicles(3).dynamics.maxSpeed;
-    end
+    maxspeed_testVehicle = Vehicles(3).dynamics.maxSpeed;
     has_collision = Vehicles(3).status.collided;
+    delay_time = delayTimeV3; % delay time of the driving mode which is set in longitudinal control of vehicle 3
     if has_collision == 0
+         % the final emergency case of the test vehicle is braking mode or platonning mode
+        if (Vehicles(1,3).status.emergencyCase ==2)||(Vehicles(1,3).status.emergencyCase ==1) 
+            front_vehicleID = Vehicles(1,3).sensors.leadingVehicleId;
+             rear_vehicleID = Vehicles(3).id; 
+         elseif Vehicles(1,3).status.emergencyCase ==0
+            front_vehicleID = max(allTestData(10,3,:));
+            rear_vehicleID = Vehicles(3).id;
+         end
         min_distance = min(allTestData(8,3,:));
         filtTTC = allTestData(7,3,:);  %filter out the negative TTC
         filtTTC(find(filtTTC<0)) = 1000;
         [min_TTC,min_TTCidx]= min(filtTTC); %[minimum TTC, index]
         min_TTCtime = min_TTCidx*Sim_Ts;
-        T_noColiM1(idx_nocoliM1+1,:) = {delay_time, front_vehicleID, rear_vehicleID, maxspeed_rearVehicle, has_collision, min_distance, min_TTC, min_TTCtime};
+        T_noColiM1(idx_nocoliM1+1,:) = {delay_time, front_vehicleID, rear_vehicleID, maxspeed_testVehicle, has_collision, min_distance, min_TTC, min_TTCtime};
         save('.\src\Misc\Safety Evaluation Report\test_noColiM1.mat','T_noColiM1');
-    elseif has_collision ==1
+    
+    elseif has_collision ==1      
+         % if the vehicle onece has emergency case 2 (platooning mode)
+        if ismember(2,allTestData(9,3,:))==1
+            front_vehicleID = max(allTestData(10,3,:));
+            rear_vehicleID = Vehicles(3).id;
+            % not generalized, only works if collision happens directly without
+            % emegrency brake and vehicles moved to the right.
+        elseif Vehicles(1,3).dynamics.position(1) < Vehicles(1,4).dynamics.position(1)
+            front_vehicleID = Vehicles(4).id;
+            rear_vehicleID = Vehicles(3).id;
+        end
         %load speed of v3 and v4
         load('.\src\Misc\Safety Evaluation Report\SpeedPlotV3V4M1.mat');
         relaSpeed_calcu = [allTestData(1,3,:), allTestData(1,4,:)]; %[speed_v4,speed_v3]
@@ -165,7 +192,7 @@ for i = 1:size(loops_M1,1)
         speedColi_V4 = speedV3V4M1(end,2,i); % the speed of v4 at collision time
         collisionTime = i*Sim_Ts;
         rela_impactSpeed = speedColi_V3 - speedColi_V4;
-        T_ColiM1(idx_coliM1+1,:) = {delay_time, front_vehicleID, rear_vehicleID, maxspeed_rearVehicle, has_collision, rela_impactSpeed, collisionTime};
+        T_ColiM1(idx_coliM1+1,:) = {delay_time, front_vehicleID, rear_vehicleID, maxspeed_testVehicle, has_collision, rela_impactSpeed, collisionTime};
         save('.\src\Misc\Safety Evaluation Report\test_ColiM1.mat','T_ColiM1');
     end
     
@@ -198,22 +225,37 @@ for i = 1:size(loops_M2,1)
     idx_nocoliM2 = height(T_noColiM2);
     idx_coliM2 = height(T_ColiM2);
     
-    if Vehicles(1,3).dynamics.position(1) < Vehicles(1,4).dynamics.position(1)
-        failure_rate = V3_FailureRate;
-        front_vehicleID = Vehicles(3).id;
-        rear_vehicleID = Vehicles(4).id;
-        maxspeed_rearVehicle = Vehicles(3).dynamics.maxSpeed;
-    end
+    maxspeed_testVehicle = Vehicles(3).dynamics.maxSpeed;
     has_collision = Vehicles(3).status.collided;
+    failure_rate = V3_FailureRate; % delay time of the driving mode which is set in longitudinal control of vehicle 3
+    
     if has_collision == 0
+         % the final emergency case of the test vehicle is braking mode or platonning mode
+        if (Vehicles(1,3).status.emergencyCase ==2)||(Vehicles(1,3).status.emergencyCase ==1) 
+            front_vehicleID = Vehicles(1,3).sensors.leadingVehicleId;
+            rear_vehicleID = Vehicles(3).id;
+        elseif Vehicles(1,3).status.emergencyCase ==0
+            front_vehicleID = max(allTestData(10,3,:));
+            rear_vehicleID = Vehicles(3).id;
+        end
         min_distance = min(allTestData(8,3,:));
         filtTTC = allTestData(7,3,:);  %filter out the negative TTC
         filtTTC(find(filtTTC<0)) = 1000;
         [min_TTC,min_TTCidx]= min(filtTTC); %[minimum TTC, index]
         min_TTCtime = min_TTCidx*Sim_Ts;
-        T_noColiM2(idx_nocoliM2+1,:) = {failure_rate, front_vehicleID, rear_vehicleID, maxspeed_rearVehicle, has_collision, min_distance, min_TTC, min_TTCtime};
+        T_noColiM2(idx_nocoliM2+1,:) = {failure_rate, front_vehicleID, rear_vehicleID, maxspeed_testVehicle, has_collision, min_distance, min_TTC, min_TTCtime};
         save('.\src\Misc\Safety Evaluation Report\test_noColiM2.mat','T_noColiM2');
     elseif has_collision ==1
+        %if the vehicle onece has emergency case 2 (platooning mode)
+        if ismember(2,allTestData(9,3,:))==1
+            front_vehicleID = max(allTestData(10,3,:));
+            rear_vehicleID = Vehicles(3).id;
+            % not generalized, only works if collision happens directly without
+            % emegrency brake and vehicles moved to the right.
+        elseif Vehicles(1,3).dynamics.position(1) < Vehicles(1,4).dynamics.position(1)
+            front_vehicleID = Vehicles(4).id;
+            rear_vehicleID = Vehicles(3).id;
+        end
         %load speed of v3 and v4
         load('.\src\Misc\Safety Evaluation Report\SpeedPlotV3V4M2.mat');
         relaSpeed_calcu = [allTestData(1,3,:), allTestData(1,4,:)]; %[speed_v4,speed_v3]
@@ -231,7 +273,7 @@ for i = 1:size(loops_M2,1)
         speedColi_V4 = speedV3V4M2(end,2,i); % the speed of v4 at collision time
         collisionTime = i*Sim_Ts;
         rela_impactSpeed = speedColi_V3 - speedColi_V4;
-        T_ColiM2(idx_coliM2+1,:) = {failure_rate front_vehicleID, rear_vehicleID, maxspeed_rearVehicle, has_collision, rela_impactSpeed, collisionTime};
+        T_ColiM2(idx_coliM2+1,:) = {failure_rate front_vehicleID, rear_vehicleID, maxspeed_testVehicle, has_collision, rela_impactSpeed, collisionTime};
         save('.\src\Misc\Safety Evaluation Report\test_ColiM2.mat','T_ColiM2');
     end
     
@@ -250,22 +292,36 @@ for k = 1:nr_Simulations
     idx_nocoliL1 = height(T_noColiL1);
     idx_coliL1 = height(T_ColiL1);
     
-    if Vehicles(1,3).dynamics.position(1) < Vehicles(1,4).dynamics.position(1)
-        delay_time = delayTimeV3; % delay time of the driving mode which is set in longitudinal control of vehicle 3
-        front_vehicleID = Vehicles(3).id;
-        rear_vehicleID = Vehicles(4).id;
-        maxspeed_rearVehicle = Vehicles(3).dynamics.maxSpeed;
-    end
+    maxspeed_testVehicle = Vehicles(3).dynamics.maxSpeed;
     has_collision = Vehicles(3).status.collided;
+    delay_time = delayTimeV3; % delay time of the driving mode which is set in longitudinal control of vehicle 3
     if has_collision == 0
+         % the final emergency case of the test vehicle is braking mode or platonning mode
+        if (Vehicles(1,3).status.emergencyCase ==2)||(Vehicles(1,3).status.emergencyCase ==1) 
+            front_vehicleID = Vehicles(1,3).sensors.leadingVehicleId;
+             rear_vehicleID = Vehicles(3).id; 
+         elseif Vehicles(1,3).status.emergencyCase ==0
+            front_vehicleID = max(allTestData(10,3,:));
+            rear_vehicleID = Vehicles(3).id;
+        end
         min_distance = min(allTestData(8,3,:));
         filtTTC = allTestData(7,3,:);  %filter out the negative TTC
         filtTTC(find(filtTTC<0)) = 1000;
         [min_TTC,min_TTCidx]= min(filtTTC); %[minimum TTC, index]
         min_TTCtime = min_TTCidx*Sim_Ts;
-        T_noColiL1(idx_nocoliL1+1,:) = {delay_time, front_vehicleID, rear_vehicleID, maxspeed_rearVehicle, has_collision, min_distance, min_TTC, min_TTCtime};
+        T_noColiL1(idx_nocoliL1+1,:) = {delay_time, front_vehicleID, rear_vehicleID, maxspeed_testVehicle, has_collision, min_distance, min_TTC, min_TTCtime};
         save('.\src\Misc\Safety Evaluation Report\test_noColiL1.mat','T_noColiL1');
     elseif has_collision ==1
+        %if the vehicle onece has emergency case 2 (platooning mode)
+        if ismember(2,allTestData(9,3,:))==1
+            front_vehicleID = max(allTestData(10,3,:));
+            rear_vehicleID = Vehicles(3).id;
+            % not generalized, only works if collision happens directly without
+            % emegrency brake and vehicles moved to the right.
+        elseif Vehicles(1,3).dynamics.position(1) < Vehicles(1,4).dynamics.position(1)
+            front_vehicleID = Vehicles(4).id;
+            rear_vehicleID = Vehicles(3).id;
+        end
         %load speed of v3 and v4
         load('.\src\Misc\Safety Evaluation Report\SpeedPlotV3V4L1.mat');
         relaSpeed_calcu = [allTestData(1,3,:), allTestData(1,4,:)]; %[speed_v4,speed_v3]
@@ -283,7 +339,7 @@ for k = 1:nr_Simulations
         speedColi_V4 = speedV3V4L1(end,2,i); % the speed of v4 at collision time
         collisionTime = i*Sim_Ts;
         rela_impactSpeed = speedColi_V3 - speedColi_V4;
-        T_ColiL1(idx_coliL1+1,:) = {delay_time, front_vehicleID, rear_vehicleID, maxspeed_rearVehicle, has_collision, rela_impactSpeed, collisionTime};
+        T_ColiL1(idx_coliL1+1,:) = {delay_time, front_vehicleID, rear_vehicleID, maxspeed_testVehicle, has_collision, rela_impactSpeed, collisionTime};
         save('.\src\Misc\Safety Evaluation Report\test_ColiL1.mat','T_ColiL1');
     end
     
