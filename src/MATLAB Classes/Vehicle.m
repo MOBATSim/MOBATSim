@@ -14,7 +14,6 @@ classdef Vehicle < handle
     %    getAccelerationDistance - (TODO: Check in detail)
     %    timeToReachNextWaypointInAccelerationPhase - (TODO: Check in detail)
     % SET Methods:
-    %    setDestination - Sets the destination waypoint
     %    setStopStatus - Stops the vehicle
     %    setCurrentRoute
     %    setPath
@@ -187,12 +186,21 @@ classdef Vehicle < handle
             obj.setYawAngle(obj.map.getInitialYawAnglefromWaypoint(startingPoint));
         end %Constructor
         
-        function car = setDestination(car, destination, global_timesteps)
+        function bool = checkWaypointReached(car,Destination)
+            if car.pathInfo.routeEndDistance < 1 % consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
+                car.pathInfo.s = 0;%reset s at the end of road
+                
+                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
+                
+                car.setRouteCompleted(true);% Vehicle Set
+                car.setLastWaypoint(lastWaypoint); % Vehicle Set
+                
+                bool = true;
+            else
+                bool = false;
+            end
             
-            car.pathInfo.destinationPoint = destination;
-            car.dataLogger.setDestinationDataLogger(global_timesteps, car.pathInfo.lastWaypoint);
-            car.setStopStatus(false);
-            car.destinationReached = false;
+            
         end
         
         function checkCollision(vehicle,car)

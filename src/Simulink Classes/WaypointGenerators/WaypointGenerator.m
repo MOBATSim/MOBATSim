@@ -44,43 +44,24 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
         
-                function move_straight(obj,car,Destination)
+        function move_straight(obj,car,Destination)
             %% Reference Waypoint Generation
             obj.generateStraightWaypoints(car)
             %%
-            
-            if car.pathInfo.routeEndDistance <1
-                
-                car.pathInfo.s = 0;
-                
-                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true); % Vehicle Set
-                car.setLastWaypoint(lastWaypoint); % Vehicle Set
-                
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
-                car.setCurrentRoute(nextRoute); % Vehicle Set
+            if car.checkWaypointReached(Destination)
+                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,car.pathInfo.lastWaypoint);
+                car.setCurrentRoute(nextRoute);
             end
-
+            
         end
         
         function rotate_left(obj, car, Destination)
             %% Reference Waypoint Generation
             obj.generateLeftRotationWaypoints(car);
             %%
-
-            if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
-                car.pathInfo.s = 0;%reset s at the end of road
-                
-                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true);% Vehicle Set
-                car.setLastWaypoint(lastWaypoint); % Vehicle Set
-                
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
-                car.setCurrentRoute(nextRoute); % Vehicle Set
-                
-                
+            if car.checkWaypointReached(Destination)
+                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,car.pathInfo.lastWaypoint);
+                car.setCurrentRoute(nextRoute);
             end
             
         end
@@ -89,22 +70,11 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             %% Reference Waypoint Generation
             obj.generateRightRotationWaypoints(car);
             %%
-            
-            if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
-                car.pathInfo.s = 0;%reset s at the end of road
-                
-                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true);% Vehicle Set
-                car.setLastWaypoint(lastWaypoint); % Vehicle Set
-                
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
+            if car.checkWaypointReached(Destination)
+                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,car.pathInfo.lastWaypoint);
                 car.setCurrentRoute(nextRoute);
-                
-
             end
-            
-            
+
         end
         
         
@@ -135,9 +105,9 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
                     abs(car.map.connections.circle(index,3)),car.map.connections.circle(index,4),car.map.connections.circle(index,6);
                     -sign(car.map.connections.circle(index,3))*ones(1,3)];
             end
-         end
+        end
         
-              
+        
         function [position_Cart,orientation_Cart] = Frenet2Cartesian(~,route,s,d,radian)
             
             %this function transfer a position in Frenet coordinate into Cartesian coordinate
@@ -195,7 +165,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             Route_StartPoint = route(1,:);
             Route_endPoint = route(2,:);
             
-
+            
             if radian == 0%straight road
                 obj.curvature = 0;
                 
@@ -218,11 +188,11 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
                 plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
                 center = Route_StartPoint + targetVector*norm(Route_endPoint-Route_StartPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
                 startPointVector = Route_StartPoint-center;% vector OP_1 in Frenet.xml
-
+                
                 l = vehiclePos_Cartesian-center;% the vector from rotation center to position
                 d = norm(l)-r;
                 lAng = atan2(l(2),l(1)); % the angle of vector l with x axis (phi 3 in Frenet.xml)
-
+                
                 start_dot_l = dot(startPointVector,l);% |startPointVetor|*|l|*sin(angle)
                 start_cross_l = sign(radian)*(startPointVector(1)*l(2)-startPointVector(2)*l(1));% |startPointVetor|*|l|*cos(angle)
                 angle = atan2(start_cross_l,start_dot_l);% the angle between startPointVector and vector l, tan(angle) = start_dot_l/start_cross_1
@@ -239,15 +209,15 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             end
         end
         
-
+        
     end
     methods(Static,Access = protected)
         
     end
     
-        %% Abstract Methods / Must be implemented by Subclasses
+    %% Abstract Methods / Must be implemented by Subclasses
     methods (Abstract, Access = protected)
-
+        
         % Every Waypoint generator should generate Waypoints in their own way
         generateStraightWaypoints(obj,car)
         generateLeftRotationWaypoints(obj,car)
