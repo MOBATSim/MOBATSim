@@ -34,7 +34,7 @@ classdef VehiclePredictor < handle
         tablePosition           (:,1) = []          % logged positions
         tablePredictedPosition  (:,1) = NaN         % predicted position for this time
         tablePositionError      (:,1) = []          % position error for this time stamp
-        simTs                   (1,1) = evalin('base','Sim_Ts')
+        simTs                   (1,1) = 0
     end
     
     properties
@@ -238,9 +238,9 @@ classdef VehiclePredictor < handle
         function testPredictionError(obj)
             % log predicted data, real data and compare
             
-            if abs(obj.egoVehicle.dynamics.acceleration) < 0.1 ... % only measure when acc = 0 or near 0
-               && (isempty(obj.tableTimeStamp) ...                      % and at start when empty
-               ||(obj.tableTimeStamp(end) ~= obj.currentSimTime)) % or simulation time changed
+            if abs(obj.egoVehicle.dynamics.acceleration) < 0.1 ... % only predict when acc = 0 or near 0
+               && obj.egoVehicle.dynamics.speed > 0                % and moving
+
                 % New time entry
                 obj.tableTimeStamp(end+1) = obj.currentSimTime;
                 
@@ -256,8 +256,14 @@ classdef VehiclePredictor < handle
             end
             
             % Remove all future predicted entries when time jump happend
-            if length(obj.tableTimeStamp) > 1 && ... % at least two table entries
-                (obj.tableTimeStamp(end)-obj.tableTimeStamp(end-1)) > 2*obj.simTs % time jump (two times for preventing rounding errors)
+            if length(obj.tableTimeStamp) == 1 ... % check if first entry is bigger then simTs
+               && (obj.tableTimeStamp(end) - 0) > 2*obj.simTs % time jump (two times for preventing rounding errors)
+           
+                % Set future predicted entries except the new one to NaN
+                obj.tablePredictedPosition(length(obj.tableTimeStamp):end-1) = NaN;
+            elseif length(obj.tableTimeStamp) >= 1 ... % check if time change is bigger then simTs
+                    && (obj.tableTimeStamp(end)- obj.tableTimeStamp(end-1)) > 2*obj.simTs % time jump (two times for preventing rounding errors)
+                
                 % Set future predicted entries except the new one to NaN
                 obj.tablePredictedPosition(length(obj.tableTimeStamp):end-1) = NaN;
             end
@@ -286,6 +292,11 @@ classdef VehiclePredictor < handle
             end           
             
             %% Get information
+            
+            % Calculate sim time step at first call within simulation
+            if obj.currentSimTime == 0 && currentSimTime > 0
+                obj.simTs = currentSimTime - obj.currentSimTime;
+            end
             
             % Simulation time
             obj.currentSimTime = currentSimTime;

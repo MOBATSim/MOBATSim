@@ -1,18 +1,24 @@
 classdef MOBATSimConfigurations
-    %MOBATSimConfigurations Summary of this class goes here
+    %MOBATSimConfigurations Contains the configuration of the current
+    %simulation
     %   Detailed explanation goes here
     properties
         modelName
-        MapType
-        Sim_Ts
+        simStopTime
+        simTs
+        mapType
+        mapName
+        scenarioName
     end
     
     methods
-        function obj = MOBATSimConfigurations(modelName,Sim_Ts,MapType)
+        function obj = MOBATSimConfigurations(modelName, simStopTime, simTs, mapType, mapName, scenarioName)
             obj.modelName = modelName;
-            obj.Sim_Ts = Sim_Ts;
-            obj.MapType = MapType;
-            
+            obj.simStopTime = simStopTime;
+            obj.simTs = simTs;
+            obj.mapType = mapType;
+            obj.mapName = mapName;
+            obj.scenarioName = scenarioName;
         end
         
     end
