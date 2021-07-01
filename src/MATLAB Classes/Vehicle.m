@@ -71,6 +71,7 @@ classdef Vehicle < handle
         %         lastWaypoint
         %         referencePath
         %         routeCompleted
+        %         calculateNewPathFlag
         %         path
         %         BOGPath
         dataLog
@@ -147,6 +148,7 @@ classdef Vehicle < handle
             obj.pathInfo.lastWaypoint = startingPoint;
             obj.pathInfo.referencePath = [];
             obj.pathInfo.routeCompleted = true;
+            obj.pathInfo.calculateNewPathFlag = true;
             obj.pathInfo.path = 0;
             obj.pathInfo.staticPath = 0; % Check where they are set and get
             obj.pathInfo.BOGPath = [];
@@ -191,16 +193,50 @@ classdef Vehicle < handle
                 car.pathInfo.s = 0;%reset s at the end of road
                 
                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true);% Vehicle Set
                 car.setLastWaypoint(lastWaypoint); % Vehicle Set
                 
+                if ~(car.checkifDestinationReached()) % Check if destination reached
+                    % If not -> find the next route and calculate the trajectory
+                    nextRoute = car.generateCurrentRoute(car.pathInfo.path,lastWaypoint);
+                    car.setCurrentRoute(nextRoute);
+                    car.pathInfo.path(1) = [];
+                    currentTrajectory = car.generateTrajectoryFromPath(car.pathInfo.path);
+                    car.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
+                    car.pathInfo.calculateNewPathFlag = 1; % TODO: check
+                end
                 bool = true;
             else
                 bool = false;
             end
+        end
+        
+        function currentTrajectory = generateTrajectoryFromPath(car,path)
+            % Format of route for vehicle dynamics (translation)
+            if (isempty(find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)), 1 )) == false)
+                index = find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)) );
+                currentTrajectory = [car.map.waypoints(car.map.connections.translation(index,1),:);
+                    car.map.waypoints(car.map.connections.translation(index,2),:);
+                    zeros(1,3);
+                    zeros(1,3)];
+            end
+            % Format of route for vehicle dynamics (curves)
+            if (isempty(find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)), 1 )) == false)
+                index = find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)) );
+                currentTrajectory = [car.map.waypoints(car.map.connections.circle(index,1),:);
+                    car.map.waypoints(car.map.connections.circle(index,2),:);
+                    abs(car.map.connections.circle(index,3)),car.map.connections.circle(index,4),car.map.connections.circle(index,6);
+                    -sign(car.map.connections.circle(index,3))*ones(1,3)];
+            end
+        end
+        
+        function currentRoute = generateCurrentRoute(car, path, lastWaypoint)
             
-            
+            idx = find(path==lastWaypoint);
+            if idx+1<=length(path) % Next Route
+                currentRoute = car.map.getRouteIDfromPath([path(idx) path(idx+1)]);
+            else % Destination Reached // CurrentRoute stays the same
+                currentRoute = car.pathInfo.currentRoute;
+            end
         end
         
         function checkCollision(vehicle,car)
@@ -464,7 +500,7 @@ classdef Vehicle < handle
         end
         
         function bool = setRouteCompleted(car,bool)
-            car.pathInfo.routeCompleted = bool;
+            car.pathInfo.routeCompleted = bool;  
         end
         
         function bool = setDestinationReached(car,bool)

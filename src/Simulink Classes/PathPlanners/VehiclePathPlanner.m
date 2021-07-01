@@ -50,8 +50,8 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 waypointReached=1;                                  %Output 2: Waypoint Reached enabler
             else            
                 %% Check if the vehicle has reached a waypoint / Then it should reupdate its plan
-                if obj.vehicle.pathInfo.routeCompleted == 1 
-
+                if obj.vehicle.pathInfo.calculateNewPathFlag == 1 
+                    previousPath = obj.vehicle.pathInfo.path;
                     OtherVehiclesFutureData = obj.CollectFutureData(obj.Map.Vehicles, CommunicationIDs);
                     
                     obj.vehicle.logWaypointArrivalTimeStamps(obj.getCurrentTime); % Log Time Stamps
@@ -66,8 +66,14 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     % Build the future plan by deriving the next routes and building the path
                     FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
                     waypointReached =1;                                 %Output 2: Waypoint Reached enabler
-                    obj.vehicle.decisionUnit.futureData = FuturePlan;
                     
+                    if ~isequal(previousPath,obj.vehicle.pathInfo.path) % If the vehicle changed it's planned path
+                        currentTrajectory = obj.vehicle.generateTrajectoryFromPath(obj.vehicle.pathInfo.path);
+                        obj.vehicle.setCurrentTrajectory(currentTrajectory); % Generate the new trajectory
+                    end
+                    
+                    obj.vehicle.decisionUnit.futureData = FuturePlan;
+                    obj.vehicle.pathInfo.calculateNewPathFlag = 0;
                     %% ------------------------------ FuturePlan Structure ------------------------------ nx6 --------------- 
                     % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | PlannerType
                     % PlannerType: DigraphA*= -1, D*ExtraLite= -2, Shortest= -3, GridA*= non negative value

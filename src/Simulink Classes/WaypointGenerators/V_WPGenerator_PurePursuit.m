@@ -60,6 +60,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
                     
                     obj.vehicle.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
                     obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
+                    obj.vehicle.setRouteCompleted(false);                % Vehicle - Set Functions
                 end
                 
                 speedAccordingtoSimulation = speed*obj.sim_Ts;%speed limit on curved road
@@ -185,16 +186,17 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
         
         function [position, orientation] = move_straight(obj,car,speed,Destination)
             %% Reference Waypoint Generation
-            obj.generateStraightWaypoints(car)
+            obj.generateStraightWaypoints(car);
             %%
+            car.checkWaypointReached(Destination);
             %Displacement Vector and determination of its Angle
-            if car.pathInfo.routeCompleted == true
-                DisplacementVector = Destination- car.dynamics.position;
-                ThetaRadian = atan(DisplacementVector(1)/DisplacementVector(3));
-                car.dynamics.orientation(4) = ThetaRadian;
-                car.dynamics.directionVector = DisplacementVector;
-                car.setRouteCompleted(false);
-            end
+%             if car.pathInfo.routeCompleted == true
+%                 DisplacementVector = Destination- car.dynamics.position;
+%                 ThetaRadian = atan(DisplacementVector(1)/DisplacementVector(3));
+%                 car.dynamics.orientation(4) = ThetaRadian;
+%                 car.dynamics.directionVector = DisplacementVector;
+%                 car.setRouteCompleted(false);
+%             end
             
             % For Intercardinal directions: Depending on the four quadrants, the problem the atan function is that it
             % is between -pi and pi so that it doesn't correctly cover a 360 degrees
@@ -243,18 +245,18 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             %             %if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
             %             if norm(checkPoint-Destination)< 1+car.pathInfo.laneId*obj.laneWidth % Error tolerance value TODO: check lower numbers
             %
-            if car.pathInfo.routeEndDistance <1
-                
-                car.pathInfo.s = 0;
-                
-                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true); % Vehicle Set
-                car.setLastWaypoint(lastWaypoint); % Vehicle Set
-                
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
-                car.setCurrentRoute(nextRoute); % Vehicle Set
-            end
+%             if car.pathInfo.routeEndDistance <1
+%                 
+%                 car.pathInfo.s = 0;
+%                 
+%                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
+%                 
+%                 car.setRouteCompleted(true); % Vehicle Set
+%                 car.setLastWaypoint(lastWaypoint); % Vehicle Set
+%                 
+%                 nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
+%                 car.setCurrentRoute(nextRoute); % Vehicle Set
+%             end
             
             orientation = [ 0 1 0 ThetaRadian];
             % Simple Straight Motion Equation
@@ -265,10 +267,9 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             %% Reference Waypoint Generation
             obj.generateLeftRotationWaypoints(car);
             %%
-            if car.pathInfo.routeCompleted == true
+            if ~car.checkWaypointReached(Destination) % TODO: ~
                 
                 car.dynamics.cornering.angles = pi; % Vehicle Set
-                car.setRouteCompleted(false); % Vehicle Set
                 
                 point_to_rotate= car.dynamics.position;
                 
@@ -289,17 +290,8 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             t = car.dynamics.cornering.angles;
             
             
-            if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
-                car.pathInfo.s = 0;%reset s at the end of road
-                
-                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true);% Vehicle Set
-                car.setLastWaypoint(lastWaypoint); % Vehicle Set
-                
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
-                car.setCurrentRoute(nextRoute); % Vehicle Set
-                
+            %if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
+            if car.checkWaypointReached(Destination)    
                 car.dynamics.cornering.angles = 0;
                 
                 position = Destination;
@@ -321,12 +313,15 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             %% Reference Waypoint Generation
             obj.generateRightRotationWaypoints(car);
             %%
-            if car.pathInfo.routeCompleted == true
-                
-                car.setRouteCompleted(false);
-                
-                car.setCorneringValues(car.dynamics.position, rotation_point)
+            if ~car.checkWaypointReached(Destination)
+                 car.setCorneringValues(car.dynamics.position, rotation_point)
             end
+%             if car.pathInfo.routeCompleted == true
+%                 
+%                 car.setRouteCompleted(false);
+%                 
+%                 car.setCorneringValues(car.dynamics.position, rotation_point)
+%             end
             
             r = norm(Destination-rotation_point);
             vector_z=[0 0 1];
@@ -344,21 +339,27 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             %             checkPoint = [checkPoint_x 0 checkPoint_y];
             %
             %             if  norm(checkPoint - Destination) < 1+car.pathInfo.laneId*obj.laneWidth % TODO Check the value
-            if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
-                car.pathInfo.s = 0;%reset s at the end of road
-                
-                lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-                
-                car.setRouteCompleted(true);% Vehicle Set
-                car.setLastWaypoint(lastWaypoint); % Vehicle Set
-                
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
-                car.setCurrentRoute(nextRoute);
-                
+            
+            if car.checkWaypointReached(Destination)
                 car.dynamics.cornering.angles = 0;
                 
                 position = Destination;
                 orientation = car.dynamics.orientation;
+%             if car.pathInfo.routeEndDistance <1% consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
+%                 car.pathInfo.s = 0;%reset s at the end of road
+%                 
+%                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
+%                 
+%                 car.setRouteCompleted(true);% Vehicle Set
+%                 car.setLastWaypoint(lastWaypoint); % Vehicle Set
+%                 
+%                 nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
+%                 car.setCurrentRoute(nextRoute);
+%                 
+%                 car.dynamics.cornering.angles = 0;
+%                 
+%                 position = Destination;
+%                 orientation = car.dynamics.orientation;
             else
                 vector_velocity=[-a*sin(t)-cos(t)*c b a*cos(t)-c*sin(t)];
                 vector=cross(vector_velocity, vector_z);

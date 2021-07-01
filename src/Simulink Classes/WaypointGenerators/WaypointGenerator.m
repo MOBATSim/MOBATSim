@@ -47,34 +47,19 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         function move_straight(obj,car,Destination)
             %% Reference Waypoint Generation
             obj.generateStraightWaypoints(car)
-            %%
-            if car.checkWaypointReached(Destination)
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,car.pathInfo.lastWaypoint);
-                car.setCurrentRoute(nextRoute);
-            end
-            
+            car.checkWaypointReached(Destination);
         end
         
         function rotate_left(obj, car, Destination)
             %% Reference Waypoint Generation
             obj.generateLeftRotationWaypoints(car);
-            %%
-            if car.checkWaypointReached(Destination)
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,car.pathInfo.lastWaypoint);
-                car.setCurrentRoute(nextRoute);
-            end
-            
+            car.checkWaypointReached(Destination);          
         end
         
         function rotate_right(obj, car, Destination)
             %% Reference Waypoint Generation
             obj.generateRightRotationWaypoints(car);
-            %%
-            if car.checkWaypointReached(Destination)
-                nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,car.pathInfo.lastWaypoint);
-                car.setCurrentRoute(nextRoute);
-            end
-
+            car.checkWaypointReached(Destination);
         end
         
         
