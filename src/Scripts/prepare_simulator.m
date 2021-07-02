@@ -4,7 +4,7 @@ function prepare_simulator(options)
     arguments
         options.Analysing   (1,1) logical   = false                 % activate the analysing functions
         options.modelName   (1,1) string    = 'MOBATSim'            % name of the simulink model
-        options.simStopTime (1,1) double    = 40                    % simulation stop time in seconds
+        options.simStopTime (1,1) double    = 80                    % simulation stop time in seconds
         options.simTs       (1,1) double    = 0.02                  % simulation time step: sample time of the simulation (may not be stable if changed)
         options.mapType     (1,1) MapTypes  = MapTypes.GridMap      % 'GridMap' or 'DigraphMap'
         options.mapName     (1,1) string    = 'Mobatkent'           % Mobatkent, Highway, Crossmap

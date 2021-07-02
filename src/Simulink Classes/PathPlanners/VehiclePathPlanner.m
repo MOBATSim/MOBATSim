@@ -47,7 +47,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             %% Check if destination is reached
             if obj.vehicle.checkifDestinationReached() % If true vehicle stops
                 FuturePlan = obj.vehicle.decisionUnit.futureData;   %Output 1: Future plan of the vehicle
-                waypointReached=1;                                  %Output 2: Waypoint Reached enabler
+                waypointReached=0;                                  %Output 2: Waypoint Reached enabler
             else            
                 %% Check if the vehicle has reached a waypoint / Then it should reupdate its plan
                 if obj.vehicle.pathInfo.calculateNewPathFlag == 1 
