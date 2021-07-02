@@ -148,14 +148,10 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             end
         end
         
-        function OtherVehiclesFutureData = getSameTypeOfOtherVehicleFutureData(obj,OtherVehiclesFutureData)
+        function OtherVehiclesFutureData = getSameTypeOfOtherVehicleFutureData(~,OtherVehiclesFutureData)
             if ~isempty(OtherVehiclesFutureData)
-                switch class(obj)
-                    case 'VehiclePathPlanner_GridAStar'
-                        OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)>=0,:);% Just take the grid
-                    otherwise                     
-                        OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)<0,:); % Just take the negative indices to clear the grid
-                end
+                
+                OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)<0,:); % Just take the negative indices to clear the grid
             end
         end
                 
