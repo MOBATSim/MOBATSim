@@ -194,7 +194,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             c = car.dynamics.cornering.c;
             
             step_length = speed/r;
-            car.setRotationAngle(-step_length) % Vehicle Set
+            car.dynamics.cornering.angles = car.dynamics.cornering.angles - step_length;
             t = car.dynamics.cornering.angles;
             
             if  pi-rotation_angle>t
@@ -229,7 +229,10 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
                 
                 car.setRouteCompleted(false);
                 
-                car.setCorneringValues(car.dynamics.position, rotation_point)
+                car.dynamics.cornering.angles = 0;
+                car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
+                car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
+                car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
             end
             
             r = norm(Destination-rotation_point);
@@ -240,7 +243,7 @@ classdef VehicleKinematics < matlab.System & handle & matlab.system.mixin.Propag
             c = car.dynamics.cornering.c;
             
             step_length = speed/r;
-            car.setRotationAngle(step_length) % Vehicle Set
+            car.dynamics.cornering.angles = car.dynamics.cornering.angles + step_length;
             
             t = car.dynamics.cornering.angles;
             

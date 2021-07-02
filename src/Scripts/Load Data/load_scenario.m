@@ -1,5 +1,4 @@
-function [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenarioName)
-    startingTimes = [0 0 0 0 0 0 0 0 0 0];
+function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenarioName)
     switch scenarioName
         case 'Urban City Traffic'
             %% Test scenarios           
@@ -95,13 +94,11 @@ function [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_sc
             maxSpeeds = [13 13 11 9 13 13 8 14 4 13];
 
         case 'Intersection'
-            startingTimes = [0 0 0 0 0 0 0 0 0 0];
             startingPoints =    [52 11 32 47 33 92 22 6  45 82];
             destinationPoints = [35 79 95 79 95 95 63 59  47 27];
             maxSpeeds =         [17  19  22 19 19 19 28  26 26 27];
 
         case 'Hard Left'
-            startingTimes = [0 0 0 0 0 0 0 0 0 0];
             startingPoints =    [20 23 24 92 93 96 84 83 82 30];
             destinationPoints = [80 79 78 9 8 7 68 67 66 60];
             maxSpeeds =         [17  19  12 19 13 19 14  16 16 17];
@@ -146,7 +143,6 @@ function [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_sc
     % maxSpeeds = [13 12.4 11 8.4 13 13 9.2 13.2 9 13];
 
     % Fabian AIM Scenario
-    %startingTimes = [0 0 0 0 0 0 0 0 0 0];
     %startingPoints =    [52 11 32 47 33 92 22 6  45 82];
     %destinationPoints = [35 79 95 79 95 95 21 8  47 83];
     %maxSpeeds =         [7  9  12 9 12.5 19 8  16 16 17];

@@ -54,15 +54,16 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             for i=1:length(obj.map.crossroadUnits)
                 mergedBrakingFlagArrays =  [mergedBrakingFlagArrays; obj.map.crossroadUnits(i).breakingFlagArray]; %#ok<AGROW>
             end
-            
 
-            %% 2D Traffic Plot
-            obj.map.dynamicTrafficPlot();
-            
-            %% Path Dynamic Highlight
+            %% 2D Traffic Plot + Path Dynamic Highlight
             if mod(obj.getCurrentTime,0.2) == 0
-                obj.map.dynamicRouteHighlighting();
+                obj.map.dynamicTrafficPlot(); % Update Vehicle locations and speeds
+                
+                if mod(obj.getCurrentTime,1) == 0
+                    obj.map.dynamicRouteHighlighting(); % Update hightlighted paths
+                end   
             end
+            
             %% Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 allVehiclePositions = cat(1,cat(1,cat(1,obj.map.Vehicles).dynamics).position);
@@ -91,7 +92,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         end
         %% load test data for safety evaluation
          function TestData = logTestData(obj)
-             TestData = [];
+             TestData = zeros(10, length(obj.Vehicles));
              for i = 1:length(obj.Vehicles)
                  TestData(1, i) = obj.Vehicles(1,i).dynamics.speed;
                  TestData(2, i) = obj.Vehicles(1,i).dynamics.minDeceleration;

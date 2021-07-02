@@ -128,7 +128,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                     if isempty(newFutureData)
                         %we cant reach any node from now
                         disp(['No possible path was found for Vehicle ' num2str(obj.vehicle.id)])
-                        obj.stopVehicle(obj.vehicle); % TODO: This should be removed and vehicle path should not be pruned!!!
+                        obj.vehicle.setStopStatus(true);
                         return;
                     end
                 else                   
@@ -149,19 +149,6 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 obj.vehicle.setPath(obj.vehicle.pathInfo.path(2:end));%delete old node in path
             end
             
-        end        
-
-        
-        %% vehicle commands
-        function stopVehicle(~, car)    % TODO - Remove this from here, if needed, add a function in Vehicle class
-            %code from vehicle.checkifDestinationReached
-            car.setPath([]);
-            car.pathInfo.destinationReached = true;
-            car.setStopStatus(true);
-            car.setRouteCompleted(true);
-            car.updateActualSpeed(0);
-            car.dataLog.totalTravelTime = obj.getCurrentTime;
-            car.V2VdataLink(car.V2VdataLink==1) =0;
         end
         
         %% open list related
@@ -545,10 +532,6 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             indx = obj.Map.connections.all(:,1)== s;
             su = obj.Map.connections.all(indx,2)';
         end
-        function succE = eSucc(obj,s)
-            %returns all edges to successors of s
-            succE = find(obj.Map.connections.all(:,1)== s)';
-        end
         
         %% utility functions
         function less = compareKeys(~,k1a,k1b,k2a,k2b) 
@@ -602,13 +585,13 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             if globalTime ~= 0
                 %if a car without future data blocks a node, we set the node blocked
                 
-                %get all other cars
-                otherCars = getNrOfAllOtherCars(obj);
                 vehicles = obj.vehicle.map.Vehicles;
+                otherCars = vehicles(cat(1,vehicles(:).id) ~= obj.vehicle.id);
+                
                 for car = otherCars
                     %check for stop
-                    if vehicles(car).status.stop
-                        obj.nodesBlocked(vehicles(car).pathInfo.lastWaypoint)=1;
+                    if car.status.stop
+                        obj.nodesBlocked(car.pathInfo.lastWaypoint)=1;
                     end
                 end
             end
@@ -636,31 +619,22 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             
             blocked = willBeBlocked || alreadyBlocked;
         end
-        function blocked = checkIfBlockedForLoop(obj,otherCars, curEdge)
-            %if a car will stop after current edge, it will block the node
-            for c = otherCars                
-                roads = ePred(obj,obj.vehicle.map.Vehicles(c).pathInfo.destinationPoint);
-                blocked = fastMember(obj,1,fastMember(obj,roads,curEdge));
-                if blocked
-                    break;
-                end
-            end
-        end 
+
         
         %% edit and evaluate FutureData        
         function futureData = deleteCollidedVehicleFutureData(obj,futureData)
             %deletes future data of vehicles that will not move because of collision
-            otherCars = getNrOfAllOtherCars(obj); 
             vehicles = obj.vehicle.map.Vehicles;
+            otherCars = vehicles(cat(1,vehicles(:).id) ~= obj.vehicle.id);
             obj.changedEdges = [];%reset
             obj.haveCostsChanged = false;
             for car = otherCars
                 %check for collision
-                if vehicles(car).status.collided
+                if car.status.collided
                     %remove every entry with the collided car from FD
-                    futureData = futureData(futureData(:,1)~=car,:);
+                    futureData = futureData(futureData(:,1) ~= car.id,:);
                     %block the start and the future node of the crash
-                    area = [vehicles(car).pathInfo.lastWaypoint,vehicles(car).pathInfo.path(2)];
+                    area = [car.pathInfo.lastWaypoint,car.pathInfo.path(2)];
                     obj.nodesBlocked(area(1))=1;
                     obj.nodesBlocked(area(2))=1;
                     obj.changedEdges = [obj.changedEdges, obj.getEdge(area(1),area(2))];
@@ -702,15 +676,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 obj.haveCostsChanged = true;
             end
         end
-        
-        %% get information on other cars in the simulation
-        function otherCars = getNrOfAllOtherCars(obj)
-            %returns a vector with all other cars id
-            
-            otherCars = 1:10;
-            otherCars = otherCars(otherCars~= obj.vehicle.id);
-        end
-        
+           
         
         %% temporary goal node realted
         function tempFD = newGoalNode(obj)
@@ -745,7 +711,8 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
                 end
             end
             tempFD = [obj.vehicle.id 0 0 0 0 -2];
-        end         
+        end   
+        
         function initializeGoal(obj,s)
             %set up new goal node s
             obj.nodesG(s) = 0;

@@ -8,7 +8,6 @@ classdef Vehicle < handle
     %    vehiclesCollide - Stops the vehicles if a collision has happened
     %    checkIntersection - Checks if hitboxes intersect to raise the collision flag
     %    checkifDestinationReached - Checks if the vehicle has reached its destination waypoint
-    %    logWaypointArrivalTimeStamps - (TODO: Check in detail)
     %    calculateEstimatedTimeOfArrival - (TODO: Check in detail)
     %    getAverageAcceleration - (TODO: Check in detail)
     %    getAccelerationDistance - (TODO: Check in detail)
@@ -27,15 +26,12 @@ classdef Vehicle < handle
     %    setLastWaypoint
     %    setRouteCompleted
     %    setDestinationReached
-    %    setCorneringValues - (TODO: Check in detail)
-    %    setRotationAngle
     %    setYawAngle
     %    setPosition
 
     properties
         id              %    id - Unique id of a vehicle
         name            %    name - A custom name for a vehicle
-        drivingBehavior % Check where they are set and get
         physics
         %         size
         %         mass
@@ -62,7 +58,6 @@ classdef Vehicle < handle
         %         collided
         %         ttc                           time to collision
         pathInfo
-        %         startingTime
         %         currentRoute
         %         destinationReached
         %         stopAt
@@ -96,21 +91,16 @@ classdef Vehicle < handle
     end
     
     methods
-        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,startingTime,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration, map)
+        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration, map)
             obj.id = id;
             obj.name = car_name;
-            
-            obj.drivingBehavior.safetyTime = 2; % Check where they are set and get
-            
+                        
             obj.physics.size = size; %Should be edited according to the vehicle
             obj.physics.mass = mass; %kg Should be edited according to the vehicle
             
             obj.dynamics.position = [0 0 0];
             obj.dynamics.speed = 0;
             obj.dynamics.maxSpeed =maxSpeed;
-            obj.dynamics.directionVector=[0 0 0];
-            obj.dynamics.cornering.angles = 0;
-            obj.dynamics.cornering.iterator = 1;
             obj.dynamics.orientation = [0 1 0 0];
             obj.dynamics.minDeceleration = minDeceleration;
             obj.dynamics.acceleration = 0;
@@ -124,9 +114,9 @@ classdef Vehicle < handle
             %obj.sensors.leadingVehicleSpeed          TODO: implement this variable
             % TODO: check following, if they are needed
             obj.sensors.leadingVehicle = []; % Check where they are set and get
-            obj.sensors.behindVehicle = []; % Check where they are set and get % TODO: name it to rearVehicle
-            obj.sensors.behindVehicleSafetyMargin = 1000; % Check where they are set and get
-            obj.sensors.behindVehicleDistance = 1000; % Check where they are set and get
+            obj.sensors.readVehicle = []; % Check where they are set and get
+            obj.sensors.rearVehicleSafetyMargin = 1000; % Check where they are set and get
+            obj.sensors.rearVehicleDistance = 1000; % Check where they are set and get
             
             
             
@@ -138,7 +128,6 @@ classdef Vehicle < handle
             obj.status.laneSwitchFinish = 0; % Check where they are set and get
             obj.status.ttc = 1000;
             
-            obj.pathInfo.startingTime = startingTime;
             obj.pathInfo.currentTrajectory = [];
             obj.pathInfo.currentRoute =0;
             obj.pathInfo.destinationReached = false;
@@ -157,7 +146,6 @@ classdef Vehicle < handle
             obj.pathInfo.d = 0; % Check where they are set and get
             obj.pathInfo.routeEndDistance = []; % Check where they are set and get
             
-            obj.dataLog.timeStamps =[];
             obj.dataLog.totalTravelTime = 0;
             obj.dataLog.speedInCrossroad = [];
             obj.dataLog.speedInCrossroad2 = [];
@@ -336,9 +324,6 @@ classdef Vehicle < handle
             end
         end
         
-        function logWaypointArrivalTimeStamps(car,TimeStamp)
-            car.dataLog.timeStamps = [car.dataLog.timeStamps;[car.pathInfo.lastWaypoint TimeStamp]];
-        end
         
         %% Estimator of the vehicle to calculate the ETA at the crossroad
         
@@ -459,12 +444,12 @@ classdef Vehicle < handle
             end
             
             if ~(rearVehicleID==-1) % Register Behind Vehicle if exists
-                car.sensors.behindVehicle = car.map.Vehicles(rearVehicleID);
-                relSpeed = car.sensors.behindVehicle.dynamics.speed-car.dynamics.speed;
-                car.sensors.behindVehicleSafetyMargin = distanceToRear/relSpeed;
+                car.sensors.rearVehicle = car.map.Vehicles(rearVehicleID);
+                relSpeed = car.sensors.rearVehicle.dynamics.speed-car.dynamics.speed;
+                car.sensors.rearVehicleSafetyMargin = distanceToRear/relSpeed;
             else
-                car.sensors.behindVehicle = [];
-                car.sensors.behindVehicleSafetyMargin = inf;
+                car.sensors.rearVehicle = [];
+                car.sensors.rearVehicleSafetyMargin = inf;
             end
             
         end
@@ -514,18 +499,7 @@ classdef Vehicle < handle
             end
             
         end
-        
-        function setCorneringValues(car, point_to_rotate, rotation_point)
-            car.dynamics.cornering.angles = 0;
-            car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
-            car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
-            car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
-        end
-        
-        function setRotationAngle(car, step_length)
-            car.dynamics.cornering.angles = car.dynamics.cornering.angles + step_length;
-        end
-        
+               
         function setOrientation(car,newOrientation) % Might be obsolete after implementing setYawAngle function
             car.dynamics.orientation = newOrientation;
         end

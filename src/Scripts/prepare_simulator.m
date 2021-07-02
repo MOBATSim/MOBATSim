@@ -4,7 +4,7 @@ function prepare_simulator(options)
     arguments
         options.Analysing   (1,1) logical   = false                 % activate the analysing functions
         options.modelName   (1,1) string    = 'MOBATSim'            % name of the simulink model
-        options.simStopTime (1,1) double    = 40                    % simulation stop time in seconds
+        options.simStopTime (1,1) double    = 80                    % simulation stop time in seconds
         options.simTs       (1,1) double    = 0.02                  % simulation time step: sample time of the simulation (may not be stable if changed)
         options.mapType     (1,1) MapTypes  = MapTypes.GridMap      % 'GridMap' or 'DigraphMap'
         options.mapName     (1,1) string    = 'Mobatkent'           % Mobatkent, Highway, Crossmap
@@ -61,10 +61,10 @@ function prepare_simulator(options)
 
     %% Load Scenario and Vehicles
     if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % TODO: change this part when GUI is changed, does not check base workspace
-        [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out
+        [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out
     end
     %uncomment line below to undo
-    % [startingTimes, startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out
+    % [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out
 
     
     %% (Will be moved from here) Fault Injection Parameters
@@ -75,7 +75,7 @@ function prepare_simulator(options)
     
     %% Load Vehicles
     
-    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, startingTimes, Map); % default on - for Monte Carlo experiments comment out
+    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map); % default on - for Monte Carlo experiments comment out
 
     %MonteCarlo_scenarios(); % default off - for Monte Carlo experiments uncomment
 

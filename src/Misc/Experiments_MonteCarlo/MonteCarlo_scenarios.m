@@ -10,8 +10,6 @@ dataLinksV2I = ones(1,length(VehicleNames));
 isMonteCarlo = true; % default: false
 
 %% Create a set of possible starting and destination points sets
-startingTimes = [0 0 0 0 0 0 0 0 0 0];
-
 AllSets = [1:78];
 OnlyStartingSet = [30 38 6 53 29 28 37 5];
 OnlyDestinationSet = [16 1 2 59 60];
@@ -64,7 +62,7 @@ for j=1:length(VehicleNames)
     
     VehicleVariable = strcat('Vehicle',num2str(j));
     assignin('caller',VehicleVariable,Vehicle(j,VehicleNames{j},startingPoints(j),destinationPoints(j),...
-    startingTimes(j),maxSpeeds(j),sizes(j,:),dataLinksV2V(j,:),dataLinksV2I(j),mass(j),...
+    maxSpeeds(j),sizes(j,:),dataLinksV2V(j,:),dataLinksV2I(j),mass(j),...
     frontSensorRange(j),AEBdistance(j),minDeceleration(j),Map) );
     NewVehicle = evalin('base',strcat('Vehicle',int2str(j)));
     Vehicles =[Vehicles NewVehicle];
