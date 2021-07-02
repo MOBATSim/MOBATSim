@@ -146,7 +146,7 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             else
                 %we cant reach any node from now
                 disp(strcat("No possible path was found for Vehicle ",num2str(carID)))
-                obj.stopVehicle();
+                obj.vehicle.setStopStatus(true);
                 newFutureData = [];
                 return;
             end
@@ -332,25 +332,18 @@ classdef VehiclePathPlanner_GridAStar< VehiclePathPlanner
             allCars = 1:length(obj.Map.Vehicles);
             otherCars = allCars(allCars ~= obj.vehicle.id);
             
-            % TODO: needs to be vectorized like: [cat(1,obj.Map.Vehicles(otherCars).pathInfo).destinationReached] == 1
-            for carId = otherCars
-                if obj.Map.Vehicles(carId).pathInfo.destinationReached                    
-                    coords = obj.Map.waypoints(obj.Map.Vehicles(carId).pathInfo.lastWaypoint,:);
-                    coords = obj.Map.bogMap.world2grid([coords(1)-obj.Map.xOffset,-coords(3)-obj.Map.yOffset]);
-                    futureData = [futureData;[carId , coords , 0, 0, -1]];
-                end
-            end
-        end
-        
-        function stopVehicle(obj)% TODO - Remove this from here, if needed, add a function in Vehicle class
-            car = obj.vehicle;            
-            %code from vehicle.checkifDestinationReached
-            car.pathInfo.path = [];
-            car.pathInfo.destinationReached = true;
-            car.setStopStatus(true);
-            car.updateActualSpeed(0);
-            car.dataLog.totalTravelTime = obj.getCurrentTime;
-            car.V2VdataLink(car.V2VdataLink==1) =0;
+            % other cars that reached their destination
+            otherCarsAtDest = otherCars([cat(1,obj.Map.Vehicles(otherCars).pathInfo).destinationReached] == 1);
+            
+             if otherCarsAtDest
+                    % get the coordinates of the cars that reached destination
+                    coords = obj.Map.waypoints([cat(1,obj.Map.Vehicles(otherCarsAtDest).pathInfo).lastWaypoint],:);
+                    coords = obj.Map.bogMap.world2grid([coords(:,1)-obj.Map.xOffset,-coords(:,3)-obj.Map.yOffset]);
+                    
+                    nrCars = length(otherCarsAtDest);
+                    % append the coordinates to future data
+                    futureData(end+1:end+nrCars,:) = [otherCarsAtDest' , coords , zeros(nrCars,1), zeros(nrCars,1), -1*ones(nrCars,1)];
+             end
         end
       
         function [nextSpeed,timeToReach] = checkACCOnGrid(obj,currentGL,currentSpeed)
