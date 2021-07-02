@@ -47,7 +47,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             %% Check if destination is reached
             if obj.vehicle.checkifDestinationReached() % If true vehicle stops
                 FuturePlan = obj.vehicle.decisionUnit.futureData;   %Output 1: Future plan of the vehicle
-                waypointReached=1;                                  %Output 2: Waypoint Reached enabler
+                waypointReached=0;                                  %Output 2: Waypoint Reached enabler
             else            
                 %% Check if the vehicle has reached a waypoint / Then it should reupdate its plan
                 if obj.vehicle.pathInfo.calculateNewPathFlag == 1 
@@ -59,7 +59,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false
                     %% OtherVehiclesFutureData Processing
                     OtherVehiclesFutureData = obj.checkEmptyFutureData(OtherVehiclesFutureData); % Replace empty by zeros of nx6
-                    OtherVehiclesFutureData = obj.getSameTypeOfOtherVehicleFutureData(OtherVehiclesFutureData); % Discard incompatible Future Data
                     OtherVehiclesFutureData = obj.deleteCollidedVehicleFutureData(OtherVehiclesFutureData); % Delete collided Vehicles' Future Data
                     
                     %% This is an abstract method that is implemented separately in each PathPlanner subclass
@@ -147,18 +146,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 OtherVehiclesFutureData = [0 0 0 0 0 0]; % Default nx6 Structure to avoid any size errors
             end
         end
-        
-        function OtherVehiclesFutureData = getSameTypeOfOtherVehicleFutureData(obj,OtherVehiclesFutureData)
-            if ~isempty(OtherVehiclesFutureData)
-                switch class(obj)
-                    case 'VehiclePathPlanner_GridAStar'
-                        OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)>=0,:);% Just take the grid
-                    otherwise                     
-                        OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,6)<0,:); % Just take the negative indices to clear the grid
-                end
-            end
-        end
-                
+                       
         function path = composePath(~,waypoints, startingPoint, endingPoint)
             %% define path from waypoints array
             predecessor = waypoints(endingPoint,2);
