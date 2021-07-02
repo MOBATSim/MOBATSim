@@ -32,7 +32,6 @@ classdef Vehicle < handle
     properties
         id              %    id - Unique id of a vehicle
         name            %    name - A custom name for a vehicle
-        drivingBehavior % Check where they are set and get
         physics
         %         size
         %         mass
@@ -59,7 +58,6 @@ classdef Vehicle < handle
         %         collided
         %         ttc                           time to collision
         pathInfo
-        %         startingTime
         %         currentRoute
         %         destinationReached
         %         stopAt
@@ -93,7 +91,7 @@ classdef Vehicle < handle
     end
     
     methods
-        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,startingTime,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration, map)
+        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration, map)
             obj.id = id;
             obj.name = car_name;
                         
@@ -130,7 +128,6 @@ classdef Vehicle < handle
             obj.status.laneSwitchFinish = 0; % Check where they are set and get
             obj.status.ttc = 1000;
             
-            obj.pathInfo.startingTime = startingTime;
             obj.pathInfo.currentTrajectory = [];
             obj.pathInfo.currentRoute =0;
             obj.pathInfo.destinationReached = false;

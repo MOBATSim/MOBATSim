@@ -294,7 +294,6 @@ function [Route_LaneNumber, waypoints, connections_circle, connections_translati
 
 
     % Fabian AIM Scenario
-    %startingTimes = [0 0 0 0 0 0 0 0 0 0];
     %startingPoints =    [52 11 32 47 33 92 22 6  45 82];
     %destinationPoints = [35 79 95 79 95 95 21 8  47 83];
     %maxSpeeds =         [7  9  12 9 12.5 19 8  16 16 17];
