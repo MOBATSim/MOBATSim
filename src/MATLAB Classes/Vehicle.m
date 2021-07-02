@@ -8,7 +8,6 @@ classdef Vehicle < handle
     %    vehiclesCollide - Stops the vehicles if a collision has happened
     %    checkIntersection - Checks if hitboxes intersect to raise the collision flag
     %    checkifDestinationReached - Checks if the vehicle has reached its destination waypoint
-    %    logWaypointArrivalTimeStamps - (TODO: Check in detail)
     %    calculateEstimatedTimeOfArrival - (TODO: Check in detail)
     %    getAverageAcceleration - (TODO: Check in detail)
     %    getAccelerationDistance - (TODO: Check in detail)
@@ -157,7 +156,6 @@ classdef Vehicle < handle
             obj.pathInfo.d = 0; % Check where they are set and get
             obj.pathInfo.routeEndDistance = []; % Check where they are set and get
             
-            obj.dataLog.timeStamps =[];
             obj.dataLog.totalTravelTime = 0;
             obj.dataLog.speedInCrossroad = [];
             obj.dataLog.speedInCrossroad2 = [];
@@ -336,9 +334,6 @@ classdef Vehicle < handle
             end
         end
         
-        function logWaypointArrivalTimeStamps(car,TimeStamp)
-            car.dataLog.timeStamps = [car.dataLog.timeStamps;[car.pathInfo.lastWaypoint TimeStamp]];
-        end
         
         %% Estimator of the vehicle to calculate the ETA at the crossroad
         

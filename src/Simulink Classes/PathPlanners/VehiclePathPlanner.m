@@ -51,18 +51,16 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             else            
                 %% Check if the vehicle has reached a waypoint / Then it should reupdate its plan
                 if obj.vehicle.pathInfo.calculateNewPathFlag == 1 
-                    previousPath = obj.vehicle.pathInfo.path;
-                    OtherVehiclesFutureData = obj.CollectFutureData(obj.Map.Vehicles, CommunicationIDs);
                     
-                    obj.vehicle.logWaypointArrivalTimeStamps(obj.getCurrentTime); % Log Time Stamps
-
-                    obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false
+                    obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false       
                     %% OtherVehiclesFutureData Processing
+                    OtherVehiclesFutureData = obj.CollectFutureData(obj.Map.Vehicles, CommunicationIDs);
                     OtherVehiclesFutureData = obj.checkEmptyFutureData(OtherVehiclesFutureData); % Replace empty by zeros of nx6
                     OtherVehiclesFutureData = obj.deleteCollidedVehicleFutureData(OtherVehiclesFutureData); % Delete collided Vehicles' Future Data
                     
                     %% This is an abstract method that is implemented separately in each PathPlanner subclass
                     % Build the future plan by deriving the next routes and building the path
+                    previousPath = obj.vehicle.pathInfo.path;
                     FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
                     waypointReached =1;                                 %Output 2: Waypoint Reached enabler
                     
