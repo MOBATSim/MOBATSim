@@ -90,7 +90,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 if (obj.vehicle.pathInfo.laneId==0)&&(obj.vehicle.status.ttc <1.4*3)%conditions for left lane-changing
                     obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
                     laneChange = 1;
-                elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.behindVehicleSafetyMargin)>2)&&(obj.vehicle.status.ttc>3.5)%conditions for right lane-changing
+                elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.rearVehicleSafetyMargin)>2)&&(obj.vehicle.status.ttc>3.5)%conditions for right lane-changing
                     obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
                     laneChange = 2;
                 else

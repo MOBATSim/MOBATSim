@@ -96,9 +96,7 @@ classdef Vehicle < handle
         function obj = Vehicle(id, car_name,startingPoint,destinationPoint,startingTime,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration, map)
             obj.id = id;
             obj.name = car_name;
-            
-            obj.drivingBehavior.safetyTime = 2; % Check where they are set and get
-            
+                        
             obj.physics.size = size; %Should be edited according to the vehicle
             obj.physics.mass = mass; %kg Should be edited according to the vehicle
             
@@ -118,9 +116,9 @@ classdef Vehicle < handle
             %obj.sensors.leadingVehicleSpeed          TODO: implement this variable
             % TODO: check following, if they are needed
             obj.sensors.leadingVehicle = []; % Check where they are set and get
-            obj.sensors.behindVehicle = []; % Check where they are set and get % TODO: name it to rearVehicle
-            obj.sensors.behindVehicleSafetyMargin = 1000; % Check where they are set and get
-            obj.sensors.behindVehicleDistance = 1000; % Check where they are set and get
+            obj.sensors.readVehicle = []; % Check where they are set and get
+            obj.sensors.rearVehicleSafetyMargin = 1000; % Check where they are set and get
+            obj.sensors.rearVehicleDistance = 1000; % Check where they are set and get
             
             
             
@@ -449,12 +447,12 @@ classdef Vehicle < handle
             end
             
             if ~(rearVehicleID==-1) % Register Behind Vehicle if exists
-                car.sensors.behindVehicle = car.map.Vehicles(rearVehicleID);
-                relSpeed = car.sensors.behindVehicle.dynamics.speed-car.dynamics.speed;
-                car.sensors.behindVehicleSafetyMargin = distanceToRear/relSpeed;
+                car.sensors.rearVehicle = car.map.Vehicles(rearVehicleID);
+                relSpeed = car.sensors.rearVehicle.dynamics.speed-car.dynamics.speed;
+                car.sensors.rearVehicleSafetyMargin = distanceToRear/relSpeed;
             else
-                car.sensors.behindVehicle = [];
-                car.sensors.behindVehicleSafetyMargin = inf;
+                car.sensors.rearVehicle = [];
+                car.sensors.rearVehicleSafetyMargin = inf;
             end
             
         end
