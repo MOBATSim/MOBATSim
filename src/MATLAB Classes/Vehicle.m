@@ -26,8 +26,6 @@ classdef Vehicle < handle
     %    setLastWaypoint
     %    setRouteCompleted
     %    setDestinationReached
-    %    setCorneringValues - (TODO: Check in detail)
-    %    setRotationAngle
     %    setYawAngle
     %    setPosition
 
@@ -107,9 +105,6 @@ classdef Vehicle < handle
             obj.dynamics.position = [0 0 0];
             obj.dynamics.speed = 0;
             obj.dynamics.maxSpeed =maxSpeed;
-            obj.dynamics.directionVector=[0 0 0];
-            obj.dynamics.cornering.angles = 0;
-            obj.dynamics.cornering.iterator = 1;
             obj.dynamics.orientation = [0 1 0 0];
             obj.dynamics.minDeceleration = minDeceleration;
             obj.dynamics.acceleration = 0;
@@ -509,18 +504,7 @@ classdef Vehicle < handle
             end
             
         end
-        
-        function setCorneringValues(car, point_to_rotate, rotation_point)
-            car.dynamics.cornering.angles = 0;
-            car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
-            car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
-            car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
-        end
-        
-        function setRotationAngle(car, step_length)
-            car.dynamics.cornering.angles = car.dynamics.cornering.angles + step_length;
-        end
-        
+               
         function setOrientation(car,newOrientation) % Might be obsolete after implementing setYawAngle function
             car.dynamics.orientation = newOrientation;
         end

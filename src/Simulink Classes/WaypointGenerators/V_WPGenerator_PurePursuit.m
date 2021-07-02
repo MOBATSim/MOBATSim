@@ -8,7 +8,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
         %  laneSwitchWayPoints = [];% Trajectory for pure pursuit controller
         
         sim_Ts = evalin('base','Sim_Ts');       
-        
+        directionVector = [0 0 0];
         referenceWaypoints = zeros(10,3);
         adaptiveGain = 1;%adaptive control law G for the Stanley controller
         adaptiveGain_k0 = 2;%k0 of adaptive control law G,FKFS equation 10
@@ -189,14 +189,6 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             obj.generateStraightWaypoints(car);
             %%
             car.checkWaypointReached(Destination);
-            %Displacement Vector and determination of its Angle
-%             if car.pathInfo.routeCompleted == true
-%                 DisplacementVector = Destination- car.dynamics.position;
-%                 ThetaRadian = atan(DisplacementVector(1)/DisplacementVector(3));
-%                 car.dynamics.orientation(4) = ThetaRadian;
-%                 car.dynamics.directionVector = DisplacementVector;
-%                 car.setRouteCompleted(false);
-%             end
             
             % For Intercardinal directions: Depending on the four quadrants, the problem the atan function is that it
             % is between -pi and pi so that it doesn't correctly cover a 360 degrees
@@ -205,62 +197,44 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             ThetaRadian = car.dynamics.orientation(4);
             
             % Intercardinal Directions
-            if car.dynamics.directionVector(1)<0
-                if car.dynamics.directionVector(3)<0
+            if obj.directionVector(1)<0
+                if obj.directionVector(3)<0
                     ThetaRadian= ThetaRadian+pi;
                 end
-            elseif car.dynamics.directionVector(1)>0
-                if car.dynamics.directionVector(3)<0
+            elseif obj.directionVector(1)>0
+                if obj.directionVector(3)<0
                     ThetaRadian= ThetaRadian+pi;
                 end
                 
                 % Vertical and horizontal movements - Cardinal Directions
                 % Movement z direction
-            elseif car.dynamics.directionVector(1)==0
+            elseif obj.directionVector(1)==0
                 
                 % Positive z direction
-                if car.dynamics.directionVector(3)>0
+                if obj.directionVector(3)>0
                     ThetaRadian = 0;
                     
                     % Negative z direction
-                elseif car.dynamics.directionVector(3)<0
+                elseif obj.directionVector(3)<0
                     ThetaRadian =-pi;
                 end
                 
                 % Movement x direction
-            elseif car.dynamics.directionVector(3)==0
+            elseif obj.directionVector(3)==0
                 % Positive x direction
-                if car.dynamics.directionVector(1)>0
+                if obj.directionVector(1)>0
                     ThetaRadian= pi/2;
                     % Negative x direction
-                elseif car.dynamics.directionVector(3)<0
+                elseif obj.directionVector(3)<0
                     ThetaRadian= -pi/2;
                 end
                 
             end
             
-            %             [checkPoint_x,checkPoint_y]=get_vehicle_checkpoint(obj,car);
-            %             checkPoint = [checkPoint_x 0 checkPoint_y];
-            %
-            %             %if  norm(car.dynamics.directionVector/norm(car.dynamics.directionVector))*speed > norm(Destination-car.dynamics.position)
-            %             if norm(checkPoint-Destination)< 1+car.pathInfo.laneId*obj.laneWidth % Error tolerance value TODO: check lower numbers
-            %
-%             if car.pathInfo.routeEndDistance <1
-%                 
-%                 car.pathInfo.s = 0;
-%                 
-%                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
-%                 
-%                 car.setRouteCompleted(true); % Vehicle Set
-%                 car.setLastWaypoint(lastWaypoint); % Vehicle Set
-%                 
-%                 nextRoute = obj.generateCurrentRoute(car,car.pathInfo.path,lastWaypoint);
-%                 car.setCurrentRoute(nextRoute); % Vehicle Set
-%             end
             
             orientation = [ 0 1 0 ThetaRadian];
             % Simple Straight Motion Equation
-            position = car.dynamics.position + (car.dynamics.directionVector/norm(car.dynamics.directionVector))*(speed);
+            position = car.dynamics.position + (obj.directionVector/norm(obj.directionVector))*(speed);
         end
         
         function [position, orientation] = rotate_left(obj ,car, speed, rotation_point,Destination)
@@ -286,7 +260,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             c = car.dynamics.cornering.c;
             
             step_length = speed/r;
-            car.setRotationAngle(-step_length) % Vehicle Set
+            car.dynamics.cornering.angles = car.dynamics.cornering.angles - step_length;
             t = car.dynamics.cornering.angles;
             
             
@@ -314,15 +288,12 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             obj.generateRightRotationWaypoints(car);
             %%
             if ~car.checkWaypointReached(Destination)
-                 car.setCorneringValues(car.dynamics.position, rotation_point)
+                car.dynamics.cornering.angles = 0;
+                car.dynamics.cornering.a=point_to_rotate(1)-rotation_point(1);
+                car.dynamics.cornering.b=point_to_rotate(2)-rotation_point(2);
+                car.dynamics.cornering.c=point_to_rotate(3)-rotation_point(3);
             end
-%             if car.pathInfo.routeCompleted == true
-%                 
-%                 car.setRouteCompleted(false);
-%                 
-%                 car.setCorneringValues(car.dynamics.position, rotation_point)
-%             end
-            
+
             r = norm(Destination-rotation_point);
             vector_z=[0 0 1];
             
@@ -331,7 +302,7 @@ classdef V_WPGenerator_PurePursuit < WaypointGenerator
             c = car.dynamics.cornering.c;
             
             step_length = speed/r;
-            car.setRotationAngle(step_length) % Vehicle Set
+            car.dynamics.cornering.angles = car.dynamics.cornering.angles + step_length;
             
             t = car.dynamics.cornering.angles;
             
