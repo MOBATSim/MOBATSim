@@ -86,11 +86,11 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 %% Check if crossroad
                 obj.crossroadCheck(obj.vehicle);
             end
+            
             %% Grid path generation
-            if mod(obj.getCurrentTime,0.2) == 0 % Plotting can decrease performance (update at every 0.2 seconds)
-                if isa(obj.Map,'GridMap') % BOGPath is only generated if the Map type is GridMap
-                    obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
-                end
+            if mod(obj.getCurrentTime,1) == 0 % BOGPath generation sample time (update at every 1 second)
+                % BOGPath is only generated if the Map type is GridMap
+                obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
             end
             
         end
