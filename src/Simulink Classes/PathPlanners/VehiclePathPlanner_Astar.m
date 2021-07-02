@@ -205,18 +205,21 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
         
         function OtherVehiclesFutureData = deleteCollidedVehicleFutureData(obj,OtherVehiclesFutureData)
             
-                otherCars = unique(OtherVehiclesFutureData(:,1))'; % OtherCars which have the same FutureData
-                otherCars(otherCars==0) = []; % If zero comes as index, make it empty
-                vehicles = obj.Map.Vehicles;
+            otherCarIDs = unique(OtherVehiclesFutureData(:,1))'; % OtherCars which have the same FutureData
+            otherCars = obj.Map.Vehicles(otherCarIDs);
+            
+            % other cars with same future data found
+            if otherCarIDs %#ok<BDSCI,BDLGI>                
+                % find collided cars
+                collidedCarIDs = otherCarIDs([cat(1,otherCars.status).collided] == 1);
                 
-                for carID = otherCars
-                    if vehicles(carID).status.collided
-                        %remove every entry with the collided car from FD
-                        OtherVehiclesFutureData = OtherVehiclesFutureData(OtherVehiclesFutureData(:,1)~=carID,:);
-                    end
+                if collidedCarIDs
+                    % remove future data from collided cars
+                    OtherVehiclesFutureData(ismember(OtherVehiclesFutureData(:,1),collidedCarIDs),:) = [];
                 end
-                    
-        end   
+            end
+            
+        end
     end
     
     
