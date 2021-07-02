@@ -92,7 +92,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         end
         %% load test data for safety evaluation
          function TestData = logTestData(obj)
-             TestData = zeros(9, length(obj.Vehicles));
+             TestData = zeros(10, length(obj.Vehicles));
              for i = 1:length(obj.Vehicles)
                  TestData(1, i) = obj.Vehicles(1,i).dynamics.speed;
                  TestData(2, i) = obj.Vehicles(1,i).dynamics.minDeceleration;
