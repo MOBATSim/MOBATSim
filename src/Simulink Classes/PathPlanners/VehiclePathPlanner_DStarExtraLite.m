@@ -532,10 +532,6 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             indx = obj.Map.connections.all(:,1)== s;
             su = obj.Map.connections.all(indx,2)';
         end
-        function succE = eSucc(obj,s)
-            %returns all edges to successors of s
-            succE = find(obj.Map.connections.all(:,1)== s)';
-        end
         
         %% utility functions
         function less = compareKeys(~,k1a,k1b,k2a,k2b) 
@@ -623,16 +619,7 @@ classdef VehiclePathPlanner_DStarExtraLite < VehiclePathPlanner
             
             blocked = willBeBlocked || alreadyBlocked;
         end
-        function blocked = checkIfBlockedForLoop(obj,otherCars, curEdge)
-            %if a car will stop after current edge, it will block the node
-            for c = otherCars                
-                roads = ePred(obj,obj.vehicle.map.Vehicles(c).pathInfo.destinationPoint);
-                blocked = fastMember(obj,1,fastMember(obj,roads,curEdge));
-                if blocked
-                    break;
-                end
-            end
-        end 
+
         
         %% edit and evaluate FutureData        
         function futureData = deleteCollidedVehicleFutureData(obj,futureData)
