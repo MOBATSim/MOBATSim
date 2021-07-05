@@ -24,6 +24,10 @@ classdef DigraphMap < Map
             obj.plots.graph.LineWidth = 2;
             
         end %Constructor
+        
+        function initialGraphHighlighting(obj)
+            obj.plots.graph.EdgeColor = 'g';
+        end
 
         function dynamicRouteHighlighting(obj)
             
