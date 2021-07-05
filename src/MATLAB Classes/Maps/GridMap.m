@@ -7,7 +7,7 @@ classdef GridMap < Map
         gridLocationMap;               % Container object to store and load all GridLocation objects
         xOffset;                       % Offset to transform visualization into bog coordinates if necessary
         yOffset;
-        colourMatrix;
+        colorMatrix;
     end
     
     methods
@@ -15,7 +15,7 @@ classdef GridMap < Map
         function obj = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
             obj = obj@Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber);
             
-            obj.colourMatrix = [1 0 0;      %1  red
+            obj.colorMatrix = [1 0 0;       %1  red
                 1 1 0 ;                     %2	yellow
                 0 1 1 ;                     %3  light blue
                 0 0.2470 0.5410;            %4  dark blue
@@ -148,8 +148,10 @@ classdef GridMap < Map
             delete(obj.plots.trajectories) % Delete previous trajectories using their handle
        
             hold on
+            nrEntriesColorMatrix = size(obj.colorMatrix,1); 
             for vehicle = obj.Vehicles % Changing sizes of BOGPath makes it hard to vectorize
-                obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',obj.colourMatrix(vehicle.id,:),'LineWidth',2);
+                color = obj.colorMatrix(mod(vehicle.id,nrEntriesColorMatrix)+1,:); % repeat the color when more vehicles than entries in color matrix
+                obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',color,'LineWidth',2);
             end
             hold off
             

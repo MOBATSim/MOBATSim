@@ -18,7 +18,7 @@ classdef Map < handle
         function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
             obj.mapName = mapName;
             obj.waypoints = waypoints;
-            obj.Vehicles = [];
+            obj.Vehicles = []; % Vehicles are added after vehicle generation
             obj.connections.all = [connections_circle(:,1:2);connections_translation(:,1:2)];
             obj.connections.maxSpeeds = [connections_circle(:,end); connections_translation(:,end)];
             obj.connections.circle = connections_circle;
@@ -26,6 +26,7 @@ classdef Map < handle
             obj.plots.trajectories = [];
             obj.Route_LaneNumber = Route_LaneNumber;
             
+            % Crossroads
             obj.crossroads.startingNodes = startingNodes;
             obj.crossroads.breakingNodes = breakingNodes;
             obj.crossroads.stoppingNodes = stoppingNodes;
@@ -54,7 +55,7 @@ classdef Map < handle
             obj.connections.distances = [distancesCircle';distancesTranslation'];
 
             %create direct graph with related weights
-            obj.directedGraph = digraph( [obj.connections.circle(:,1)' obj.connections.translation(:,1)'],[obj.connections.circle(:,2)' obj.connections.translation(:,2)'],[ obj.connections.distances']);
+            obj.directedGraph = digraph( [obj.connections.circle(:,1)' obj.connections.translation(:,1)'],[obj.connections.circle(:,2)' obj.connections.translation(:,2)'], obj.connections.distances');
             
         end %Constructor
         
@@ -80,15 +81,6 @@ classdef Map < handle
             index = find(obj.connections.all(:,1) ==point1&obj.connections.all(:,2) ==point2);
             
         end        
-        
-        function stopCollidingVehicles(~, car)
-            if car.status.emergencyCase == 3 % Collision
-                % Inform the map and/or the Decision Unit about what happened
-                car.dynamics.speed = 0;
-                car.setStopStatus(true);
-            end
-            
-        end
         
         function initialYawAngle = getInitialYawAnglefromWaypoint(obj,waypoint)
             
@@ -131,16 +123,16 @@ classdef Map < handle
         end
         
         function neighbourRoutes = getForwardNeighbourRoutes(obj, route)
-            connections = obj.connections.all;
-            connection = connections(route,:);
-            neighbourRoutes =find(connections(:,1)==connection(2));
+            allConnections = obj.connections.all;
+            connection = allConnections(route,:);
+            neighbourRoutes =find(allConnections(:,1)==connection(2));
             
         end
         
         function neighbourRoutes = getBackwardNeighbourRoutes(obj, route)
-            connections = obj.connections.all;
-            connection = connections(route,:);
-            neighbourRoutes =find(connections(:,2)==connection(1));
+            allConnections = obj.connections.all;
+            connection = allConnections(route,:);
+            neighbourRoutes =find(allConnections(:,2)==connection(1));
             
         end
         
@@ -194,8 +186,6 @@ classdef Map < handle
             hold on
             obj.plots.Vehicles = scatter([],[],380,'filled'); % Size of the vehicle bubbles            
             hold off
-                    
-            obj.plots.Vehicles.ZData = 0.01 .* ones(1,10); % Warning: This may sometimes cause a bug and disable the figure zoom for map.
 
         end
         
@@ -205,36 +195,33 @@ classdef Map < handle
 
             obj.plots.Vehicles.XData = allVehiclePositions(:,1);
             obj.plots.Vehicles.YData = -allVehiclePositions(:,3);
+            obj.plots.Vehicles.ZData = 0.01 + allVehiclePositions(:,2); % Warning: This may sometimes cause a bug and disable the figure zoom for map.
             obj.plots.carDescription=text(allVehiclePositions(:,1)',-allVehiclePositions(:,3)',num2cell("V" + cat(1,obj.Vehicles.id))','FontWeight','Bold','FontSize',9);
             
-            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-5, -allVehiclePositions(1:length(obj.Vehicles),3)+2, 0.011.*ones(1,10)'];
-            allTextPositions = mat2cell(allVehiclePositions,ones(1,10),3); % Matrix to Cell for the handle format
+            allVehiclePositions = [allVehiclePositions(:,1)-5, -allVehiclePositions(:,3)+2, allVehiclePositions(:,2)+0.01];
+            allTextPositions = mat2cell(allVehiclePositions,ones(1,size(allVehiclePositions,1)),3); % Matrix to Cell for the handle format
             
             % Set the position of the Text handles
             set(obj.plots.carDescription,{'Position'},allTextPositions);
         end
         
-        function initialGraphHighlighting(obj)
-            obj.plots.graph.EdgeColor = 'g';
-        end
-        
         function dynamicTrafficPlot(obj)
             
-            allVehiclePositions = cat(1,cat(1,obj.Vehicles(1:length(obj.Vehicles)).dynamics).position);
+            allVehiclePositions = cat(1,cat(1,obj.Vehicles.dynamics).position);
             
             % Vehicles' 2D scatter plot circle positions
             obj.plots.Vehicles.XData = allVehiclePositions(:,1);
             obj.plots.Vehicles.YData = -allVehiclePositions(:,3);
             
             % Vehicles' Annotation String
-            speedArray = compose("%4.1f", [cat(1,cat(1,obj.Vehicles(1:length(obj.Vehicles))).dynamics).speed]);
-            nameArray = ("V" + cat(1,obj.Vehicles.id))';
+            speedArray = compose("%4.1f", [cat(1,obj.Vehicles.dynamics).speed]);
+            nameArray = "V" + [obj.Vehicles.id];
             textDescArray = num2cell([nameArray; speedArray],1)';
 
             
             % Vehicles' Annotation Position
-            allVehiclePositions = [allVehiclePositions(1:length(obj.Vehicles),1)-8, -allVehiclePositions(1:length(obj.Vehicles),3)+8, 0.011.*ones(1,10)'];
-            allTextPositions = mat2cell(allVehiclePositions,ones(1,10),3); % Matrix to Cell for the handle format
+            allVehiclePositions = [allVehiclePositions(:,1)-8, -allVehiclePositions(:,3)+8, allVehiclePositions(:,2)+0.01];
+            allTextPositions = mat2cell(allVehiclePositions,ones(1,size(allVehiclePositions,1)),3); % Matrix to Cell for the handle format
             
             %set the position and string handles
             set(obj.plots.carDescription,{'Position'},allTextPositions);
@@ -245,7 +232,7 @@ classdef Map < handle
         
         %% For debugging and analysis - not implemented
         function costs = getCosts(obj, point1, point2)
-            index = find(([obj.connections.translation(:,1);obj.connections.circle(:,1)] ==point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2));
+            index = ([obj.connections.translation(:,1);obj.connections.circle(:,1)] ==point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2);
             costs_vector = [obj.connections.costs.translation obj.connections.costs.circle] ;
             costs = costs_vector(index);
         end
@@ -253,13 +240,13 @@ classdef Map < handle
         
         function path = get_shortest_path(obj, starting_point, ending_point)
             
-            [path,distance] = shortestpath(obj.directedGraph,starting_point,ending_point);
+            [path,~] = shortestpath(obj.directedGraph,starting_point,ending_point);
             
         end
         
         function path_in_waypoints = find_shortest_path_as_waypoints(obj, starting_point, ending_point )
             
-            [path,distance] = shortestpath(obj.directedGraph,starting_point,ending_point);
+            [path,~] = shortestpath(obj.directedGraph,starting_point,ending_point);
             path_in_waypoints = obj.waypoints(path,:);
             
         end
@@ -304,7 +291,7 @@ classdef Map < handle
     end
     
     methods (Abstract)
-    dynamicRouteHighlighting(obj)
+        dynamicRouteHighlighting(obj)
     end
     
   

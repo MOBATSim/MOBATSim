@@ -2,6 +2,15 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     % This block initializes the vehicles on the map, draws and updates their positions on the 2D plot. When a collision happens, the MAP instance detects it and stops the colliding vehicles. Apart from that, it contains an AIM (Autonomous Intersection Manager) to avoid conflictions on intersections. The decisions are sent to the vehicles as stop, wait, and go.
     %
 
+    % These properties are nontunable. When you use the System object™, 
+    % you can only change nontunable properties before calling the object 
+    % or after calling the release function.
+    properties (Nontunable)
+        % This properties are needed to set the output size of this block
+               
+        nrVehicles % Number of vehicles
+    end
+  
     % Public, tunable properties
     properties(Access = private)
         map = evalin('base','Map');
@@ -123,9 +132,9 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         end
         
         
-        function mergedBrakingFlagArrays = getOutputSizeImpl(~)
+        function mergedBrakingFlagArrays = getOutputSizeImpl(obj)
             % Maximum length of the output
-            mergedBrakingFlagArrays = [10 20];
+            mergedBrakingFlagArrays = [obj.nrVehicles 2];
             
         end
         
