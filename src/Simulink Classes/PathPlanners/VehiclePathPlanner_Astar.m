@@ -206,6 +206,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
         function OtherVehiclesFutureData = deleteCollidedVehicleFutureData(obj,OtherVehiclesFutureData)
             
             otherCarIDs = unique(OtherVehiclesFutureData(:,1))'; % OtherCars which have the same FutureData
+            otherCarIDs(otherCarIDs==0) = [];
             otherCars = obj.Map.Vehicles(otherCarIDs);
             
             % other cars with same future data found
