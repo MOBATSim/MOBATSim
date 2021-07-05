@@ -55,7 +55,7 @@ classdef Map < handle
             obj.connections.distances = [distancesCircle';distancesTranslation'];
 
             %create direct graph with related weights
-            obj.directedGraph = digraph( [obj.connections.circle(:,1)' obj.connections.translation(:,1)'],[obj.connections.circle(:,2)' obj.connections.translation(:,2)'],[ obj.connections.distances']);
+            obj.directedGraph = digraph( [obj.connections.circle(:,1)' obj.connections.translation(:,1)'],[obj.connections.circle(:,2)' obj.connections.translation(:,2)'], obj.connections.distances');
             
         end %Constructor
         
@@ -123,16 +123,16 @@ classdef Map < handle
         end
         
         function neighbourRoutes = getForwardNeighbourRoutes(obj, route)
-            connections = obj.connections.all;
-            connection = connections(route,:);
-            neighbourRoutes =find(connections(:,1)==connection(2));
+            allConnections = obj.connections.all;
+            connection = allConnections(route,:);
+            neighbourRoutes =find(allConnections(:,1)==connection(2));
             
         end
         
         function neighbourRoutes = getBackwardNeighbourRoutes(obj, route)
-            connections = obj.connections.all;
-            connection = connections(route,:);
-            neighbourRoutes =find(connections(:,2)==connection(1));
+            allConnections = obj.connections.all;
+            connection = allConnections(route,:);
+            neighbourRoutes =find(allConnections(:,2)==connection(1));
             
         end
         
