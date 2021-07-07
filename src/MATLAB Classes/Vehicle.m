@@ -167,7 +167,6 @@ classdef Vehicle < handle
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
-            obj.V2I = V2I(id, dataLinkV2I, map);
             
             obj.setPosition(obj.map.get_coordinates_from_waypoint(startingPoint));
             obj.setYawAngle(obj.map.getInitialYawAnglefromWaypoint(startingPoint));

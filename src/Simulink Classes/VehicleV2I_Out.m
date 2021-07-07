@@ -82,11 +82,6 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                                 
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 1];
-                else
-                    fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
-                    if ~isempty(fallbackVehicle)                        
-                        fallbackVehicle.V2I.carReachesCrossroadV2I(car,starting_point,global_timesteps,crossroadId)
-                    end
                 end
                 
             elseif nnz(cat(1,map.crossroadUnits.breakingNodes)==current_point) % car reaches Breaking Point 
@@ -95,24 +90,6 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                 
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 2];
-                else
-                    fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
-                    if ~isempty(fallbackVehicle)
-                        % if car is not registered yet in the IM yet, it has to
-                        % be done before
-
-                        %any(car.map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id) == 0 %check if it works
-                        %like below
-                        if ~any(map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id)
-                            
-                            %get startingNode to register vehicle correctly
-                            arrivingDirection = breakingPoint == map.crossroadUnits(crossroadId).breakingNodes;
-                            startingNode = map.crossroadUnits(crossroadId).startingNodes(arrivingDirection);
-                            
-                            fallbackVehicle.V2I.carReachesCrossroadV2I(car,startingNode,global_timesteps,crossroadId)
-                        end
-                        fallbackVehicle.V2I.carReachesBreakingPointV2I(car,breakingPoint,global_timesteps,crossroadId)
-                    end  
                 end
                 
             elseif nnz(cat(1,map.crossroadUnits.stoppingNodes)==current_point) % car reaches Stopping Point
@@ -123,12 +100,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             elseif nnz(cat(1,map.crossroadUnits.leavingNodes)==current_point)>0 % car leaves crossroad
                 crossroadId = find(any(cat(1,map.crossroadUnits.leavingNodes)==current_point,2));
                 if obj.vehicle.V2IdataLink==1
-                    V2Idata = [crossroadId 4];
-                else
-                    fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
-                    if ~isempty(fallbackVehicle)
-                        fallbackVehicle.V2I.carLeavesCrossroadV2I(car,global_timesteps,crossroadId)
-                    end    
+                    V2Idata = [crossroadId 4];   
                 end
                 car.decisionUnit.inCrossroad = [0 0];
             else
