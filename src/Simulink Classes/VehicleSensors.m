@@ -95,6 +95,8 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     rearVehicleID = rearDetection(rowId,1);
                     distanceToRear = min(rearDetection(:,2));
                 end
+            else
+                %% TODO: Use Map getBackwardNeighbourRoutes to find vehicles behind
             end
             
         end

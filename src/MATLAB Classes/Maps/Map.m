@@ -129,13 +129,7 @@ classdef Map < handle
             neighbourRoutes =find(allConnections(:,2)==connection(1));
             
         end
-        
-        function closestWaypoint = getClosestWaypoint(obj, waypoint)
-            cellWaypoints = num2cell(obj.waypoints,2);
-            x = cellfun(@(x) norm(x-obj.waypoints(waypoint,:)), cellWaypoints);
-            closestWaypoint = find(x==(min(x(x>0))));
-        end
-        
+               
         function formattedRoute = getRouteDefinitionfromRouteID(obj, routeID)
             
             
@@ -221,17 +215,14 @@ classdef Map < handle
             set(obj.plots.carDescription,{'Position'},allTextPositions);
             set(obj.plots.carDescription,{'String'},textDescArray);
         end
-        
-
-        
+            
         %% For debugging and analysis - not implemented
         function costs = getCosts(obj, point1, point2)
             index = ([obj.connections.translation(:,1);obj.connections.circle(:,1)] ==point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2);
             costs_vector = [obj.connections.costs.translation obj.connections.costs.circle] ;
             costs = costs_vector(index);
         end
-        
-        
+           
         function path = get_shortest_path(obj, starting_point, ending_point)
             
             [path,~] = shortestpath(obj.directedGraph,starting_point,ending_point);
@@ -245,24 +236,6 @@ classdef Map < handle
             
         end
         
-        function speed = get_speed (obj, route, maxSpeed)
-            point1 = get_waypoint_from_coordinates (obj,route(1,:));
-            point2 = get_waypoint_from_coordinates (obj,route(2,:));
-            
-            index = find(([obj.connections.translation(:,1);obj.connections.circle(:,1)] == point1)&([obj.connections.translation(:,2);obj.connections.circle(:,2)] ==point2));
-            if index > length(obj.connections.translation)
-                speed = obj.connections.circle(index -  length(obj.connections.translation),end);
-            else
-                speed = obj.connections.translation(index,end);
-            end
-            
-            if maxSpeed < speed
-                speed = maxSpeed;
-            end
-            
-        end
-        
-
     end
     methods (Static)
         function coordinates2D = transform3DAnimTo2Dcoordinate(coordinates3D)
@@ -287,8 +260,6 @@ classdef Map < handle
     methods (Abstract)
         dynamicRouteHighlighting(obj)
     end
-    
-  
     
 end
 
