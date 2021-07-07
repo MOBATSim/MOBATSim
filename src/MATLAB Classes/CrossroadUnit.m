@@ -379,7 +379,7 @@ classdef CrossroadUnit < handle
                 % the following line requests the ETA of the current
                 % vehicle using the stopping node and the ETA of the
                 % vehicle ahead (in case there is one)
-                timeToReach = vehicle.V2I.getEstimations(vehicle,stoppingNode,ETAcarInFront,obj.params.platooning,global_timesteps);
+                timeToReach = obj.calculateEstimatedTimeOfArrival(vehicle,stoppingNode,ETAcarInFront,obj.params.platooning,global_timesteps);
                 
                 
                 obj.arrivingQueue(i,4) = timeToReach;                
@@ -619,6 +619,56 @@ classdef CrossroadUnit < handle
             end
             
            
+        end
+        
+        function timeToReach = calculateEstimatedTimeOfArrival(obj,vehicle,stoppingNode,ETAcarInFront,platooningTimeBehind,global_timesteps)
+            
+            distToConflictZone = norm(vehicle.dynamics.position -  vehicle.map.get_coordinates_from_waypoint(stoppingNode)) + 100;
+            % if vehicle is in acceleration phase
+            if abs(vehicle.dynamics.speed - vehicle.dynamics.maxSpeed)>1
+                %averageAcceleration = NN_acceleration([obj.dynamics.speed; obj.dynamics.maxSpeed-obj.dynamics.speed]);
+                averageAcceleration = vehicle.dynamics.maxSpeed - vehicle.dynamics.speed; % average acceleration to reach top speed
+                accelerationDistance = obj.getAccelerationDistance(averageAcceleration, vehicle.dynamics.speed, vehicle.dynamics.maxSpeed);
+                
+                if accelerationDistance < distToConflictZone
+                    % if the acceleration distance is below the distance to
+                    % the conflict zone we have to calculate t1 (time in
+                    % accleration phase) and t2 (time in constant speed
+                    % phase)
+                    t1 = obj.timeToReachNextWaypointInAccelerationPhase(vehicle.dynamics.speed, averageAcceleration, accelerationDistance);
+                    t2 = (distToConflictZone-accelerationDistance)/vehicle.dynamics.maxSpeed;
+                    timeToReach = t1+t2+global_timesteps;
+                else
+                    % if the acceleration distance is above the distance to
+                    % the conflict zone we can immediately calculate the
+                    % time to reach
+                    timeToReach = obj.timeToReachNextWaypointInAccelerationPhase(vehicle.dynamics.speed, averageAcceleration, distToConflictZone)+global_timesteps;
+                    
+                end
+            else
+                % if vehicle is not in accleration phase simple constant
+                % speed phase calculation
+                timeToReach = distToConflictZone/vehicle.dynamics.speed + global_timesteps;
+            end
+            
+            
+            if ETAcarInFront ~= 0
+                % if there is a car in front
+                if timeToReach < ETAcarInFront
+                    
+                    timeToReach = ETAcarInFront + platooningTimeBehind; % platooninTimeBehind is a constant, set in the constructor of the crossroad unit TODO (has to be changed)
+                end
+            end
+        end
+        
+        function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
+            delta_v = speedTo-currentSpeed;
+            accelerationDistance = delta_v^2/(2*averageAcceleration)+currentSpeed*delta_v/averageAcceleration;
+        end
+        
+        %% Eigenvalues of Equation 8 in NecSys Paper
+        function timeToReach = timeToReachNextWaypointInAccelerationPhase(~, currentSpeed, averageAcceleration, distance)
+            timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
         end
     end
     

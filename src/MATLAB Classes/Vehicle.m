@@ -8,10 +8,7 @@ classdef Vehicle < handle
     %    vehiclesCollide - Stops the vehicles if a collision has happened
     %    checkIntersection - Checks if hitboxes intersect to raise the collision flag
     %    checkifDestinationReached - Checks if the vehicle has reached its destination waypoint
-    %    calculateEstimatedTimeOfArrival - (TODO: Check in detail)
-    %    getAverageAcceleration - (TODO: Check in detail)
-    %    getAccelerationDistance - (TODO: Check in detail)
-    %    timeToReachNextWaypointInAccelerationPhase - (TODO: Check in detail)
+
     % SET Methods:
     %    setStopStatus - Stops the vehicle
     %    setCurrentRoute
@@ -322,88 +319,6 @@ classdef Vehicle < handle
                     reached = false; %This case should never happen
                 end
             end
-        end
-        
-        
-        %% Estimator of the vehicle to calculate the ETA at the crossroad
-        
-        function timeToReach = calculateEstimatedTimeOfArrival(obj,stoppingNode,ETAcarInFront,platooningTimeBehind,global_timesteps)
-            distToConflictZone = norm(obj.dynamics.position -  obj.map.get_coordinates_from_waypoint(stoppingNode)) + 100;
-            % if vehicle is in acceleration phase
-            if abs(obj.dynamics.speed - obj.dynamics.maxSpeed)>1
-                averageAcceleration = NN_acceleration([obj.dynamics.speed; obj.dynamics.maxSpeed-obj.dynamics.speed]); % NN_acceleration -> can be replaced by getAverageAcceleration(speedFrom, speedTo)
-                accelerationDistance = getAccelerationDistance(obj, averageAcceleration, obj.dynamics.speed, obj.dynamics.maxSpeed);
-                
-                if accelerationDistance < distToConflictZone
-                    % if the acceleration distance is below the distance to
-                    % the conflict zone we have to calculate t1 (time in
-                    % accleration phase) and t2 (time in constant speed
-                    % phase)
-                    t1 = timeToReachNextWaypointInAccelerationPhase(obj, obj.dynamics.speed, averageAcceleration, accelerationDistance);
-                    t2 = (distToConflictZone-accelerationDistance)/obj.dynamics.maxSpeed;
-                    timeToReach = t1+t2+global_timesteps;
-                else
-                    % if the acceleration distance is above the distance to
-                    % the conflict zone we can immediately calculate the
-                    % time to reach
-                    timeToReach = timeToReachNextWaypointInAccelerationPhase(obj, obj.dynamics.speed, averageAcceleration, distToConflictZone)+global_timesteps;
-                    
-                end
-            else
-                % if vehicle is not in accleration phase simple constant
-                % speed phase calculation
-                timeToReach = distToConflictZone/obj.dynamics.speed + global_timesteps;
-            end
-            
-            
-            if ETAcarInFront ~= 0
-                % if there is a car in front
-                if timeToReach < ETAcarInFront
-                    
-                    timeToReach = ETAcarInFront + platooningTimeBehind; % platooninTimeBehind is a constant, set in the constructor of the crossroad unit (has to be changed)
-                end
-            end
-        end
-        
-        function averageAcceleration = getAverageAcceleration(obj, speedFrom, speedTo)
-            
-            % this is the alternative to the neural network for the
-            % acceleration phase. This calculation is based on a polynom,
-            % derived by curve fitting on acceleration measurements.
-            x = speedFrom;
-            y = abs(speedTo-speedFrom);
-            p00 =      0.1091  ;
-            p10 =     -0.1124  ;
-            p01 =    -0.02811  ;
-            p20 =     0.02018  ;
-            p11 =     0.04362  ;
-            p02 =     0.01583  ;
-            p30 =   -0.001595  ;
-            p21 =   -0.004716  ;
-            p12 =     -0.0054  ;
-            p03 =   -0.001514  ;
-            p40 =   5.917e-05  ;
-            p31 =   0.0001982  ;
-            p22 =   0.0003198  ;
-            p13 =    0.000251  ;
-            p04 =   5.423e-05  ;
-            p50 =  -8.408e-07  ;
-            p41 =  -2.908e-06  ;
-            p32 =  -6.004e-06  ;
-            p23 =   -6.48e-06  ;
-            p14 =  -3.938e-06  ;
-            p05 =  -6.736e-07  ;
-            averageAcceleration = sign(speedTo-speedFrom)*(p00 + p10*x + p01*y + p20*x^2 + p11*x*y + p02*y^2 + p30*x^3 + p21*x^2*y+ p12*x*y^2 + p03*y^3 + p40*x^4 + p31*x^3*y + p22*x^2*y^2 + p13*x*y^3 + p04*y^4 + p50*x^5 + p41*x^4*y + p32*x^3*y^2 + p23*x^2*y^3 + p14*x*y^4 + p05*y^5) ;
-            
-        end
-        
-        function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
-            delta_v = speedTo-currentSpeed;
-            accelerationDistance = delta_v^2/(2*averageAcceleration)+currentSpeed*delta_v/averageAcceleration;
-        end
-        %% Eigenvalues of Equation 8 in NecSys Paper
-        function timeToReach = timeToReachNextWaypointInAccelerationPhase(~, currentSpeed, averageAcceleration, distance)
-            timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
         end
         
         %% SET/GET Functions to control the changes in the properties
