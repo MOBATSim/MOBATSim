@@ -20,7 +20,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         % 2 -> stoppingZone
         % 3 -> intersectionZone
         
-        %variables for visualization
+        % Variable for colored planned path visualization
         pathPlot;
     end
     
@@ -166,18 +166,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             path = fliplr(path);
             
         end
-        
-        % Equation 5 & 8 in NecSys Paper
-        function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
-            delta_v = speedTo-currentSpeed;
-            accelerationDistance = delta_v^2/(2*averageAcceleration)+currentSpeed*delta_v/averageAcceleration;
-        end
-        
-        % Eigenvalues of Equation 8 in NecSys Paper
-        function timeToReach = timeToReachNextWaypointInAccelerationPhase(~, currentSpeed, averageAcceleration, distance)
-            timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
-        end
-        
+                       
         %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj
