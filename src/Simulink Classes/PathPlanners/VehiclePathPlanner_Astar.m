@@ -55,7 +55,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             waypoints(expandingWaypoint,5) = global_timesteps;
             waypoints(expandingWaypoint,4) = currentSpeed;
             
-            %% Main loop
+            %% The while loop will continue until it finds the lowest cost until the destination point
             while (1)
                 waypoints(expandingWaypoint,1) = 2; %set state of the expanding waypoint to 2 -> waypoint in closed List
                 
@@ -110,46 +110,25 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                 end
                 
                 minCosts = min(waypoints(waypoints(:,1) == 1,6)); % get waypoint with min costs
-                %% loop exit conditions
-                if waypoints(destinationWaypoint,1) ~= 0 % check if waypoint state is 1 or 2
-                    costToDest = waypoints(destinationWaypoint,6);
+                
+                %% While(1) Loop "break" Condition Check
+                if obj.checkIfLowestCostToDestinationFound(waypoints, destinationWaypoint, minCosts)
+                    break
+                else
+                    %% Get another next possible waypoint to check -> Next iteration in loop
+                    expandingWaypoint =  find(waypoints(:,6) == minCosts& waypoints(:,1)==1);
                     
-                    if minCosts ==  costToDest % We already find the lowest cost until Destination
-                        
-                        % Uncomment the code below to convert the waypoints into table to analyze
-                        % array2table(waypoints,'VariableNames',{'State of Waypoint','Current Node','Current Route','Current Speed','Time Costs','Time + Heuristic Costs','Total distance'})
-                        break
-                    end
-                end
-                
-                
-%                 if ismember(1,waypoints(:,1)) % Check if there is any node with state 1 (open and touched)
-%                     minCosts = min(waypoints(waypoints(:,1) == 1,6)); % get waypoint with min costs
-%                 else
-%                     break
-%                 end
-                
-%                 if waypoints(destinationWaypoint,1) ~= 0 % check if waypoint state is 1 or 2
-%                     if minCosts >  waypoints(destinationWaypoint)
-%                         % Uncomment the code below to convert the waypoints into table to analyze
-%                         % array2table(waypoints,'VariableNames',{'State of Waypoint','Current Node','Current Route','Current Speed','Time Costs','Time + Heuristic Costs','Total distance'})
-%                         break
-%                     end
-%                 end
-                
-                %% get new waypoint to analyze -> next iteration in loop
-                expandingWaypoint =  find(waypoints(:,6) == minCosts& waypoints(:,1)==1);
-                
-%                 if length(expandingWaypoint)>1 % In case there are two next possible waypoints with exact same costs == minCosts
-%                     expandingWaypoint = expandingWaypoint(1);
-%                 end
+                    %                 if length(expandingWaypoint)>1 % In case there are two next possible waypoints with exact same costs == minCosts
+                    %                     expandingWaypoint = expandingWaypoint(1);
+                    %                 end
+                end   
                 
             end
             
-            % Compose the path by using the analyzed waypoints array
+            %% Compose the path by using the checked waypoints array
             path = obj.composePath(waypoints, startingWaypoint, destinationWaypoint);
             
-            %% updateFuture Date of this vehicle
+            %% UpdateFuture Date of this vehicle
             newFutureData = zeros((length(path)-1),6); %Matrix Preallocation
             for i = 1: (length(path)-1)
                 newFutureData(i,:) = [car.id waypoints(path(i+1),3) waypoints(path(i+1),4) waypoints(path(i),5)  waypoints(path(i+1),5) -1];
@@ -159,8 +138,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                         
         end
         
-        function OtherVehiclesFutureData = deleteCollidedVehicleFutureData(obj,OtherVehiclesFutureData)
-            
+        function OtherVehiclesFutureData = deleteCollidedVehicleFutureData(obj,OtherVehiclesFutureData)       
             otherCarIDs = unique(OtherVehiclesFutureData(:,1))'; % OtherCars which have the same FutureData            
             
             % other cars with same future data found
@@ -203,6 +181,16 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                 end
             end
             
+        end
+        
+        function bool = checkIfLowestCostToDestinationFound(~,waypoints, destinationWaypoint, minCosts)
+            bool = false;
+            costToDest = waypoints(destinationWaypoint,6);
+            
+            % Check if waypoint state is 1 or 2 && Lowest cost found until destination       
+            if (waypoints(destinationWaypoint,1) ~= 0) && (minCosts == costToDest)
+                bool = true;
+            end
         end
         
     end
