@@ -4,7 +4,6 @@ classdef CrossroadUnit < handle
     
     properties
         %static
-        V2I
         id
         startingNodes
         breakingNodes
