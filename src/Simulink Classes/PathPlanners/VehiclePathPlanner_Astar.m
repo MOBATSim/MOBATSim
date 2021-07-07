@@ -30,7 +30,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
         end
         
         
-        function [path, newFutureData] = AStarPathfinder(obj, car, startingPoint, endingPoint, global_timesteps, futureData)
+        function [path, newFutureData] = AStarPathfinder(obj, car, startingWaypoint, destinationWaypoint, global_timesteps, futureData)
             %This function performs a normal A* search inside the Digraph.
             %OUTPUT: newFutureData = | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time |
             %path = [nr of nodes from start to finish]
@@ -42,133 +42,112 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             % Create a table for all the waypoints (nodes) where each row index is an identifier for a waypoint
             waypoints =  zeros(length(obj.Map.waypoints),7); % initialize with zeros (later could be turned into table but might lead to overhead)
             % --------------------------------------------Waypoints Structure----nx7-----------------------------------------------------
-            % | State of Waypoint | Current Node | Current Route | Current Speed | Time Costs | Time + Heuristic Costs | Total distance |
-            
-            %get maximum speed for every edge
-            maxSpeed = car.dynamics.maxSpeed ;
-            currentSpeed = car.dynamics.speed ;
-            speedRoutes = [obj.Map.connections.circle(:,end);obj.Map.connections.translation(:,end)];
-            maxSpeedRoutes = speedRoutes;
-            maxSpeedRoutes(speedRoutes>maxSpeed)= maxSpeed; %possible speed for every route
+            % | State of Waypoint | Current Node | Current Route | Maximum Speed | Time Costs | Time + Heuristic Costs | Total distance |
+
+            maxSpeed = car.dynamics.maxSpeed;
+            currentSpeed = car.dynamics.speed;
             
             connections = obj.Map.connections.all;
             
             distances = obj.Map.connections.distances;
             
-            currentNode = startingPoint; %currentNode: current Node from where to expand neighbour Nodes
-            waypoints(startingPoint,5) = global_timesteps;
-            waypoints(startingPoint,4) = currentSpeed;
+            expandingWaypoint = startingWaypoint; %expandingWaypoint: the Node from where to expand to neighbouring waypoints
+            waypoints(expandingWaypoint,5) = global_timesteps;
+            waypoints(expandingWaypoint,4) = currentSpeed;
             
-            %% main loop
+            %% Main loop
             while (1)
-                waypoints(currentNode,1) = 2; %set state of waypoint to 2 -> waypoint in closed List
+                waypoints(expandingWaypoint,1) = 2; %set state of the expanding waypoint to 2 -> waypoint in closed List
                 
-                %% find neighbours
-                routes2neighbourNode = find(connections(:,1) == currentNode); % route ID
-                neighbourNodes = connections(connections(:,1) == currentNode,2); % waypointID of neighbour
-                neighbourNodes_Routes = [neighbourNodes'; routes2neighbourNode'];
-                %% loop over all neighbours
-                for neighbourNode_Route=neighbourNodes_Routes
-                    neighbourWP = waypoints(neighbourNode_Route(1),:); % waypointID of neighbour
-                    currentTime = waypoints(currentNode,5); % time the car will reach the node
-                    currentTotalDistance = waypoints(currentNode,7); %distance travveled unto this node
-                    currentSpeed = waypoints(currentNode,4); % the speed of the car when entering the node
-                    currentRoute = neighbourNode_Route(2); % route ID
+                %% find possible forward Routes
+                possibleNextRoutes = find(connections(:,1) == expandingWaypoint); % Find the Route IDs
+                
+                %% Loop through all possible next Routes
+                for possibleNextRoute=possibleNextRoutes'
+                    possibleNextWaypointID = connections(possibleNextRoute,2); % end of Route - next Waypoint
+                    nextWP_list = waypoints(possibleNextWaypointID,:); % next Waypoint - Future Data
                     
-                    currentMaxSpeedRoutes = maxSpeedRoutes;
-                    
-                    %% If the vehicle is still in the acceleration phase
-                    timeToReach = distances(currentRoute)/ currentMaxSpeedRoutes(currentRoute); %timesteps to reach neighbour
+                    timeUntilReachingWP = waypoints(expandingWaypoint,5); % the time when the car will reach the node
+                                        
+                    %% Calculate time to reach the next waypoint(costs = distance/speed)
+                    timeToReach = distances(possibleNextRoute)/ maxSpeed; % Estimated to to reach the next possible Waypoint
                     nextSpeed = maxSpeed;
                     
                     %% check for other cars on same route (using merged future data)
-                    %get every future data info for the current edge
-                    currentFutureData = futureData(futureData(:,2) == currentRoute,:);
-                    %relevant data has to contain an arrival time before
-                    %current car and an exit time after that car
-                    currentFutureData = currentFutureData(currentFutureData(:,4)<= currentTime & currentFutureData(:,5)>currentTime,:);
-                    if ~isempty(currentFutureData)
-                        %% disturbing car on same route
-                        %search for the highest exit time, that will slow
-                        %us down the most
-                        index = find(max(currentFutureData(:,5)));%TODO use max function properly
-                        timeToReachDisturbingVehicle = currentFutureData(index,5);
-                        %get speed of the slower vehicle
-                        speedDisturbingVehicle =  currentFutureData(index,3);
-                        %currentTime = entry time of the edge
-                        %timeToReach = how long does it take to drive over current edge
-                        %timeToReachDisturbingVehicle = exit time of other vehicle
-                        %differnce = current car exit time - other car exit time
-                        timeDifference = (currentTime + timeToReach) - timeToReachDisturbingVehicle ;
-                        
-                        spacingTime = 6;
-                        if (timeDifference < spacingTime)
-                            timeToReach = timeToReachDisturbingVehicle + spacingTime - currentTime;
-                            nextSpeed = speedDisturbingVehicle;
-                        end
-                        
-                        
-                    end
-                    
-                    %% calculate costs (costs = distance/speed)
-                    costs = timeToReach;
+                    [timeToReach,nextSpeed]= obj.checkForSlowerVehicles(possibleNextRoute,timeToReach,nextSpeed,timeUntilReachingWP,futureData);
+                    % Overwrite the Estimated time costs and speed if there
+                    % is a slower vehicle [timeToReach,nextSpeed]
                     
                     %% calculate heuristic (Luftlinie)
-                    heuristicCosts = 1/maxSpeed * norm(get_coordinates_from_waypoint(obj.Map, neighbourNode_Route(1))-get_coordinates_from_waypoint(obj.Map, endingPoint));
-                    
+                    heuristicTimeCostToDestination = 1/maxSpeed * norm(get_coordinates_from_waypoint(obj.Map, possibleNextWaypointID)-get_coordinates_from_waypoint(obj.Map, destinationWaypoint));
                     
                     %% update waypoints array
-                    if neighbourWP(1) == 0
-                        neighbourWP(2) = currentNode;
+                    if nextWP_list(1) == 0
                         
-                        neighbourWP(5) = waypoints(currentNode,5) + costs;
-                        neighbourWP(1) = 1;
-                        neighbourWP(3) = currentRoute;
-                        neighbourWP(4) = nextSpeed;
-                        neighbourWP(6) = waypoints(currentNode,5) + costs + heuristicCosts;
-                        neighbourWP(7) = waypoints(currentNode,7) + distances(currentRoute) ;
+                        nextWP_list(1) = 1; % WP checked state =1
+                        nextWP_list(2) = expandingWaypoint;
+                        nextWP_list(3) = possibleNextRoute;
+                        nextWP_list(4) = nextSpeed;
+                        nextWP_list(5) = waypoints(expandingWaypoint,5) + timeToReach;
+                        nextWP_list(6) = waypoints(expandingWaypoint,5) + timeToReach + heuristicTimeCostToDestination;
+                        nextWP_list(7) = waypoints(expandingWaypoint,7) + distances(possibleNextRoute) ;
                         
-                    elseif  neighbourWP(1) == 1
+                    elseif  nextWP_list(1) == 1
                         
                         %% replace costs if smaller
-                        if  (waypoints(currentNode,5)+ costs < neighbourWP(5))
+                        if  (waypoints(expandingWaypoint,5)+ timeToReach < nextWP_list(5))
                             
-                            neighbourWP(2) = currentNode;
-                            neighbourWP(5) = waypoints(currentNode,5) + costs;
-                            neighbourWP(3) = currentRoute;
-                            neighbourWP(4) = nextSpeed;
-                            neighbourWP(6) = waypoints(currentNode,5 )+ costs + heuristicCosts;
-                            neighbourWP(7) = waypoints(currentNode,7) + distances(currentRoute);
+                            nextWP_list(2) = expandingWaypoint;
+                            nextWP_list(5) = waypoints(expandingWaypoint,5) + timeToReach;
+                            nextWP_list(3) = possibleNextRoute;
+                            nextWP_list(4) = nextSpeed;
+                            nextWP_list(6) = waypoints(expandingWaypoint,5 )+ timeToReach + heuristicTimeCostToDestination;
+                            nextWP_list(7) = waypoints(expandingWaypoint,7) + distances(possibleNextRoute); % Total distance the end of the Route
                             
                         end
                     end
-                    waypoints(neighbourNode_Route(1),:) = neighbourWP;
+                    waypoints(possibleNextWaypointID,:) = nextWP_list;
                 end
                 
-                
+                minCosts = min(waypoints(waypoints(:,1) == 1,6)); % get waypoint with min costs
                 %% loop exit conditions
-                if ismember(1,waypoints(:,1)) % Check if there is any node with state 1 (open and touched)
-                    minCosts = min(waypoints(waypoints(:,1) == 1,6)); % get waypoint with min costs
-                else
-                    break
-                end
-                
-                if waypoints(endingPoint,1) ~= 0 % check if waypoint state is 1 or 2
-                    if minCosts >  waypoints(endingPoint)
+                if waypoints(destinationWaypoint,1) ~= 0 % check if waypoint state is 1 or 2
+                    costToDest = waypoints(destinationWaypoint,6);
+                    
+                    if minCosts ==  costToDest % We already find the lowest cost until Destination
+                        
                         % Uncomment the code below to convert the waypoints into table to analyze
                         % array2table(waypoints,'VariableNames',{'State of Waypoint','Current Node','Current Route','Current Speed','Time Costs','Time + Heuristic Costs','Total distance'})
                         break
                     end
                 end
                 
+                
+%                 if ismember(1,waypoints(:,1)) % Check if there is any node with state 1 (open and touched)
+%                     minCosts = min(waypoints(waypoints(:,1) == 1,6)); % get waypoint with min costs
+%                 else
+%                     break
+%                 end
+                
+%                 if waypoints(destinationWaypoint,1) ~= 0 % check if waypoint state is 1 or 2
+%                     if minCosts >  waypoints(destinationWaypoint)
+%                         % Uncomment the code below to convert the waypoints into table to analyze
+%                         % array2table(waypoints,'VariableNames',{'State of Waypoint','Current Node','Current Route','Current Speed','Time Costs','Time + Heuristic Costs','Total distance'})
+%                         break
+%                     end
+%                 end
+                
                 %% get new waypoint to analyze -> next iteration in loop
-                currentNode =  find(waypoints(:,6) == minCosts& waypoints(:,1)==1);
-                currentNode = currentNode(1);
+                expandingWaypoint =  find(waypoints(:,6) == minCosts& waypoints(:,1)==1);
+                
+%                 if length(expandingWaypoint)>1 % In case there are two next possible waypoints with exact same costs == minCosts
+%                     expandingWaypoint = expandingWaypoint(1);
+%                 end
                 
             end
             
             % Compose the path by using the analyzed waypoints array
-            path = obj.composePath(waypoints, startingPoint, endingPoint);
+            path = obj.composePath(waypoints, startingWaypoint, destinationWaypoint);
             
             %% updateFuture Date of this vehicle
             newFutureData = zeros((length(path)-1),6); %Matrix Preallocation
@@ -197,6 +176,35 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             end
             
         end
+        
+        function [timeToReach,nextSpeed] = checkForSlowerVehicles(~,nextRoute,timeToReach,nextSpeed,timeUntilReachingWP,futureData)
+            %get every future data info for the current edge
+            currentFutureData = futureData(futureData(:,2) == nextRoute,:);
+            %relevant data has to contain an arrival time before
+            %current car and an exit time after that car
+            currentFutureData = currentFutureData(currentFutureData(:,4)<= timeUntilReachingWP & currentFutureData(:,5)>timeUntilReachingWP,:);
+            if ~isempty(currentFutureData)
+                %% Another car on same route
+                %search for the highest exit time, that will slow us down the most
+                index = find(max(currentFutureData(:,5)));%TODO use max function properly
+                timeToReachSlowerVehicle = currentFutureData(index,5);
+                %get speed of the slower vehicle
+                speedDisturbingVehicle =  currentFutureData(index,3);
+                %currentTime = entry time of the edge
+                %timeToReach = how long does it take to drive over current edge
+                %timeToReachDisturbingVehicle = exit time of other vehicle
+                %differnce = current car exit time - other car exit time
+                timeDifference = (timeUntilReachingWP + timeToReach) - timeToReachSlowerVehicle ;
+                
+                spacingTime = 6;
+                if (timeDifference < spacingTime)
+                    timeToReach = timeToReachSlowerVehicle + spacingTime - timeUntilReachingWP;
+                    nextSpeed = speedDisturbingVehicle;
+                end
+            end
+            
+        end
+        
     end
     
     
