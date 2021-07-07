@@ -9,8 +9,7 @@ classdef Map < handle
         directedGraph
         Vehicles                %vector of all vehicles: line = nr
         plots
-        crossroadUnits
-        crossroads
+        crossroadUnits          % objects controling a crossroad
         Route_LaneNumber % lane number of the route
     end
     
@@ -26,12 +25,7 @@ classdef Map < handle
             obj.plots.trajectories = [];
             obj.Route_LaneNumber = Route_LaneNumber;
             
-            % Crossroads
-            obj.crossroads.startingNodes = startingNodes;
-            obj.crossroads.breakingNodes = breakingNodes;
-            obj.crossroads.stoppingNodes = stoppingNodes;
-            obj.crossroads.leavingNodes = leavingNodes;
-            
+            % Crossroad units            
             for i = 1:  size(startingNodes,1)
                 
                 obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i,startingNodes(i,:),breakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];

@@ -23,8 +23,7 @@ function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, 
     % sizes(vehicleId,:) = [2 1.8 10];
     
     %% Masses
-    mass = 1800; % kilogram
-    masses = repmat(mass,nrVehicles,1);
+    masses(1:nrVehicles) = 1800; % kilogram
     % To specifically change a vehicle's mass:
     % masses(vehicleId) = 5000;
     
