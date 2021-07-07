@@ -19,7 +19,7 @@ classdef V2I < handle
             if obj.dataLinkV2I==1                
                 obj.map.crossroadUnits(crossroadId).carReachesCrossroad(car,starting_point,global_timesteps);
             else
-                fallbackVehicle = car.V2V.checkV2Ifallback(car);
+                fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
                 if ~isempty(fallbackVehicle)
                     
                     fallbackVehicle.V2I.carReachesCrossroadV2I(car,starting_point,global_timesteps,crossroadId)
@@ -31,11 +31,11 @@ classdef V2I < handle
             if obj.dataLinkV2I==1
                 obj.map.crossroadUnits(crossroadId).carReachesBreakingPoint(car,breakingPoint,global_timesteps);
             else
-                fallbackVehicle = car.V2V.checkV2Ifallback(car);
+                fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
                 if ~isempty(fallbackVehicle)
                     % if car is not registered yet in the IM yet, it has to
                     % be done before
-                    if any(obj.map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id) == 0
+                    if ~any(obj.map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id)
                         
                         %get startingNode to register vehicle correctly
                         arrivingDirection = find(breakingPoint == obj.map.crossroadUnits(crossroadId).breakingNodes);
@@ -54,7 +54,7 @@ classdef V2I < handle
             if obj.dataLinkV2I==1
                 obj.map.crossroadUnits(crossroadId).carLeavesCrossroad(car,global_timesteps);
             else
-                fallbackVehicle = car.V2V.checkV2Ifallback(car);
+                fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
                 if ~isempty(fallbackVehicle)
                     
                     
@@ -65,17 +65,17 @@ classdef V2I < handle
         end
         
         function stopFlag = requestRightOfWayV2I(obj,car,crossroadId,global_timesteps)
-            stopFlag = 1;
+            
             if obj.dataLinkV2I==1
                 
                 stopFlag = obj.map.crossroadUnits(crossroadId).requestRightOfWay(car.id);
             else
-                fallbackVehicle = car.V2V.checkV2Ifallback(car);
+                fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
                 if ~isempty(fallbackVehicle)
                     
                     % if car is not registered yet in the IM yet, it has to
                     % be done before
-                    if any(obj.map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id) == 0
+                    if ~any(obj.map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id)
                         
                         %get startingNode and breakingNode to register vehicle correctly
                         breakingPoint = car.pathInfo.path(1);
@@ -95,12 +95,7 @@ classdef V2I < handle
                 end
                 
             end
-        end
-        
-        function  timeToReach = getEstimations(~,vehicle,stoppingNode,ETAcarInFront,paramsPlatooning,global_timesteps)
-            timeToReach = vehicle.calculateEstimatedTimeOfArrival(stoppingNode,ETAcarInFront,paramsPlatooning,global_timesteps);
-        end
-        
+        end    
         
     end
 end

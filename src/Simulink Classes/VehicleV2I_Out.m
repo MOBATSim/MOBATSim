@@ -74,38 +74,40 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         
         function V2Idata = checkCrossroadActions(obj,car,current_point)
             % check for crossroad actions
-            if nnz(car.map.crossroads.startingNodes==current_point)>0
-                crossroadId = find(any(car.map.crossroads.startingNodes==current_point,2));
+            map = car.map;
+            
+            if nnz(cat(1,map.crossroadUnits.startingNodes)==current_point)
+                crossroadId = find(any(cat(1,map.crossroadUnits.startingNodes)==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 1];
                                 
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 1];
                 else
-                    fallbackVehicle = car.V2V.checkV2Ifallback(car);
+                    fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
                     if ~isempty(fallbackVehicle)                        
                         fallbackVehicle.V2I.carReachesCrossroadV2I(car,starting_point,global_timesteps,crossroadId)
                     end
                 end
                 
-            elseif nnz(car.map.crossroads.breakingNodes==current_point)>0 % car reaches Breaking Point 
-                crossroadId = find(any(car.map.crossroads.breakingNodes==current_point,2));
+            elseif nnz(cat(1,map.crossroadUnits.breakingNodes)==current_point) % car reaches Breaking Point 
+                crossroadId = find(any(cat(1,map.crossroadUnits.breakingNodes)==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 2];
                 
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 2];
                 else
-                    fallbackVehicle = car.V2V.checkV2Ifallback(car);
+                    fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
                     if ~isempty(fallbackVehicle)
                         % if car is not registered yet in the IM yet, it has to
                         % be done before
 
                         %any(car.map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id) == 0 %check if it works
                         %like below
-                        if ~any(car.map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id)
+                        if ~any(map.crossroadUnits(crossroadId).arrivingQueue(:,1)==car.id)
                             
                             %get startingNode to register vehicle correctly
-                            arrivingDirection = breakingPoint == car.map.crossroadUnits(crossroadId).breakingNodes;
-                            startingNode = car.map.crossroadUnits(crossroadId).startingNodes(arrivingDirection);
+                            arrivingDirection = breakingPoint == map.crossroadUnits(crossroadId).breakingNodes;
+                            startingNode = map.crossroadUnits(crossroadId).startingNodes(arrivingDirection);
                             
                             fallbackVehicle.V2I.carReachesCrossroadV2I(car,startingNode,global_timesteps,crossroadId)
                         end
@@ -113,17 +115,17 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                     end  
                 end
                 
-            elseif nnz(car.map.crossroads.stoppingNodes==current_point)>0 % car reaches Stopping Point
-                crossroadId = find(any(car.map.crossroads.stoppingNodes==current_point,2));
+            elseif nnz(cat(1,map.crossroadUnits.stoppingNodes)==current_point) % car reaches Stopping Point
+                crossroadId = find(any(cat(1,map.crossroadUnits.stoppingNodes)==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 3];
                 V2Idata = [crossroadId 3];
                 
-            elseif nnz(car.map.crossroads.leavingNodes==current_point)>0 % car leaves crossroad
-                crossroadId = find(any(car.map.crossroads.leavingNodes==current_point,2));
+            elseif nnz(cat(1,map.crossroadUnits.leavingNodes)==current_point)>0 % car leaves crossroad
+                crossroadId = find(any(cat(1,map.crossroadUnits.leavingNodes)==current_point,2));
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 4];
                 else
-                    fallbackVehicle = car.V2V.checkV2Ifallback(car);
+                    fallbackVehicle = car.V2V.checkV2Ifallback(car); % TODO: check, method are not existing
                     if ~isempty(fallbackVehicle)
                         fallbackVehicle.V2I.carLeavesCrossroadV2I(car,global_timesteps,crossroadId)
                     end    
