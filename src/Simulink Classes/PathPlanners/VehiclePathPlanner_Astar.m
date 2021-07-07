@@ -118,9 +118,9 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                     %% Get another next possible waypoint to check -> Next iteration in loop
                     expandingWaypoint =  find(waypoints(:,6) == minCosts& waypoints(:,1)==1);
                     
-                    %                 if length(expandingWaypoint)>1 % In case there are two next possible waypoints with exact same costs == minCosts
-                    %                     expandingWaypoint = expandingWaypoint(1);
-                    %                 end
+                    % if length(expandingWaypoint)>1 % In case there are two next possible waypoints with exact same costs == minCosts
+                    %   expandingWaypoint = expandingWaypoint(1);
+                    % end
                 end   
                 
             end
