@@ -6,7 +6,6 @@ function prepare_simulator(options)
         options.modelName   (1,1) string    = 'MOBATSim'            % name of the simulink model
         options.simStopTime (1,1) double    = 80                    % simulation stop time in seconds
         options.simTs       (1,1) double    = 0.02                  % simulation time step: sample time of the simulation (may not be stable if changed)
-        options.mapType     (1,1) MapTypes  = MapTypes.GridMap      % 'GridMap' or 'DigraphMap'
         options.mapName     (1,1) string    = 'Mobatkent'           % Mobatkent, Highway, Crossmap
         options.scenarioName(1,1) string    = 'Urban City Traffic'
         options.FI_id       (1,1) double = 1
@@ -31,7 +30,6 @@ function prepare_simulator(options)
     configs = MOBATSimConfigurations(options.modelName, ...
                                      options.simStopTime, ...
                                      options.simTs, ...
-                                     options.mapType, ...
                                      options.mapName, ...
                                      options.scenarioName);
 
@@ -53,11 +51,7 @@ function prepare_simulator(options)
     end
 
     %% Generate the 2D Map and the instance from the Map class
-    if configs.mapType == MapTypes.GridMap
-        Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
-    else
-        Map = DigraphMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
-    end
+    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
 
     %% Load Scenario and Vehicles
     if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % TODO: change this part when GUI is changed, does not check base workspace
@@ -83,10 +77,10 @@ function prepare_simulator(options)
     Map.Vehicles = Vehicles;
     Map.initCarDescriptionPlot();
 
-    if configs.mapType == MapTypes.GridMap
-        %create BOG
-        [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
-    end
+    
+    %create BOG
+    [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
+
     
     % Open MOBATSim Simulink Model
     open_system(options.modelName)

@@ -6,17 +6,15 @@ classdef MOBATSimConfigurations
         modelName
         simStopTime
         simTs
-        mapType
         mapName
         scenarioName
     end
     
     methods
-        function obj = MOBATSimConfigurations(modelName, simStopTime, simTs, mapType, mapName, scenarioName)
+        function obj = MOBATSimConfigurations(modelName, simStopTime, simTs, mapName, scenarioName)
             obj.modelName = modelName;
             obj.simStopTime = simStopTime;
             obj.simTs = simTs;
-            obj.mapType = mapType;
             obj.mapName = mapName;
             obj.scenarioName = scenarioName;
         end
