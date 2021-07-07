@@ -167,14 +167,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
         end
         
-        function bool = checkforAccelerationPhase(obj,currentSpeed,maxSpeed)
-            if abs(maxSpeed - currentSpeed) > 1 && obj.accelerationPhase(1) == 0
-                bool = true;
-            else
-                bool = false;
-            end
-        end
-        
         function accelerationPhaseData = setAccelerationPhase(obj,currentSpeed,maxSpeed)
             
             % Neural Network is used to get average acceleration value

@@ -59,11 +59,6 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             waypoints(startingPoint,5) = global_timesteps;
             waypoints(startingPoint,4) = currentSpeed;
             
-            %% check for acceleration phase
-            if checkforAccelerationPhase(obj,currentSpeed,maxSpeed)
-                obj.accelerationPhase = setAccelerationPhase(obj,currentSpeed,maxSpeed);
-            end
-            
             %% main loop
             while (1)
                 waypoints(currentNode,1) = 2; %set state of waypoint to 2 -> waypoint in closed List
@@ -83,27 +78,9 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                     currentMaxSpeedRoutes = maxSpeedRoutes;
                     
                     %% If the vehicle is still in the acceleration phase
-                    if obj.accelerationPhase(1) == 1
-                        accelerationDistance = obj.accelerationPhase(4);
-                        averageAcceleration = obj.accelerationPhase(5);
-                        if ((currentTotalDistance + distances(currentRoute) - accelerationDistance) < 0)
-                            % Whole route in acceleration phase
-                            timeToReach = obj.timeToReachNextWaypointInAccelerationPhase( currentSpeed, averageAcceleration, distances(currentRoute));
-                            nextSpeed = currentSpeed + averageAcceleration*timeToReach;
-                        else
-                            % The route is divided in two phases: First acceleration phase (t1)
-                            % and the second: Constant speed phase (t2)
-                            t1 = obj.timeToReachNextWaypointInAccelerationPhase(currentSpeed, averageAcceleration, accelerationDistance - currentTotalDistance);
-                            t2 = (currentTotalDistance+ distances(currentRoute) - accelerationDistance)/ currentMaxSpeedRoutes(currentRoute);
-                            timeToReach = t1+t2;
-                            nextSpeed = obj.accelerationPhase(3);
-                            obj.accelerationPhase = zeros(1,5); % Set acceleration phase data to zero
-                        end
-                        
-                    else
-                        timeToReach = distances(currentRoute)/ currentMaxSpeedRoutes(currentRoute); %timesteps to reach neighbour
-                        nextSpeed = currentSpeed;
-                    end
+                    timeToReach = distances(currentRoute)/ currentMaxSpeedRoutes(currentRoute); %timesteps to reach neighbour
+                    nextSpeed = maxSpeed;
+                    
                     %% check for other cars on same route (using merged future data)
                     %get every future data info for the current edge
                     currentFutureData = futureData(futureData(:,2) == currentRoute,:);
