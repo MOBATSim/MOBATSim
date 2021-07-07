@@ -239,15 +239,7 @@ classdef CrossroadUnit < handle
                 end
             end
         end
-        
-        function breakingFlag = requestRightOfWay(obj,carId) %function unused
-            if isempty(obj.breakingFlagArray)
-                breakingFlag = 0;
-            else
-                breakingFlag = obj.breakingFlagArray(obj.breakingFlagArray(:,1)==carId,2);
-            end
-        end
-        
+                
         function updateBreakingFlagArray(obj)
             % this function updates the breakingflag Array due to a change
             % of the current CSG
