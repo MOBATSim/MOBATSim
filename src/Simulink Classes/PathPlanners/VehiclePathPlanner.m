@@ -167,15 +167,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
         end
         
-        function accelerationPhaseData = setAccelerationPhase(obj,currentSpeed,maxSpeed)
-            
-            % Neural Network is used to get average acceleration value
-            averageAcceleration = NN_acceleration([currentSpeed; maxSpeed-currentSpeed]);
-            accelerationDistance = obj.getAccelerationDistance(averageAcceleration, currentSpeed, maxSpeed);
-            accelerationPhaseData = [1,currentSpeed,maxSpeed, accelerationDistance, averageAcceleration];
-            
-        end
-
         % Equation 5 & 8 in NecSys Paper
         function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
             delta_v = speedTo-currentSpeed;

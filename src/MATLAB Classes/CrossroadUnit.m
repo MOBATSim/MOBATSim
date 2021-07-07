@@ -626,7 +626,6 @@ classdef CrossroadUnit < handle
             distToConflictZone = norm(vehicle.dynamics.position -  vehicle.map.get_coordinates_from_waypoint(stoppingNode)) + 100;
             % if vehicle is in acceleration phase
             if abs(vehicle.dynamics.speed - vehicle.dynamics.maxSpeed)>1
-                %averageAcceleration = NN_acceleration([obj.dynamics.speed; obj.dynamics.maxSpeed-obj.dynamics.speed]);
                 averageAcceleration = vehicle.dynamics.maxSpeed - vehicle.dynamics.speed; % average acceleration to reach top speed
                 accelerationDistance = obj.getAccelerationDistance(averageAcceleration, vehicle.dynamics.speed, vehicle.dynamics.maxSpeed);
                 
