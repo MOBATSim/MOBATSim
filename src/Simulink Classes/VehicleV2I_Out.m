@@ -84,8 +84,8 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                     V2Idata = [crossroadId 1];
                 end
                 
-            elseif nnz(cat(1,map.crossroadUnits.breakingNodes)==current_point) % car reaches Breaking Point 
-                crossroadId = find(any(cat(1,map.crossroadUnits.breakingNodes)==current_point,2));
+            elseif nnz(cat(1,map.crossroadUnits.brakingNodes)==current_point) % car reaches Breaking Point 
+                crossroadId = find(any(cat(1,map.crossroadUnits.brakingNodes)==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 2];
                 
                 if obj.vehicle.V2IdataLink==1
