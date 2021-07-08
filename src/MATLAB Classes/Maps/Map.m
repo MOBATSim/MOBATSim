@@ -28,7 +28,7 @@ classdef Map < handle
             % Crossroad units            
             for i = 1:  size(startingNodes,1)
                 
-                obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i,startingNodes(i,:),breakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
+                obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i, startingNodes(i,:),breakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
             end
             %% Calculate curved distances (Lengths of circular routes)
             distancesCircle = ones(1,size(connections_circle,1)); % memory preallocation

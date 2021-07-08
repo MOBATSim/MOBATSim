@@ -4,9 +4,9 @@ classdef CrossroadUnit < handle
     
     properties
         %static
-        id
+        id                  % identification of the crossroad unit
         startingNodes
-        breakingNodes
+        brakingNodes
         stoppingNodes
         leavingNodes
         trafficStateLookupTable
@@ -18,38 +18,31 @@ classdef CrossroadUnit < handle
              % platooningTimeBehind
              % conventionalTrafficLights
              % energyEquation
-             % platooning (parameters of implemented platooning control)
-                   % tau
-                   % d_s
-        
-        %dynamic
-        arrivingQueue % this is named Waiting Queue in our  paper
+        arrivingQueue   = []% this is named Waiting Queue in our  paper
+        leavingQueue    = []
         priorityGroup % this is named first-order vehicle group in our  paper
-        leavingQueue        
+                
         trafficState %this is named CSG in our paper   
         breakingFlagArray % Array with the following structure: [ carId breakingFlag]
                           %                                     [ carId breakingFlag]
                           % breakingFlag: 1 -> Stop!, 0 -> Go!
-         dataLog
-        
-        
+        dataLog
+            % traffic state
     end
     
     methods
-        function obj = CrossroadUnit(id,startingNodes,breakingNodes,stoppingNodes,leavingNodes)
-            obj.id = id;
-            obj.trafficStateLookupTable = obj.generateLookupTable(startingNodes);
+        function obj = CrossroadUnit(id, startingNodes,brakingNodes,stoppingNodes,leavingNodes)
+            obj.id = id;          
             obj.startingNodes = startingNodes;
-            obj.breakingNodes = breakingNodes;
+            obj.brakingNodes = brakingNodes;
             obj.stoppingNodes = stoppingNodes;
             obj.leavingNodes = leavingNodes;
             
-            %obj.params.platooning.tau = 1.4;
-            %obj.params.platooning.d_s = 25;
-            
+            obj.trafficStateLookupTable = obj.generateLookupTable();
+
             %platooning control isn't working as expected, therefore a
             %constant platooning time behind the car ahead is set:
-            obj.params.platooning = 0.2;
+            obj.params.platooningTimeBehind = 0.2;
             
             % edit all the parameters at this point to change the algorithm
             obj.params.deltaStatePriority = 2; % delta_p in our paper
@@ -76,53 +69,56 @@ classdef CrossroadUnit < handle
             
         end %Constructor
         
-        function trafficStateLookupTable = generateLookupTable(~,crossroad)
+        function trafficStateLookupTable = generateLookupTable(~)
             
                 % Lookup Table for a 4-road-crossing with 7 different CSGs 
                 
                 % The definition is
                 
-                % from N W S E
-                % to N x x x x
-                % to W x x x x
-                % to S x x x x
-                % to E x x x x
+                % to     N E S W
+                % from N x x x x
+                % from E x x x x
+                % from S x x x x
+                % from W x x x x
+                
+                % Vehicles can drive in 7 different scenarios according to
+                % the table from row to column without collision
                 
                 trafficStateLookupTable={[
-                    [0 1 1 1]
-                    [1 0 0 0]
                     [0 0 0 0]
-                    [0 0 0 0] ],
+                    [1 0 0 1]
+                    [0 0 0 0]
+                    [0 1 1 0] ], ... E-N E-W W-S W-E
                     [
                     [0 0 1 1]
                     [0 0 0 0]
                     [1 1 0 0]
-                    [0 0 0 0] ],
+                    [0 0 0 0] ], ... N-W N-S S-E S-N
                     [
+                    [0 0 0 1]
                     [0 0 0 0]
                     [0 0 0 0]
-                    [1 1 0 1]
-                    [0 0 1 0] ],
+                    [1 1 1 0] ], ... W-N W-E W-S N-W
+                    [
+                    [0 1 1 1]
+                    [1 0 0 0]
+                    [0 0 0 0]
+                    [0 0 0 0] ], ... N-E N-S N-W E-N
                     [
                     [0 0 0 0]
                     [1 0 1 1]
                     [0 1 0 0]
-                    [0 0 0 0] ],
+                    [0 0 0 0] ], ... E-S E-W E-N S-E
                     [
                     [0 0 0 0]
-                    [1 0 0 1]
                     [0 0 0 0]
-                    [0 1 1 0] ],
-                    [
-                    [0 0 0 1]
-                    [0 0 0 0]
-                    [0 0 0 0]
-                    [1 1 1 0] ],
+                    [1 1 0 1]
+                    [0 0 1 0] ], ... S-W S-N S-E W-S
                     [    
                     [0 0 0 1]
                     [1 0 0 0]
                     [0 1 0 0]
-                    [0 0 1 0] ]};
+                    [0 0 1 0] ]}; % N-W, E-N, S-E, W-S
            
         end
         
@@ -130,91 +126,84 @@ classdef CrossroadUnit < handle
             % when a car is reaching the starting node of a crossroad, the
             % car has to be registrated in the arriving queue
             
-%             if ~isempty(obj.arrivingQueue)
-%                 if any(obj.arrivingQueue(:,1) == car.id) 
-%                     return % hack for a crazy fault that a car is added twice to arriving queue
-%                 end
-%             end
-            
             if obj.params.intelligentDecision == 1 % for normal algorithm
                 
-                % check if cars destination is before crossroad
+                % check that cars destination is not  before crossroad
                 if length(car.pathInfo.path)>3
                     arrivingDirection = find(startingNode == obj.startingNodes); % from which direction the car is coming 1=N, 2=E, 3=S, 4=W
                     
                     
-                    index = find(ismember(car.pathInfo.path,obj.leavingNodes));
-                    
+                    index = find(ismember(car.pathInfo.path,obj.leavingNodes));                   
 
                     try
                         leavingDirection = find(car.pathInfo.path(index(1)) == obj.leavingNodes); % in which direction the car is going 1=N, 2=E, 3=S, 4=W
                         
-                    catch ME
+                    catch
                         
                         disp('crossroad error');
                         
                     end
                     
-                    
-                    TTR = 0; %equal to ETA in our paper. First simple calculation of TTR, but is being replaced later anyway by the estimator of the car 
-                    
                     % arring queue definition:
                     % [car id; arrving direction; leaving direction; ETA]
                     % the cars will be added in this style to the arriving
                     % queue. One line is one car.
-                    obj.arrivingQueue = [obj.arrivingQueue ;[car.id arrivingDirection leavingDirection TTR]];
+                    obj.arrivingQueue(end+1,:) = [car.id arrivingDirection leavingDirection 0]; % ETA = 0, not calculated jet
                 end
             end
             
             
         end
         
-        function carReachesBreakingPoint(obj,car,breakingNode, global_timesteps)
-            % this function is executed when a car reaches the braking point. Now the main algorithm has to be executed to derive the optimal CSG             
+        function carReachesBreakingPoint(obj, vehicle, vehicles, brakingNode, currentTime)
+            % this function is executed when a car reaches the braking
+            % point. Now the main algorithm has to be executed to derive
+            % the optimal CSG
             
             % When we are in FCFS the car hasn't been added in the arriving
             % queue yet. This is done here.
             if obj.params.intelligentDecision == 0
-                    arrivingDirection = find(breakingNode == obj.breakingNodes);
-                    leavingDirection = find(car.pathInfo.path(3) == obj.leavingNodes);
-                    TTR = 190/car.dynamics.speed + global_timesteps;
-
-                    obj.arrivingQueue = [obj.arrivingQueue ;[car.id arrivingDirection leavingDirection TTR]];
-             
+                
+                arrivingDirection = find(brakingNode == obj.brakingNodes);
+                leavingDirection = find(vehicle.pathInfo.path(3) == obj.leavingNodes);
+                TTR = 190/vehicle.dynamics.speed + currentTime;
+                
+                obj.arrivingQueue(end+1,:) = [vehicle.id arrivingDirection leavingDirection TTR];
+                
             end
-           
+            
             if ~isempty(obj.arrivingQueue)
                 if obj.params.conventionalTrafficLights == 0
                     % now the main part of the algorithm is executed. It is
                     % built up by the two following functions
-                    getPriorityGroup(obj,car,global_timesteps); % get first-order vehicle group
-                    deriveMPCSG(obj,global_timesteps); % derive the optimal CSG for this group of cars
+                    obj.getPriorityGroup(vehicles, currentTime); % get first-order vehicle group
+                    obj.deriveMPCSG(vehicles, currentTime); % derive the optimal CSG for this group of cars
                 end
             end
             
             % the next step is to update the braking flag array according
-            % to the new CSG 
-              obj.breakingFlagArray = [obj.breakingFlagArray; [car.id 1 ]]; % this is just to add the new car to the braking flag array
-              
-              if obj.trafficState ~=0
-              obj.updateBreakingFlagArray;  % this function updates the braking flag array if the current CSG is not zero 
-              end
+            % to the new CSG
+            obj.breakingFlagArray = [obj.breakingFlagArray; [vehicle.id 1 ]]; % this is just to add the new car to the braking flag array
             
-                % now we have to check what the new braking flag for the
-                % new car is. If it is zero, we have to remove the car from
-                % the arriving queue 
-              breakingFlag = obj.breakingFlagArray(obj.breakingFlagArray(:,1)==car.id,2);
+            if obj.trafficState ~=0
+                obj.updateBreakingFlagArray;  % this function updates the braking flag array if the current CSG is not zero
+            end
             
-            if breakingFlag == 0 
+            % now we have to check what the new braking flag for the
+            % new car is. If it is zero, we have to remove the car from
+            % the arriving queue
+            breakingFlag = obj.breakingFlagArray(obj.breakingFlagArray(:,1)==vehicle.id,2);
+            
+            if breakingFlag == 0
                 
                 % remove car from waiting queue for specific cardinal direction
-                obj.arrivingQueue(obj.arrivingQueue(:,1)==car.id,:)=[];
+                obj.arrivingQueue(obj.arrivingQueue(:,1)==vehicle.id,:)=[];
                 
             end
             
         end
         
-        function carLeavesCrossroad(obj,car,global_timesteps)
+        function carLeavesCrossroad(obj,vehicle, vehicles, currentTime)
             % when a vehicle reaches the leaving node of a crossroad, the
             % main algorithm has to be executed again and the car has to be
             % deleted from the leaving queue
@@ -224,16 +213,16 @@ classdef CrossroadUnit < handle
             if ~isempty(obj.leavingQueue)
                 
                 
-                obj.leavingQueue(obj.leavingQueue(:,1)==car.id,:)=[]; % remove car from leaving queue
-                obj.breakingFlagArray(obj.breakingFlagArray(:,1)==car.id,:)=[]; % remove car from braking flag array
+                obj.leavingQueue(obj.leavingQueue(:,1)==vehicle.id,:)=[]; % remove car from leaving queue
+                obj.breakingFlagArray(obj.breakingFlagArray(:,1)==vehicle.id,:)=[]; % remove car from braking flag array
                 
                 
                 % when there are still cars in the arriving queue then the
                 % main algorithm has to be executed again
                 if ~isempty(obj.arrivingQueue)
                     if obj.params.conventionalTrafficLights == 0
-                        getPriorityGroup(obj,car,global_timesteps); % get first order vehicle group
-                        deriveMPCSG(obj,global_timesteps); % derive the optimal CSG for this group of cars
+                        obj.getPriorityGroup(vehicles,currentTime); % get first order vehicle group
+                        obj.deriveMPCSG(vehicles, currentTime); % derive the optimal CSG for this group of cars
                     end
                 end
             end
@@ -255,7 +244,7 @@ classdef CrossroadUnit < handle
                             try
                                 index = find(obj.arrivingQueue(:,2)==carDirection(1));
                                 Err_expression = index(1) >= find(obj.arrivingQueue(:,1)==carId);
-                            catch ME
+                            catch
                                 disp('crossroad error 2');
                                 Err_expression = false;
                             end
@@ -266,7 +255,7 @@ classdef CrossroadUnit < handle
                                 % now we can get the braking flag according
                                 % to the CSGs we have defined in the lookup
                                 % table
-                                newBreakingFlag = ~obj.trafficStateLookupTable{obj.trafficState,1}(carDirection(1),carDirection(2));
+                                newBreakingFlag = ~obj.trafficStateLookupTable{obj.trafficState}(carDirection(1),carDirection(2));
                                 if newBreakingFlag == 0
                                     obj.breakingFlagArray(k,2) = newBreakingFlag;
                                     obj.leavingQueue = [obj.leavingQueue;
@@ -288,7 +277,7 @@ classdef CrossroadUnit < handle
                         if obj.breakingFlagArray(k,2) == 1
                              carId = obj.breakingFlagArray(k,1);
                              carDirection =  obj.arrivingQueue(obj.arrivingQueue(:,1)==carId,2:3);
-                             newBreakingFlag = ~obj.trafficStateLookupTable{obj.trafficState,1}(carDirection(1),carDirection(2));
+                             newBreakingFlag = ~obj.trafficStateLookupTable{obj.trafficState}(carDirection(1),carDirection(2));
                                 if newBreakingFlag == 0
                                     obj.breakingFlagArray(k,2) = newBreakingFlag;
                                     obj.leavingQueue = [obj.leavingQueue;
@@ -341,39 +330,36 @@ classdef CrossroadUnit < handle
             end
         end
         
-        function getPriorityGroup(obj,~,global_timesteps) % get first order vehicle group which only is considered in the algorithm
-            
+        function getPriorityGroup(obj, vehicles, currentTime) % get first order vehicle group which only is considered in the algorithm
             % in this function we delimitate vehicles with close ETAs. The
             % parameter we are using is criticalDeltaTTR (in our paper: deltaETA)
             
-            Vehicles = evalin('base','Vehicles');
             % we loop through all vehicles to get the estimated time of
             % arrival at the conflict zone (ETA)
-            for i=1:size(obj.arrivingQueue,1)
-                vehicle = Vehicles(obj.arrivingQueue(i,1));
-                
-                tempArrivingQueue = obj.arrivingQueue(1:i-1,:);
+            for i=1:size(obj.arrivingQueue,1)          
                 
                 % to get exact estimations of all vehicles in the arriving
                 % queue, it has to be checked if there is another vehicle
                 % ahead. The next lines evaluate if there is another car
                 % ahead and if so then the ETA of the car ahead is saved in
                 % 'ETAcarInFront'. If there is no other car ahead
-                % ETAcarInFront = 0. 
+                % ETAcarInFront = 0.                
+                tempArrivingQueue = obj.arrivingQueue(1:i-1,:);
+                
                 if any(tempArrivingQueue(:,2)== obj.arrivingQueue(i,2))
                     rowIndexCarInFront = find(tempArrivingQueue(:,2)== obj.arrivingQueue(i,2));
                     ETAcarInFront = obj.arrivingQueue(rowIndexCarInFront(end),4);
                 else
                     ETAcarInFront = 0;
                 end
+                
+                % get the current vehicle of arriving queue
+                vehicle = vehicles(obj.arrivingQueue(i,1));
                 stoppingNode = obj.stoppingNodes(obj.arrivingQueue(i,2));
                 % the following line requests the ETA of the current
                 % vehicle using the stopping node and the ETA of the
                 % vehicle ahead (in case there is one)
-                timeToReach = obj.calculateEstimatedTimeOfArrival(vehicle,stoppingNode,ETAcarInFront,obj.params.platooning,global_timesteps);
-                
-                
-                obj.arrivingQueue(i,4) = timeToReach;                
+                obj.arrivingQueue(i,4) = obj.calculateEstimatedTimeOfArrival(vehicle,stoppingNode,ETAcarInFront, currentTime,3); % assume an average acceleration of 3             
                 
             end
             
@@ -396,24 +382,24 @@ classdef CrossroadUnit < handle
             
         end
         
-        function deriveMPCSG(obj, global_timesteps)
+        function deriveMPCSG(obj, vehicles, currentTime)
             % this function dervies the maximum priority CSG by using the
             % first-order vehicle group
-            Vehicles = evalin('base','Vehicles');
-            priority = [];
+
             % in the following the priority for each car in the first-order
             % vehicle group (obj.priorityGroup) is calculated
             for i=1:size(obj.priorityGroup,1)
                 priorityGroupMember = obj.priorityGroup(i,:);
-                vehicle = findobj(Vehicles,'id',priorityGroupMember(1));
+                vehicle = vehicles(priorityGroupMember(1));
                 if obj.params.energyEquation == 0
-                    priority = [priority; 1 + vehicle.dynamics.speed * obj.params.alpha];   % time optimized priority formula
+                    priority = 1 + vehicle.dynamics.speed * obj.params.alpha;   % time optimized priority formula
                 else
-                    priority = [priority; 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass];   % energy optimized priority formula
+                    priority = 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass;   % energy optimized priority formula
                 end
+                obj.priorityGroup(i,5) = priority; % add priority to priority group
             end
             
-            obj.priorityGroup(:,5) = priority;
+            
             
             % finding the optimal traffic state for the priority car group
             vector0 = zeros(length(obj.trafficStateLookupTable),1);
@@ -440,11 +426,11 @@ classdef CrossroadUnit < handle
             % in the following we loop through all CSGs and we add up the
             % priority for each vehicles that suits to the current CSG
             for i=1:length(obj.trafficStateLookupTable)
-                entry = obj.trafficStateLookupTable(i);
+                entry = cell2mat(obj.trafficStateLookupTable(i));
                 tempPriorityGroup = obj.priorityGroup;
                 for k=1:size(obj.priorityGroup,1)
                     priorityGroupMember = tempPriorityGroup(k,:);
-                    if entry{1}(priorityGroupMember(2),priorityGroupMember(3))==1
+                    if entry(priorityGroupMember(2),priorityGroupMember(3))==1
                         % check if there's no blocking car ahead
                         if ~any(tempPriorityGroup(1:k-1,2)==priorityGroupMember(2))
                             
@@ -490,7 +476,7 @@ classdef CrossroadUnit < handle
                 for k = 1:size(trafficStatePriority,1)
                     for i = 1:size(obj.leavingQueue,1)
                         leavingQueueMember = obj.leavingQueue(i,:);
-                        isMatching(k) = isMatching(k) && obj.trafficStateLookupTable{k,1}(leavingQueueMember(2),leavingQueueMember(3));
+                        isMatching(k) = isMatching(k) && obj.trafficStateLookupTable{k}(leavingQueueMember(2),leavingQueueMember(3));
                     end
                     if isMatching(k) == 0
                         trafficStatePriority(k) = trafficStatePriority(k) - obj.params.deltaStatePriority; % the priority of MPCSG-nonmatching is reduced by delta_p
@@ -523,7 +509,7 @@ classdef CrossroadUnit < handle
                 end
                 
             end
-        obj.dataLog.trafficState = [obj.dataLog.trafficState [obj.trafficState;global_timesteps]]; 
+        obj.dataLog.trafficState = [obj.dataLog.trafficState [obj.trafficState;currentTime]]; 
 
             
         end      
@@ -612,53 +598,71 @@ classdef CrossroadUnit < handle
            
         end
         
-        function timeToReach = calculateEstimatedTimeOfArrival(obj,vehicle,stoppingNode,ETAcarInFront,platooningTimeBehind,global_timesteps)
+        %% Estimation functions
+        
+        function timeReachingCrossroad = calculateEstimatedTimeOfArrival(obj,vehicle,stoppingNode,ETAcarInFront, currentTime, estimatedAcceleration)
+            % calculate the time of arrival at the stopping node of the
+            % crossroad for a specific vehicle
             
-            distToConflictZone = norm(vehicle.dynamics.position -  vehicle.map.get_coordinates_from_waypoint(stoppingNode)) + 100;
-            % if vehicle is in acceleration phase
-            if abs(vehicle.dynamics.speed - vehicle.dynamics.maxSpeed)>1
-                averageAcceleration = vehicle.dynamics.maxSpeed - vehicle.dynamics.speed; % average acceleration to reach top speed
-                accelerationDistance = obj.getAccelerationDistance(averageAcceleration, vehicle.dynamics.speed, vehicle.dynamics.maxSpeed);
+            maxSpeed = vehicle.dynamics.maxSpeed;
+            currentSpeed = vehicle.dynamics.speed;
+            
+            distToConflictZone = norm(vehicle.dynamics.position -  vehicle.map.get_coordinates_from_waypoint(stoppingNode));
+            % vehicle at max speed
+            if abs(maxSpeed - currentSpeed)<1
+                % if vehicle is not in accleration phase simple constant
+                % speed phase calculation
+                timeToReach = distToConflictZone/currentSpeed;
+            else % vehicle in acceleration phase    
                 
-                if accelerationDistance < distToConflictZone
+                [distanceAccPhase, timeAccPhase] = obj.getAccPhaseParameters(estimatedAcceleration, currentSpeed, maxSpeed); % distance and time to reach maximum speed                
+                if distanceAccPhase < distToConflictZone
                     % if the acceleration distance is below the distance to
-                    % the conflict zone we have to calculate t1 (time in
-                    % accleration phase) and t2 (time in constant speed
-                    % phase)
-                    t1 = obj.timeToReachNextWaypointInAccelerationPhase(vehicle.dynamics.speed, averageAcceleration, accelerationDistance);
-                    t2 = (distToConflictZone-accelerationDistance)/vehicle.dynamics.maxSpeed;
-                    timeToReach = t1+t2+global_timesteps;
+                    % the conflict zone we have a time accelerating and a
+                    % and a time at constant speed
+                    timeConstSpeed = (distToConflictZone-distanceAccPhase)/maxSpeed;
+                    timeToReach = timeAccPhase + timeConstSpeed;
                 else
                     % if the acceleration distance is above the distance to
                     % the conflict zone we can immediately calculate the
                     % time to reach
-                    timeToReach = obj.timeToReachNextWaypointInAccelerationPhase(vehicle.dynamics.speed, averageAcceleration, distToConflictZone)+global_timesteps;
+                    timeToReach = obj.timeToCoverDistanceInAccPhase(currentSpeed, estimatedAcceleration, distToConflictZone);
                     
-                end
-            else
-                % if vehicle is not in accleration phase simple constant
-                % speed phase calculation
-                timeToReach = distToConflictZone/vehicle.dynamics.speed + global_timesteps;
+                end       
             end
             
-            
-            if ETAcarInFront ~= 0
-                % if there is a car in front
-                if timeToReach < ETAcarInFront
-                    
-                    timeToReach = ETAcarInFront + platooningTimeBehind; % platooninTimeBehind is a constant, set in the constructor of the crossroad unit TODO (has to be changed)
-                end
+            % add global time
+            timeReachingCrossroad = timeToReach + currentTime;
+                        
+            if (ETAcarInFront ~= 0) && (ETAcarInFront > timeReachingCrossroad)
+                % if there is a car in front and it is slower, vehicle will
+                % arrive after the car in front
+                timeReachingCrossroad = ETAcarInFront + obj.params.platooningTimeBehind; % platooninTimeBehind is time distance the vehicle is driving behind
             end
         end
         
-        function accelerationDistance = getAccelerationDistance(~, averageAcceleration, currentSpeed, speedTo)
-            delta_v = speedTo-currentSpeed;
-            accelerationDistance = delta_v^2/(2*averageAcceleration)+currentSpeed*delta_v/averageAcceleration;
+        function [distance, time] = getAccPhaseParameters(~, acceleration, startingSpeed, topSpeed)
+            % calculate the distance covered and the time needed to reach
+            % top speed from starting speed with constant acceleration
+            
+            deltaV = topSpeed-startingSpeed;          
+            t = deltaV/acceleration; % time to accelerate to top speed
+            
+            distance = startingSpeed*t + 1/2*acceleration*t^2; % distance = way at starting speed + way added through acceleration
+            time = t; % time in acceleration phase
         end
         
-        %% Eigenvalues of Equation 8 in NecSys Paper
-        function timeToReach = timeToReachNextWaypointInAccelerationPhase(~, currentSpeed, averageAcceleration, distance)
-            timeToReach = -currentSpeed/averageAcceleration + sqrt((currentSpeed/averageAcceleration)^2+2*distance/averageAcceleration);
+        function time = timeToCoverDistanceInAccPhase(~, startingSpeed, acceleration, distance)
+            % get time to cover a distance while constant accelerating from
+            % start speed
+            
+            % reshape distance formular to get time (get eigenvalues):
+            % Equation 8 in NecSys Paper
+            % d = v0*t + 1/2*a*t^2
+            v0 = startingSpeed;
+            a = acceleration;
+            
+            time = (-v0 + sqrt(v0^2+2*distance*a))/a;
         end
     end
     

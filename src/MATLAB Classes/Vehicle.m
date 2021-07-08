@@ -73,7 +73,6 @@ classdef Vehicle < handle
         %         emergencyCase
         %         speedInCrossroad        Speed from braking to leaving point
         %         speedInCrossroad2       Speed from starting to leaving point
-        %         platooning
         decisionUnit
         %         Map
         %         accelerationPhase
@@ -148,7 +147,6 @@ classdef Vehicle < handle
             obj.dataLog.speedInCrossroad2 = [];
             obj.dataLog.speed = [];
             obj.dataLog.emergencyCase = [];
-            obj.dataLog.platooning = [];
             obj.dataLog.laneSwitchStartTime = []; % Check where they are set and get
             obj.dataLog.laneSwitchEndTime = []; % Check where they are set and get
             obj.dataLog.MinJerkTrajPolynom = {};% Check where they are set and get

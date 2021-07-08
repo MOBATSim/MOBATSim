@@ -41,28 +41,28 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
             
+            %% Crossroad units
+            
             for i=1:size(V2Idata,1)
-                if ~(V2Idata(i,1) == 0)
-                    vehicle = obj.map.Vehicles(i);
+                if V2Idata(i,1) ~= 0
+                    vehicle = obj.Vehicles(i);
                     if V2Idata(i,2) == 1
                         % Car reaches the crossroad
                         obj.map.crossroadUnits(V2Idata(i,1)).carReachesCrossroad(vehicle, vehicle.pathInfo.lastWaypoint);
                     elseif V2Idata(i,2) == 2
                         % Car reaches the braking point
-                        obj.map.crossroadUnits(V2Idata(i,1)).carReachesBreakingPoint(vehicle, vehicle.pathInfo.lastWaypoint, obj.getCurrentTime);
+                        obj.map.crossroadUnits(V2Idata(i,1)).carReachesBreakingPoint(vehicle, obj.Vehicles, vehicle.pathInfo.lastWaypoint, obj.getCurrentTime);
                     elseif V2Idata(i,2) == 3
                         
                     elseif V2Idata(i,2) == 4
                         % Car leaves the crossroad
-                        obj.map.crossroadUnits(V2Idata(i,1)).carLeavesCrossroad(vehicle, obj.getCurrentTime)
+                        obj.map.crossroadUnits(V2Idata(i,1)).carLeavesCrossroad(vehicle, obj.Vehicles, obj.getCurrentTime)
                     end
                 end
             end
             
-            mergedBrakingFlagArrays = []; % Memory preallocation is not feasible since the assignment size is variable
-            for i=1:length(obj.map.crossroadUnits)
-                mergedBrakingFlagArrays =  [mergedBrakingFlagArrays; obj.map.crossroadUnits(i).breakingFlagArray]; %#ok<AGROW>
-            end
+            % get the braking flag arrays from all crossroad units
+            mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.breakingFlagArray);
 
             %% 2D Traffic Plot + Path Dynamic Highlight
             if mod(obj.getCurrentTime,0.2) == 0
@@ -84,7 +84,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                     end
                 end
             end
-            %% Vehicle Analysing Window TODO: check if should be called here
+            %% Vehicle Analysing Window
             if obj.vehicleAnalysingWindow ~= false % call only if window is generated
                 obj.vehicleAnalysingWindow.update(obj.getCurrentTime);
             end
