@@ -171,14 +171,13 @@ classdef Vehicle < handle
         end %Constructor
         
         function bool = checkWaypointReached(car,Destination)
-            if car.pathInfo.routeEndDistance < 1 % consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user
-                car.pathInfo.s = 0;%reset s at the end of road
-                
+            if car.pathInfo.routeEndDistance < 1 % consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user      
                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
                 car.setLastWaypoint(lastWaypoint); % Vehicle Set
                 
                 if ~(car.checkifDestinationReached()) % Check if destination reached
                     % If not -> find the next route and calculate the trajectory
+                    car.pathInfo.s = 0;%reset s at the end of road
                     nextRoute = car.generateCurrentRoute(car.pathInfo.path,lastWaypoint);
                     car.setCurrentRoute(nextRoute);
                     car.pathInfo.path(1) = [];
