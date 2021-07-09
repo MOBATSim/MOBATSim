@@ -6,9 +6,9 @@ classdef DigraphMap < Map
     end
     
     methods
-        function obj = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
+        function obj = DigraphMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
             
-            obj = obj@Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber);
+            obj = obj@Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber);
             
                
             for i=1:length(obj.connections.all)

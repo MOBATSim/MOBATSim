@@ -13,7 +13,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         Map
         accelerationPhase;
         futureData
-        breakingFlag
         inCrossroad % [crossroadId crossroadZone]
         % crossroadZone:
         % 1 -> arrivingZone
@@ -39,7 +38,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             obj.Map = obj.vehicle.map;
             
             obj.accelerationPhase =  zeros(1,5);
-            obj.breakingFlag = 0;
             obj.inCrossroad = [0 0];
         end
         
@@ -93,7 +91,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
         end
         
-        function crossroadCheck(~,car)
+        function crossroadCheck(obj,car)
             
             crossroadId = car.decisionUnit.inCrossroad(1);
             crossroadZone = car.decisionUnit.inCrossroad(2);
@@ -115,7 +113,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 
                 if crossroadZone == 2
                     
-                    if car.decisionUnit.breakingFlag == 1
+                    if car.decisionUnit.brakingFlag == 1
                         car.pathInfo.stopAt = car.pathInfo.path(2);
                     else
                         car.pathInfo.stopAt = 0;

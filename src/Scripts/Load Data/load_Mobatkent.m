@@ -1,5 +1,5 @@
 function [mapName, waypoints, connections_circle, connections_translation, ...
-          startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent()
+          startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent()
 
     mapName = 'Mobatkent';
 
@@ -205,7 +205,7 @@ function [mapName, waypoints, connections_circle, connections_translation, ...
     startingNodes = [56    72    73    65;
         51     0     0    44];
 
-    breakingNodes = [ 70    71    74    75;
+    brakingNodes = [ 70    71    74    75;
         78     0     0    76];
 
     stoppingNodes = [68    62    49    66;
