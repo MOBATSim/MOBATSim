@@ -27,7 +27,6 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         vehicle
         accelerationPhase;
         futureData
-        breakingFlag
         inCrossroad % [crossroadId crossroadZone]
         % crossroadZone:
         % 1 -> arrivingZone
@@ -50,7 +49,6 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
             
             obj.accelerationPhase =  zeros(1,5);
-            obj.breakingFlag = 0;
             obj.inCrossroad = [0 0];
         end
           
@@ -84,7 +82,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                     V2Idata = [crossroadId 1];
                 end
                 
-            elseif nnz(cat(1,map.crossroadUnits.brakingNodes)==current_point) % car reaches Breaking Point 
+            elseif nnz(cat(1,map.crossroadUnits.brakingNodes)==current_point) % car reaches Braking Point 
                 crossroadId = find(any(cat(1,map.crossroadUnits.brakingNodes)==current_point,2));
                 car.decisionUnit.inCrossroad = [crossroadId 2];
                 

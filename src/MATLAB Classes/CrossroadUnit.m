@@ -18,20 +18,30 @@ classdef CrossroadUnit < handle
              % platooningTimeBehind
              % conventionalTrafficLights
              % energyEquation
-        arrivingQueue   = []% this is named Waiting Queue in our  paper
+        arrivingQueue   = []    % this is named Waiting Queue in our  paper
         leavingQueue    = []
-        priorityGroup % this is named first-order vehicle group in our  paper
+        priorityGroup           % this is named first-order vehicle group in our  paper
                 
-        trafficState %this is named CSG in our paper   
-        breakingFlagArray % Array with the following structure: [ carId breakingFlag]
-                          %                                     [ carId breakingFlag]
-                          % breakingFlag: 1 -> Stop!, 0 -> Go!
+        trafficState    = 0     %this is named CSG in our paper   
+        brakingFlagArray % Array with the following structure: [ carId brakingFlag]
+                         %                                     [ carId brakingFlag]
+                         % brakingFlag: 1 -> Stop!, 0 -> Go!
         dataLog
             % traffic state
     end
     
     methods
-        function obj = CrossroadUnit(id, startingNodes,brakingNodes,stoppingNodes,leavingNodes)
+        function obj = CrossroadUnit(id, startingNodes,brakingNodes,stoppingNodes,leavingNodes, configurations)
+            arguments
+                id                                         (1,1) double
+                startingNodes                              (1,4) double
+                brakingNodes                               (1,4) double
+                stoppingNodes                              (1,4) double
+                leavingNodes                               (1,4) double
+                configurations.conventionalTrafficLights   (1,1) logical   = false  % use conventional traffic lights
+                configurations.intelligentDecision         (1,1) logical   = true   % 0 for FCFS, 1 for our algorithm
+                configurations.energyEquation              (1,1) logical   = false  % 0 for time optimized approach, 1 for energy optimized approach
+            end
             obj.id = id;          
             obj.startingNodes = startingNodes;
             obj.brakingNodes = brakingNodes;
@@ -40,19 +50,19 @@ classdef CrossroadUnit < handle
             
             obj.trafficStateLookupTable = obj.generateLookupTable();
 
-            %platooning control isn't working as expected, therefore a
-            %constant platooning time behind the car ahead is set:
-            obj.params.platooningTimeBehind = 0.2;
+            
             
             % edit all the parameters at this point to change the algorithm
             obj.params.deltaStatePriority = 2; % delta_p in our paper
             obj.params.criticalDeltaTTR = 1.5; % delta_TTR in our paper
             obj.params.alpha = 0.072;
             obj.params.alpha2 = 0.001;
-            
-            obj.params.intelligentDecision = 1; % 0 for FCFS, 1 for our algorithm
-            obj.params.conventionalTrafficLights = 0; % 1 for conventional traffic light system
-            obj.params.energyEquation = 0; % 0 for time optimized approach, 1 for energy optimized approach
+            %platooning control isn't working as expected, therefore a
+            %constant platooning time behind the car ahead is set:
+            obj.params.platooningTimeBehind = 0.2;           
+            obj.params.intelligentDecision          = configurations.intelligentDecision;
+            obj.params.conventionalTrafficLights    = configurations.conventionalTrafficLights;
+            obj.params.energyEquation               = configurations.energyEquation;
             
             
             if obj.params.intelligentDecision == 0
@@ -62,7 +72,6 @@ classdef CrossroadUnit < handle
             if obj.params.energyEquation == 1
                 obj.params.deltaStatePriority = 9999; % for energy optimized approach we set delta_p to 9999 (see in diploma thesis for explanation)
             end
-            obj.trafficState = 0; 
            
             
             obj.dataLog.trafficState = []; 
@@ -81,7 +90,7 @@ classdef CrossroadUnit < handle
                 % from S x x x x
                 % from W x x x x
                 
-                % Vehicles can drive in 7 different scenarios according to
+                % Vehicles can drive in 9 different scenarios according to
                 % the table from row to column without collision
                 
                 trafficStateLookupTable={[
@@ -118,7 +127,20 @@ classdef CrossroadUnit < handle
                     [0 0 0 1]
                     [1 0 0 0]
                     [0 1 0 0]
-                    [0 0 1 0] ]}; % N-W, E-N, S-E, W-S
+                    [0 0 1 0] ], ... % N-W, E-N, S-E, W-S
+                    ... % 2 new scenarios (2 cars from opposite roads turning
+                    ... % left at the same time)
+                    [    
+                    [0 0 0 1]
+                    [0 0 1 0]
+                    [0 1 0 0]
+                    [1 0 0 0] ], ... % N-W, E-S, S-E, W-N
+                    [    
+                    [0 1 0 0]
+                    [1 0 0 0]
+                    [0 0 0 1]
+                    [0 0 1 0] ], ... % N-E, E-N, S-W, W-S
+                    };
            
         end
         
@@ -155,7 +177,7 @@ classdef CrossroadUnit < handle
             
         end
         
-        function carReachesBreakingPoint(obj, vehicle, vehicles, brakingNode, currentTime)
+        function carReachesBrakingPoint(obj, vehicle, vehicles, brakingNode, currentTime)
             % this function is executed when a car reaches the braking
             % point. Now the main algorithm has to be executed to derive
             % the optimal CSG
@@ -183,18 +205,18 @@ classdef CrossroadUnit < handle
             
             % the next step is to update the braking flag array according
             % to the new CSG
-            obj.breakingFlagArray = [obj.breakingFlagArray; [vehicle.id 1 ]]; % this is just to add the new car to the braking flag array
+            obj.brakingFlagArray(end+1,:) = [vehicle.id 1]; % this is just to add the new car to the braking flag array
             
             if obj.trafficState ~=0
-                obj.updateBreakingFlagArray;  % this function updates the braking flag array if the current CSG is not zero
+                obj.updateBrakingFlagArray;  % this function updates the braking flag array if the current CSG is not zero
             end
             
             % now we have to check what the new braking flag for the
             % new car is. If it is zero, we have to remove the car from
             % the arriving queue
-            breakingFlag = obj.breakingFlagArray(obj.breakingFlagArray(:,1)==vehicle.id,2);
+            brakingFlag = obj.brakingFlagArray(obj.brakingFlagArray(:,1)==vehicle.id,2);
             
-            if breakingFlag == 0
+            if brakingFlag == 0
                 
                 % remove car from waiting queue for specific cardinal direction
                 obj.arrivingQueue(obj.arrivingQueue(:,1)==vehicle.id,:)=[];
@@ -214,7 +236,7 @@ classdef CrossroadUnit < handle
                 
                 
                 obj.leavingQueue(obj.leavingQueue(:,1)==vehicle.id,:)=[]; % remove car from leaving queue
-                obj.breakingFlagArray(obj.breakingFlagArray(:,1)==vehicle.id,:)=[]; % remove car from braking flag array
+                obj.brakingFlagArray(obj.brakingFlagArray(:,1)==vehicle.id,:)=[]; % remove car from braking flag array
                 
                 
                 % when there are still cars in the arriving queue then the
@@ -228,15 +250,15 @@ classdef CrossroadUnit < handle
             end
         end
                 
-        function updateBreakingFlagArray(obj)
-            % this function updates the breakingflag Array due to a change
+        function updateBrakingFlagArray(obj)
+            % this function updates the brakingflag Array due to a change
             % of the current CSG
             
             if obj.params.intelligentDecision == 1
-                if ~isempty(obj.breakingFlagArray)
-                    for k=1: size(obj.breakingFlagArray,1)
-                        if obj.breakingFlagArray(k,2) == 1
-                            carId = obj.breakingFlagArray(k,1);
+                if ~isempty(obj.brakingFlagArray)
+                    for k=1: size(obj.brakingFlagArray,1)
+                        if obj.brakingFlagArray(k,2) == 1
+                            carId = obj.brakingFlagArray(k,1);
                             carDirection =  obj.arrivingQueue(obj.arrivingQueue(:,1)==carId,2:3);
 
                             % check if theres a car ahead who has to stop
@@ -255,11 +277,10 @@ classdef CrossroadUnit < handle
                                 % now we can get the braking flag according
                                 % to the CSGs we have defined in the lookup
                                 % table
-                                newBreakingFlag = ~obj.trafficStateLookupTable{obj.trafficState}(carDirection(1),carDirection(2));
-                                if newBreakingFlag == 0
-                                    obj.breakingFlagArray(k,2) = newBreakingFlag;
-                                    obj.leavingQueue = [obj.leavingQueue;
-                                        [carId carDirection]];
+                                newBrakingFlag = ~obj.trafficStateLookupTable{obj.trafficState}(carDirection(1),carDirection(2));
+                                if newBrakingFlag == 0
+                                    obj.brakingFlagArray(k,2) = newBrakingFlag;
+                                    obj.leavingQueue(end+1,:) = [carId carDirection];
 
                                     % when braking flag is zero we can remove car from waiting queue for specific cardinal direction
                                     obj.arrivingQueue(obj.arrivingQueue(:,1)==carId,:)=[];                            
@@ -272,16 +293,15 @@ classdef CrossroadUnit < handle
                 end
             else
                 % this routine is for FCFS
-                if ~isempty(obj.breakingFlagArray)
-                    for k=1: size(obj.breakingFlagArray,1)
-                        if obj.breakingFlagArray(k,2) == 1
-                             carId = obj.breakingFlagArray(k,1);
+                if ~isempty(obj.brakingFlagArray)
+                    for k=1: size(obj.brakingFlagArray,1)
+                        if obj.brakingFlagArray(k,2) == 1
+                             carId = obj.brakingFlagArray(k,1);
                              carDirection =  obj.arrivingQueue(obj.arrivingQueue(:,1)==carId,2:3);
-                             newBreakingFlag = ~obj.trafficStateLookupTable{obj.trafficState}(carDirection(1),carDirection(2));
-                                if newBreakingFlag == 0
-                                    obj.breakingFlagArray(k,2) = newBreakingFlag;
-                                    obj.leavingQueue = [obj.leavingQueue;
-                                        [carId carDirection]];
+                             newBrakingFlag = ~obj.trafficStateLookupTable{obj.trafficState}(carDirection(1),carDirection(2));
+                                if newBrakingFlag == 0
+                                    obj.brakingFlagArray(k,2) = newBrakingFlag;
+                                    obj.leavingQueue(end+1,:) = [carId carDirection];
 
                                     % remove car from waiting queue for specific cardinal direction
                                     obj.arrivingQueue(obj.arrivingQueue(:,1)==carId,:)=[];                            
@@ -295,17 +315,17 @@ classdef CrossroadUnit < handle
             end
         end
         
-        function updateCustomBreakingFlagArray(obj, customBreakingFlags)
+        function updateCustomBrakingFlagArray(obj, customBrakingFlags)
             % this function is used to upadte the braking Flag Array with
             % custom CSGs. This function is used in the traffic light
             % system function.
-            % the function is pretty similar to the updateBreakingFlagArray
+            % the function is pretty similar to the updateBrakingFlagArray
             % function
 
-            if ~isempty(obj.breakingFlagArray)
-                for k=1: size(obj.breakingFlagArray,1)
-                    if obj.breakingFlagArray(k,2) == 1
-                        carId = obj.breakingFlagArray(k,1);
+            if ~isempty(obj.brakingFlagArray)
+                for k=1: size(obj.brakingFlagArray,1)
+                    if obj.brakingFlagArray(k,2) == 1
+                        carId = obj.brakingFlagArray(k,1);
                         carDirection =  obj.arrivingQueue(obj.arrivingQueue(:,1)==carId,2:3);
                         
                         % check if theres a blocking car ahead
@@ -313,9 +333,9 @@ classdef CrossroadUnit < handle
                         
                         % if no blocking car ahead check traffic state
                         if index(1) >= find(obj.arrivingQueue(:,1)==carId)
-                            newBreakingFlag = ~customBreakingFlags(carDirection(1),carDirection(2));
-                            if newBreakingFlag == 0
-                                obj.breakingFlagArray(k,2) = newBreakingFlag;
+                            newBrakingFlag = ~customBrakingFlags(carDirection(1),carDirection(2));
+                            if newBrakingFlag == 0
+                                obj.brakingFlagArray(k,2) = newBrakingFlag;
                                 obj.leavingQueue = [obj.leavingQueue;
                                     [carId carDirection]];
                                 
@@ -465,7 +485,7 @@ classdef CrossroadUnit < handle
             if isempty(obj.leavingQueue)
                 obj.trafficState = optimalTrafficStates(1);
                 
-                obj.updateBreakingFlagArray; % after setting a new CSG the breakingFlagArray has to be updated
+                obj.updateBrakingFlagArray; % after setting a new CSG the brakingFlagArray has to be updated
                 
                 % if leaving queue is not empty and old and new CSG are not equal
             elseif ~ismember(obj.trafficState,optimalTrafficStates)
@@ -493,34 +513,34 @@ classdef CrossroadUnit < handle
                     
                     obj.trafficState = TS;
                   
-                    obj.updateBreakingFlagArray;
+                    obj.updateBrakingFlagArray;
                     
                 else
                     % but if the new CSG does not macht with the old one we
                     % have to set CSG = 0 to evacuate the conflict zone.
                     % Therefore all vehicles has to stop
                     obj.trafficState = 0;
-                    for k=1: size(obj.breakingFlagArray,1)
-                        if ~any(obj.leavingQueue(:,1)== obj.breakingFlagArray(k,1))
-                            obj.breakingFlagArray(k,2) = 1;
+                    for k=1: size(obj.brakingFlagArray,1)
+                        if ~any(obj.leavingQueue(:,1)== obj.brakingFlagArray(k,1))
+                            obj.brakingFlagArray(k,2) = 1;
                         end
                         
                     end
                 end
                 
             end
-        obj.dataLog.trafficState = [obj.dataLog.trafficState [obj.trafficState;currentTime]]; 
+            obj.dataLog.trafficState(:,end+1) = [obj.trafficState;currentTime]; 
 
             
         end      
  
-        function updateTrafficStateFromConventionalSystem(obj,global_timesteps)
+        function updateTrafficStateFromConventionalSystem(obj ,currentTime)
             % this function calculates the current traffic state for a
             % conventional traffic light system
             
             % the following line calculates a floating number x by using the
-            % global timesteps. This number x goes up from 1 to 6 in a loop
-            x = (mod(round((global_timesteps + 14)*20),600))/100+1; 
+            % current time. This number x goes up from 1 to 6 in a loop
+            x = (mod(round((currentTime + 14)*20),600))/100+1; 
             
             % the number before the comma is the CSG
             newTrafficState = floor(x);
@@ -534,68 +554,54 @@ classdef CrossroadUnit < handle
             % durationYellowPhase defines the yellow phase for each CSG
             durationYellowPhase = 0.4; % 40% of the current CSG is the yellow phase
             
-            switch newTrafficState
-                case 2
-                    if durationOfTrafficState < durationYellowPhase
+            % select special braking flag array when in a yellow phase
+            if durationOfTrafficState < durationYellowPhase
+                switch newTrafficState
+                    case 2
                         % for the simulation of traffic lights we need more
                         % CSGs than the seven we have defined. The function
-                        % updateCustomBreakingFlagArray can set custom
+                        % updateCustomBrakingFlagArray can set custom
                         % CSGs. The argument of the method is a CSG in the
                         % common structure
-                        obj.updateCustomBreakingFlagArray([0 0 1 1;
-                                                           0 0 0 0;
-                                                           0 0 0 0;
-                                                           0 0 0 0]);
-                    else
-                        obj.trafficState  = newTrafficState;
-                        obj.updateBreakingFlagArray;
-                    end
-                    
-                case 3
-                    if durationOfTrafficState < durationYellowPhase
-                        obj.updateCustomBreakingFlagArray([0 0 0 0;
-                                                           0 0 0 0;
-                                                           1 1 0 0;
-                                                           0 0 0 0]);
-                    else
-                        obj.trafficState  = newTrafficState;
-                        obj.updateBreakingFlagArray;
-                    end
-                    
-                case 5
-                    if durationOfTrafficState < durationYellowPhase
-                        obj.updateCustomBreakingFlagArray([0 0 0 0;
-                                                           1 0 0 1;
-                                                           0 0 0 0;
-                                                           0 0 0 0]);
-                    else
-                        obj.trafficState  = newTrafficState;
-                        obj.updateBreakingFlagArray;
-                    end
-                    
-                case 6
-                    if durationOfTrafficState < durationYellowPhase
-                        obj.updateCustomBreakingFlagArray([0 0 0 0;
-                                                           0 0 0 0;
-                                                           0 0 0 0;
-                                                           0 1 1 0]);
-                    else
-                        obj.trafficState  = newTrafficState;
-                        obj.updateBreakingFlagArray;
-                    end
-                otherwise
-                    if durationOfTrafficState < durationYellowPhase
-                       obj.updateCustomBreakingFlagArray([0 0 0 0;
-                                                          0 0 0 0;
-                                                          0 0 0 0;
-                                                          0 0 0 0]);
-                    else
-                        obj.trafficState  = newTrafficState;
-                        obj.updateBreakingFlagArray;
-                    end
-            end
+                        customBrakingFlags = [0 0 1 1;
+                                              0 0 0 0;
+                                              0 0 0 0;
+                                              0 0 0 0];
+                        
+                    case 3
+                        
+                        customBrakingFlags = [0 0 0 0;
+                                              0 0 0 0;
+                                              1 1 0 0;
+                                              0 0 0 0];
+                        
+                    case 5
+                        customBrakingFlags = [0 0 0 0;
+                                              1 0 0 1;
+                                              0 0 0 0;
+                                              0 0 0 0];
+                        
+                    case 6
+                        customBrakingFlags = [0 0 0 0;
+                                              0 0 0 0;
+                                              0 0 0 0;
+                                              0 1 1 0];
+                          
+                    otherwise
+                        customBrakingFlags = [0 0 0 0;
+                                              0 0 0 0;
+                                              0 0 0 0;
+                                              0 0 0 0];
+                        
+                end
+                % update with this special braking flag array
+                obj.updateCustomBrakingFlagArray(customBrakingFlags);
+            else
+                % if no yellow phase use the normal CSG
+                obj.trafficState  = newTrafficState;
+                obj.updateBrakingFlagArray;
+            end            
             
-           
         end
         
         %% Estimation functions

@@ -14,7 +14,7 @@ classdef Map < handle
     end
     
     methods
-        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
+        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
             obj.mapName = mapName;
             obj.waypoints = waypoints;
             obj.Vehicles = []; % Vehicles are added after vehicle generation
@@ -28,7 +28,7 @@ classdef Map < handle
             % Crossroad units            
             for i = 1:  size(startingNodes,1)
                 
-                obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i, startingNodes(i,:),breakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
+                obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i, startingNodes(i,:),brakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
             end
             %% Calculate curved distances (Lengths of circular routes)
             distancesCircle = ones(1,size(connections_circle,1)); % memory preallocation

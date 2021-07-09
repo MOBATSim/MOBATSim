@@ -78,7 +78,7 @@ classdef Vehicle < handle
         %         accelerationPhase
         %         initialFutureData
         %         futureData
-        %         breakingFlag
+        %         brakingFlag
         %         inCrossroad
         V2I
         V2VdataLink
@@ -159,7 +159,7 @@ classdef Vehicle < handle
             obj.decisionUnit.accelerationPhase = zeros(1,5);
             obj.decisionUnit.initialFutureData = [];
             obj.decisionUnit.futureData = [];
-            obj.decisionUnit.breakingFlag = 0;
+            obj.decisionUnit.brakingFlag = 0;
             obj.decisionUnit.inCrossroad = [0 0];
             obj.decisionUnit.LaneSwitchTime = 4; % Check where they are set and get
             

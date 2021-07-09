@@ -38,20 +38,20 @@ function prepare_simulator(options)
     switch options.mapName  
         case 'Mobatkent'
             %[options.mapName, waypoints, connections_circle, connections_translation, ...
-            %  startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent();
+            %  startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent();
             [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
-              startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
+              startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
         case 'Highway'
             open_system('Platoon_Event')
             return
 
         case 'Crossmap'
             [Route_LaneNumber, waypoints, connections_circle, connections_translation, ...
-              startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Crossmap();             
+              startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Crossmap();             
     end
 
     %% Generate the 2D Map and the instance from the Map class
-    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, breakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
+    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
 
     %% Load Scenario and Vehicles
     if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % TODO: change this part when GUI is changed, does not check base workspace

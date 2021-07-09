@@ -51,7 +51,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                         obj.map.crossroadUnits(V2Idata(i,1)).carReachesCrossroad(vehicle, vehicle.pathInfo.lastWaypoint);
                     elseif V2Idata(i,2) == 2
                         % Car reaches the braking point
-                        obj.map.crossroadUnits(V2Idata(i,1)).carReachesBreakingPoint(vehicle, obj.Vehicles, vehicle.pathInfo.lastWaypoint, obj.getCurrentTime);
+                        obj.map.crossroadUnits(V2Idata(i,1)).carReachesBrakingPoint(vehicle, obj.Vehicles, vehicle.pathInfo.lastWaypoint, obj.getCurrentTime);
                     elseif V2Idata(i,2) == 3
                         
                     elseif V2Idata(i,2) == 4
@@ -62,7 +62,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             end
             
             % get the braking flag arrays from all crossroad units
-            mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.breakingFlagArray);
+            mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.brakingFlagArray);
 
             %% 2D Traffic Plot + Path Dynamic Highlight
             if mod(obj.getCurrentTime,0.2) == 0

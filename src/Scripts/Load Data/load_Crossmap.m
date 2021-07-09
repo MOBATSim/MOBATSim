@@ -1,5 +1,5 @@
 function [Route_LaneNumber, waypoints, connections_circle, connections_translation, ...
-          startingNodes, breakingNodes, stoppingNodes, leavingNodes] = load_Crossmap()
+          startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Crossmap()
     %% Map Data for CrossMap
 
     waypoints = [[10 0 -50]
@@ -244,7 +244,7 @@ function [Route_LaneNumber, waypoints, connections_circle, connections_translati
         %                  0     19    2     55
         ];
 
-    breakingNodes = [ 50    15    26    87;
+    brakingNodes = [ 50    15    26    87;
         %                   11    0     47    38;
         %                   75    30    0     90;
         %                   71    62    83    0;
@@ -271,7 +271,7 @@ function [Route_LaneNumber, waypoints, connections_circle, connections_translati
     % startingPoints = [59 46 62];
     % destinationPoints = [9 45 45];
 
-    %   3 traffic states sequentielly (breaking fail)
+    %   3 traffic states sequentielly (braking fail)
     % startingPoints = [62 8 65];
     % destinationPoints = [8 44 45];
 
