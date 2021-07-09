@@ -43,9 +43,13 @@ function prepare_simulator(options)
     %% Generate the 2D Map and the instance from the Map class
     Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
 
-    %% Load Scenario and Vehicles
+    %% Load Scenario
     if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % TODO: change this part when GUI is changed, does not check base workspace
-        [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out
+        [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out    
+    else % custom scenario or random scenario generate their own scenario on UI
+        startingPoints = evalin('base','startingPoints');
+        destinationPoints = evalin('base','destinationPoints');
+        maxSpeeds = evalin('base','maxSpeeds');        
     end
     %uncomment line below to undo
     % [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out
