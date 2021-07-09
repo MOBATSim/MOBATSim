@@ -288,8 +288,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         %% Override for experiment - Later incorparate into WaypointGenerator.m
               
         function [position_Cart,orientation_Cart] = Frenet2Cartesian(obj,route,s,d,radian)
-            
-            %this function transfer a position in Frenet coordinate into Cartesian coordinate
+            % Transform a position from Frenet coordinate to Cartesian coordinate
             %input:
             %route is a 2x2 array [x_s y_s;x_e y_e]contains the startpoint and the endpoint of the road
             %s is the journey on the reference roadline(d=0)
@@ -327,20 +326,18 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         end
         
         function [s,d,yawAngle_in_Cartesian,routeLength] = Cartesian2Frenet(obj,route,vehiclePos_Cartesian,radian)
+            %Transform a position in Cartesian coordinate into Frenet coordinate
             
-            %this function transform a position in Cartesian coordinate into Frenet coordinate
+            %Function Inputs:
+            %route:                 2x2 array [x_s y_s;x_e y_e] the starting point and the ending point of the road
+            %vehiclePos_Cartesian:  1x2 array [x y] in Cartesian coordinate
+            %radian:                The angle of the whole curved road, positive for counterclockwise turn
             
-            %input:
-            %route is a 2x2 array [x_s y_s;x_e y_e]contains the startpoint and the endpoint of the road
-            %position_C is the 1x2 array [x y] in Cartesian coordinate
-            %radian is the radian of the whole curved road,is positive when
-            %counterclockwise turn
-            
-            %output:
-            %yawAngle_in_Cartesian is the angle of the tangent vector on the reference roadline(d=0)
-            %s is the journey on the reference roadline
-            %d is the vertical offset distance to the reference roadline,positive d means away from center
-            %this function follows the similar logic with function Frenet2Cartesian(obj,route,s,d,radian)
+            %Function Output:
+            %yawAngle_in_Cartesian: The angle of the tangent vector on the reference roadline(d=0)
+            %s:                     Traversed length along the reference roadline
+            %d:                     Vertical offset distance to the reference roadline,positive d means away from center
+
             Route_StartPoint = route(1,:);
             Route_endPoint = route(2,:);
             
@@ -353,6 +350,8 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
                 yawAngle_in_Cartesian = atan2(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate
                 posVector = vehiclePos_Cartesian-Route_StartPoint;
                 sideVector = [cos(yawAngle_in_Cartesian+pi/2) sin(yawAngle_in_Cartesian+pi/2)];% side vector is perpendicular to the route
+                
+                sideVector = round(sideVector,5);
                 
                 s = dot(posVector,route_UnitVector);% the projection of posVector on local_route_vector_i
                 
