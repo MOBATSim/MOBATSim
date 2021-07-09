@@ -365,11 +365,20 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 obj.calculatedRoutesArray(end+1) = obj.vehicle.pathInfo.currentRoute; 
                 obj.currentPathPoints = obj.nextPathPoints(1:5,:);
             else
-                alpha = 0:5:(radian*180/pi);
-                obj.nextPathPoints=[rotationCenter(1)+(radius*sind(alpha)); rotationCenter(2)-(radius*cosd(alpha))]';
-                obj.allPathPoints = [obj.allPathPoints; obj.nextPathPoints];
-                obj.calculatedRoutesArray(end+1) = obj.vehicle.pathInfo.currentRoute;
-                obj.currentPathPoints = obj.nextPathPoints(1:5,:);
+                if radian >= pi
+                    alpha = (radian*180/pi):-5:0;
+                    obj.nextPathPoints=[rotationCenter(1)-(radius*sind(alpha)); rotationCenter(2)-(radius*cosd(alpha))]';
+                    obj.allPathPoints = [obj.allPathPoints; obj.nextPathPoints];
+                    obj.calculatedRoutesArray(end+1) = obj.vehicle.pathInfo.currentRoute;
+                    obj.currentPathPoints = obj.nextPathPoints(1:5,:);
+                else
+                    alpha = 0:5:(radian*180/pi);
+                    obj.nextPathPoints=[rotationCenter(1)+(radius*sind(alpha)); rotationCenter(2)-(radius*cosd(alpha))]';
+                    obj.allPathPoints = [obj.allPathPoints; obj.nextPathPoints];
+                    obj.calculatedRoutesArray(end+1) = obj.vehicle.pathInfo.currentRoute;
+                    obj.currentPathPoints = obj.nextPathPoints(1:5,:);
+                end
+
             end
         end
         
