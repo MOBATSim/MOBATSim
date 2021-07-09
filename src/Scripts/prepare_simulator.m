@@ -2,10 +2,11 @@ function prepare_simulator(options)
     % This function prepares the simulation
     %   After calling this method the simulation can run
     arguments
-        options.Analysing   (1,1) logical   = false                 % activate the analysing functions
-        options.modelName   (1,1) string    = 'MOBATSim'            % name of the simulink model
-        options.simStopTime (1,1) double    = 80                    % simulation stop time in seconds
-        options.simTs       (1,1) double    = 0.02                  % simulation time step: sample time of the simulation (may not be stable if changed)
+        options.Analysing   (1,1) logical   = false                 % Activate the analysing functions
+        options.modelName   (1,1) string    = 'MOBATSim'            % Name of the simulink model
+        options.mapName     (1,1) string    = 'Mobatkent'           % Name of the map
+        options.simStopTime (1,1) double    = 80                    % Simulation stop time in seconds
+        options.simTs       (1,1) double    = 0.02                  % Simulation time step: sample time of the simulation (may not be stable if changed)
         options.scenarioName(1,1) string    = 'Urban City Traffic'
         options.FI_id       (1,1) double = 1
         options.FI_value    (1,1) double = 0
