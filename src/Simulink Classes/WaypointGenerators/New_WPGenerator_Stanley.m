@@ -10,6 +10,8 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         % Temp variable, later should be created in the function
         refLatSpeed =0;
         RouteOrientation = 0;
+        
+        pathPoints =[];
     end
     
     methods
@@ -162,7 +164,6 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         end
 
         
-
         function generateStraightWaypoints(obj,car)
             %this function generates waypoints according to reference
             %trajectory. Waypoints are used as input signal for the Stanley
@@ -170,6 +171,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             route = car.pathInfo.currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
             position_Cart = car.dynamics.position([1,3]).*[1 -1];%Position of the vehicle in Cartesian coordinate
             radian = car.pathInfo.currentTrajectory(3,1);%radian of the curved road, is 0 for straight road
+            
             [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian);%Coordinate Conversion function
             
             car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates       
@@ -285,6 +287,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             
         end
         
+        
         %% Override for experiment - Later incorparate into WaypointGenerator.m
               
         function [position_Cart,orientation_Cart] = Frenet2Cartesian(obj,route,s,d,radian)
@@ -349,25 +352,29 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
                 route_UnitVector = route_Vector/norm(route_Vector);
                 yawAngle_in_Cartesian = atan2(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate
                 posVector = vehiclePos_Cartesian-Route_StartPoint;
-                sideVector = [cos(yawAngle_in_Cartesian+pi/2) sin(yawAngle_in_Cartesian+pi/2)];% side vector is perpendicular to the route
                 
+                sideVector = [cos(yawAngle_in_Cartesian+pi/2) sin(yawAngle_in_Cartesian+pi/2)];% side vector is perpendicular to the route
                 sideVector = round(sideVector,5);
                 
-                s = dot(posVector,route_UnitVector);% the projection of posVector on local_route_vector_i
+                s = dot(posVector,route_UnitVector);% the projection of posVector on route_UnitVector
                 
                 d = dot(posVector,sideVector);% the projection of posVector on sideVector
                 routeLength = norm(Route_endPoint-Route_StartPoint);% the length of the route_Vector
                 
             else
-                r = sqrt((norm(Route_endPoint-Route_StartPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
-                targetVector = (Route_endPoint-Route_StartPoint)/norm(Route_endPoint-Route_StartPoint);%Unit vector of route vector (p in Frenet.xml)
-                beta = atan2(targetVector(2),targetVector(1));%the angle of target vector and x axis in cartesian coordinate (theta 1 in Frenet.xml)
-                plumbLength = cos(radian/2)*r;% the distance from circle center to targetVector (OG in Frenet.xml)
-                plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
-                center = Route_StartPoint + targetVector*norm(Route_endPoint-Route_StartPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
-                startPointVector = Route_StartPoint-center;% vector OP_1 in Frenet.xml
+                %r = sqrt((norm(Route_endPoint-Route_StartPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
+                %targetVector = (Route_endPoint-Route_StartPoint)/norm(Route_endPoint-Route_StartPoint);%Unit vector of route vector (p in Frenet.xml)
+                %beta = atan2(targetVector(2),targetVector(1));%the angle of target vector and x axis in cartesian coordinate (theta 1 in Frenet.xml)
+                %plumbLength = cos(radian/2)*r;% the distance from circle center to targetVector (OG in Frenet.xml)
+                %plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
+                %center = Route_StartPoint + targetVector*norm(Route_endPoint-Route_StartPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
+                
+                rotationCenter = obj.vehicle.pathInfo.currentTrajectory(3,[2 3]); % Get the rotation center
+                rotationCenter(2) = -rotationCenter(2); % Transform the coordinate
+                r = norm(Route_StartPoint-rotationCenter); % Get the radius of the rotation
+                startPointVector = Route_StartPoint-rotationCenter;% vector OP_1 in Frenet.xml
 
-                l = vehiclePos_Cartesian-center;% the vector from rotation center to position
+                l = vehiclePos_Cartesian-rotationCenter;% the vector from rotation center to position
                 d = abs(r-norm(l)); % Previously: d = norm(l)-r;
                 lAng = atan2(l(2),l(1)); % the angle of vector l with x axis (phi 3 in Frenet.xml)
 
