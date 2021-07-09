@@ -6,7 +6,6 @@ function prepare_simulator(options)
         options.modelName   (1,1) string    = 'MOBATSim'            % name of the simulink model
         options.simStopTime (1,1) double    = 80                    % simulation stop time in seconds
         options.simTs       (1,1) double    = 0.02                  % simulation time step: sample time of the simulation (may not be stable if changed)
-        options.mapName     (1,1) string    = 'Mobatkent'           % Mobatkent, Highway, Crossmap
         options.scenarioName(1,1) string    = 'Urban City Traffic'
         options.FI_id       (1,1) double = 1
         options.FI_value    (1,1) double = 0
@@ -35,20 +34,10 @@ function prepare_simulator(options)
 
 
     %% Load the Map
-    switch options.mapName  
-        case 'Mobatkent'
-            %[options.mapName, waypoints, connections_circle, connections_translation, ...
-            %  startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent();
-            [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
-              startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
-        case 'Highway'
-            open_system('Platoon_Event')
-            return
-
-        case 'Crossmap'
-            [Route_LaneNumber, waypoints, connections_circle, connections_translation, ...
-              startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Crossmap();             
-    end
+    %[options.mapName, waypoints, connections_circle, connections_translation, ...
+    %  startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent();
+    [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
+        startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
 
     %% Generate the 2D Map and the instance from the Map class
     Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
