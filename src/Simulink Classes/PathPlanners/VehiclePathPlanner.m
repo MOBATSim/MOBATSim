@@ -85,7 +85,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
             %% Grid path generation
             if mod(obj.getCurrentTime,1) == 0 % BOGPath generation sample time (update at every 1 second)
-                % BOGPath is only generated if the Map type is GridMap
+                % BOGPath is used for the colorful path visualization, as well as path points for the local trajectory
                 obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
             end
             

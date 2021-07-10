@@ -318,10 +318,7 @@ classdef GridMap < Map
             %% prepare Path colors
             persistent waypoints
             persistent circles
-            persistent trans
-            persistent xOff
-            persistent yOff
-            
+            persistent trans          
             
             if isempty(waypoints)
                 waypoints = map.waypoints;
@@ -330,40 +327,42 @@ classdef GridMap < Map
                 circles(:,6) = -1.*circles(:,6);
                 trans = map.connections.translation;
                 
-                %use offset if you need it
-                xOff = 0;
-                yOff = 0;
             end
             
             %% plot path for every vehicle
-            bogPath = [];
             bogPath = [];%list of points to plot
             %determine if circle or not
             for k = 2 : size(path,2)
                 p1 = path(k-1);
                 p2 = path(k);
                 straight = ~isempty(trans(trans(:,1) == p1 & trans(:,2) == p2,:));
-                if straight
-                    %just draw a line
+                
+                if straight % Draw a line * startPoint * midPoint * endPoint
                     if isempty(bogPath)
-                        bogPath = [[map.Vehicles(carID).dynamics.position(1)-xOff,-map.Vehicles(carID).dynamics.position(3)-yOff]; [waypoints(p2,1)-xOff,waypoints(p2,3)-yOff]];
+                        startPoint = [map.Vehicles(carID).dynamics.position(1),-map.Vehicles(carID).dynamics.position(3)];
+                        midPoint =[mean([waypoints(p2,1),map.Vehicles(carID).dynamics.position(1)]),mean([waypoints(p2,3),-map.Vehicles(carID).dynamics.position(3)])];
+                        endPoint = [waypoints(p2,1),waypoints(p2,3)];
+                        bogPath = [startPoint; midPoint; endPoint];
                     else
-                        bogPath = [bogPath;[waypoints(p1,1)-xOff,waypoints(p1,3)-yOff]; [waypoints(p2,1)-xOff,waypoints(p2,3)-yOff]];
+                        % When appending new bogPath - last path's endPoint is already the starting point
+                        midPoint =[mean([waypoints(p2,1),waypoints(p1,1)]),mean([waypoints(p2,3),waypoints(p1,3)])];
+                        endPoint = [waypoints(p2,1),waypoints(p2,3)];
+                        bogPath(end+1:end+2,:) = [midPoint; endPoint];
                     end
                 else
-                    %gather points on the circle
+                    % Find points on the circle
                     curvedRoute = circles( circles(:,1)==p1 & circles(:,2) == p2,:);
                     if isempty(bogPath)
-                        x1 = map.Vehicles(carID).dynamics.position(1)-xOff;
-                        y1 = -map.Vehicles(carID).dynamics.position(3)-yOff;
+                        x1 = map.Vehicles(carID).dynamics.position(1);
+                        y1 = -map.Vehicles(carID).dynamics.position(3);
                     else
-                        x1 = waypoints(curvedRoute(1),1)-xOff; %start
-                        y1 = waypoints(curvedRoute(1),3)-yOff;
+                        x1 = waypoints(curvedRoute(1),1); %start
+                        y1 = waypoints(curvedRoute(1),3);
                     end
-                    x2 = waypoints(curvedRoute(2),1)-xOff; %goal
-                    y2 = waypoints(curvedRoute(2),3)-yOff;
-                    x0W = curvedRoute(4)-xOff; %central point
-                    y0W = curvedRoute(6)-yOff;
+                    x2 = waypoints(curvedRoute(2),1); %goal
+                    y2 = waypoints(curvedRoute(2),3);
+                    x0W = curvedRoute(4); %central point
+                    y0W = curvedRoute(6);
                     radius = norm( [x2,y2]-[x0W,y0W] );
                     phiStart = angle(complex((x1-x0W) , (y1-y0W)));
                     phiGoal = angle(complex((x2-x0W) , (y2-y0W)));
@@ -377,7 +376,7 @@ classdef GridMap < Map
                     
                     if abs(phiStart-phiGoal)<0.1
                         points = [x2 y2];
-                        bogPath = [bogPath;points];
+                        bogPath(end+1,:) = points;
                     else
                         %make turns through 0° possible
                         if (direction == -1 && phiStart < phiGoal)
@@ -390,7 +389,7 @@ classdef GridMap < Map
                         phi1(1) = phiStart;
                         phi1(end) = phiGoal;
                         points = [(radius .* cos(phi1)+x0W)',(radius .* sin(phi1))'+y0W];
-                        bogPath = [bogPath;points];
+                        bogPath(end+1:end+size(points,1),:) = points;
                     end
                     
                     
