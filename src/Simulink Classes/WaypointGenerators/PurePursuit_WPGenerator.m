@@ -11,13 +11,15 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         refLatSpeed =0;
         RouteOrientation = 0;
         
+        Kpoints = 6;
+        ref_d = 0;
+        
         currentPathPoints =[];
         nextPathPoints=[];
         allPathPoints =[];
         calculatedRoutesArray = [];
-        Kpoints = 6;
         laneChangingPoints =[];
-        ref_d = 0;
+        
     end
     
     methods
@@ -43,7 +45,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             obj.changeLane = changeLane;
                         
             obj.vehicle.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
-            obj.vehicle.setYawAngle(pose(3));                               % Sets the vehicle yaw angle (4th column of orientation)
+            obj.vehicle.setYawAngle(pose(3));                           % Sets the vehicle yaw angle (4th column of orientation)
                        
             %This block shouldn't run if the ego vehicle: (destinationReached or Collided)
             if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
@@ -52,26 +54,20 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 nextWPs = repmat([obj.referencePose(1) obj.referencePose(2)],obj.Kpoints,1); % Output3: PathPoints for Pure Pursuit
                 return;
             end
+            % The Vehicle hasn't reached its destination yet
+            obj.vehicle.updateActualSpeed(speed); % Vehicle - Set Functions
             
-            
-            if ~obj.vehicle.pathInfo.destinationReached
-                % The Vehicle hasn't reached its destination yet
-                obj.vehicle.updateActualSpeed(speed); % Vehicle - Set Functions
-
-                if obj.vehicle.pathInfo.routeCompleted
-                    % The Vehicle has completed its Route
-                    nextRoute = obj.generateCurrentRoute(obj.vehicle,obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
-                    currentTrajectory = obj.generateTrajectoryFromPath(obj.vehicle,obj.vehicle.pathInfo.path);
-                    
-                    obj.vehicle.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
-                    obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
-                    obj.vehicle.setRouteCompleted(false);                % Vehicle - Set Functions
-                    
-                end
-                                
-                obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory);
-            
+            if obj.vehicle.pathInfo.routeCompleted
+                % The Vehicle has completed its Route
+                nextRoute = obj.vehicle.generateCurrentRoute(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
+                currentTrajectory = obj.vehicle.generateTrajectoryFromPath(obj.vehicle.pathInfo.path);
+                
+                obj.vehicle.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
+                obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
+                obj.vehicle.setRouteCompleted(false);                % Vehicle - Set Functions
             end
+            
+            obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory);
             
             ReferenceYaw=obj.RouteOrientation +atan2(obj.refLatSpeed,speed);  % Output1: Reference pose
             referencePose = pose';         % Output2: Current pose
@@ -161,17 +157,19 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             x_f = T*car.dynamics.speed; % Target longitudinal - s coordinate
             
             if obj.changeLane ==1 % To the left
-                y_f = car.pathInfo.d+obj.laneWidth; % Target lateral - d coordinate
+                y_f = obj.laneWidth; % Target lateral - d coordinate
+                target_d = obj.laneWidth;
                 car.pathInfo.laneId = car.pathInfo.laneId + 0.5; % Means the vehicle is in between lanes - switching to left
             elseif obj.changeLane ==2 % To the right
-                y_f = car.pathInfo.d-obj.laneWidth; % Target lateral - d coordinate
+                y_f = 0; % Target lateral - d coordinate
+                target_d = -car.pathInfo.d;
                 car.pathInfo.laneId = car.pathInfo.laneId - 0.5; % Means the vehicle is in between lanes - switching to right
                 % car.pathInfo.d is used to compansate for the small
                 % values, TODO check later if this can be generalized for
                 % more lanes than two
             end           
 
-            obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
+            obj.laneSwitchTargetPoint=[x_f 0 target_d]+obj.laneSwitchStartPoint;
             %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
             syms t; % time
             % matrix with polynom coefficients for  lateral position, speed and acceleration
@@ -212,13 +210,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             
             car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates       
             %% If lane-changing trajectory exists
-            if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-                if isempty(obj.laneChangingPoints)
+            if(~isempty(obj.trajPolynom)) && isempty(obj.laneChangingPoints)
                     obj.generateLaneChanging_WPs(car)
-                else
-                    obj.refLatSpeed =0;
-                end
-                
             else
                 obj.refLatSpeed =0;
             end
@@ -310,7 +303,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             
             tP = t:0.2:T;
             newWP_s=car.dynamics.position(1)+(car.dynamics.speed*tP);
-            newWP_d=-car.dynamics.position(3)+(a0+a1*tP+a2*tP.^2+a3*tP.^3+a4*tP.^4+a5*tP.^5);
+            newWP_d=-car.dynamics.position(3)+(a0+a1*tP+a2*tP.^2+a3*tP.^3+a4*tP.^4+a5*tP.^5)-car.pathInfo.d;
             newWP_all = [newWP_s' newWP_d'];
             obj.laneChangingPoints =newWP_all;
             obj.ref_d = a0+a1*T+a2*T^2+a3*T^3+a4*T^4+a5*T^5;

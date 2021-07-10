@@ -61,37 +61,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             obj.generateRightRotationWaypoints(car);
             car.checkWaypointReached(Destination);
         end
-        
-        
-        function currentRoute = generateCurrentRoute(~,car, path, lastWaypoint)
-            
-            idx = find(path==lastWaypoint);
-            if idx+1<=length(path) % Next Route
-                currentRoute = car.map.getRouteIDfromPath([path(idx) path(idx+1)]);
-            else % Destination Reached // CurrentRoute stays the same
-                currentRoute = car.pathInfo.currentRoute;
-            end
-        end
-        
-        function currentTrajectory = generateTrajectoryFromPath(~,car,path)
-            % Format of route for vehicle dynamics (translation)
-            if (isempty(find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)), 1 )) == false)
-                index = find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)) );
-                currentTrajectory = [car.map.waypoints(car.map.connections.translation(index,1),:);
-                    car.map.waypoints(car.map.connections.translation(index,2),:);
-                    zeros(1,3);
-                    zeros(1,3)];
-            end
-            % Format of route for vehicle dynamics (curves)
-            if (isempty(find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)), 1 )) == false)
-                index = find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)) );
-                currentTrajectory = [car.map.waypoints(car.map.connections.circle(index,1),:);
-                    car.map.waypoints(car.map.connections.circle(index,2),:);
-                    abs(car.map.connections.circle(index,3)),car.map.connections.circle(index,4),car.map.connections.circle(index,6);
-                    -sign(car.map.connections.circle(index,3))*ones(1,3)];
-            end
-        end
-        
+                 
         
         function [position_Cart,orientation_Cart] = Frenet2Cartesian(~,route,s,d,radian)
             

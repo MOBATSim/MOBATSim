@@ -63,8 +63,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
 
                 if obj.vehicle.pathInfo.routeCompleted
                     % The Vehicle has completed its Route
-                    nextRoute = obj.generateCurrentRoute(obj.vehicle,obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
-                    currentTrajectory = obj.generateTrajectoryFromPath(obj.vehicle,obj.vehicle.pathInfo.path);
+                    nextRoute = obj.vehicle.generateCurrentRoute(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
+                    currentTrajectory = obj.vehicle.generateTrajectoryFromPath(obj.vehicle.pathInfo.path);
                     
                     obj.vehicle.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
                     obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
