@@ -16,6 +16,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         allPathPoints =[];
         calculatedRoutesArray = [];
         Kpoints = 6;
+        laneChangingPoints =[];
+        ref_d = 0;
     end
     
     methods
@@ -76,10 +78,46 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             end
             
             ReferenceYaw=obj.RouteOrientation +atan2(obj.refLatSpeed,speed);  % Output1: Reference pose
-            referencePose = pose';         % Output2: Current pose        
-            nextWPs =obj.currentPathPoints;  % Output3: PathPoints for Pure Pursuit
+            referencePose = pose';         % Output2: Current pose
+            
+            if ~isempty(obj.laneChangingPoints)
+                nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints; obj.currentPathPoints(2,:)];
+                nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints);
+            else
+                
+                nextWPs =obj.currentPathPoints;  % Output3: PathPoints for Pure Pursuit
+            end
+            
            
             
+        end
+        
+        function nextWPs = checkNextWPsOutputSize(obj,nextWPs,K)
+            % Prune reached WPs
+            Vpos = [obj.vehicle.dynamics.position(1) -obj.vehicle.dynamics.position(3)];
+            [~,idx] = min(vecnorm(Vpos-nextWPs,2,2));
+            nextWPs = nextWPs(idx:end,:);
+            
+            if idx>size(obj.laneChangingPoints,1)
+                obj.trajPolynom=[];%reset polynomial
+                obj.laneChangingPoints =[];
+                if (obj.ref_d-obj.vehicle.pathInfo.d) > 0 %left lane-changing
+                    obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId+0.5;
+                elseif (obj.ref_d-obj.vehicle.pathInfo.d) < 0%right lane-changing
+                    obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5;
+                end
+            end
+
+                
+            
+            % Adjust the nextWPs so that it fits the getOutputSizeMethod specifications
+            if size(nextWPs,1) < K
+                missingRowNr = K-size(nextWPs,1);
+                nextWPs(end+1:end+missingRowNr,:) = repmat(nextWPs(end,:),missingRowNr,1);
+                nextWPs(K-missingRowNr:K,2) = nextWPs(K-missingRowNr:K,2)+obj.ref_d; % Keep the lateral offset as Ego drives
+            elseif size(nextWPs,1) > obj.Kpoints
+                nextWPs = nextWPs(1:K,:);
+            end
         end
         
 
@@ -179,7 +217,12 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates       
             %% If lane-changing trajectory exists
             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-                obj.generateLaneChanging_WPs(car)
+                if isempty(obj.laneChangingPoints)
+                    obj.generateLaneChanging_WPs(car)
+                else
+                    obj.refLatSpeed =0;
+                end
+                
             else
                 obj.refLatSpeed =0;
             end
@@ -268,6 +311,13 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             % Target lateral - p point
             T = obj.laneSwitchTime;
             y_f = a0+a1*T+a2*T^2+a3*T^3+a4*T^4+a5*T^5;
+            
+            tP = t:0.2:T;
+            newWP_s=car.dynamics.position(1)+(car.dynamics.speed*tP);
+            newWP_d=-car.dynamics.position(3)+(a0+a1*tP+a2*tP.^2+a3*tP.^3+a4*tP.^4+a5*tP.^5);
+            newWP_all = [newWP_s' newWP_d'];
+            obj.laneChangingPoints =newWP_all;
+            obj.ref_d = a0+a1*T+a2*T^2+a3*T^3+a4*T^4+a5*T^5;
             
             %% TODO: Conditions shouldn't depend solely on time
             if abs(y_f-car.pathInfo.d) > 0.05 %lane-changing is not finished
