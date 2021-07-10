@@ -15,6 +15,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         nextPathPoints=[];
         allPathPoints =[];
         calculatedRoutesArray = [];
+        Kpoints = 6;
     end
     
     methods
@@ -45,15 +46,12 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
             obj.vehicle.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
             obj.vehicle.setYawAngle(pose(3));                               % Sets the vehicle yaw angle (4th column of orientation)
-            
-            %pose(3)=pose(3)*180/pi; % rad to deg
-            
+                       
             %This block shouldn't run if the ego vehicle: (destinationReached or Collided)
             if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
                 ReferenceYaw= obj.RouteOrientation + atan2(obj.refLatSpeed,speed);  % Output1: vehicle's reference steering en             
-                referencePose = pose';         % Output2: Reference pose
-                %nextWPs = [referencePose' referencePose'];  % Output3: Reference Lateral Speed
-                nextWPs = repmat([obj.referencePose(1) obj.referencePose(2)],5,1);
+                referencePose = pose';         % Output2: Current pose
+                nextWPs = repmat([obj.referencePose(1) obj.referencePose(2)],obj.Kpoints,1); % Output3: PathPoints for Pure Pursuit
                 return;
             end
             
@@ -78,12 +76,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             end
             
             ReferenceYaw=obj.RouteOrientation +atan2(obj.refLatSpeed,speed);  % Output1: Reference pose
-            %obj.referencePose(3) = obj.referencePose(3)*pi/180;
-            referencePose = pose';         % Output2: vehicle's actual pose
-            %nextWPs=[obj.referencePose'; obj.currentPathPoints];                % Output3: Reference Lateral Speed
-            
-            
-            nextWPs =obj.currentPathPoints; 
+            referencePose = pose';         % Output2: Current pose        
+            nextWPs =obj.currentPathPoints;  % Output3: PathPoints for Pure Pursuit
            
             
         end
@@ -356,32 +350,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             obj.currentPathPoints = obj.nextPathPoints(1:5,:);
             
         end
-        
-        function generate_curved_PathPoints(obj,radius,radian,rotationCenter,clockwise)
-            if clockwise == 1
-                alpha = 0:5:(-radian*180/pi);
-                obj.nextPathPoints = [rotationCenter(1)+(radius*-cosd(alpha)); rotationCenter(2)+(radius*sind(alpha))]';
-                obj.allPathPoints = [obj.allPathPoints; obj.nextPathPoints];
-                obj.calculatedRoutesArray(end+1) = obj.vehicle.pathInfo.currentRoute; 
-                obj.currentPathPoints = obj.nextPathPoints(1:5,:);
-            else
-                if radian >= pi
-                    alpha = (radian*180/pi):-5:0;
-                    obj.nextPathPoints=[rotationCenter(1)-(radius*sind(alpha)); rotationCenter(2)-(radius*cosd(alpha))]';
-                    obj.allPathPoints = [obj.allPathPoints; obj.nextPathPoints];
-                    obj.calculatedRoutesArray(end+1) = obj.vehicle.pathInfo.currentRoute;
-                    obj.currentPathPoints = obj.nextPathPoints(1:5,:);
-                else
-                    alpha = 0:5:(radian*180/pi);
-                    obj.nextPathPoints=[rotationCenter(1)+(radius*sind(alpha)); rotationCenter(2)-(radius*cosd(alpha))]';
-                    obj.allPathPoints = [obj.allPathPoints; obj.nextPathPoints];
-                    obj.calculatedRoutesArray(end+1) = obj.vehicle.pathInfo.currentRoute;
-                    obj.currentPathPoints = obj.nextPathPoints(1:5,:);
-                end
-
-            end
-        end
-        
+  
         function [s,d,yawAngle_in_Cartesian,routeLength] = Cartesian2Frenet(obj,route,vehiclePos_Cartesian,radian)
             %Transform a position in Cartesian coordinate into Frenet coordinate
             
@@ -410,20 +379,9 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 sideVector = [cos(yawAngle_in_Cartesian+pi/2) sin(yawAngle_in_Cartesian+pi/2)];% side vector is perpendicular to the route
                 sideVector = round(sideVector,5);
                 
-                if ~any(obj.calculatedRoutesArray==obj.vehicle.pathInfo.currentRoute)
-                    obj.generate_straight_PathPoints(route);
-                else
-                    nextPoints = obj.nextPathPoints;
-                    [~,idx] = min(vecnorm(vehiclePos_Cartesian-nextPoints,2,2));
-                    if idx+4 > length(obj.nextPathPoints)
-                        obj.currentPathPoints = obj.nextPathPoints(idx:end,:);
-                        lastPathPoints = repmat(obj.nextPathPoints(end,:),4-(length(obj.nextPathPoints)-idx),1);
-                        obj.currentPathPoints =  [obj.currentPathPoints; lastPathPoints];
-                    else
-                        obj.currentPathPoints = obj.nextPathPoints(idx:idx+4,:);
-                    end
-                    
-                end
+                obj.currentPathPoints = obj.findTheNextKPoints(vehiclePos_Cartesian,obj.vehicle.pathInfo.BOGPath,obj.Kpoints);
+                %obj.generate_straight_PathPoints(route);
+
    
                 s = dot(posVector,route_UnitVector);% the projection of posVector on route_UnitVector
                 
@@ -437,19 +395,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 r = norm(Route_StartPoint-rotationCenter); % Get the radius of the rotation
                 startPointVector = Route_StartPoint-rotationCenter;% vector OP_1 in Frenet.xml
                 
-                if ~any(obj.calculatedRoutesArray==obj.vehicle.pathInfo.currentRoute)
-                    obj.generate_curved_PathPoints(r,radian,rotationCenter,obj.vehicle.pathInfo.currentTrajectory(4,1));
-                else
-                    nextPoints = obj.nextPathPoints;
-                    [~,idx] = min(vecnorm(vehiclePos_Cartesian-nextPoints,2,2));
-                    if idx+4 > length(obj.nextPathPoints)
-                        obj.currentPathPoints = obj.nextPathPoints(idx:end,:);
-                        lastPathPoints = repmat(obj.nextPathPoints(end,:),4-(length(obj.nextPathPoints)-idx),1);
-                        obj.currentPathPoints =  [obj.currentPathPoints; lastPathPoints];
-                    else
-                        obj.currentPathPoints = obj.nextPathPoints(idx:idx+4,:);
-                    end
-                end
+                obj.currentPathPoints = obj.findTheNextKPoints(vehiclePos_Cartesian,obj.vehicle.pathInfo.BOGPath,obj.Kpoints);
+
                 
                 l = vehiclePos_Cartesian-rotationCenter;% the vector from rotation center to position
                 d = abs(r-norm(l)); % Previously: d = norm(l)-r;
@@ -471,7 +418,18 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             end
         end
         
-
+        function currentPathPoints = findTheNextKPoints(~,Vpos,nextPoints,K)
+            K = K - 1;
+            [~,idx] = min(vecnorm(Vpos-nextPoints,2,2));
+            if idx+K > size(nextPoints,1)
+                currentPathPoints = nextPoints(idx:end,:);
+                lastPathPoints = repmat(nextPoints(end,:),K-(size(nextPoints,1)-idx),1);
+                currentPathPoints =  [currentPathPoints; lastPathPoints];
+            else
+                currentPathPoints = nextPoints(idx:idx+K,:);
+            end
+            
+        end
         
     end
     %% Standard Simulink Output functions
@@ -482,11 +440,11 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             % Initialize / reset discrete-state properties
         end
         
-        function [out, out2, out3] = getOutputSizeImpl(~)
+        function [out, out2, out3] = getOutputSizeImpl(obj)
             % Return size for each output port
             out = [1 1];
             out2 = [1 3];
-            out3 = [5 2];
+            out3 = [obj.Kpoints 2];
             
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);

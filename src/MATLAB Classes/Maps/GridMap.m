@@ -337,17 +337,15 @@ classdef GridMap < Map
                 p2 = path(k);
                 straight = ~isempty(trans(trans(:,1) == p1 & trans(:,2) == p2,:));
                 
-                if straight % Draw a line * startPoint * midPoint * endPoint
+                if straight % Draw a line = startPoint - endPoint
                     if isempty(bogPath)
                         startPoint = [map.Vehicles(carID).dynamics.position(1),-map.Vehicles(carID).dynamics.position(3)];
-                        midPoint =[mean([waypoints(p2,1),map.Vehicles(carID).dynamics.position(1)]),mean([waypoints(p2,3),-map.Vehicles(carID).dynamics.position(3)])];
                         endPoint = [waypoints(p2,1),waypoints(p2,3)];
-                        bogPath = [startPoint; midPoint; endPoint];
+                        bogPath = [startPoint; endPoint];
                     else
                         % When appending new bogPath - last path's endPoint is already the starting point
-                        midPoint =[mean([waypoints(p2,1),waypoints(p1,1)]),mean([waypoints(p2,3),waypoints(p1,3)])];
                         endPoint = [waypoints(p2,1),waypoints(p2,3)];
-                        bogPath(end+1:end+2,:) = [midPoint; endPoint];
+                        bogPath(end+1,:) = endPoint;
                     end
                 else
                     % Find points on the circle
