@@ -80,8 +80,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints; obj.currentPathPoints(2,:)];
                 nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints);
             else
-                
-                nextWPs =obj.currentPathPoints;  % Output3: PathPoints for Pure Pursuit
+                obj.currentPathPoints(2:end,2) = obj.currentPathPoints(2:end,2) + obj.ref_d;
+                nextWPs = obj.currentPathPoints;  % Output3: PathPoints for Pure Pursuit
             end
             
            

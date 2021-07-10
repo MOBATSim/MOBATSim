@@ -116,7 +116,9 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     elseif nnz(~(car.pathInfo.currentTrajectory == vehicle_.pathInfo.currentTrajectory))
                         %Inconsistency: The Route is updated but not the Trajectory -> TODO: Fix this issue in Vehicle Kinematics later on and remove this workaround
                     elseif ~(car.pathInfo.laneId == vehicle_.pathInfo.laneId) %TODO: Check if this logic about different lanes holds for all situations
-                        
+                        % Sense side vehicle for a safe lane-changing (TODO: Either carry to Side vehicle or update Rear Vehicle)
+                        relativeDistance = (car.pathInfo.s - vehicle_.pathInfo.s)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
+                        rearDetection = [rearDetection; [vehicle_.id relativeDistance]];
                     else
                         
                         relativeDistance = abs(car.pathInfo.s - vehicle_.pathInfo.s)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
@@ -164,6 +166,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             
             
         end
+        
         
         %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
