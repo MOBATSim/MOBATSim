@@ -34,10 +34,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             setupImpl@WaypointGenerator(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
         end
 
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("WaypointGenerator.png");
-        end
+
 
  
         
@@ -45,7 +42,6 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             % Lane changing signal
             obj.changeLane = changeLane;
                         
-            %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
             obj.vehicle.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
             obj.vehicle.setYawAngle(pose(3));                               % Sets the vehicle yaw angle (4th column of orientation)
                        
@@ -479,6 +475,11 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 currentPathPoints = nextPoints(idx:idx+K,:);
             end
             
+        end
+        
+        function icon = getIconImpl(~)
+            % Define icon for System block
+            icon = matlab.system.display.Icon("WaypointGenerator.png");
         end
         
     end

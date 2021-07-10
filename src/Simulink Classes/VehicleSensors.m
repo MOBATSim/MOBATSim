@@ -14,7 +14,6 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         vehicle  %Ego Vehicle
         Vehicles= evalin('base','Vehicles');    %Other Vehicles (Used to generate the distance value)
-        failureRate = evalin('base','V3_FailureRate'); % failure rate of the sensor in vehicle 3
     end
     
     methods
@@ -47,12 +46,11 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             if ~obj.vehicle.pathInfo.destinationReached ...         % Detect when destination is not reached
                     && obj.vehicle.status.stop == 0 ...                  % and the ego vehicle is not on halt
                     && ~isempty(obj.vehicle.pathInfo.currentTrajectory)  % and it has a planned trajectory
-                %% (TODO: Remove later)Fault injection for vehicle 3
-                if ~(obj.vehicle.id ==3 && rand()< obj.failureRate)
-                    % Detection function
-                    [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
-                end               
-            end 
+                
+                % Detection function
+                [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
+                
+            end
             % Output1 : V2VcommIDs      -> Vehicle in front id
             % Output2 : ObjectinFront   -> Distance to the vehicle in front
             obj.vehicle.setVehicleSensorDetection(leadingVehicleID,distanceToLeading,rearVehicleID, distanceToRear)
