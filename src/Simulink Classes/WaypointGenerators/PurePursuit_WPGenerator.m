@@ -40,7 +40,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
 
  
         
-        function [ReferenceYaw, referencePose, nextWPs] = stepImpl(obj,pose,speed,changeLane)
+        function nextWPs = stepImpl(obj,pose,speed,changeLane)
             % Lane changing signal
             obj.changeLane = changeLane;
                         
@@ -49,9 +49,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                        
             %This block shouldn't run if the ego vehicle: (destinationReached or Collided)
             if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
-                ReferenceYaw= obj.RouteOrientation + atan2(obj.refLatSpeed,speed);  % Output1: vehicle's reference steering en             
-                referencePose = pose';         % Output2: Current pose
-                nextWPs = repmat([obj.referencePose(1) obj.referencePose(2)],obj.Kpoints,1); % Output3: PathPoints for Pure Pursuit
+                nextWPs = repmat([obj.referencePose(1) obj.referencePose(2)],obj.Kpoints,1); % Output: PathPoints for Pure Pursuit
                 return;
             end
             % The Vehicle hasn't reached its destination yet
@@ -68,16 +66,13 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             end
             
             obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory);
-            
-            ReferenceYaw=obj.RouteOrientation +atan2(obj.refLatSpeed,speed);  % Output1: Reference pose
-            referencePose = pose';         % Output2: Current pose
-            
+                        
             if ~isempty(obj.laneChangingPoints)
                 nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints; obj.currentPathPoints(2,:)];
                 nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints);
             else
                 obj.currentPathPoints(2:end,2) = obj.currentPathPoints(2:end,2) + obj.ref_d;
-                nextWPs = obj.currentPathPoints;  % Output3: PathPoints for Pure Pursuit
+                nextWPs = obj.currentPathPoints;  % Output: PathPoints for Pure Pursuit
             end
             
            
@@ -331,7 +326,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         
         %% Override for experiment - Later incorparate into WaypointGenerator.m
               
-        function [position_Cart,orientation_Cart] = Frenet2Cartesian(obj,route,s,d,radian)
+        function [position_Cart,orientation_Cart] = Frenet2Cartesian(~,route,s,d,radian)
             % Transform a position from Frenet coordinate to Cartesian coordinate
             %input:
             %route is a 2x2 array [x_s y_s;x_e y_e]contains the startpoint and the endpoint of the road
@@ -477,48 +472,38 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         
     end
     %% Standard Simulink Output functions
-    methods(Static,Access = protected)
-
-        
+    methods(Static,Access = protected)       
         function resetImpl(~)
             % Initialize / reset discrete-state properties
         end
         
-        function [out, out2, out3] = getOutputSizeImpl(obj)
+        function out = getOutputSizeImpl(obj)
             % Return size for each output port
-            out = [1 1];
-            out2 = [1 3];
-            out3 = [obj.Kpoints 2];
+            out = [obj.Kpoints 2];
             
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
         end
         
-        function [out,out2, out3] = getOutputDataTypeImpl(~)
+        function out = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
-            out2 = 'double';
-            out3 = 'double';
 
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
         
-        function [out, out2, out3] = isOutputComplexImpl(~)
+        function out = isOutputComplexImpl(~)
             % Return true for each output port with complex data
             out = false;
-            out2 = false;
-            out3 = false;
             
             % Example: inherit complexity from first input port
             % out = propagatedInputComplexity(obj,1);
         end
         
-        function [out, out2, out3] = isOutputFixedSizeImpl(~)
+        function out = isOutputFixedSizeImpl(~)
             % Return true for each output port with fixed size
             out = true;
-            out2 = true;
-            out3 = true;
 
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
