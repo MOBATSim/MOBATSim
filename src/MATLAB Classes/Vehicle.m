@@ -61,7 +61,6 @@ classdef Vehicle < handle
         %         startingPoint
         %         destinationPoint
         %         lastWaypoint
-        %         referencePath
         %         routeCompleted
         %         calculateNewPathFlag
         %         path
@@ -131,7 +130,6 @@ classdef Vehicle < handle
             obj.pathInfo.startingPoint = startingPoint;
             obj.pathInfo.destinationPoint = destinationPoint;
             obj.pathInfo.lastWaypoint = startingPoint;
-            obj.pathInfo.referencePath = [];
             obj.pathInfo.routeCompleted = true;
             obj.pathInfo.calculateNewPathFlag = true;
             obj.pathInfo.path = 0;
@@ -171,7 +169,8 @@ classdef Vehicle < handle
         end %Constructor
         
         function bool = checkWaypointReached(car,Destination)
-            if car.pathInfo.routeEndDistance < 1 % consider to reach the endpoint when distance smaller than a threshold. Threshold defined by the user      
+            % Consider waypoint/destination reached when the distance is smaller than a threshold (1 meter).
+            if (car.pathInfo.routeEndDistance<1) || (norm(Destination-car.dynamics.position)<1)      
                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
                 car.setLastWaypoint(lastWaypoint); % Vehicle Set
                 

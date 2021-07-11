@@ -235,7 +235,9 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 
                 start_dot_l = dot(startPointVector,l);% |startPointVetor|*|l|*sin(angle)
                 start_cross_l = sign(radian)*(startPointVector(1)*l(2)-startPointVector(2)*l(1));% |startPointVetor|*|l|*cos(angle)
-                angle = atan2(start_cross_l,start_dot_l);% the angle between startPointVector and vector l, tan(angle) = start_dot_l/start_cross_1
+                % TODO: Check + - according to radian and
+                % obj.vehicle.pathInfo.currentTrajectory values
+                angle = -atan2(start_cross_l,start_dot_l);% the angle between startPointVector and vector l, tan(angle) = start_dot_l/start_cross_1
                 if mod(angle,2*pi) > abs(radian)% judge if the radian of the angle bigger than the radian of the road
                     start_cross_l = -(startPointVector(1)*l(2)-startPointVector(2)*l(1));
                     angle = -atan2(start_cross_l,start_dot_l);
