@@ -157,13 +157,13 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             %trajectory. Waypoints are used as input signal for the Stanley
             %controller.
             route = car.pathInfo.currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
-            position_Cart = car.dynamics.position([1,3]).*[1 -1];%Position of the vehicle in Cartesian coordinate
+            Vpos_C = car.dynamics.position([1,3]).*[1 -1];%Position of the vehicle in Cartesian coordinate
             radian = car.pathInfo.currentTrajectory(3,1);%radian of the curved road, is 0 for straight road
             
-            [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian);%Coordinate Conversion function
+            [s,d,routeLength] = obj.Cartesian2Frenet(route,Vpos_C,radian);%Coordinate Conversion function
             
             
-            car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates
+            car.updateVehicleFrenetPosition(s,d,routeLength); % Update Vehicle Frenet Coordinates
             
         end
         
@@ -180,7 +180,6 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             
             % Target lateral - p point
             T = obj.laneChangeTime;
-            y_f = a0+a1*T+a2*T^2+a3*T^3+a4*T^4+a5*T^5;
             
             tP = t:0.2:T;
             newWP_s=car.dynamics.position(1)+(car.dynamics.speed*tP);
@@ -206,67 +205,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         
         
         %% Override for experiment - Later incorparate into WaypointGenerator.m
-        
-        function [position_Cart,orientation_Cart] = Frenet2Cartesian(~,route,s,d,radian)
-            % Transform a position from Frenet coordinate to Cartesian coordinate
-            %input:
-            %route is a 2x2 array [x_s y_s;x_e y_e]contains the startpoint and the endpoint of the road
-            %s is the journey on the reference roadline(d=0)
-            %d is the vertical offset distance to the reference roadline,positive d means away from center
-            %radian is the radian of the whole curved road,is positive when
-            %counterclockwise turns
-            %output:
-            %position_Cart is the 1x2 array [x y] in Cartesian coordinate
-            %orientation_Cart is the angle of the tangent vector on the reference roadline and the x axis of cartesian
-            %detail information check Frenet.mlx
-            startPoint = route(1,:);
-            endPoint = route(2,:);
-            if radian == 0%straight road
-                route_Vector = endPoint-startPoint;
-                local_route_Vector_i = route_Vector/norm(route_Vector);% unit vector of the route_vector
-                orientation_Cart = atan2(local_route_Vector_i(2),local_route_Vector_i(1)); % reverse tangent of unit vector
-                sideVector = [cos(orientation_Cart+pi/2) sin(orientation_Cart+pi/2)];%vector of the tangent line of reference line
-                position_Cart = s*local_route_Vector_i+d*sideVector+startPoint;% position= start point + length of journey
-            else %curved road
-                r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
-                targetVector = (endPoint-startPoint)/norm(endPoint-startPoint); %Unit vector of route vector (p in Frenet.xml)
-                beta = atan2(targetVector(2),targetVector(1)); %the angle of target vector and x axis in cartesian coordinate (theta 1 in Frenet.xml)
-                plumbLength = cos(radian/2)*r; % the distance from circle center to targetVector (OG in Frenet.xml)
-                plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
-                center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
-                startPointVector = startPoint-center;%OP1 in Frenet.xml
-                startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
-                l = r+d;%current distance from rotation center to position
-                lAng = sign(radian)*s/r+startPointVectorAng;% the angle of vector l
-                position_Cart = l*[cos(lAng) sin(lAng)]+center;% the position in Cartesion coordinate
-                orientation_Cart = lAng+sign(radian)*pi/2;
-                orientation_Cart = mod(orientation_Cart,2*pi);
-                orientation_Cart = orientation_Cart.*(0<=orientation_Cart & orientation_Cart <= pi) + (orientation_Cart - 2*pi).*(pi<orientation_Cart & orientation_Cart<2*2*pi);   % angle in (-pi,pi]
-            end
-        end
-        
-        function generate_straight_PathPoints(obj,route)
-            Route_StartPoint = route(1,:);
-            Route_endPoint = route(2,:);
-            k = 50;
-            deltaX = (Route_endPoint(1)-Route_StartPoint(1))/k;
-            deltaY = (Route_endPoint(2)-Route_StartPoint(2))/k;
-            
-            if deltaX == 0
-                % Vertical Road
-                obj.nextPathPoints =[repmat(route(1,1),k+1,1) (route(1,2):deltaY:route(2,2))'];
-            elseif deltaY == 0
-                % Horizontal Road
-                obj.nextPathPoints = [(route(1,1):deltaX:route(2,1))' repmat(route(1,2),k+1,1)];
-            end
-            
-            obj.allPathPoints = [obj.allPathPoints; obj.nextPathPoints];
-            obj.calculatedRoutesArray(end+1) = obj.vehicle.pathInfo.currentRoute;
-            obj.currentPathPoints = obj.nextPathPoints(1:5,:);
-            
-        end
-        
-        function [s,d,yawAngle_in_Cartesian,routeLength] = Cartesian2Frenet(obj,route,vehiclePos_Cartesian,radian)
+          
+        function [s,d,routeLength] = Cartesian2Frenet(obj,route,vehiclePos_Cartesian,radian)
             %Transform a position in Cartesian coordinate into Frenet coordinate
             
             %Function Inputs:
@@ -283,9 +223,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             Route_endPoint = route(2,:);
             
             
-            if radian == 0%straight road
-                obj.curvature = 0;
-                
+            if radian == 0%straight road                
                 route_Vector = Route_endPoint-Route_StartPoint;
                 route_UnitVector = route_Vector/norm(route_Vector);
                 yawAngle_in_Cartesian = atan2(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate
@@ -294,9 +232,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 sideVector = [cos(yawAngle_in_Cartesian+pi/2) sin(yawAngle_in_Cartesian+pi/2)];% side vector is perpendicular to the route
                 sideVector = round(sideVector,5);
                 
-                obj.currentPathPoints = obj.findTheNextKPoints(vehiclePos_Cartesian,obj.vehicle.pathInfo.BOGPath,obj.Kpoints);
-                %obj.generate_straight_PathPoints(route);
-                
+                obj.currentPathPoints = obj.findTheNextKPoints(vehiclePos_Cartesian,obj.vehicle.pathInfo.BOGPath,obj.Kpoints);                
                 
                 s = dot(posVector,route_UnitVector);% the projection of posVector on route_UnitVector
                 
@@ -315,7 +251,6 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 
                 l = vehiclePos_Cartesian-rotationCenter;% the vector from rotation center to position
                 d = abs(r-norm(l)); % Previously: d = norm(l)-r;
-                lAng = atan2(l(2),l(1)); % the angle of vector l with x axis (phi 3 in Frenet.xml)
                 
                 start_dot_l = dot(startPointVector,l);% |startPointVetor|*|l|*sin(angle)
                 start_cross_l = sign(radian)*(startPointVector(1)*l(2)-startPointVector(2)*l(1));% |startPointVetor|*|l|*cos(angle)
@@ -326,10 +261,6 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 end
                 s = angle*r;
                 routeLength = abs(radian)*r;
-                yawAngle_in_Cartesian = lAng+sign(radian)*pi/2;% the orientation of the current point of the road(phi 4 in Frenet.xml) in cartesian coordinate
-                yawAngle_in_Cartesian = mod(yawAngle_in_Cartesian,2*pi);% orientation can not bigger than 2pi
-                yawAngle_in_Cartesian = yawAngle_in_Cartesian.*(0<=yawAngle_in_Cartesian & yawAngle_in_Cartesian <= pi) + (yawAngle_in_Cartesian - 2*pi).*(pi<yawAngle_in_Cartesian & yawAngle_in_Cartesian<2*2*pi);   % angle in (-pi,pi]
-                obj.curvature = 1/r;
             end
         end
              
