@@ -62,7 +62,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             car.checkWaypointReached(Destination);
         end
                  
-        function registerPoseToVehicle(~,car,pose,speed)
+        function registerVehiclePoseAndSpeed(~,car,pose,speed)
             car.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
             car.setYawAngle(pose(3));                           % Sets the vehicle yaw angle (4th column of orientation)
             car.updateActualSpeed(speed);                       % Sets the vehicle speed

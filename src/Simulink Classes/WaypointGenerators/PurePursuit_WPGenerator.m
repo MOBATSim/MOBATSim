@@ -42,10 +42,9 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         
         function nextWPs = stepImpl(obj,pose,speed,changeLane)
             
-            obj.registerPoseToVehicle(obj.vehicle,pose,speed); % Sets/Registers vehicle current Pose and speed
+            obj.registerVehiclePoseAndSpeed(obj.vehicle,pose,speed); % Sets/Registers vehicle current Pose and speed
             
-            
-            %This block shouldn't run if the ego vehicle: (destinationReached or Collided)
+            %% This block shouldn't run if the ego vehicle: (destinationReached or Collided)
             if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
                 nextWPs = repmat([pose(1) pose(2)],obj.Kpoints,1); % Output: PathPoints for Pure Pursuit
                 return;
@@ -56,9 +55,11 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             %% Check and generate lane switching trajectory if commanded
             if ~(changeLane==0) && isempty(obj.trajPolynom)
                     obj.trajPolynom = obj.generateMinJerkTrajectory(obj.vehicle,obj.laneChangeTime,changeLane);
+                    obj.laneChangingPoints = obj.generateLaneChanging_WPs(obj.vehicle);
             end
-            
-            obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory);
+
+            obj.generatePathFollowingWaypoints(obj.vehicle)
+            obj.vehicle.checkWaypointReached(obj.vehicle.pathInfo.currentTrajectory(2,:));
             
             if ~isempty(obj.laneChangingPoints)
                 nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints; obj.currentPathPoints(2,:)];
@@ -100,27 +101,6 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             end
         end
         
-        
-        function takeRoute(obj,car,refRoute)
-            RotationVector = refRoute(3,:);
-            
-            %% Generate forward waypoints
-            if (RotationVector(1) == 0) %Straight motion
-                obj.move_straight(car,refRoute(2,:));
-                
-            else %Rotational motion
-                P_final = refRoute(2,:);
-                
-                %Determine rotation direction: left or right
-                if car.pathInfo.currentTrajectory(4,:) == -ones(1,3) % -1 means turn left
-                    obj.rotate_left(car,P_final);
-                    
-                elseif car.pathInfo.currentTrajectory(4,:) == ones(1,3) % 1 means turn right
-                    obj.rotate_right(car,P_final);
-                end
-            end
-            
-        end
         
         
         function trajPolynom=generateMinJerkTrajectory(obj,car,T,changeLane)
@@ -172,7 +152,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             trajPolynom = [a0 a1 a2 a3 a4 a5];
         end
         
-        function generateStraightWaypoints(obj,car)
+        function generatePathFollowingWaypoints(obj,car)
             %this function generates waypoints according to reference
             %trajectory. Waypoints are used as input signal for the Stanley
             %controller.
@@ -184,84 +164,23 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             
             
             car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates
-            %% If lane-changing trajectory exists
-            if(~isempty(obj.trajPolynom)) && isempty(obj.laneChangingPoints)
-                obj.generateLaneChanging_WPs(car)
-            else
-                obj.refLatSpeed =0;
-            end
             
-            % ISSUE: Doesn't have meaning with LaneId-0.5
-            %d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
-            d = obj.latOffset;
-            obj.latOffsetError = d-vehicle_d;%lateral offset error
+        end
+        
+        function generateStraightWaypoints(obj,car)
             
-            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,obj.latOffsetError+d,radian);%Coordinate Conversion function
-            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
-            % TRY
-            obj.RouteOrientation = roadOrientation;
         end
         
         function generateLeftRotationWaypoints(obj,car)
-            %this function generates waypoints according to reference
-            %trajectory. Waypoints are used as input signal for the Stanley
-            %controller.
-            route = car.pathInfo.currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
-            position_Cart = car.dynamics.position([1,3]).*[1 -1];%Position of the vehicle in Cartesian coordinate
-            radian = abs(car.pathInfo.currentTrajectory(3,1));%radian of the curved road, is positive for left rotating curved road
-            %% transfer Cartesian coordinate into Frenet coordinate
-            [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian); %Coordinate Conversion function
-            car.pathInfo.s = s;% Arc length
-            car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
+
             
-            car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates
-            %% If lane-changing trajectory exists
-            if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-                obj.generateLaneChanging_WPs(car)
-            else
-                obj.refLatSpeed =0;
-            end
-            
-            % ISSUE: Doesn't have meaning with LaneId-0.5
-            d=-obj.latOffset;%negative is only for left rotating vehicle -> Check if minus is right
-            
-            obj.latOffsetError = d-vehicle_d;%lateral offset error
-            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,obj.latOffsetError+d,radian);%Coordinate Conversion function
-            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
-            % TRY
-            obj.RouteOrientation = roadOrientation;
         end
         
         function generateRightRotationWaypoints(obj,car)
-            %this function generates waypoints according to reference
-            %trajectory. Waypoints are used as input signal for the Stanley
-            %controller.
-            route = car.pathInfo.currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
-            position_Cart = car.dynamics.position([1,3]).*[1 -1];%Position of the vehicle in Cartesian coordinate
-            radian = -abs(car.pathInfo.currentTrajectory(3,1));%radian of the curved road, is negative for left rotating curved road
-            [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian);%Coordinate Conversion function
-            car.pathInfo.s = s;% Arc length
-            car.pathInfo.routeEndDistance = routeLength-s;%distance to the current route's endpoint
             
-            car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates
-            %% If lane-changing trajectory exists
-            if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-                obj.generateLaneChanging_WPs(car)
-            else
-                obj.refLatSpeed =0;
-            end
-            
-            % ISSUE: Doesn't have meaning with LaneId-0.5
-            d=obj.latOffset;%for right rotating vehicle
-            
-            obj.latOffsetError = d-vehicle_d;%lateral offset error
-            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,obj.latOffsetError+d,radian);%Coordinate Conversion function
-            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
-            % TRY
-            obj.RouteOrientation = roadOrientation;
         end
         
-        function generateLaneChanging_WPs(obj, car)
+        function newWP_all = generateLaneChanging_WPs(obj, car)
             t=obj.getCurrentTime-obj.laneChangeStartTime;
             
             % Unfortunately there is no better way than this, double2cell -> deal is slower
@@ -280,26 +199,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             newWP_s=car.dynamics.position(1)+(car.dynamics.speed*tP);
             newWP_d=-car.dynamics.position(3)+(a0+a1*tP+a2*tP.^2+a3*tP.^3+a4*tP.^4+a5*tP.^5)-car.pathInfo.d;
             newWP_all = [newWP_s' newWP_d'];
-            obj.laneChangingPoints =newWP_all;
-            obj.ref_d = a0+a1*T+a2*T^2+a3*T^3+a4*T^4+a5*T^5;
             
-            %% TODO: Conditions shouldn't depend solely on time
-            if abs(y_f-car.pathInfo.d) > 0.05 %lane-changing is not finished
-                obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;                    % reference delta_d
-                obj.refLatSpeed= a1  + 2*a2*t +  3*a3*t.^2  +  4*a4*t.^3  +  5*a5*t.^4; % reference delta_d_dot
-                
-            else%lane-changing done
-                obj.refLatSpeed = 0;
-                obj.latOffset = car.pathInfo.d;%reset reference delta_d
-                car.status.laneSwitchFinish = 1;%lane-changing done flag
-                if (y_f-car.pathInfo.d) > 0 %left lane-changing
-                    car.pathInfo.laneId = car.pathInfo.laneId+0.5;
-                elseif (y_f-car.pathInfo.d) < 0%right lane-changing
-                    car.pathInfo.laneId = car.pathInfo.laneId-0.5;
-                end
-                %car.status.canLaneSwitch = 0;%reset flag
-                obj.trajPolynom=[];%reset polynomial
-            end
+            obj.ref_d = a0+a1*T+a2*T^2+a3*T^3+a4*T^4+a5*T^5;
             
         end
         
@@ -318,23 +219,6 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         
         
         %% Override for experiment - Later incorparate into WaypointGenerator.m
-        function move_straight(obj,car,Destination)
-            %% Reference Waypoint Generation
-            obj.generateStraightWaypoints(car)
-            car.checkWaypointReached(Destination);
-        end
-        
-        function rotate_left(obj, car, Destination)
-            %% Reference Waypoint Generation
-            obj.generateLeftRotationWaypoints(car);
-            car.checkWaypointReached(Destination);
-        end
-        
-        function rotate_right(obj, car, Destination)
-            %% Reference Waypoint Generation
-            obj.generateRightRotationWaypoints(car);
-            car.checkWaypointReached(Destination);
-        end
         
         function [position_Cart,orientation_Cart] = Frenet2Cartesian(~,route,s,d,radian)
             % Transform a position from Frenet coordinate to Cartesian coordinate
