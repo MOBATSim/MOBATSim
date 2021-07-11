@@ -44,23 +44,6 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
         
-        function move_straight(obj,car,Destination)
-            %% Reference Waypoint Generation
-            obj.generateStraightWaypoints(car)
-            car.checkWaypointReached(Destination);
-        end
-        
-        function rotate_left(obj, car, Destination)
-            %% Reference Waypoint Generation
-            obj.generateLeftRotationWaypoints(car);
-            car.checkWaypointReached(Destination);          
-        end
-        
-        function rotate_right(obj, car, Destination)
-            %% Reference Waypoint Generation
-            obj.generateRightRotationWaypoints(car);
-            car.checkWaypointReached(Destination);
-        end
                  
         function registerVehiclePoseAndSpeed(~,car,pose,speed)
             car.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
@@ -171,17 +154,14 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         
         
     end
-    methods(Static,Access = protected)
-        
-    end
     
     %% Abstract Methods / Must be implemented by Subclasses
     methods (Abstract, Access = protected)
         
         % Every Waypoint generator should generate Waypoints in their own way
-        generateStraightWaypoints(obj,car)
-        generateLeftRotationWaypoints(obj,car)
-        generateRightRotationWaypoints(obj,car)
+        %generateStraightWaypoints(obj,car)
+        %generateLeftRotationWaypoints(obj,car)
+        %generateRightRotationWaypoints(obj,car)
         
     end
 end

@@ -1,5 +1,5 @@
 classdef PurePursuit_WPGenerator < WaypointGenerator
-    % This blocks generates waypoints.
+    % This blocks generates waypoints for the Pure Pursuit lateral controller.
     %
     
     % Pre-computed constants
@@ -164,19 +164,6 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             
             
             car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates
-            
-        end
-        
-        function generateStraightWaypoints(obj,car)
-            
-        end
-        
-        function generateLeftRotationWaypoints(obj,car)
-
-            
-        end
-        
-        function generateRightRotationWaypoints(obj,car)
             
         end
         

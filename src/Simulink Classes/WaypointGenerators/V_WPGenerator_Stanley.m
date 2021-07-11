@@ -5,13 +5,13 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
     % Pre-computed constants
     properties(Access = private)
         
-
+        
         adaptiveGain = 1;%adaptive control law G for the Stanley controller
         adaptiveGain_k0 = 2;%k0 of adaptive control law G,FKFS equation 10
         adaptiveGain_g0 = 20;%g0 of adaptive control law G,FKFS equation 10
         latOffsetError = 0;
         changeLane = 0;
-
+        
     end
     
     methods
@@ -27,31 +27,31 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             % Perform one-time calculations, such as computing constants
             setupImpl@WaypointGenerator(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
         end
-
+        
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("WaypointGenerator.png");
         end
-
-
+        
+        
         
         
         function [poseOut, referencePose] = stepImpl(obj,pose,speed,changeLane)
             obj.changeLane = changeLane;
             %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
-           
+            
             
             obj.vehicle.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
             obj.vehicle.setYawAngle(pose(3));                               % Sets the vehicle yaw angle (4th column of orientation)
             
-             pose(3)=pose(3)*180/pi; % rad to deg
+            pose(3)=pose(3)*180/pi; % rad to deg
             
             %This block shouldn't run if the ego vehicle: (destinationReached or Collided)
             if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
                 
-                poseOut=pose';                      % Output1: vehicle's actual pose               
+                poseOut=pose';                      % Output1: vehicle's actual pose
                 referencePose = obj.referencePose'; % Output2: Reference pose
-
+                
                 obj.adaptiveGain = obj.adaptiveGain_k0/(obj.adaptiveGain_g0*obj.curvature+1);%adaptive control law G
                 return;
             end
@@ -60,7 +60,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             if ~obj.vehicle.pathInfo.destinationReached
                 % The Vehicle hasn't reached its destination yet
                 obj.vehicle.updateActualSpeed(speed); % Vehicle - Set Functions
-
+                
                 if obj.vehicle.pathInfo.routeCompleted
                     % The Vehicle has completed its Route
                     nextRoute = obj.vehicle.generateCurrentRoute(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
@@ -76,7 +76,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 %Output 1: Position of the vehicle
                 %Output 2: Rotation angle of the vehicle
                 
-                              
+                
             end
             
             referencePose = obj.referencePose';
@@ -89,17 +89,17 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             
         end
         
-
+        
         function takeRoute(obj,car,refRoute)
             RotationVector = refRoute(3,:);
             
             obj.checkLaneSwitch(car);
-
+            
             if (RotationVector(1) == 0) %Straight motion
                 obj.move_straight(car,refRoute(2,:));
                 
             else %Rotational motion
-
+                
                 P_final = refRoute(2,:);
                 
                 %Determine rotation direction: left or right
@@ -119,16 +119,16 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 if isempty(obj.trajPolynom)
                     
                     candidateTrajectories = []; % Candidate trajectories stored here
-                    costsTrajectories = []; % 
+                    costsTrajectories = []; %
                     timeFactorTrajectories = []; % candidate deltaFactor stored here !!!!!!!!!!!!!
-
+                    
                     for deltaTFactor = 0.5:0.25:1.5
                         [cand_trajPolynom, costTraj] = obj.generateMinJerkTrajectory(car,deltaTFactor);
                         candidateTrajectories = [candidateTrajectories; cand_trajPolynom];
                         costsTrajectories = [costsTrajectories costTraj];
                         timeFactorTrajectories = [timeFactorTrajectories deltaTFactor]; %!!!!!!!!!!!!
                     end
-
+                    
                     obj.chooseReferenceTrajectory(car,candidateTrajectories,costsTrajectories,timeFactorTrajectories); %!!!!!!!!!!!!
                 end
             end
@@ -146,22 +146,22 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 y_f = +obj.laneWidth; % Final y coordinate // -2 as an extra effort, TODO: remove -2 after lateral control is improved
             elseif obj.changeLane ==2
                 y_f = -obj.laneWidth; % Final y coordinate
-            end           
-
+            end
+            
             obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
             %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
             syms t; % time
             % matrix with polynom coefficients for  lateral position, speed and acceleration
             %         a0   a1    a2     a3      a4       a5
             d(t) = [  1     t   t^2    t^3     t^4     t^5;
-                      0     1   2*t  3*t^2   4*t^3   5*t^4;
-                      0     0     2    6*t  12*t^2  20*t^3];
+                0     1   2*t  3*t^2   4*t^3   5*t^4;
+                0     0     2    6*t  12*t^2  20*t^3];
             % Starting conditions
             ti = 0; % time
             d_ti = [0; 0; 0]; % position, speed, acceleration
             % Finish conditions
             tf = T;
-            d_tf = [y_f; 0; 0]; % position, speed, acceleration        
+            d_tf = [y_f; 0; 0]; % position, speed, acceleration
             % Solve all linear equations with conditions at t = ti and t = tf
             A = linsolve([d(ti);d(tf)], [d_ti; d_tf]);
             A = double(A);
@@ -176,14 +176,14 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             costTraj=obj.calculateCostFunction(car, cand_traj_coeffs, tf);%!!!!!!!!!!!!!!!!!!!!!!!!
             
             obj.trajPolynom_candidates = [obj.trajPolynom_candidates; cand_trajPolynom];
-
+            
         end
-
+        
         function costTraj = calculateCostFunction(obj,car,candidateTrajectory, T) %!!!!!!!!!!!!!!!!!!!!!!
             a3 = candidateTrajectory(1);
             a4 = candidateTrajectory(2);
             a5 = candidateTrajectory(3);
-
+            
             % T = car.decisionUnit.LaneSwitchTime*0.5; %!!!!!!!!!!
             t=0:0.01:T;
             y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
@@ -191,7 +191,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;%minimum ttc
             costTraj=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
         end
-              
+        
         function chooseReferenceTrajectory(obj,car, candidateTrajectories, costsTrajectories, timeFactorTrajectories) %!!!!!!!!!!!!!!!
             %find the trajectory with minimum cost function value
             
@@ -205,7 +205,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             
         end
         
-
+        
         function generateStraightWaypoints(obj,car)
             %this function generates waypoints according to reference
             %trajectory. Waypoints are used as input signal for the Stanley
@@ -219,9 +219,9 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             
             %% If lane-changing trajectory exists
             obj.generateLaneChanging_WPs(car)
-
             
-            % ISSUE: Doesn't have meaning with LaneId-0.5 
+            
+            % ISSUE: Doesn't have meaning with LaneId-0.5
             %d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
             d = obj.latOffset;
             obj.latOffsetError = d-vehicle_d;%lateral offset error
@@ -243,8 +243,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
             %% apply lane-changing trajectory if a Trajectory polynomial has been set
             obj.generateLaneChanging_WPs(car);
-
-            % ISSUE: Doesn't have meaning with LaneId-0.5 
+            
+            % ISSUE: Doesn't have meaning with LaneId-0.5
             d=-obj.latOffset;%negative is only for left rotating vehicle
             
             obj.latOffsetError = d-vehicle_d;%lateral offset error
@@ -264,8 +264,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             car.pathInfo.routeEndDistance = routeLength-s;%distance to the current route's endpoint
             
             obj.generateLaneChanging_WPs(car);
-
-            % ISSUE: Doesn't have meaning with LaneId-0.5 
+            
+            % ISSUE: Doesn't have meaning with LaneId-0.5
             d=obj.latOffset;%for right rotating vehicle
             
             obj.latOffsetError = d-vehicle_d;%lateral offset error
@@ -273,7 +273,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
             
         end
-
+        
         function generateLaneChanging_WPs(obj, car)
             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
                 
@@ -289,9 +289,9 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 
                 if t<=obj.laneSwitchTime%lane-changing is not finished
                     obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
-             
+                    
                 else%lane-changing done
-                    % obj.latOffset = 0;%reset reference delta_d 
+                    % obj.latOffset = 0;%reset reference delta_d
                     car.status.laneSwitchFinish = 1;%lane-changing done flag
                     if obj.changeLane ==1%left lane-changing
                         car.pathInfo.laneId = car.pathInfo.laneId+1;
@@ -304,10 +304,28 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             end
         end
         
+        function move_straight(obj,car,Destination)
+            %% Reference Waypoint Generation
+            obj.generateStraightWaypoints(car)
+            car.checkWaypointReached(Destination);
+        end
+        
+        function rotate_left(obj, car, Destination)
+            %% Reference Waypoint Generation
+            obj.generateLeftRotationWaypoints(car);
+            car.checkWaypointReached(Destination);
+        end
+        
+        function rotate_right(obj, car, Destination)
+            %% Reference Waypoint Generation
+            obj.generateRightRotationWaypoints(car);
+            car.checkWaypointReached(Destination);
+        end
+        
     end
     %% Standard Simulink Output functions
     methods(Static,Access = protected)
-
+        
         
         function resetImpl(~)
             % Initialize / reset discrete-state properties
@@ -326,7 +344,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             % Return data type for each output port
             out = 'double';
             out2 = 'double';
-
+            
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
@@ -344,7 +362,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             % Return true for each output port with fixed size
             out = true;
             out2 = true;
-
+            
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
         end
