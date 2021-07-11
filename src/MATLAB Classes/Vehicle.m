@@ -424,6 +424,16 @@ classdef Vehicle < handle
             car.dynamics.position = newPosition;
         end
         
+        function setInitialRouteAndTrajectory(car)
+            % The Vehicle determines the initial trajectory and route
+            nextRoute = car.generateCurrentRoute(car.pathInfo.path,car.pathInfo.lastWaypoint);
+            currentTrajectory = car.generateTrajectoryFromPath(car.pathInfo.path);
+            
+            car.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
+            car.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
+            car.setRouteCompleted(false);                % Vehicle - Set Functions  
+        end
+        
         
     end
 end
