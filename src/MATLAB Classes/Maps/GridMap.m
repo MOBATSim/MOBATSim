@@ -164,16 +164,52 @@ classdef GridMap < Map
         
         function dynamicRouteHighlighting(obj)
             
-            delete(obj.plots.trajectories) % Delete previous trajectories using their handle
-       
+%             delete(obj.plots.trajectories) % Delete previous trajectories using their handle
+%             
+%             hold on
+%             nrEntriesColorMatrix = size(obj.colorMatrix,1); 
+%             for vehicle = obj.Vehicles % Changing sizes of BOGPath makes it hard to vectorize
+%                 color = obj.colorMatrix(mod(vehicle.id,nrEntriesColorMatrix)+1,:); % repeat the color when more vehicles than entries in color matrix
+%                 obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',color,'LineWidth',2);
+%             end
+%             hold off
+            
+            
+            %% get all BOG paths
+            nrVehicles = length(obj.Vehicles);
+            % preallocate arrays
+            BOGPathsX = zeros(100,nrVehicles);
+            BOGPathsY = zeros(100,nrVehicles);
+            % add BOG path for every vehicle to array
+            for vehicle = obj.Vehicles
+                BOGPathsX(1:length(vehicle.pathInfo.BOGPath),vehicle.id) = vehicle.pathInfo.BOGPath(:,1);
+                BOGPathsY(1:length(vehicle.pathInfo.BOGPath),vehicle.id) = vehicle.pathInfo.BOGPath(:,2);
+            end
+            % remove zeros
+            BOGPathsX(BOGPathsX==0) = NaN;
+            BOGPathsY(BOGPathsY==0) = NaN;
+            
+            %% highlight paths 
+            % generate new plot handles when they are not existing
+            % else just update them
             hold on
-            nrEntriesColorMatrix = size(obj.colorMatrix,1); 
-            for vehicle = obj.Vehicles % Changing sizes of BOGPath makes it hard to vectorize
-                color = obj.colorMatrix(mod(vehicle.id,nrEntriesColorMatrix)+1,:); % repeat the color when more vehicles than entries in color matrix
-                obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',color,'LineWidth',2);
+            if isempty(obj.plots.trajectories)
+                % plot paths
+                obj.plots.trajectories = plot(BOGPathsX,BOGPathsY,'LineWidth',2);
+                
+                % check if enough colors for all vehicles are given
+                while nrVehicles > length(obj.colorMatrix)
+                    % extend color matrix
+                    obj.colorMatrix(end+1:end+length(obj.colorMatrix),:) = obj.colorMatrix;
+                end
+                % color paths with own color
+                set(obj.plots.trajectories, {'color'}, num2cell(obj.colorMatrix(1:length(obj.Vehicles),:), 2));
+            else
+                % Update highlighted paths
+                set(obj.plots.trajectories, {'XData'}, num2cell(BOGPathsX, 1)');
+                set(obj.plots.trajectories, {'YData'}, num2cell(BOGPathsY, 1)');
             end
             hold off
-            
         end
         
         
