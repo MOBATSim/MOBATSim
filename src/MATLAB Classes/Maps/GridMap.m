@@ -49,6 +49,10 @@ classdef GridMap < Map
             waypoints = obj.waypoints;
             circ = obj.connections.circle; %curves
             trans = obj.connections.translation; %straight roads
+            % get the length of circ, trans and waypoints
+            nrCurves = length(circ);
+            nrStraights = length(trans);
+            nrWaypoints = length(waypoints);
             %coordinate transformation
             waypoints(:,3) = -1.*waypoints(:,3);    %MOBATSim stores the negative y, so we have to transform it
             circ(:,6) = -1.*circ(:,6);
@@ -64,9 +68,12 @@ classdef GridMap < Map
                 circ(:,4) = circ(:,4)-xOff;
                 circ(:,6) = circ(:,6)-yOff;
             end
-            %% Generate a usable plot
-            %% generate curves
-            for c = 1 : length(circ)
+            
+            %% Generate a usable plot       
+            %% generate curves        
+            % preallocate array for all curve text positions
+            textPosCurves = zeros(nrCurves,2);
+            for c = 1 : nrCurves
                 cPart = circ(c,:); %load information on the current curve
                 %starting point
                 x1 = waypoints(cPart(1),1);
@@ -116,31 +123,43 @@ classdef GridMap < Map
                 end
                 %plot it
                 plot(points(:,1),points(:,2),'color',[0 1 0],'LineWidth',2);
-                %plot number next to edge
-                textPos = points(round(length(points)/2,0),:);
-                description = text(textPos(1)-10,textPos(2)-15,num2str(c),'color',[0 0.5 0]);
+                % save text position in array
+                textPosCurves(c,:) = points(round(length(points)/2,0),:);                
             end
+            %plot text next to curve
+            text(textPosCurves(:,1),textPosCurves(:,2),num2str((1:nrCurves)'),'color',[0 0.5 0], ...
+                                                                              'VerticalAlignment','top', ...
+                                                                              'HorizontalAlignment','center');
+            
             %% generate straight lines
-            for t = 1 : length(trans)
-                position = zeros(2,2); %preallocate start and goal point
-                %get both points and plot a line in between
-                position(1,:) = [waypoints(trans(t,1),1) ,waypoints(trans(t,1),3)];
-                position(2,:) = [waypoints(trans(t,2),1) ,waypoints(trans(t,2),3)];
-                plot(position(:,1),position(:,2),'color',[0 1 0],'LineWidth',2);
-                %plot number next to edge
-                textPos = (position(2,:) + position(1,:))/2;
-                text(textPos(1)+5,textPos(2)-15,num2str(t+c),'color',[0 0.5 0]);
-            end
+            
+            % x positions of start and end of straight roads
+            xPositions(:,:) = [waypoints(trans(:,1),1) ,waypoints(trans(:,2),1)];
+            % y positions of start and end of straight roads
+            yPositions(:,:) = [waypoints(trans(:,1),3) ,waypoints(trans(:,2),3)];
+            % plot all straight roads
+            plot(xPositions',yPositions','color',[0 1 0],'LineWidth',2);
+            
+            % position text at the middle of the straight road
+            textPosX = (xPositions(:,2) + xPositions(:,1))/2;
+            textPosY = (yPositions(:,2) + yPositions(:,1))/2;
+            % plot text next to straight roads
+            text(textPosX,textPosY,num2str((1:nrStraights)'),'color',[0 0.5 0], ...
+                                                             'VerticalAlignment','top', ...
+                                                             'HorizontalAlignment','left');
+            
             %% plot nodes with numbers
-            for n = 1 : length(waypoints)
-                %get position
-                pos = [waypoints(n,1),waypoints(n,3)];
-                %plot dot and number in a dark blue
-                plot(pos(1),pos(2),'Marker','o','MarkerFaceColor',[0 0.2 0.5],'color',[0 0.2 0.5]);
-                text(pos(1)-5,pos(2)-15,num2str(n),'color',[0 0.2 0.5]);%TODO make it appear automatically under dot
-                %maybe there is a way to let it not collide with other text?
-            end
+            % 2D positions
+            pos = [waypoints(:,1),waypoints(:,3)];
+            %plot dot and number in a dark blue
+            plot(pos(:,1),pos(:,2),'Marker','o','MarkerFaceColor',[0 0.2 0.5],'color',[0 0.2 0.5],'LineStyle','none');
+            % plot number next to waypoints           
+            text(pos(:,1),pos(:,2),num2str((1:nrWaypoints)'),'color',[0 0.2 0.5], ...
+                                                             'HorizontalAlignment','center', ...
+                                                             'VerticalAlignment','top');
+            %%
             hold off
+            
         end
         
         function dynamicRouteHighlighting(obj)
