@@ -164,17 +164,6 @@ classdef GridMap < Map
         
         function dynamicRouteHighlighting(obj)
             
-%             delete(obj.plots.trajectories) % Delete previous trajectories using their handle
-%             
-%             hold on
-%             nrEntriesColorMatrix = size(obj.colorMatrix,1); 
-%             for vehicle = obj.Vehicles % Changing sizes of BOGPath makes it hard to vectorize
-%                 color = obj.colorMatrix(mod(vehicle.id,nrEntriesColorMatrix)+1,:); % repeat the color when more vehicles than entries in color matrix
-%                 obj.plots.trajectories(vehicle.id) = plot(vehicle.pathInfo.BOGPath(:,1),vehicle.pathInfo.BOGPath(:,2),'color',color,'LineWidth',2);
-%             end
-%             hold off
-            
-            
             %% get all BOG paths
             nrVehicles = length(obj.Vehicles);
             % preallocate arrays
