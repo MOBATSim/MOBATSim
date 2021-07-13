@@ -31,7 +31,9 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             obj.oldNextWaypoint = 0;
         end
                
-        function [SpeedReference, DistanceReference, LeadSpeed, DrivingMode, Dist2Stop] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
+        function [SpeedReference, DistanceReference, LeadSpeed, DrivingMode, Dist2Stop,laneChange] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
+            laneChange = 0;
+            
             %This block shouldn't run if the vehicle has reached its destination
             if obj.vehicle.pathInfo.destinationReached
                 SpeedReference=0;
@@ -213,51 +215,52 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             flag = true;
         end
         
-        function [out,out2,out3,out4,out5] = getOutputDataTypeImpl(~)
+        function [out,out2,out3,out4,out5,out6] = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
             out2 = 'double';
             out3 = 'double';
             out4 = 'double';
             out5 = 'double';
-            
-            
+            out6 = 'double';
+                   
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
         
-        function [out,out2,out3,out4,out5] = isOutputComplexImpl(~)
+        function [out,out2,out3,out4,out5,out6] = isOutputComplexImpl(~)
             % Return true for each output port with complex data
             out = false;
             out2 = false;
             out3 = false;
             out4 = false;
             out5 = false;
+            out6 = false;
             
             % Example: inherit complexity from first input port
             % out = propagatedInputComplexity(obj,1);
         end
         
-        function [out,out2,out3,out4,out5] = isOutputFixedSizeImpl(~)
+        function [out,out2,out3,out4,out5,out6] = isOutputFixedSizeImpl(~)
             % Return true for each output port with fixed size
             out = true;
             out2 = true;
             out3 = true;
             out4 = true;
             out5 = true;
-            
+            out6 = true;
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
         end
         
-        function [out,out2,out3,out4,out5] = getOutputSizeImpl(~)
+        function [out,out2,out3,out4,out5, out6] = getOutputSizeImpl(~)
             % Return size for each output port
             out = [1 1];
             out2 = [1 1];
             out3 = [1 1];
             out4 = [1 1];
             out5 = [1 1];
-            
+            out6 = [1 1];
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
         end
