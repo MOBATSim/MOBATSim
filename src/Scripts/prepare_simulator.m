@@ -7,7 +7,7 @@ function prepare_simulator(options)
         options.mapName             (1,1) string    = 'Mobatkent'           % Name of the map
         options.simStopTime         (1,1) double    = 80                    % Simulation stop time in seconds
         options.simTs               (1,1) double    = 0.02                  % Simulation time step: sample time of the simulation (may not be stable if changed)
-        options.scenarioName        (1,1) string    = 'Urban City Traffic'
+        options.scenarioName        (1,1) string    = 'Urban City Traffic'  % scenario sets start points, destination points and maxSpeeds
         options.startingPoints      (1,:) double    = []                    % custom starting points for vehicles
         options.destinationPoints   (1,:) double    = []                    % custom destination points for vehicles
         options.maxSpeeds           (1,:) double    = []                    % custom max speeds for vehicles
@@ -77,11 +77,6 @@ function prepare_simulator(options)
     % Open MOBATSim Simulink Model
     open_system(options.modelName)
 
-    %% Fault Injection properties (TODO: To be implemented soon)
-    FI_distance = 0;
-    FI_speed = 0;
-    SafeDistance =18;
-
     %% Initalize analysing
     
     % close vehicle analysing window
@@ -105,9 +100,6 @@ function prepare_simulator(options)
     assignin('base','Map',Map); % only used by Infrastructure.m
     assignin('base','Vehicles',Vehicles); % used by many instances
     assignin('base','vehicleAnalysingWindow_Gui',vehicleAnalysingWindow_Gui);
-    assignin('base','FI_distance',FI_distance);
-    assignin('base','FI_speed',FI_speed);
-    assignin('base','SafeDistance',SafeDistance);
     
     %% Single button execution
     
