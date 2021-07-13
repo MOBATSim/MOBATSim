@@ -14,15 +14,13 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         ref_d = 0;
         
         currentPathPoints =[];
-        nextPathPoints=[];
-        allPathPoints =[];
-        calculatedRoutesArray = [];
         laneChangingPoints =[];
         
         laneChangeTime = 4;
         laneChangeStartPoint = [];
         %laneChangeTargetPoint = [];
         laneChangeStartTime = [];
+        offset_d_flag = 0;
         
     end
     
@@ -73,8 +71,16 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                     nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints; obj.currentPathPoints(2,:)];
                     nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints); % Output: PathPoints for Pure Pursuit
             else
-                obj.currentPathPoints(2:end,2) = obj.currentPathPoints(2:end,2) + obj.ref_d; % TODO + d works only in frenet not in cartesian
-                nextWPs = obj.currentPathPoints;  % Output: PathPoints for Pure Pursuit
+                %obj.currentPathPoints = obj.Frenet2Cartesian(s,d,obj.currentPathPoints,obj.vehicle.pathInfo.currentTrajectory);
+                %obj.currentPathPoints(2:end,2) = obj.currentPathPoints(2:end,2);% + obj.ref_d; % TODO + d works only in frenet not in cartesian
+                if obj.offset_d_flag
+                    s_next = (s:4:obj.vehicle.pathInfo.routeEndDistance+s)';
+                    d_next=repmat(d,length(s_next),1);
+                    nextWPs = obj.curved_Frenet2Cartesian(route,s_next,d_next,radian);
+                    nextWPs = nextWPs(1:obj.Kpoints,:);
+                else
+                    nextWPs = obj.currentPathPoints;  % Output: PathPoints for Pure Pursuit
+                end
             end
             
             
@@ -134,15 +140,17 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 obj.laneChangingPoints =[];
                 if (obj.ref_d-obj.vehicle.pathInfo.d) > 0 %left lane-changing
                     obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId+0.5;
+                    obj.offset_d_flag = 1;
                 elseif (obj.ref_d-obj.vehicle.pathInfo.d) < 0%right lane-changing
                     obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5;
+                    obj.offset_d_flag = 0;
                 end
             end
             % Adjust the nextWPs so that it fits the getOutputSizeMethod specifications
             if size(nextWPs,1) < K
                 missingRowNr = K-size(nextWPs,1);
                 nextWPs(end+1:end+missingRowNr,:) = repmat(nextWPs(end,:),missingRowNr,1);
-                nextWPs(K-missingRowNr:K,2) = nextWPs(K-missingRowNr:K,2)+obj.ref_d; % Keep the lateral offset as Ego drives
+                nextWPs(K-missingRowNr:K,2) = nextWPs(K-missingRowNr:K,2);%+obj.ref_d; % Keep the lateral offset as Ego drives
             elseif size(nextWPs,1) > obj.Kpoints
                 nextWPs = nextWPs(1:K,:);
             end
