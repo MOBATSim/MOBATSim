@@ -2,12 +2,15 @@ function prepare_simulator(options)
     % This function prepares the simulation
     %   After calling this method the simulation can run
     arguments
-        options.Analysing   (1,1) logical   = false                 % Activate the analysing functions
-        options.modelName   (1,1) string    = 'MOBATSim'            % Name of the simulink model
-        options.mapName     (1,1) string    = 'Mobatkent'           % Name of the map
-        options.simStopTime (1,1) double    = 80                    % Simulation stop time in seconds
-        options.simTs       (1,1) double    = 0.02                  % Simulation time step: sample time of the simulation (may not be stable if changed)
-        options.scenarioName(1,1) string    = 'Urban City Traffic'
+        options.Analysing           (1,1) logical   = false                 % Activate the analysing functions
+        options.modelName           (1,1) string    = 'MOBATSim'            % Name of the simulink model
+        options.mapName             (1,1) string    = 'Mobatkent'           % Name of the map
+        options.simStopTime         (1,1) double    = 80                    % Simulation stop time in seconds
+        options.simTs               (1,1) double    = 0.02                  % Simulation time step: sample time of the simulation (may not be stable if changed)
+        options.scenarioName        (1,1) string    = 'Urban City Traffic'
+        options.startingPoints      (1,:) double    = []                    % custom starting points for vehicles
+        options.destinationPoints   (1,:) double    = []                    % custom destination points for vehicles
+        options.maxSpeeds           (1,:) double    = []                    % custom max speeds for vehicles
     end
     
     %% Init file for MOBATSim
@@ -40,16 +43,21 @@ function prepare_simulator(options)
     Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
 
     %% Load Scenario
-    if (~exist('CustomScenarioGenerated','var'))&&(~exist('RandomScenarioGenerated','var')) % TODO: change this part when GUI is changed, does not check base workspace
-        [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out    
-    else % custom scenario or random scenario generate their own scenario on UI
-        startingPoints = evalin('base','startingPoints');
-        destinationPoints = evalin('base','destinationPoints');
-        maxSpeeds = evalin('base','maxSpeeds');        
+    [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName);    
+    
+    % check for custom starting options
+    if ~isempty(options.startingPoints)
+        % replace starting points with custom
+        startingPoints = options.startingPoints;
     end
-    %uncomment line below to undo
-    % [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName); % default on - for Monte Carlo experiments comment out
-
+    if ~isempty(options.destinationPoints)
+        % replace destination points with custom
+        destinationPoints = options.destinationPoints;
+    end
+    if ~isempty(options.startingPoints)
+        % replace max speeds with custom
+        maxSpeeds = options.maxSpeeds;
+    end  
         
     %% Load Vehicles
     
