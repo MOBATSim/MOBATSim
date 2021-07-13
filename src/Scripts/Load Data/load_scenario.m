@@ -74,14 +74,6 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
     %                 destinationPoints = [10  11 15 27 47 71 70 56 77 78];
     %                 maxSpeeds =         [20  11 20 20 20 20 20 20 20 20];
 
-            %% SC3a use temporary goal
-            %V2 should drive to node 11
-            %TODO: Error with D*EL
-            %Output argument "currentRoute" (and maybe others) not assigned during call to "VehicleKinematics/setCurrentRoute"
-    %                 startingPoints =    [23  22 19  7 48 72 56 57 78 51];
-    %                 destinationPoints = [11  11 15 27 47 71 70 56 77 78];
-    %                 maxSpeeds =         [20  20 20 20 20 20 20 20 20 20];
-
         case 'Carmageddon'
             startingPoints =    [46 53 54 51 44 9  65 27 30 6];
             destinationPoints = [25 64 24 16 10 59 42 10 11 24];
