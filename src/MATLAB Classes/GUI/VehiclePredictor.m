@@ -243,12 +243,9 @@ classdef VehiclePredictor < handle
 
                 % New time entry
                 obj.tableTimeStamp(end+1) = obj.currentSimTime;
-                
-                % Annotation about curved road
-                % TODO app.tableCurvedRoad(end+1) = % TODO: add steering angle
-                
+          
                 % Actual position
-                obj.tablePosition(end+1) = obj.egoVehicle.dynamics.position(1); % first only on x-Axis TODO: measure distance not one coordinate
+                obj.tablePosition(end+1) = obj.egoVehicle.dynamics.position(1); % first only on x-Axis
                 
                 % Predicted value
                 entryForPrediction = length(obj.tableTimeStamp) + obj.nrStepsPredict*obj.timeSteps/obj.simTs; % actual time entry plus future entries

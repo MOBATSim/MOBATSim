@@ -19,7 +19,7 @@ function prepare_simulator(options)
 
     %% Added for Fast Debug /Needs to be removed later to make sure that simulations can be repeated without "clear all"
     if evalin('base','exist(''Map'',''var'')') 
-        evalin('base','clear all'); %TODO: needs to be off in order not to delete the variables assigned from the GUI
+        evalin('base','clear all');
         evalin('base','close all'); %to avoid some problems with the deleted handles TODO: Try -> close('all', 'hidden')
     end
     
@@ -97,7 +97,7 @@ function prepare_simulator(options)
     end   
     
     
-    %% Assign all needed variables to base workspace TODO: check if they all needed in base workspace
+    %% Assign all needed variables to base workspace
     
     assignin('base','Sim_Ts',options.simTs); % used by the model and in VehicleKinematics and V_WPGenerator_PurePursuit
     assignin('base','Sim_t',options.simStopTime); % used by Infrastructure for a test and in the model as StopTime
