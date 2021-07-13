@@ -7,8 +7,8 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
 %            maxSpeeds =         [13 13 11 9 13 13 12 14 4 13];
 % 
             startingPoints =    [46 30 84 3  53 64 58 57 4 63];
-            destinationPoints = [54 77 82 26 3  42 27 25 3 47];
-            maxSpeeds =         [3  15  1 7  14 10 0.1 4 10 10];
+            destinationPoints = [54 78 82 26 3  42 27 25 3 47];
+            maxSpeeds =         [3  15  3 7  14 10 0.1 4 10 10];
          %% test scenario Qianwei
              %V4 and V3 on the same road testing front collision
             %startingPoints =    [46 47 7 27 85 52 64 57 15 63];

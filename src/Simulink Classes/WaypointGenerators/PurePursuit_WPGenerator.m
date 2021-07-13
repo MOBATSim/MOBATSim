@@ -14,15 +14,13 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         ref_d = 0;
         
         currentPathPoints =[];
-        nextPathPoints=[];
-        allPathPoints =[];
-        calculatedRoutesArray = [];
         laneChangingPoints =[];
         
         laneChangeTime = 4;
         laneChangeStartPoint = [];
-        laneChangeTargetPoint = [];
+        %laneChangeTargetPoint = [];
         laneChangeStartTime = [];
+        offset_d_flag = 0;
         
     end
     
@@ -52,31 +50,83 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 obj.vehicle.setInitialRouteAndTrajectory();
             end
             
+            route = obj.vehicle.pathInfo.currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
+            Vpos_C = [pose(1) pose(2)];%Position of the vehicle in Cartesian coordinate
+            radian = obj.vehicle.pathInfo.currentTrajectory(3,1);%radian of the curved road, is 0 for straight road
+            
+            obj.currentPathPoints = obj.generatePathFollowingWaypoints(Vpos_C,obj.vehicle.pathInfo.BOGPath,obj.Kpoints);
+            [s,d,routeLength] = obj.Cartesian2Frenet(route,Vpos_C,radian);%Coordinate Conversion function
+            obj.vehicle.updateVehicleFrenetPosition(s,d,routeLength); % Update Vehicle Frenet Coordinates
+            obj.vehicle.checkWaypointReached(obj.vehicle.pathInfo.currentTrajectory(2,:));
+            
+            
             %% Check and generate lane switching trajectory if commanded
             if ~(changeLane==0) && isempty(obj.trajPolynom)
                     obj.trajPolynom = obj.generateMinJerkTrajectory(obj.vehicle,obj.laneChangeTime,changeLane);
                     obj.laneChangingPoints = obj.generateLaneChanging_WPs(obj.vehicle);
+                    obj.laneChangingPoints = obj.Frenet2Cartesian(s,d,obj.laneChangingPoints,obj.vehicle.pathInfo.currentTrajectory);
             end
-            
-            route = obj.vehicle.pathInfo.currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
-            Vpos_C = [pose(1) pose(2)];%Position of the vehicle in Cartesian coordinate
-            radian = obj.vehicle.pathInfo.currentTrajectory(3,1);%radian of the curved road, is 0 for straight road
-
-            obj.currentPathPoints = obj.generatePathFollowingWaypoints(Vpos_C,obj.vehicle.pathInfo.BOGPath,obj.Kpoints);
-            [s,d,routeLength] = obj.Cartesian2Frenet(route,Vpos_C,radian);%Coordinate Conversion function        
-            obj.vehicle.updateVehicleFrenetPosition(s,d,routeLength); % Update Vehicle Frenet Coordinates
-            obj.vehicle.checkWaypointReached(obj.vehicle.pathInfo.currentTrajectory(2,:));
             
             if ~isempty(obj.laneChangingPoints)
-                nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints; obj.currentPathPoints(2,:)];
-                nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints); % Output: PathPoints for Pure Pursuit
+                    nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints; obj.currentPathPoints(2,:)];
+                    nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints); % Output: PathPoints for Pure Pursuit
             else
-                obj.currentPathPoints(2:end,2) = obj.currentPathPoints(2:end,2) + obj.ref_d;
-                nextWPs = obj.currentPathPoints;  % Output: PathPoints for Pure Pursuit
+                %obj.currentPathPoints = obj.Frenet2Cartesian(s,d,obj.currentPathPoints,obj.vehicle.pathInfo.currentTrajectory);
+                %obj.currentPathPoints(2:end,2) = obj.currentPathPoints(2:end,2);% + obj.ref_d; % TODO + d works only in frenet not in cartesian
+                if obj.offset_d_flag
+                    s_next = (s:4:obj.vehicle.pathInfo.routeEndDistance+s)';
+                    d_next=repmat(d,length(s_next),1);
+                    nextWPs = obj.curved_Frenet2Cartesian(route,s_next,d_next,radian);
+                    nextWPs = nextWPs(1:obj.Kpoints,:);
+                else
+                    nextWPs = obj.currentPathPoints;  % Output: PathPoints for Pure Pursuit
+                end
             end
             
             
             
+        end
+        
+        function updatedLaneChangingPoints_Cartesian = Frenet2Cartesian(obj,s,d,laneChangingPoints,currentTrajectory)
+            route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];
+            radian = currentTrajectory(3,1);
+            left = currentTrajectory(4,1);
+            
+            if radian == 0
+                route_Vector = route(2,:)-route(1,:);
+                route_UnitVector = route_Vector/norm(route_Vector);
+                yawAngle_in_Cartesian = atan2(route_UnitVector(2),route_UnitVector(1));
+                sideVector = [cos(yawAngle_in_Cartesian+pi/2) sin(yawAngle_in_Cartesian+pi/2)];
+                sideVector = round(sideVector,5);
+                
+                % Lane Changing Points were already in Frenet - only "s" value should be added
+                % "d" is already the reference
+                updatedLaneChangingPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
+                
+                updatedLaneChangingPoints_Cartesian = updatedLaneChangingPoints_Frenet(:,1)*route_UnitVector+updatedLaneChangingPoints_Frenet(:,2)*sideVector+route(1,:);
+            else
+                startPoint = route(1,:);
+                endPoint = route(2,:);
+                r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
+                center = [currentTrajectory(3,2) -currentTrajectory(3,3)];
+                startPointVector = startPoint-center;%OP1 in Frenet.xml
+                startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
+                l = r+(left*d);%current distance from rotation center to position
+                lAng = sign(radian)*s/r+startPointVectorAng;% the angle of vector l
+                position_Cart = l*[cos(lAng) sin(lAng)]+center;% the position in Cartesion coordinate
+                orientation_Cart = lAng+sign(radian)*pi/2;
+                orientation_Cart = mod(orientation_Cart,2*pi);
+                orientation_Cart = orientation_Cart.*(0<=orientation_Cart & orientation_Cart <= pi) + (orientation_Cart - 2*pi).*(pi<orientation_Cart & orientation_Cart<2*2*pi);   % angle in (-pi,pi]
+                
+                updatedLaneChangingPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
+                %frePoints = [(updatedLaneChangingPoints_Frenet(:,1)/r) updatedLaneChangingPoints_Frenet(:,2)];
+                all_s = updatedLaneChangingPoints_Frenet(:,1);
+                all_d = updatedLaneChangingPoints_Frenet(:,2);
+                updatedLaneChangingPoints_Cartesian = obj.curved_Frenet2Cartesian(route,all_s,all_d,radian);
+            end
+            
+            
+
         end
         
         function nextWPs = checkNextWPsOutputSize(obj,nextWPs,K)
@@ -90,15 +140,17 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 obj.laneChangingPoints =[];
                 if (obj.ref_d-obj.vehicle.pathInfo.d) > 0 %left lane-changing
                     obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId+0.5;
+                    obj.offset_d_flag = 1;
                 elseif (obj.ref_d-obj.vehicle.pathInfo.d) < 0%right lane-changing
                     obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5;
+                    obj.offset_d_flag = 0;
                 end
             end
             % Adjust the nextWPs so that it fits the getOutputSizeMethod specifications
             if size(nextWPs,1) < K
                 missingRowNr = K-size(nextWPs,1);
                 nextWPs(end+1:end+missingRowNr,:) = repmat(nextWPs(end,:),missingRowNr,1);
-                nextWPs(K-missingRowNr:K,2) = nextWPs(K-missingRowNr:K,2)+obj.ref_d; % Keep the lateral offset as Ego drives
+                nextWPs(K-missingRowNr:K,2) = nextWPs(K-missingRowNr:K,2);%+obj.ref_d; % Keep the lateral offset as Ego drives
             elseif size(nextWPs,1) > obj.Kpoints
                 nextWPs = nextWPs(1:K,:);
             end
@@ -110,22 +162,23 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             obj.laneChangeStartPoint = car.dynamics.position.*[1 1 -1];%coordinates conversion
             
             %% Minimum Jerk Trajectory Generation
-            x_f = T*car.dynamics.speed; % Target longitudinal - s coordinate
+            %x_f = T*car.dynamics.speed; % Target longitudinal - s coordinate
             
             if changeLane ==1 % To the left
                 y_f = obj.laneWidth; % Target lateral - d coordinate
-                target_d = obj.laneWidth;
+                %target_d = obj.laneWidth;
                 car.pathInfo.laneId = car.pathInfo.laneId + 0.5; % Means the vehicle is in between lanes - switching to left
             elseif changeLane ==2 % To the right
                 y_f = 0; % Target lateral - d coordinate
-                target_d = -car.pathInfo.d;
+                %target_d = -car.pathInfo.d;
                 car.pathInfo.laneId = car.pathInfo.laneId - 0.5; % Means the vehicle is in between lanes - switching to right
                 % car.pathInfo.d is used to compansate for the small
                 % values, TODO check later if this can be generalized for
                 % more lanes than two
             end
             
-            obj.laneChangeTargetPoint=[x_f 0 target_d]+obj.laneChangeStartPoint;
+            %obj.laneChangeTargetPoint=[x_f 0 target_d]+obj.laneChangeStartPoint;
+            
             %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
             syms t; % time
             % matrix with polynom coefficients for  lateral position, speed and acceleration
@@ -181,9 +234,11 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             T = obj.laneChangeTime;
             
             tP = t:0.2:T;
-            newWP_s=car.dynamics.position(1)+(car.dynamics.speed*tP);
-            newWP_d=-car.dynamics.position(3)+(a0+a1*tP+a2*tP.^2+a3*tP.^3+a4*tP.^4+a5*tP.^5)-car.pathInfo.d;
-            newWP_all = [newWP_s' newWP_d'];
+            %newWP_s=car.dynamics.position(1)+(car.dynamics.speed*tP);
+            %newWP_d=-car.dynamics.position(3)+(a0+a1*tP+a2*tP.^2+a3*tP.^3+a4*tP.^4+a5*tP.^5)-car.pathInfo.d;
+            newWP_s=car.dynamics.speed*tP;
+            newWP_d=a0+a1*tP+a2*tP.^2+a3*tP.^3+a4*tP.^4+a5*tP.^5;
+            newWP_all =  [newWP_s' newWP_d'];
             
             obj.ref_d = a0+a1*T+a2*T^2+a3*T^3+a4*T^4+a5*T^5;
             
@@ -245,6 +300,22 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 s = angle*r;
                 routeLength = abs(radian)*r;
             end
+        end
+        
+        function position_Cart = curved_Frenet2Cartesian(~,route,s,d,radian)
+            startPoint = route(1,:);
+            endPoint = route(2,:);
+            r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
+            targetVector = (endPoint-startPoint)/norm(endPoint-startPoint); %Unit vector of route vector (p in Frenet.xml)
+            beta = atan2(targetVector(2),targetVector(1)); %the angle of target vector and x axis in cartesian coordinate (theta 1 in Frenet.xml)
+            plumbLength = cos(radian/2)*r; % the distance from circle center to targetVector (OG in Frenet.xml)
+            plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
+            center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
+            startPointVector = startPoint-center;%OP1 in Frenet.xml
+            startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
+            l = r-(sign(radian)*d);%current distance from rotation center to position
+            lAng = sign(radian)*s/r+startPointVectorAng;% the angle of vector l
+            position_Cart = l.*[cos(lAng) sin(lAng)]+center;% the position in Cartesion coordinate
         end
                      
         function icon = getIconImpl(~)
