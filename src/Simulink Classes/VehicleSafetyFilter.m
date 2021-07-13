@@ -24,7 +24,7 @@ classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Prop
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
 
-        function [Acc,Steering,Stop] = stepImpl(obj,Acc,Steering)
+        function [Acc,Stop,Steering] = stepImpl(obj,Acc,Steering)
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
             

@@ -37,12 +37,11 @@ classdef Vehicle < handle
         %         speed
         %         maxSpeed
         %         orientation
-        %         directionVector
-        %         cornering
         %         minDeceleration
         %         acceleration                  acceleration applied to model        
         %         steeringAngle                 steering angle applied to model
         sensors
+        %         safeDistance
         %         frontSensorRange
         %         AEBdistance
         %         leadingVehicleId
@@ -101,7 +100,7 @@ classdef Vehicle < handle
             obj.dynamics.acceleration = 0;
             obj.dynamics.steeringAngle = 0;
             
-            
+            obj.sensors.safeDistance = 18;
             obj.sensors.frontSensorRange            = frontSensorRange;
             obj.sensors.AEBdistance                 = AEBdistance;
             obj.sensors.leadingVehicleId            = 0;
