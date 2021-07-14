@@ -31,39 +31,55 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             obj.vehicle = obj.Vehicles(obj.Vehicle_id);
         end
         
-        function [V2VcommIDs, distanceToLeading] = stepImpl(obj)
+        function [V2VcommIDs, vehicleDetected] = stepImpl(obj)
             
-            % Get V2V Data Links (0,1)
+            % Output1 : V2VcommIDs      -> V2V Data Links (0,1)                       
             V2VcommIDs = obj.vehicle.V2VdataLink;
-            % TODO check outputs of this function
             
-            % Default value for no detection
-            leadingVehicleID = -1;
-            distanceToLeading = 1000;
-            rearVehicleID = -1;
-            distanceToRear = 1000;
-            
-            if ~obj.vehicle.pathInfo.destinationReached ...         % Detect when destination is not reached
-                    && obj.vehicle.status.stop == 0 ...                  % and the ego vehicle is not on halt
-                    && ~isempty(obj.vehicle.pathInfo.currentTrajectory)  % and it has a planned trajectory
+            % Default values for no detection
+            if obj.vehicle.pathInfo.destinationReached ...              % No detection when destination reached
+                    || obj.vehicle.status.stop == true ...              % or vehicle stopped
+                    || isempty(obj.vehicle.pathInfo.currentTrajectory)  % or has no planned trajectory
                 
+                leadingVehicle = [];
+                rearVehicle = [];
+                distanceToLeading = Inf;
+                distanceToRear = Inf;                
+            else
+                vehicleDetected = false;
                 % Detection function
+                % Output2: distanceToLeading    -> distance to vehicle in front
                 [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
-                
+                % get front vehicle if exists
+                if leadingVehicleID > 0
+                    leadingVehicle = obj.Vehicles(leadingVehicleID);
+                    % Output2: vehicle detected
+                    vehicleDetected = true;
+                else
+                    leadingVehicle = [];
+                end
+                % get rear vehicle if exists
+                if rearVehicleID > 0
+                    rearVehicle = obj.Vehicles(rearVehicleID);
+                    % Output2: vehicle detected
+                    vehicleDetected = true;
+                else
+                    rearVehicle = [];
+                end
             end
-            % Output1 : V2VcommIDs      -> Vehicle in front id
-            % Output2 : ObjectinFront   -> Distance to the vehicle in front
-            obj.vehicle.setVehicleSensorDetection(leadingVehicleID,distanceToLeading,rearVehicleID, distanceToRear)
-        end
+                                            
+            % update vehicle sensor data
+            obj.vehicle.setVehicleSensorDetection(leadingVehicle,distanceToLeading,rearVehicle, distanceToRear);
+        end        
         
         %% Helper functions
         function [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = detectVehicles(obj ,car, Vehicles)
             % Default values for the outputs assigned arbitrary values for empty (not detected)
             leadingVehicleID = -1;
-            distanceToLeading = 1000;
+            distanceToLeading = Inf;
             
             rearVehicleID = -1;
-            distanceToRear = 1000;
+            distanceToRear = Inf;
             
             % Sensor information about front and behinds vehicle nearby (on the same route)
             [frontDetection,rearDetection] = obj.findVehiclesOnTheSameRoute(car,Vehicles);
@@ -225,8 +241,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         function [out,out2] = getOutputSizeImpl(obj)
             % Return size for each output port
             out = [1 length(obj.Vehicles)];
-            out2 = [1 1];
-            
+            out2 = [1 1];            
             % Example: inherit size from first input port
             % out = propagatedInputSize(obj,1);
         end
@@ -234,8 +249,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         function [out,out2] = getOutputDataTypeImpl(~)
             % Return data type for each output port
             out = 'double';
-            out2 = 'double';
-            
+            out2 = 'boolean';
             % Example: inherit data type from first input port
             % out = propagatedInputDataType(obj,1);
         end
@@ -244,7 +258,6 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             % Return true for each output port with complex data
             out = false;
             out2 = false;
-            
             % Example: inherit complexity from first input port
             % out = propagatedInputComplexity(obj,1);
         end
@@ -253,7 +266,6 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             % Return true for each output port with fixed size
             out = true;
             out2 = true;
-            
             % Example: inherit fixed-size status from first input port
             % out = propagatedInputFixedSize(obj,1);
         end
