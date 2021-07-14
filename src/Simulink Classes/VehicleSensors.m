@@ -36,6 +36,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             % Output1 : V2VcommIDs      -> V2V Data Links (0,1)                       
             V2VcommIDs = obj.vehicle.V2VdataLink;
             
+            vehicleDetected = false;
             % Default values for no detection
             if obj.vehicle.pathInfo.destinationReached ...              % No detection when destination reached
                     || obj.vehicle.status.stop == true ...              % or vehicle stopped
@@ -46,7 +47,6 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 distanceToLeading = Inf;
                 distanceToRear = Inf;                
             else
-                vehicleDetected = false;
                 % Detection function
                 % Output2: distanceToLeading    -> distance to vehicle in front
                 [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
