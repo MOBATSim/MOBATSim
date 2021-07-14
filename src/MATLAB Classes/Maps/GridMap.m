@@ -93,9 +93,9 @@ classdef GridMap < Map
                 phiGoal = angle(complex((x2-x0W) , (y2-y0W)));
                 %direction
                 direction = sign(cPart(3));
-                %% make angle allways usable
+                %% make angle always usable
                 %we have to make every angle positive and also big eneough,
-                %that an angle of a point is allways between start and goal
+                %that an angle of a point is always between start and goal
                 if phiStart <0
                     phiStart = phiStart + 2*3.1415;
                 end
