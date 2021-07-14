@@ -21,7 +21,6 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     % Pre-computed constants
     properties(Access = private)
         vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow_Gui');
-        allTestData 
     end
     
     methods(Access = protected)
