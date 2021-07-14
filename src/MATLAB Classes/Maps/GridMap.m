@@ -8,6 +8,7 @@ classdef GridMap < Map
         xOffset;                       % Offset to transform visualization into bog coordinates if necessary
         yOffset;
         colorMatrix;
+        lineWidth;
     end
     
     methods
@@ -27,9 +28,10 @@ classdef GridMap < Map
                 0.4940 0.1840 0.5560;       %10 violet
                 ];
             
+            obj.lineWidth = 3;
             
             % Plot the map on the figure
-            generateMapVisual(obj,false);
+            generateMapVisual(obj,false,obj.lineWidth);
             % BOG will be created in the prepare_simulator script, to include all vehicle data
             
             %create bog container map object
@@ -39,7 +41,7 @@ classdef GridMap < Map
             
         end %Constructor
         
-        function generateMapVisual(obj,displayInGridCoordinates)
+        function generateMapVisual(obj,displayInGridCoordinates,lineWidth)
             %This function plots any XML Map of MOBATSim. Keep in mind that you have to
             %do a coordinate transformation between normal coordinates and grid / mobatsim
             %Input: XML Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
@@ -122,7 +124,7 @@ classdef GridMap < Map
                     hold on
                 end
                 %plot it
-                plot(points(:,1),points(:,2),'color',[0 1 0],'LineWidth',2);
+                plot(points(:,1),points(:,2),'color',[0 1 0],'LineWidth',obj.Route_LaneNumber(c,2)*lineWidth);
                 % save text position in array
                 textPosCurves(c,:) = points(round(length(points)/2,0),:);                
             end
@@ -137,8 +139,14 @@ classdef GridMap < Map
             xPositions(:,:) = [waypoints(trans(:,1),1) ,waypoints(trans(:,2),1)];
             % y positions of start and end of straight roads
             yPositions(:,:) = [waypoints(trans(:,1),3) ,waypoints(trans(:,2),3)];
+            
+            % Double and Single lane separation
+            double_idx = logical(obj.Route_LaneNumber(c+1:end,2)-1); % double lane = 2, single = 1 -> with minus 1 dl=1, sl=1
+            % Plot straight double lanes
+            plot(xPositions(double_idx,:)',yPositions(double_idx,:)','color',[0 1 0],'LineWidth',2*lineWidth);
+            % Plot straight single lanes
+            plot(xPositions(~double_idx,:)',yPositions(~double_idx,:)','color',[0 1 0],'LineWidth',lineWidth);
             % plot all straight roads
-            plot(xPositions',yPositions','color',[0 1 0],'LineWidth',2);
             
             % position text at the middle of the straight road
             textPosX = (xPositions(:,2) + xPositions(:,1))/2;

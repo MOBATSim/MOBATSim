@@ -172,7 +172,7 @@ classdef Map < handle
             ax.Interactions = [];
             view(2)
             hold on
-            obj.plots.Vehicles = scatter([],[],200,'filled', 'MarkerFaceColor',[0.2 0.6470 0.9410]); % Size of the vehicle bubbles            
+            obj.plots.Vehicles = scatter([],[],260,'filled', 'MarkerFaceColor',[0.2 0.6470 0.9410]); % Size of the vehicle bubbles            
             hold off
 
         end
