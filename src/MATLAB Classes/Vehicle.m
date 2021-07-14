@@ -14,7 +14,6 @@ classdef Vehicle < handle
     %    setCurrentRoute
     %    setPath
     %    setVehicleSensorDetection
-    %    setEmergencyCase
     %    setDrivingMode
     %    setCollided
     %    setCurrentTrajectory
@@ -48,7 +47,6 @@ classdef Vehicle < handle
         %         distanceToLeadingVehicle
         %         leadingVehicleSpeed
         status
-        %         emergencyCase
         %         drivingMode
         %         stop
         %         collided
@@ -68,7 +66,6 @@ classdef Vehicle < handle
         %         timeStamps
         %         totalTravelTime
         %         speed
-        %         emergencyCase
         %         speedInCrossroad        Speed from braking to leaving point
         %         speedInCrossroad2       Speed from starting to leaving point
         decisionUnit
@@ -104,17 +101,16 @@ classdef Vehicle < handle
             obj.sensors.frontSensorRange            = frontSensorRange;
             obj.sensors.AEBdistance                 = AEBdistance;
             obj.sensors.leadingVehicleId            = 0;
-            obj.sensors.distanceToLeadingVehicle    = 1000;
-            %obj.sensors.leadingVehicleSpeed          TODO: implement this variable
+            obj.sensors.distanceToLeadingVehicle    = Inf;
+            obj.sensors.leadingVehicleSpeed         = -1;
             % TODO: check following, if they are needed
             obj.sensors.leadingVehicle = []; % Check where they are set and get
             obj.sensors.readVehicle = []; % Check where they are set and get
             obj.sensors.rearVehicleSafetyMargin = 1000; % Check where they are set and get
-            obj.sensors.rearVehicleDistance = 1000; % Check where they are set and get
+            obj.sensors.rearVehicleDistance = Inf; % Check where they are set and get
             
             
             
-            obj.setEmergencyCase(0); % no emergency case appears
             obj.setDrivingMode(0);
             obj.setStopStatus(true);
             obj.setCollided(false); % vehicle has no collision
@@ -143,7 +139,6 @@ classdef Vehicle < handle
             obj.dataLog.speedInCrossroad = [];
             obj.dataLog.speedInCrossroad2 = [];
             obj.dataLog.speed = [];
-            obj.dataLog.emergencyCase = [];
             obj.dataLog.laneSwitchStartTime = []; % Check where they are set and get
             obj.dataLog.laneSwitchEndTime = []; % Check where they are set and get
             obj.dataLog.MinJerkTrajPolynom = {};% Check where they are set and get
@@ -338,33 +333,34 @@ classdef Vehicle < handle
             car.pathInfo.path = newPath;
         end
         
-        function setVehicleSensorDetection(car,leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear)
-            car.sensors.leadingVehicleId = leadingVehicleID;
+        function setVehicleSensorDetection(car,leadingVehicle, distanceToLeading, rearVehicle, distanceToRear)
+            % set the data about leading and rear vehicle
+            
+            %% Leading vehicle
+            
+            car.sensors.leadingVehicle = leadingVehicle;
             car.sensors.distanceToLeadingVehicle = distanceToLeading;
-            %% Temp -> TODO: Carry these into Situation Awareness Block
-            if ~(leadingVehicleID==-1) % Register Front Vehicle
-                car.sensors.leadingVehicle = car.map.Vehicles(leadingVehicleID);
+            if isobject(leadingVehicle) % if there is a leading vehicle
+                car.sensors.leadingVehicleId = leadingVehicle.id;
+                car.sensors.leadingVehicleSpeed = car.sensors.leadingVehicle.dynamics.speed;
                 relSpeed = car.dynamics.speed - car.sensors.leadingVehicle.dynamics.speed;
-                car.status.ttc = distanceToLeading/relSpeed;
             else
-                car.sensors.leadingVehicle = [];
-                car.status.ttc = inf;
-                
+                car.sensors.leadingVehicleId = 0;
+                car.sensors.leadingVehicleSpeed = -1;
+                relSpeed = 0; % to get a infinite time to collision
             end
+            car.status.ttc = distanceToLeading/relSpeed; % time to collision           
             
-            if ~(rearVehicleID==-1) % Register Behind Vehicle if exists
-                car.sensors.rearVehicle = car.map.Vehicles(rearVehicleID);
-                relSpeed = car.sensors.rearVehicle.dynamics.speed-car.dynamics.speed;
-                car.sensors.rearVehicleSafetyMargin = distanceToRear/relSpeed;
+            %% Rear vehicle
+            
+            car.sensors.rearVehicle = rearVehicle;
+            if isobject(rearVehicle) % if there is a rear vehicle
+                relSpeed = car.sensors.rearVehicle.dynamics.speed - car.dynamics.speed;
             else
-                car.sensors.rearVehicle = [];
-                car.sensors.rearVehicleSafetyMargin = inf;
+                relSpeed = 0; % to get an infinite rear safety margin
             end
+            car.sensors.rearVehicleSafetyMargin = distanceToRear/relSpeed;
             
-        end
-        
-        function setEmergencyCase(car, EmergencyCase)
-            car.status.emergencyCase = EmergencyCase;
         end
         
         function setDrivingMode(car, DrivingMode)

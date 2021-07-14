@@ -31,7 +31,7 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             obj.oldNextWaypoint = 0;
         end
                
-        function [SpeedReference, DistanceReference, LeadSpeed, DrivingMode, Dist2Stop,laneChange] = stepImpl(obj,LeaderSpeed,LeaderDistance,emergencyCase)
+        function [SpeedReference, DistanceReference, LeadSpeed, DrivingMode, Dist2Stop, laneChange] = stepImpl(obj, vehicleDetected)
             laneChange = 0;
             
             %This block shouldn't run if the vehicle has reached its destination
@@ -43,50 +43,62 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
                 Dist2Stop = -1;
                 return;
             end
-                        
             
-            %Output 4: Driving mode
-            if(emergencyCase == 0)
-                % Mode 1: drive at reference speed
-                DrivingMode = 1;
-            elseif(emergencyCase == 1)
-                % Mode 2: follow leading vehicle at platoon mode
-                DrivingMode = 2;
-            elseif(emergencyCase == 2)
-                if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
-                    % Mode 3: stop
-                    DrivingMode = 3;
-                else
-                    DrivingMode = 2;
-                end
-                
-            else
-                DrivingMode = 1;
-            end
-            % Set driving mode at vehicle
-            obj.vehicle.setDrivingMode(DrivingMode);
+            % get sensor information from vehicle
+            distanceToLeadingVehicle = obj.vehicle.sensors.distanceToLeadingVehicle;
+            leadingVehicleSpeed = obj.vehicle.sensors.leadingVehicleSpeed;
             
             %Output 1: Reference Speed
             SpeedReference = obj.vehicle.dynamics.maxSpeed;
-            %Output 2: Reference distance to the vehicle in front
-            DistanceReference = LeaderDistance;
-            %Output 3: The speed of the leading vehicle
-            LeadSpeed = LeaderSpeed;
             
+            %Output 2: Reference distance to the vehicle in front
+            DistanceReference = distanceToLeadingVehicle;
+            % Limit leader distance for platoon controller
+            if DistanceReference > 1000
+                DistanceReference = 1000;
+            end
+            
+            %Output 3: The speed of the leading vehicle
+            LeadSpeed = leadingVehicleSpeed;
+            
+            %Output 4: Driving mode
+            if vehicleDetected % check if vehicle detected                           
+                if distanceToLeadingVehicle > obj.vehicle.sensors.frontSensorRange ...
+                        || distanceToLeadingVehicle < 0 % Front vehicle out of sensor range
+                    % Mode 1 = Drive at reference speed
+                    DrivingMode = 1;
+                    
+                elseif distanceToLeadingVehicle > obj.vehicle.sensors.AEBdistance
+                    % Mode 2 = Follow leading vehicle at platoon mode
+                    DrivingMode = 2;
+                    
+                elseif (leadingVehicleSpeed - obj.vehicle.dynamics.speed)>0 % Too close but leading is leaving
+                    % Mode 2 = Follow leading vehicle at platoon mode
+                    DrivingMode = 2;
+                    
+                else % Leading vehicle too close !!!
+                    % Mode 3 = Stop
+                    DrivingMode = 3;
+                    
+                end
+            else
+                % Mode 1 = Drive at reference speed
+                DrivingMode = 1;
+            end           
             
             if(obj.vehicle.pathInfo.stopAt ~= 0)
                 %Output 5: Distance to stop before a crossroad
                 Dist2Stop = norm(obj.vehicle.dynamics.position - obj.vehicle.map.get_coordinates_from_waypoint(obj.vehicle.pathInfo.stopAt));
-                DrivingMode = 4;
-                if(emergencyCase == 2)
-                    if (obj.vehicle.dynamics.speed - LeaderSpeed)>0
-                        DrivingMode = 3;
-                    end
+                if ~DrivingMode == 3
+                    % choose approach the crossroad when not stopping
+                    DrivingMode = 4;
                 end
             else
                 %Output 5: Distance to stop before a crossroad
                 Dist2Stop = 0;
             end
+            obj.vehicle.setDrivingMode(DrivingMode);           
+            
             
             %%%%% Safety planner test %%%%%
             enableSafetyPlanner = false; % condition to enable safety planner
@@ -176,7 +188,7 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
         
         function icon = getIconImpl(~)
             % Define icon for System block
-            icon = matlab.system.display.Icon("BehaviouralPlanner.png");
+            icon = matlab.system.display.Icon("situationAwareness.png");
         end
         
         function loadObjectImpl(obj,s,wasLocked)
