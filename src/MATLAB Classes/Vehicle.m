@@ -97,7 +97,7 @@ classdef Vehicle < handle
             obj.dynamics.acceleration = 0;
             obj.dynamics.steeringAngle = 0;
             
-            obj.sensors.safeDistance = 18;
+            obj.sensors.safeDistance = 5;
             obj.sensors.frontSensorRange            = frontSensorRange;
             obj.sensors.AEBdistance                 = AEBdistance;
             obj.sensors.leadingVehicleId            = 0;

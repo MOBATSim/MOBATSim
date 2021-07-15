@@ -67,6 +67,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             
             if ~isempty(obj.laneChangingPoints)
                     nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints; obj.currentPathPoints(2,:)];
+                    nextWPs = obj.updateLaneChangingNextWPs(nextWPs);
                     nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints); % Output: PathPoints for Pure Pursuit
             else
                 %obj.currentPathPoints = obj.Frenet2Cartesian(s,d,obj.currentPathPoints,obj.vehicle.pathInfo.currentTrajectory);
@@ -76,7 +77,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                     d_next=repmat(d,length(s_next),1);
                     
                     nextWPs = obj.array_Frenet2Cartesian(route,s_next,d_next,radian);
-                    nextWPs = nextWPs(1:obj.Kpoints,:);
+                    nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints);
 
                 else
                     nextWPs = obj.currentPathPoints;  % Output: PathPoints for Pure Pursuit
@@ -130,6 +131,17 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         end
         
         function nextWPs = checkNextWPsOutputSize(obj,nextWPs,K)
+            
+            % Adjust the nextWPs so that it fits the getOutputSizeMethod specifications
+            if size(nextWPs,1) < K
+                missingRowNr = K-size(nextWPs,1);
+                nextWPs(end+1:end+missingRowNr,:) = repmat(nextWPs(end,:),missingRowNr,1);
+            elseif size(nextWPs,1) > obj.Kpoints
+                nextWPs = nextWPs(1:K,:);
+            end
+        end
+        
+        function nextWPs = updateLaneChangingNextWPs(obj,nextWPs)
             % Prune reached WPs
             Vpos = [obj.vehicle.dynamics.position(1) -obj.vehicle.dynamics.position(3)];
             [~,idx] = min(vecnorm(Vpos-nextWPs,2,2));
@@ -146,15 +158,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                     obj.offset_d_flag = 0;
                 end
             end
-            % Adjust the nextWPs so that it fits the getOutputSizeMethod specifications
-            if size(nextWPs,1) < K
-                missingRowNr = K-size(nextWPs,1);
-                nextWPs(end+1:end+missingRowNr,:) = repmat(nextWPs(end,:),missingRowNr,1);
-                nextWPs(K-missingRowNr:K,2) = nextWPs(K-missingRowNr:K,2);%+obj.ref_d; % Keep the lateral offset as Ego drives
-            elseif size(nextWPs,1) > obj.Kpoints
-                nextWPs = nextWPs(1:K,:);
-            end
         end
+        
                         
         function newWP_all=generateMinJerkTrajectory(obj,car,T,changeLane)
             obj.laneChangeStartTime = obj.getCurrentTime;

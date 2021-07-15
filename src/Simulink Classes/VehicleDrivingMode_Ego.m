@@ -31,7 +31,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             %This block shouldn't run if the ego vehicle has reached its destination
             if obj.vehicle.pathInfo.destinationReached
                 SpeedReference=0;
-                DistanceReference =-1;
+                DistanceReference = -1;
                 LeadSpeed = -1;
                 DrivingMode = 1;
                 Dist2Stop = -1;
@@ -40,48 +40,67 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             end
             
             % Evaluation of lane-changing maneuver
-            laneChange = switch_decision(obj);
- 
-            % get sensor information from vehicle
-            distanceToLeadingVehicle = obj.vehicle.sensors.distanceToLeadingVehicle;
-            leadingVehicleSpeed = obj.vehicle.sensors.leadingVehicleSpeed;
-            
-            %Output 1: Reference Speed
-            SpeedReference = obj.vehicle.dynamics.maxSpeed; 
-            
-            %Output 2: Reference distance to the vehicle in front
-            DistanceReference = distanceToLeadingVehicle;
-            % Limit leader distance
-            if DistanceReference > 1000
-                DistanceReference = 1000;
+            if vehicleDetected
+                %laneChange = switch_decision(obj);
+                laneChange = 0;
+            else
+                laneChange = 0;
             end
             
-            %Output 3: The speed of the leading vehicle
-            LeadSpeed = leadingVehicleSpeed;
-            %Output 4: Driving mode
-%             if vehicleDetected % check if vehicle detected                           
-%                 if distanceToLeadingVehicle > car.sensors.frontSensorRange ...
-%                         || distanceToLeadingVehicle < 0 % Front vehicle out of sensor range
-%                     % Mode 1 = Drive at reference speed
-%                     DrivingMode = 1;
-%                     
-%                 elseif distanceToLeadingVehicle > car.sensors.AEBdistance
-%                     % Mode 2 = Follow leading vehicle at platoon mode
-%                     DrivingMode = 2;
-%                     
-%                 elseif (leadingVehicleSpeed - obj.vehicle.dynamics.speed)>0 % Too close but leading is leaving
-%                     % Mode 2 = Follow leading vehicle at platoon mode
-%                     DrivingMode = 2;
-%                     
-%                 else % Leading vehicle too close !!!
-%                     % Mode 3 = Stop
-%                     DrivingMode = 3;
-%                     
-%                 end
-%             else
-                % Mode 1 = Drive at reference speed
+            
+            if laneChange
                 DrivingMode = 1;
-%             end
+                SpeedReference=obj.vehicle.dynamics.maxSpeed;
+                DistanceReference =-1;
+                LeadSpeed = -1;
+                Dist2Stop = -1;
+                return;
+            else
+                % get sensor information from vehicle
+                distanceToLeadingVehicle = obj.vehicle.sensors.distanceToLeadingVehicle;
+                leadingVehicleSpeed = obj.vehicle.sensors.leadingVehicleSpeed;
+                %Output 1: Reference Speed
+                SpeedReference = obj.vehicle.dynamics.maxSpeed;
+                
+                %Output 2: Reference distance to the vehicle in front
+                DistanceReference = distanceToLeadingVehicle;
+                % Limit leader distance
+                if DistanceReference > 100
+                    DistanceReference = 100;
+                end
+                
+                %Output 3: The speed of the leading vehicle
+                LeadSpeed = leadingVehicleSpeed;
+                %Output 4: Driving mode
+                if vehicleDetected % check if vehicle detected
+                    if distanceToLeadingVehicle > obj.vehicle.sensors.frontSensorRange ...
+                            || distanceToLeadingVehicle < 0 % Front vehicle out of sensor range
+                        % Mode 1 = Drive at reference speed
+                        DrivingMode = 1;
+                        
+                    elseif distanceToLeadingVehicle > obj.vehicle.sensors.AEBdistance
+                        % Mode 2 = Follow leading vehicle at platoon mode
+                        DrivingMode = 2;
+                        
+                    elseif (leadingVehicleSpeed - obj.vehicle.dynamics.speed)>0 % Too close but leading vehicle is faster
+                        % Mode 2 = Follow leading vehicle at platoon mode
+                        DrivingMode = 2;
+                        
+                    else % Leading vehicle too close !!!
+                        % Mode 3 = Stop
+                        DrivingMode = 3;
+                        
+                    end
+                else
+                    %M ode 1 = Drive at reference speed
+                    DrivingMode = 1;
+                end
+                
+            end
+            
+            
+            
+            
             
             
             if(obj.vehicle.pathInfo.stopAt ~= 0)
@@ -101,9 +120,11 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
         end
         %% helper function
         function laneChange = switch_decision(obj)
-
+            
             if checkNecessaryConditionsforLaneChanging(obj)
-                if (obj.vehicle.pathInfo.laneId==0)&&(obj.vehicle.status.ttc <1.4*3)%conditions for left lane-changing
+                if (obj.vehicle.pathInfo.laneId==0)... % if vehicle is already on the right lane
+                        &&(obj.vehicle.dynamics.maxSpeed >obj.vehicle.sensors.leadingVehicleSpeed*2)... % and the vehicle is more than 2 times faster than the lead vehicle
+                        &&(obj.vehicle.sensors.distanceToLeadingVehicle <(obj.vehicle.dynamics.speed-obj.vehicle.sensors.leadingVehicleSpeed)*4)% and the vehicle can overtake in 4 seconds
                     obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
                     laneChange = 1;
                 elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.rearVehicleSafetyMargin)>2)&&(obj.vehicle.status.ttc>3.5)%conditions for right lane-changing
@@ -119,7 +140,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
         end
         
         function allowed = checkNecessaryConditionsforLaneChanging(obj)
-        % Check if currentRoute variable Exists and NON-zero and NOT Single lane
+            % Check if currentRoute variable Exists and NON-zero and NOT Single lane
             if isempty(obj.vehicle.pathInfo.currentRoute) || obj.vehicle.pathInfo.currentRoute ==0 || obj.vehicle.map.get_lane_number_from_route(obj.vehicle.pathInfo.currentRoute)==1
                 allowed = 0;
             else
@@ -129,9 +150,10 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 else
                     % Check if there is a next route
                     if length(obj.vehicle.pathInfo.path)>=3
-                        % Check if there is enough distance if the next route is also double lane
+                        % Check if there is enough distance if the next route is also double lane and straight
+                        % (plannedNextRoute for curved roads is dangerous because its curvature is unknown at the time)
                         plannedNextRoute = obj.vehicle.map.getRouteIDfromPath(obj.vehicle.pathInfo.path([2 3]));
-                        if ~isempty(plannedNextRoute) && ~(obj.vehicle.map.get_lane_number_from_route(plannedNextRoute)==1)
+                        if ~isempty(plannedNextRoute) && ~(obj.vehicle.map.get_lane_number_from_route(plannedNextRoute)==1) && (obj.vehicle.pathInfo.currentTrajectory(3,1) == 0)
                             allowed = 1;
                         else
                             allowed = 0;
