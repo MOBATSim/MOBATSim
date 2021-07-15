@@ -41,7 +41,7 @@ function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, 
     
     %% Sensors
     frontSensorRange = 100.* ones(1,nrVehicles);
-    AEBdistance = 25.* ones(1,nrVehicles);
+    AEBdistance = 15.* ones(1,nrVehicles);
     
     %% Dynamics
     % add default max speed 10 for every vehicle where no max speed is given

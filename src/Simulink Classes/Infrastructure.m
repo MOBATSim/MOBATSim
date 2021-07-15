@@ -15,14 +15,12 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         map = evalin('base','Map');
         Vehicles = evalin('base','Vehicles'); % prepare for logging test data
-        Sim_t = evalin('base','Sim_t')% simulation time
     end
     
     
     % Pre-computed constants
     properties(Access = private)
         vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow_Gui');
-        allTestData 
     end
     
     methods(Access = protected)
@@ -88,33 +86,8 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             if obj.vehicleAnalysingWindow ~= false % call only if window is generated
                 obj.vehicleAnalysingWindow.update(obj.getCurrentTime);
             end
-         %% Test data for evaluation
-            enableLogData = true; % if it is able to log test data
-            if enableLogData
-                 TestData = obj.logTestData(); 
-                 obj.allTestData = cat(3, obj.allTestData, TestData); % all test data in 3 dimension array
-                 if obj.getCurrentTime >= obj.Sim_t % the last loop of simulation, "Sim_t" can be changed in "prepare_simulator.m"
-                 assignin('base', 'allTestData', obj.allTestData); % all test data in workspace
-                 %assignin('base', 'TestData', TestData); % only test data at stop time
-                 end
-            end
         end
-        %% load test data for safety evaluation
-         function TestData = logTestData(obj)
-             TestData = zeros(10, length(obj.Vehicles));
-             for i = 1:length(obj.Vehicles)
-                 TestData(1, i) = obj.Vehicles(1,i).dynamics.speed;
-                 TestData(2, i) = obj.Vehicles(1,i).dynamics.minDeceleration;
-                 TestData(3, i) = obj.Vehicles(1,i).dynamics.position(1);
-                 TestData(4, i) = obj.Vehicles(1,i).dynamics.position(3);
-                 TestData(5, i) = obj.Vehicles(1,i).sensors.AEBdistance;
-                 TestData(6, i) = obj.Vehicles(1,i).sensors.frontSensorRange;
-                 TestData(7, i) = obj.Vehicles(1,i).status.ttc;
-                 TestData(8, i) = obj.Vehicles(1,i).sensors.distanceToLeadingVehicle;  
-                 TestData(9, i) = obj.Vehicles(1,i).status.emergencyCase;
-                 TestData(10,i) = obj.Vehicles(1,i).sensors.leadingVehicleId;           
-             end
-         end
+
   %%      
         % These have to be specified because of
         % matlab.system.mixin.Propagates, to have variable size of outputs

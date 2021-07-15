@@ -1,41 +1,36 @@
 function prepare_simulator(options)
+%% Init file for MOBATSim    
     % This function prepares the simulation
-    %   After calling this method the simulation can run
+    %   After calling this function the simulation can run
     arguments
         options.Analysing           (1,1) logical   = false                 % Activate the analysing functions
         options.modelName           (1,1) string    = 'MOBATSim'            % Name of the simulink model
         options.mapName             (1,1) string    = 'Mobatkent'           % Name of the map
         options.simStopTime         (1,1) double    = 80                    % Simulation stop time in seconds
         options.simTs               (1,1) double    = 0.02                  % Simulation time step: sample time of the simulation (may not be stable if changed)
-        options.scenarioName        (1,1) string    = 'Urban City Traffic'  % scenario sets start points, destination points and maxSpeeds
-        options.startingPoints      (1,:) double    = []                    % custom starting points for vehicles
-        options.destinationPoints   (1,:) double    = []                    % custom destination points for vehicles
-        options.maxSpeeds           (1,:) double    = []                    % custom max speeds for vehicles
+        options.scenarioName        (1,1) string    = 'Urban City Traffic'  % Scenario sets start points, destination points and maxSpeeds
+        options.startingPoints      (1,:) double    = []                    % Custom starting points for vehicles
+        options.destinationPoints   (1,:) double    = []                    % Custom destination points for vehicles
+        options.maxSpeeds           (1,:) double    = []                    % Custom max speeds for vehicles
     end
     
-    %% Init file for MOBATSim
+    %% Clear all data and release maps including invisible handles to make sure that the simulations can be repeated
     hold off
     warning off
-
-    %% Added for Fast Debug /Needs to be removed later to make sure that simulations can be repeated without "clear all"
-    if evalin('base','exist(''Map'',''var'')') 
+    
+    if evalin('base','exist(''Map'',''var'')')
         evalin('base','clear all');
-        evalin('base','close all'); %to avoid some problems with the deleted handles TODO: Try -> close('all', 'hidden')
+        evalin('base','close all');
     end
     
-
-    %% MOBATSim Configurations  
-      
+    %% MOBATSim Configurations
     configs = MOBATSimConfigurations(options.modelName, ...
                                      options.simStopTime, ...
                                      options.simTs, ...
                                      options.mapName, ...
                                      options.scenarioName);
 
-
     %% Load the Map
-    %[options.mapName, waypoints, connections_circle, connections_translation, ...
-    %  startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent();
     [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
         startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
 
@@ -45,44 +40,38 @@ function prepare_simulator(options)
     %% Load Scenario
     [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName);    
     
-    % check for custom starting options
+    % Check for custom starting options
     if ~isempty(options.startingPoints)
-        % replace starting points with custom
+        % Replace starting points with custom
         startingPoints = options.startingPoints;
     end
     if ~isempty(options.destinationPoints)
-        % replace destination points with custom
+        % Replace destination points with custom
         destinationPoints = options.destinationPoints;
     end
-    if ~isempty(options.startingPoints)
-        % replace max speeds with custom
+    if ~isempty(options.maxSpeeds)
+        % Replace max speeds with custom
         maxSpeeds = options.maxSpeeds;
     end  
         
     %% Load Vehicles
-    
-    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map); % default on - for Monte Carlo experiments comment out
-
-    %MonteCarlo_scenarios(); % default off - for Monte Carlo experiments uncomment
+    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map);
 
     %% Initialize Vehicles on the Map
     Map.Vehicles = Vehicles;
     Map.initCarDescriptionPlot();
 
-    
-    %create BOG
+    % Create Binary Occupancy Grid Map
     [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
 
-    
-    % Open MOBATSim Simulink Model
+    % Open the MOBATSim Simulink Model
     open_system(options.modelName)
-
-    %% Initalize analysing
     
-    % close vehicle analysing window
-    close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow')); % close analysing window
+    %% Initalize Analysis Window
+    % Close Vehicle Analysis Window
+    close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow'));
     
-    % generate analysing classes
+    % Generate Analysing Classes
     if options.Analysing
         vehiclePredictor = VehiclePredictor(Vehicles, 2); % part for all calculations and stuff shown on vehicle analysing window
         vehicleAnalysingWindow_Gui = VehicleAnalysingWindow_Gui(vehiclePredictor);
@@ -90,19 +79,13 @@ function prepare_simulator(options)
     else
         vehicleAnalysingWindow_Gui = false;
     end   
-    
-    
-    %% Assign all needed variables to base workspace
-    
-    assignin('base','Sim_Ts',options.simTs); % used by the model and in VehicleKinematics and V_WPGenerator_PurePursuit
-    assignin('base','Sim_t',options.simStopTime); % used by Infrastructure for a test and in the model as StopTime
-    assignin('base','configs',configs);
-    assignin('base','Map',Map); % only used by Infrastructure.m
-    assignin('base','Vehicles',Vehicles); % used by many instances
+      
+    %% Assign all needed workspace variables to the "base" workspace
+    assignin('base','Sim_Ts',options.simTs);        % Used as the block sampling time
+    assignin('base','Sim_t',options.simStopTime);   % Used by the model as the Simulation Time
+    assignin('base','configs',configs);             % MOBATSim configurations
+    assignin('base','Map',Map);                     % Used by the Infrastructure.m
+    assignin('base','Vehicles',Vehicles);           % The instances are used by the MATLAB System Blocks
     assignin('base','vehicleAnalysingWindow_Gui',vehicleAnalysingWindow_Gui);
-    
-    %% Single button execution
-    
-    %sim(options.modelName); % Uncomment this line for a single button execution
     
 end
