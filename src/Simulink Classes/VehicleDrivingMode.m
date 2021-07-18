@@ -64,7 +64,8 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             %Output 4: Driving mode
             if vehicleDetected % check if vehicle detected                           
                 if distanceToLeadingVehicle > obj.vehicle.sensors.frontSensorRange ...
-                        || distanceToLeadingVehicle < 0 % Front vehicle out of sensor range
+                        || distanceToLeadingVehicle < 0 ... % Front vehicle out of sensor range
+                        || distanceToLeadingVehicle > (obj.vehicle.dynamics.speed*1.4+obj.vehicle.sensors.safeDistance)+25
                     % Mode 1 = Drive at reference speed
                     DrivingMode = 1;
                     

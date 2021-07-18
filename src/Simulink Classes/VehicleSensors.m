@@ -128,8 +128,10 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     % This exception happens only when following vehicles
                     % reach waypoints and not update their trajectory at the right place
                     if nnz(~(car.pathInfo.currentTrajectory == car.map.getRouteDefinitionfromRouteID(car.pathInfo.currentRoute)))
+                        disp('asd')
                         %Inconsistency: The Route is updated but not the Trajectory -> TODO: Fix this issue in Vehicle Kinematics later on and remove this workaround
                     elseif nnz(~(car.pathInfo.currentTrajectory == vehicle_.pathInfo.currentTrajectory))
+                        disp('asd')
                         %Inconsistency: The Route is updated but not the Trajectory -> TODO: Fix this issue in Vehicle Kinematics later on and remove this workaround
                     elseif ~(car.pathInfo.laneId == vehicle_.pathInfo.laneId) %TODO: Check if this logic about different lanes holds for all situations
                         % Sense side vehicle for a safe lane-changing (TODO: Either carry to Side vehicle or update Rear Vehicle)
