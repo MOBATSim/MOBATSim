@@ -23,9 +23,6 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         latOffset = 0;%variable to save reference delta_d in Frenet coordinate
         trajPolynom_candidates = [];% candidate trajectories
         trajPolynom = [];% Trajectory choosen
-        %velocityPolynom = {};% reference velocity for minimum jerk trajectory
-        %accPolynom = {};%reference acc for minimum jerk trajectory
-        %jerkPolynom = {};%reference jerk for minimum jerk trajectory
         
         referencePose = [0; 0; 0];
     end
@@ -152,16 +149,6 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             end
         end
         
-        
-    end
-    
-    %% Abstract Methods / Must be implemented by Subclasses
-    methods (Abstract, Access = protected)
-        
-        % Every Waypoint generator should generate Waypoints in their own way
-        %generateStraightWaypoints(obj,car)
-        %generateLeftRotationWaypoints(obj,car)
-        %generateRightRotationWaypoints(obj,car)
         
     end
 end

@@ -4,14 +4,9 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
     
     % Pre-computed constants
     properties(Access = private)
-        latOffsetError = 0;  
         
-        % Temp variable, later should be created in the function
-        refLatSpeed =0;
-        RouteOrientation = 0;
-        
-        Kpoints = 6;
-        ref_d = 0;
+        Kpoints = 6; % The number of next path points to be output to the Pure Pursuit controller
+        ref_d = 0; % The reference lateral coordinate "d" for tracking the right or the left lane
         
         currentPathPoints =[];
         laneChangingPoints =[];
@@ -61,7 +56,6 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             %% Check and generate lane switching trajectory if commanded
             if ~(changeLane==0) && isempty(obj.trajPolynom)
                     obj.laneChangingPoints = obj.generateMinJerkTrajectory(obj.vehicle,obj.laneChangeTime,changeLane);
-                    %obj.laneChangingPoints = obj.generateLaneChanging_WPs(obj.vehicle);
                     obj.laneChangingPoints = obj.Frenet2Cartesian(s,d,obj.laneChangingPoints,obj.vehicle.pathInfo.currentTrajectory);
             end
             
@@ -70,8 +64,6 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                     nextWPs = obj.updateLaneChangingNextWPs(nextWPs);
                     nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints); % Output: PathPoints for Pure Pursuit
             else
-                %obj.currentPathPoints = obj.Frenet2Cartesian(s,d,obj.currentPathPoints,obj.vehicle.pathInfo.currentTrajectory);
-                %obj.currentPathPoints(2:end,2) = obj.currentPathPoints(2:end,2);% + obj.ref_d; % TODO + d works only in frenet not in cartesian
                 if obj.offset_d_flag
                     s_next = (s:4:obj.vehicle.pathInfo.routeEndDistance+s)';
                     d_next=repmat(d,length(s_next),1);

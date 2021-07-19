@@ -4,14 +4,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
     
     % Pre-computed constants
     properties(Access = private)
-        
-        
-        adaptiveGain = 1;%adaptive control law G for the Stanley controller
-        adaptiveGain_k0 = 2;%k0 of adaptive control law G,FKFS equation 10
-        adaptiveGain_g0 = 20;%g0 of adaptive control law G,FKFS equation 10
-        latOffsetError = 0;
-        changeLane = 0;
-        
+                
     end
     
     methods
@@ -37,9 +30,6 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
         
         
         function [poseOut, referencePose] = stepImpl(obj,pose,speed,changeLane)
-            obj.changeLane = changeLane;
-            %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
-            
             
             obj.vehicle.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
             obj.vehicle.setYawAngle(pose(3));                               % Sets the vehicle yaw angle (4th column of orientation)
@@ -52,7 +42,6 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 poseOut=pose';                      % Output1: vehicle's actual pose
                 referencePose = obj.referencePose'; % Output2: Reference pose
                 
-                obj.adaptiveGain = obj.adaptiveGain_k0/(obj.adaptiveGain_g0*obj.curvature+1);%adaptive control law G
                 return;
             end
             
@@ -81,20 +70,13 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             
             referencePose = obj.referencePose';
             poseOut=pose';
-            obj.adaptiveGain = obj.adaptiveGain_k0/(obj.adaptiveGain_g0*obj.curvature+1);%adaptive control law G
-            
-            % ISSUE 1: runs on straight road as well and becomes inf
-            % ISSUE 2: sets the vehicle's maximum speed
-            %obj.vehicle.dynamics.maxSpeed = sqrt(0.7*10/obj.curvature);%function of calculating maximum allowed speed on a curved road
             
         end
         
         
         function takeRoute(obj,car,refRoute)
             RotationVector = refRoute(3,:);
-            
-            obj.checkLaneSwitch(car);
-            
+                        
             if (RotationVector(1) == 0) %Straight motion
                 obj.move_straight(car,refRoute(2,:));
                 
@@ -114,96 +96,6 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
         end
         
         
-        function checkLaneSwitch(obj,car)
-            if ~(obj.changeLane==0) %lane switch
-                if isempty(obj.trajPolynom)
-                    
-                    candidateTrajectories = []; % Candidate trajectories stored here
-                    costsTrajectories = []; %
-                    timeFactorTrajectories = []; % candidate deltaFactor stored here !!!!!!!!!!!!!
-                    
-                    for deltaTFactor = 0.5:0.25:1.5
-                        [cand_trajPolynom, costTraj] = obj.generateMinJerkTrajectory(car,deltaTFactor);
-                        candidateTrajectories = [candidateTrajectories; cand_trajPolynom];
-                        costsTrajectories = [costsTrajectories costTraj];
-                        timeFactorTrajectories = [timeFactorTrajectories deltaTFactor]; %!!!!!!!!!!!!
-                    end
-                    
-                    obj.chooseReferenceTrajectory(car,candidateTrajectories,costsTrajectories,timeFactorTrajectories); %!!!!!!!!!!!!
-                end
-            end
-        end
-        
-        
-        function [cand_trajPolynom, costTraj]=generateMinJerkTrajectory(obj,car,deltaTfactor)
-            obj.laneSwitchStartTime = obj.getCurrentTime;
-            car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];%logging lane-switch start time
-            obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];%coordinates conversion
-            T = car.decisionUnit.LaneSwitchTime*deltaTfactor*0.5;%delta_T!!!!!!!!!!!
-            %% minimum jerk trajectory
-            x_f = T*car.dynamics.speed; % Final x coordinate
-            if obj.changeLane ==1
-                y_f = +obj.laneWidth; % Final y coordinate // -2 as an extra effort, TODO: remove -2 after lateral control is improved
-            elseif obj.changeLane ==2
-                y_f = -obj.laneWidth; % Final y coordinate
-            end
-            
-            obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
-            %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
-            syms t; % time
-            % matrix with polynom coefficients for  lateral position, speed and acceleration
-            %         a0   a1    a2     a3      a4       a5
-            d(t) = [  1     t   t^2    t^3     t^4     t^5;
-                0     1   2*t  3*t^2   4*t^3   5*t^4;
-                0     0     2    6*t  12*t^2  20*t^3];
-            % Starting conditions
-            ti = 0; % time
-            d_ti = [0; 0; 0]; % position, speed, acceleration
-            % Finish conditions
-            tf = T;
-            d_tf = [y_f; 0; 0]; % position, speed, acceleration
-            % Solve all linear equations with conditions at t = ti and t = tf
-            A = linsolve([d(ti);d(tf)], [d_ti; d_tf]);
-            A = double(A);
-            a0=A(1);
-            a1=A(2);
-            a2=A(3);
-            a3=A(4);
-            a4=A(5);
-            a5=A(6);
-            cand_trajPolynom = [a0 a1 a2 a3 a4 a5];
-            cand_traj_coeffs = [a3, a4 , a5];
-            costTraj=obj.calculateCostFunction(car, cand_traj_coeffs, tf);%!!!!!!!!!!!!!!!!!!!!!!!!
-            
-            obj.trajPolynom_candidates = [obj.trajPolynom_candidates; cand_trajPolynom];
-            
-        end
-        
-        function costTraj = calculateCostFunction(obj,car,candidateTrajectory, T) %!!!!!!!!!!!!!!!!!!!!!!
-            a3 = candidateTrajectory(1);
-            a4 = candidateTrajectory(2);
-            a5 = candidateTrajectory(3);
-            
-            % T = car.decisionUnit.LaneSwitchTime*0.5; %!!!!!!!!!!
-            t=0:0.01:T;
-            y_dddot2 = (6*a3+24*a4*t+60*a5*t.^2).^2;
-            mean_y_dddot2=sum(y_dddot2*0.01)/T;%Mean squared jerk
-            ttc_min = 1.4*obj.vehicle.decisionUnit.LaneSwitchTime+0-T/2;%minimum ttc
-            costTraj=obj.comfortGain*mean_y_dddot2+obj.safetyGain/ttc_min;
-        end
-        
-        function chooseReferenceTrajectory(obj,car, candidateTrajectories, costsTrajectories, timeFactorTrajectories) %!!!!!!!!!!!!!!!
-            %find the trajectory with minimum cost function value
-            
-            ind = costsTrajectories==min(min(costsTrajectories));
-            % TODO: precaution should be taken when two costs are same
-            % ind might not be a single number in that case, it should be validated to be only a single number not an array.
-            
-            obj.trajPolynom = candidateTrajectories(ind,:);
-            actualTimeFactor = timeFactorTrajectories(ind); %!!!!!!!!!!!!!!!!!!!!!!
-            obj.laneSwitchTime = car.decisionUnit.LaneSwitchTime*actualTimeFactor*0.5; %!!!!!!!!!!!!!!!!!
-            
-        end
         
         
         function generateStraightWaypoints(obj,car)
@@ -217,16 +109,13 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             car.pathInfo.s = s;% drived length
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
             
-            %% If lane-changing trajectory exists
-            obj.generateLaneChanging_WPs(car)
-            
             
             % ISSUE: Doesn't have meaning with LaneId-0.5
             %d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
             d = obj.latOffset;
-            obj.latOffsetError = d-vehicle_d;%lateral offset error
+            latOffsetError = d-vehicle_d;%lateral offset error
             
-            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
+            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,latOffsetError+d,radian);%Coordinate Conversion function
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
         end
         
@@ -241,14 +130,12 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian); %Coordinate Conversion function
             car.pathInfo.s = s;% Arc length
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
-            %% apply lane-changing trajectory if a Trajectory polynomial has been set
-            obj.generateLaneChanging_WPs(car);
             
             % ISSUE: Doesn't have meaning with LaneId-0.5
             d=-obj.latOffset;%negative is only for left rotating vehicle
             
-            obj.latOffsetError = d-vehicle_d;%lateral offset error
-            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
+            latOffsetError = d-vehicle_d;%lateral offset error
+            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,latOffsetError+d,radian);%Coordinate Conversion function
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
         end
         
@@ -263,47 +150,15 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             car.pathInfo.s = s;% Arc length
             car.pathInfo.routeEndDistance = routeLength-s;%distance to the current route's endpoint
             
-            obj.generateLaneChanging_WPs(car);
-            
             % ISSUE: Doesn't have meaning with LaneId-0.5
             d=obj.latOffset;%for right rotating vehicle
             
-            obj.latOffsetError = d-vehicle_d;%lateral offset error
-            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,obj.adaptiveGain*obj.latOffsetError+d,radian);%Coordinate Conversion function,obj.adaptiveGain*obj.latOffsetError is for adaptive control
+            latOffsetError = d-vehicle_d;%lateral offset error
+            [targetPosition_C,~] = obj.Frenet2Cartesian(route,s,latOffsetError+d,radian);%Coordinate Conversion function
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
             
         end
-        
-        function generateLaneChanging_WPs(obj, car)
-            if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
-                
-                t=obj.getCurrentTime-obj.laneSwitchStartTime;
-                
-                % Unfortunately there is no better way than this, double2cell -> deal is slower
-                a0=obj.trajPolynom(1);% a0
-                a1=obj.trajPolynom(2);% a1
-                a2=obj.trajPolynom(3);% a2
-                a3=obj.trajPolynom(4);% a3
-                a4=obj.trajPolynom(5);% a4
-                a5=obj.trajPolynom(6);% a5
-                
-                if t<=obj.laneSwitchTime%lane-changing is not finished
-                    obj.latOffset = a0+a1*t+a2*t^2+a3*t^3+a4*t^4+a5*t^5;% reference delta_d
-                    
-                else%lane-changing done
-                    % obj.latOffset = 0;%reset reference delta_d
-                    car.status.laneSwitchFinish = 1;%lane-changing done flag
-                    if obj.changeLane ==1%left lane-changing
-                        car.pathInfo.laneId = car.pathInfo.laneId+1;
-                    elseif obj.changeLane ==2%right lane-changing
-                        car.pathInfo.laneId = car.pathInfo.laneId-1;
-                    end
-                    %car.status.canLaneSwitch = 0;%reset flag
-                    obj.trajPolynom=[];%reset polynomial
-                end
-            end
-        end
-        
+
         function move_straight(obj,car,Destination)
             %% Reference Waypoint Generation
             obj.generateStraightWaypoints(car)
