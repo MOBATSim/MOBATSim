@@ -346,7 +346,6 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             
 
             if radian == 0%straight road
-                obj.curvature = 0;
                 
                 route_Vector = Route_endPoint-Route_StartPoint;
                 route_UnitVector = route_Vector/norm(route_Vector);
@@ -390,7 +389,6 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
                 yawAngle_in_Cartesian = lAng+sign(radian)*pi/2;% the orientation of the current point of the road(phi 4 in Frenet.xml) in cartesian coordinate
                 yawAngle_in_Cartesian = mod(yawAngle_in_Cartesian,2*pi);% orientation can not bigger than 2pi
                 yawAngle_in_Cartesian = yawAngle_in_Cartesian.*(0<=yawAngle_in_Cartesian & yawAngle_in_Cartesian <= pi) + (yawAngle_in_Cartesian - 2*pi).*(pi<yawAngle_in_Cartesian & yawAngle_in_Cartesian<2*2*pi);   % angle in (-pi,pi]
-                obj.curvature = 1/r;
             end
         end
         
