@@ -62,9 +62,11 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
                     waypointReached =1;                                 %Output 2: Waypoint Reached enabler
                     
-                    if ~isequal(previousPath,obj.vehicle.pathInfo.path) % If the vehicle changed it's planned path
+                    if ~isequal(previousPath,obj.vehicle.pathInfo.path) % If the vehicle has changed it's planned path
+                        currentRoute = obj.vehicle.generateCurrentRoute(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
+                        obj.vehicle.setCurrentRoute(currentRoute); % Set the new current Route
                         currentTrajectory = obj.vehicle.generateTrajectoryFromPath(obj.vehicle.pathInfo.path);
-                        obj.vehicle.setCurrentTrajectory(currentTrajectory); % Generate the new trajectory
+                        obj.vehicle.setCurrentTrajectory(currentTrajectory); % Generate the new current trajectory
                     end
                     
                     obj.vehicle.decisionUnit.futureData = FuturePlan;
