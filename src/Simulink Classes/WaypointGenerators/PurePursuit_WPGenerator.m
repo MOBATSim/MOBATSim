@@ -11,7 +11,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         currentPathPoints =[];
         laneChangingPoints =[];
         
-        laneChangeTime = 4;        
+        laneChangeTime = 4;
     end
     
     methods
@@ -49,11 +49,11 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             % Generate reference path following waypoints in Cartesian
             obj.currentPathPoints = obj.generatePathFollowingWaypoints(Vpos_C,obj.vehicle.pathInfo.BOGPath,obj.Kpoints);
             
-            % Convert from Cartesian to Frenet
-            [s,d,routeLength] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C);
-            obj.vehicle.updateVehicleFrenetPosition(s,d,routeLength); % Update Vehicle Frenet Coordinates
+            % Update Vehicle Frenet Coordinates
+            [s,d,routeLength] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C); % Convert from Cartesian to Frenet
+            obj.vehicle.updateVehicleFrenetPosition(s,d,routeLength); % Register the current vehicle Frenet coordinates
             
-            % Check if Waypoint is Reached
+            % Check if the Waypoint is Reached
             obj.vehicle.checkWaypointReached(currentTrajectory(2,:));          
             
             % Check and generate lane changing trajectory if commanded
@@ -64,7 +64,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             
             % If there are lane changing path points            
             if ~isempty(obj.laneChangingPoints)
-                    nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints; obj.currentPathPoints(2,:)];
+                    nextWPs =[obj.currentPathPoints(1,:); obj.laneChangingPoints];
                     nextWPs = obj.updateLaneChangingNextWPs(nextWPs);
                     nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints); % Output: PathPoints for Pure Pursuit
             else
@@ -147,11 +147,14 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             % If the lane-changing is almost done, reset the laneChangingPoints and only track the reference trajectory with +d
             if idx>size(obj.laneChangingPoints,1) 
                 obj.laneChangingPoints =[];
-                if (obj.ref_d-obj.vehicle.pathInfo.d) > 0 %left lane-changing completed
-                    obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId+0.5;
+                if abs(obj.ref_d-obj.vehicle.pathInfo.d) < 0.05 % lane-changing completed                    
+                    if obj.ref_d > 0
+                        obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId+0.5; %left lane-changing completed
+                    else
+                        obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5; %right lane-changing completed
+                    end
                     
-                elseif (obj.ref_d-obj.vehicle.pathInfo.d) < 0%right lane-changing completed
-                    obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5;
+                    
                 end
             end
         end
