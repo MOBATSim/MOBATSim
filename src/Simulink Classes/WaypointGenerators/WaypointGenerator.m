@@ -11,8 +11,6 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         vehicle
         
         laneWidth = 3.7; % Standard road width
-        laneSwitchStartPoint = [];
-        laneSwitchTargetPoint = [];
         laneSwitchStartTime = [];
         
         %% TODO: Some of these variables will be deleted

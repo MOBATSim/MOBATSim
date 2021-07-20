@@ -31,9 +31,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
         
         function [poseOut, referencePose] = stepImpl(obj,pose,speed,changeLane)
             
-            obj.vehicle.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
-            obj.vehicle.setYawAngle(pose(3));                               % Sets the vehicle yaw angle (4th column of orientation)
-            
+            obj.registerVehiclePoseAndSpeed(obj.vehicle,pose,speed); % Sets/Registers vehicle current Pose and speed
+
             pose(3)=pose(3)*180/pi; % rad to deg
             
             %This block shouldn't run if the ego vehicle: (destinationReached or Collided)
@@ -43,30 +42,16 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
                 referencePose = obj.referencePose'; % Output2: Reference pose
                 
                 return;
+            elseif obj.vehicle.pathInfo.routeCompleted % The Vehicle determines the initial trajectory and route
+                obj.vehicle.setInitialRouteAndTrajectory();
             end
+              
             
+            obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory);
+            %Output 1: Position of the vehicle
+            %Output 2: Rotation angle of the vehicle
             
-            if ~obj.vehicle.pathInfo.destinationReached
-                % The Vehicle hasn't reached its destination yet
-                obj.vehicle.updateActualSpeed(speed); % Vehicle - Set Functions
-                
-                if obj.vehicle.pathInfo.routeCompleted
-                    % The Vehicle has completed its Route
-                    nextRoute = obj.vehicle.generateCurrentRoute(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
-                    currentTrajectory = obj.vehicle.generateTrajectoryFromPath(obj.vehicle.pathInfo.path);
-                    
-                    obj.vehicle.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
-                    obj.vehicle.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
-                    obj.vehicle.setRouteCompleted(false);                % Vehicle - Set Functions
-                    
-                end
-                
-                obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory);
-                %Output 1: Position of the vehicle
-                %Output 2: Rotation angle of the vehicle
-                
-                
-            end
+
             
             referencePose = obj.referencePose';
             poseOut=pose';

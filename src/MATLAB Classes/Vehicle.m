@@ -379,10 +379,10 @@ classdef Vehicle < handle
             car.dynamics.speed = speed;
         end
         
-        function updateVehicleFrenetPosition(car, s,vehicle_d,routeLength)
-            car.pathInfo.s = s;% driven length
-            car.pathInfo.d = vehicle_d; % lateral offset
-            car.pathInfo.routeEndDistance = routeLength-s; %distance to the current routes endpoint
+        function updateVehicleFrenetPosition(car, s,d,routeLength)
+            car.pathInfo.s = s; % driven length in Frenet
+            car.pathInfo.d = d; % lateral offset in Frenet
+            car.pathInfo.routeEndDistance = routeLength-s; % Distance until the end of the current route
         end
         
         function setLastWaypoint(car,lastWaypoint)
