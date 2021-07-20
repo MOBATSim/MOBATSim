@@ -62,9 +62,11 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
                     waypointReached =1;                                 %Output 2: Waypoint Reached enabler
                     
-                    if ~isequal(previousPath,obj.vehicle.pathInfo.path) % If the vehicle changed it's planned path
+                    if ~isequal(previousPath,obj.vehicle.pathInfo.path) % If the vehicle has changed it's planned path
+                        currentRoute = obj.vehicle.generateCurrentRoute(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
+                        obj.vehicle.setCurrentRoute(currentRoute); % Set the new current Route
                         currentTrajectory = obj.vehicle.generateTrajectoryFromPath(obj.vehicle.pathInfo.path);
-                        obj.vehicle.setCurrentTrajectory(currentTrajectory); % Generate the new trajectory
+                        obj.vehicle.setCurrentTrajectory(currentTrajectory); % Generate the new current trajectory
                     end
                     
                     obj.vehicle.decisionUnit.futureData = FuturePlan;
@@ -98,15 +100,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
             if crossroadId ~=0
                 
-                %log speed and energydata for current crossroad
-                if crossroadZone > 1
-                    car.dataLog.speedInCrossroad = [car.dataLog.speedInCrossroad car.dynamics.speed];
-                end
-                
-                if crossroadZone > 0
-                    car.dataLog.speedInCrossroad2 = [car.dataLog.speedInCrossroad2 car.dynamics.speed];
-                end
-                
+                %log speed and energydata for current crossroad               
                 if car.map.crossroadUnits(crossroadId).params.conventionalTrafficLights == 1
                     car.map.crossroadUnits(crossroadId).updateTrafficStateFromConventionalSystem(obj.getCurrentTime);
                 end

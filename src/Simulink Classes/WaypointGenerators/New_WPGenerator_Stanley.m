@@ -3,15 +3,16 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
     %
     
     % Pre-computed constants
-    properties(Access = private)     
-        latOffsetError = 0;
-        changeLane = 0;
+    properties(Access = private)
+        referencePose = [0; 0; 0];
+        trajPolynom = [];% Trajectory for lane changing
         
-        % Temp variable, later should be created in the function
+        % Temp variable, later should be created in the function        
+        laneSwitchTime = 4;%delta_T
+        laneSwitchStartTime = [];
         refLatSpeed =0;
+        latOffset = 0;%variable to save reference delta_d in Frenet coordinate
         RouteOrientation = 0;
-        
-        pathPoints =[];
     end
     
     methods
@@ -35,12 +36,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
 
  
         
-        function [ReferenceYaw, referencePose, refLatSpeed] = stepImpl(obj,pose,speed,changeLane)
-            % Lane changing signal
-            obj.changeLane = changeLane;
-                        
-            %transfer from local coordinate obj.vehicle.dynamics.speed = v_pos(4);
-            
+        function [ReferenceYaw, referencePose, refLatSpeed] = stepImpl(obj,pose,speed,changeLane)           
             
             obj.vehicle.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
             obj.vehicle.setYawAngle(pose(3));                               % Sets the vehicle yaw angle (4th column of orientation)
@@ -71,7 +67,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
                     
                 end
                                 
-                obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory);
+                obj.takeRoute(obj.vehicle,obj.vehicle.pathInfo.currentTrajectory,changeLane);
             
             end
             
@@ -81,11 +77,11 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         end
         
 
-        function takeRoute(obj,car,refRoute)
+        function takeRoute(obj,car,refRoute,changeLane)
             RotationVector = refRoute(3,:);
             
             %% Generate lane switching trajectory if commanded
-            if ~(obj.changeLane==0)
+            if ~(changeLane==0)
                 if isempty(obj.trajPolynom)
                     obj.checkLaneSwitch(car);
                 end
@@ -110,24 +106,22 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         end
         
         
-        function checkLaneSwitch(obj,car)                                                         
+        function checkLaneSwitch(obj,car,changeLane)                                                         
                     %obj.laneSwitchTime % Delta T for lane changing = defined in the superclass
-                    obj.trajPolynom = obj.generateMinJerkTrajectory(car,obj.laneSwitchTime); 
+                    obj.trajPolynom = obj.generateMinJerkTrajectory(car,obj.laneSwitchTime,changeLane); 
         end
         
         
-        function trajPolynom=generateMinJerkTrajectory(obj,car,T)
+        function trajPolynom=generateMinJerkTrajectory(obj,car,T,changeLane)
             obj.laneSwitchStartTime = obj.getCurrentTime;
-            car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];%logging lane-switch start time
-            obj.laneSwitchStartPoint = car.dynamics.position.*[1 1 -1];%coordinates conversion
             
             %% Minimum Jerk Trajectory Generation
             x_f = T*car.dynamics.speed; % Target longitudinal - s coordinate
             
-            if obj.changeLane ==1 % To the left
+            if changeLane ==1 % To the left
                 y_f = car.pathInfo.d+obj.laneWidth; % Target lateral - d coordinate
                 car.pathInfo.laneId = car.pathInfo.laneId + 0.5; % Means the vehicle is in between lanes - switching to left
-            elseif obj.changeLane ==2 % To the right
+            elseif changeLane ==2 % To the right
                 y_f = car.pathInfo.d-obj.laneWidth; % Target lateral - d coordinate
                 car.pathInfo.laneId = car.pathInfo.laneId - 0.5; % Means the vehicle is in between lanes - switching to right
                 % car.pathInfo.d is used to compansate for the small
@@ -135,7 +129,6 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
                 % more lanes than two
             end           
 
-            obj.laneSwitchTargetPoint=[x_f 0 y_f]+obj.laneSwitchStartPoint;
             %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
             syms t; % time
             % matrix with polynom coefficients for  lateral position, speed and acceleration
@@ -185,9 +178,9 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             % ISSUE: Doesn't have meaning with LaneId-0.5 
             %d=obj.laneWidth*(car.pathInfo.laneId-0.5)+obj.latOffset;
             d = obj.latOffset;
-            obj.latOffsetError = d-vehicle_d;%lateral offset error
+            latOffsetError = d-vehicle_d;%lateral offset error
             
-            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,obj.latOffsetError+d,radian);%Coordinate Conversion function
+            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,latOffsetError+d,radian);%Coordinate Conversion function
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
             % TRY
             obj.RouteOrientation = roadOrientation;
@@ -216,8 +209,8 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             % ISSUE: Doesn't have meaning with LaneId-0.5 
             d=-obj.latOffset;%negative is only for left rotating vehicle -> Check if minus is right
             
-            obj.latOffsetError = d-vehicle_d;%lateral offset error
-            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,obj.latOffsetError+d,radian);%Coordinate Conversion function
+            latOffsetError = d-vehicle_d;%lateral offset error
+            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,latOffsetError+d,radian);%Coordinate Conversion function
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
             % TRY
             obj.RouteOrientation = roadOrientation;
@@ -245,8 +238,8 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             % ISSUE: Doesn't have meaning with LaneId-0.5 
             d=obj.latOffset;%for right rotating vehicle
             
-            obj.latOffsetError = d-vehicle_d;%lateral offset error
-            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,obj.latOffsetError+d,radian);%Coordinate Conversion function
+            latOffsetError = d-vehicle_d;%lateral offset error
+            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,latOffsetError+d,radian);%Coordinate Conversion function
             obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
             % TRY
             obj.RouteOrientation = roadOrientation;
@@ -275,7 +268,6 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             else%lane-changing done
                 obj.refLatSpeed = 0;
                 obj.latOffset = car.pathInfo.d;%reset reference delta_d
-                car.status.laneSwitchFinish = 1;%lane-changing done flag
                 if (y_f-car.pathInfo.d) > 0 %left lane-changing
                     car.pathInfo.laneId = car.pathInfo.laneId+0.5;
                 elseif (y_f-car.pathInfo.d) < 0%right lane-changing
@@ -346,7 +338,6 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             
 
             if radian == 0%straight road
-                obj.curvature = 0;
                 
                 route_Vector = Route_endPoint-Route_StartPoint;
                 route_UnitVector = route_Vector/norm(route_Vector);
@@ -390,7 +381,6 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
                 yawAngle_in_Cartesian = lAng+sign(radian)*pi/2;% the orientation of the current point of the road(phi 4 in Frenet.xml) in cartesian coordinate
                 yawAngle_in_Cartesian = mod(yawAngle_in_Cartesian,2*pi);% orientation can not bigger than 2pi
                 yawAngle_in_Cartesian = yawAngle_in_Cartesian.*(0<=yawAngle_in_Cartesian & yawAngle_in_Cartesian <= pi) + (yawAngle_in_Cartesian - 2*pi).*(pi<yawAngle_in_Cartesian & yawAngle_in_Cartesian<2*2*pi);   % angle in (-pi,pi]
-                obj.curvature = 1/r;
             end
         end
         

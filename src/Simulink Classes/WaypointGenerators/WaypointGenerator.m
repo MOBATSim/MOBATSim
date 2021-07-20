@@ -11,23 +11,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         vehicle
         
         laneWidth = 3.7; % Standard road width
-        curvature = 0;%curvature of the current road
-        laneSwitchStartPoint = [];
-        laneSwitchTargetPoint = [];
-        laneSwitchStartTime = [];
         
-        %% TODO: Some of these variables will be deleted
-        safetyGain = 80;%k_2 in cost function(FKFS)
-        comfortGain = 0.05;%k_1 in cost function(FKFS)
-        laneSwitchTime = 4;%delta_T, choosen by cost function
-        latOffset = 0;%variable to save reference delta_d in Frenet coordinate
-        trajPolynom_candidates = [];% candidate trajectories
-        trajPolynom = [];% Trajectory choosen
-        %velocityPolynom = {};% reference velocity for minimum jerk trajectory
-        %accPolynom = {};%reference acc for minimum jerk trajectory
-        %jerkPolynom = {};%reference jerk for minimum jerk trajectory
-        
-        referencePose = [0; 0; 0];
     end
     
     methods
@@ -110,7 +94,6 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             
             
             if radian == 0%straight road
-                obj.curvature = 0;
                 
                 route_Vector = Route_endPoint-Route_StartPoint;
                 route_UnitVector = route_Vector/norm(route_Vector);
@@ -148,20 +131,9 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
                 yawAngle_in_Cartesian = lAng+sign(radian)*pi/2;% the orientation of the current point of the road(phi 4 in Frenet.xml) in cartesian coordinate
                 yawAngle_in_Cartesian = mod(yawAngle_in_Cartesian,2*pi);% orientation can not bigger than 2pi
                 yawAngle_in_Cartesian = yawAngle_in_Cartesian.*(0<=yawAngle_in_Cartesian & yawAngle_in_Cartesian <= pi) + (yawAngle_in_Cartesian - 2*pi).*(pi<yawAngle_in_Cartesian & yawAngle_in_Cartesian<2*2*pi);   % angle in (-pi,pi]
-                obj.curvature = 1/r;
             end
         end
         
-        
-    end
-    
-    %% Abstract Methods / Must be implemented by Subclasses
-    methods (Abstract, Access = protected)
-        
-        % Every Waypoint generator should generate Waypoints in their own way
-        %generateStraightWaypoints(obj,car)
-        %generateLeftRotationWaypoints(obj,car)
-        %generateRightRotationWaypoints(obj,car)
         
     end
 end

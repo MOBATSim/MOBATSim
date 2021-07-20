@@ -11,6 +11,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
     % Pre-computed constants
     properties(Access = private)
         vehicle
+        LaneChangeTime = 4;
     end
     
     methods
@@ -41,8 +42,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             
             % Evaluation of lane-changing maneuver
             if vehicleDetected
-                %laneChange = switch_decision(obj);
-                laneChange = 0;
+                laneChange = switch_decision(obj);
             else
                 laneChange = 0;
             end
@@ -74,7 +74,8 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 %Output 4: Driving mode
                 if vehicleDetected % check if vehicle detected
                     if distanceToLeadingVehicle > obj.vehicle.sensors.frontSensorRange ...
-                            || distanceToLeadingVehicle < 0 % Front vehicle out of sensor range
+                            || distanceToLeadingVehicle < 0 ... % Front vehicle out of sensor range
+                            || distanceToLeadingVehicle > 4*(obj.vehicle.dynamics.speed-LeadSpeed) % There is enough distance
                         % Mode 1 = Drive at reference speed
                         DrivingMode = 1;
                         
@@ -145,7 +146,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 allowed = 0;
             else
                 % Check if there is enough distance in the route
-                if (obj.vehicle.pathInfo.routeEndDistance> obj.vehicle.dynamics.speed*obj.vehicle.decisionUnit.LaneSwitchTime)
+                if (obj.vehicle.pathInfo.routeEndDistance> obj.vehicle.dynamics.speed*obj.LaneChangeTime)
                     allowed = 1;
                 else
                     % Check if there is a next route
