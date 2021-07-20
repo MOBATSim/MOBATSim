@@ -11,11 +11,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         vehicle
         
         laneWidth = 3.7; % Standard road width
-        laneSwitchStartTime = [];
         
-        %% TODO: Some of these variables will be deleted
-        laneSwitchTime = 4;%delta_T, choosen by cost function
-        latOffset = 0;%variable to save reference delta_d in Frenet coordinate              
     end
     
     methods

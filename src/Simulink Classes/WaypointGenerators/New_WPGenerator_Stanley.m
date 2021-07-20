@@ -6,10 +6,13 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
     properties(Access = private)
         referencePose = [0; 0; 0];
         trajPolynom = [];% Trajectory for lane changing
-
-        % Temp variable, later should be created in the function
+        
+        % Temp variable, later should be created in the function        
+        laneSwitchTime = 4;%delta_T
+        laneSwitchStartTime = [];
         refLatSpeed =0;
-        RouteOrientation = 0;      
+        latOffset = 0;%variable to save reference delta_d in Frenet coordinate
+        RouteOrientation = 0;
     end
     
     methods
@@ -265,7 +268,6 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             else%lane-changing done
                 obj.refLatSpeed = 0;
                 obj.latOffset = car.pathInfo.d;%reset reference delta_d
-                car.status.laneSwitchFinish = 1;%lane-changing done flag
                 if (y_f-car.pathInfo.d) > 0 %left lane-changing
                     car.pathInfo.laneId = car.pathInfo.laneId+0.5;
                 elseif (y_f-car.pathInfo.d) < 0%right lane-changing

@@ -11,6 +11,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
     % Pre-computed constants
     properties(Access = private)
         vehicle
+        LaneChangeTime = 4;
     end
     
     methods
@@ -145,7 +146,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 allowed = 0;
             else
                 % Check if there is enough distance in the route
-                if (obj.vehicle.pathInfo.routeEndDistance> obj.vehicle.dynamics.speed*obj.vehicle.decisionUnit.LaneSwitchTime)
+                if (obj.vehicle.pathInfo.routeEndDistance> obj.vehicle.dynamics.speed*obj.LaneChangeTime)
                     allowed = 1;
                 else
                     % Check if there is a next route

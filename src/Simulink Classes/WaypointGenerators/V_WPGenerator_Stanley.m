@@ -5,6 +5,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
     % Pre-computed constants
     properties(Access = private)
         referencePose = [0; 0; 0];
+        latOffset = 0;%variable to save reference delta_d in Frenet coordinate
     end
     
     methods

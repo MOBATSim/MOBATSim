@@ -110,7 +110,6 @@ classdef Vehicle < handle
             obj.setStopStatus(true);
             obj.setCollided(false); % vehicle has no collision
             obj.status.canLaneSwitch = 0; % Check where they are set and get
-            obj.status.laneSwitchFinish = 0; % Check where they are set and get
             obj.status.ttc = 1000;
             
             obj.pathInfo.currentTrajectory = [];
@@ -123,23 +122,20 @@ classdef Vehicle < handle
             obj.pathInfo.routeCompleted = true;
             obj.pathInfo.calculateNewPathFlag = true;
             obj.pathInfo.path = 0;
-            obj.pathInfo.staticPath = 0; % Check where they are set and get
             obj.pathInfo.BOGPath = [];
-            obj.pathInfo.laneId = 0;  % Check where they are set and get
+            obj.pathInfo.laneId = 0;  % Left Lane = 1, in between = 0.5, Right Lane = 0
             obj.pathInfo.s = 0; % Check where they are set and get
             obj.pathInfo.d = 0; % Check where they are set and get
             obj.pathInfo.routeEndDistance = []; % Check where they are set and get
                         
             obj.map = map;
             
-            %obj.decisionUnit = DecisionUnit;
             obj.decisionUnit.Map = map;
             obj.decisionUnit.accelerationPhase = zeros(1,5);
             obj.decisionUnit.initialFutureData = [];
             obj.decisionUnit.futureData = [];
             obj.decisionUnit.brakingFlag = 0;
             obj.decisionUnit.inCrossroad = [0 0];
-            obj.decisionUnit.LaneSwitchTime = 4; % Check where they are set and get
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
