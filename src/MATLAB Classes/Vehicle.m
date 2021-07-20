@@ -62,12 +62,7 @@ classdef Vehicle < handle
         %         calculateNewPathFlag
         %         path
         %         BOGPath
-        dataLog
-        %         timeStamps
-        %         totalTravelTime
-        %         speed
-        %         speedInCrossroad        Speed from braking to leaving point
-        %         speedInCrossroad2       Speed from starting to leaving point
+
         decisionUnit
         %         Map
         %         accelerationPhase
@@ -134,16 +129,7 @@ classdef Vehicle < handle
             obj.pathInfo.s = 0; % Check where they are set and get
             obj.pathInfo.d = 0; % Check where they are set and get
             obj.pathInfo.routeEndDistance = []; % Check where they are set and get
-            
-            obj.dataLog.totalTravelTime = 0;
-            obj.dataLog.speedInCrossroad = [];
-            obj.dataLog.speedInCrossroad2 = [];
-            obj.dataLog.speed = [];
-            obj.dataLog.laneSwitchStartTime = []; % Check where they are set and get
-            obj.dataLog.laneSwitchEndTime = []; % Check where they are set and get
-            obj.dataLog.MinJerkTrajPolynom = {};% Check where they are set and get
-            
-            
+                        
             obj.map = map;
             
             %obj.decisionUnit = DecisionUnit;
@@ -176,7 +162,7 @@ classdef Vehicle < handle
                     car.pathInfo.path(1) = [];
                     currentTrajectory = car.generateTrajectoryFromPath(car.pathInfo.path);
                     car.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
-                    car.pathInfo.calculateNewPathFlag = 1; % TODO: check
+                    car.pathInfo.calculateNewPathFlag = 1; % Path Planner should calculate a new path to account for road changes
                 end
                 bool = true;
             else
@@ -292,7 +278,7 @@ classdef Vehicle < handle
         
         function reached = checkifDestinationReached(car)
             reached = false;
-            if car.dataLog.totalTravelTime ==0 % The vehicle hasn't reached before so it is equal to zero
+            if ~car.pathInfo.destinationReached % The vehicle hasn't reached before so it is equal to zero
                 if car.pathInfo.lastWaypoint == car.pathInfo.destinationPoint
                     % Vehicle has reached its destination
                     reached = car.setDestinationReached(true);
@@ -300,12 +286,6 @@ classdef Vehicle < handle
                     car.setStopStatus(true);
                     % Close the V2V connection
                     car.V2VdataLink(car.V2VdataLink==1) =0;
-                end
-            else
-                if car.pathInfo.destinationReached
-                    reached = true;
-                else
-                    reached = false; %This case should never happen
                 end
             end
         end
@@ -396,12 +376,6 @@ classdef Vehicle < handle
         function bool = setDestinationReached(car,bool)
             car.pathInfo.destinationReached = bool;
             car.setRouteCompleted(bool);
-            
-            if bool
-                car.dataLog.totalTravelTime = get_param('MOBATSim','SimulationTime'); % TODO: Check how we can send the time into this function
-            else
-                car.dataLog.totalTravelTime = 0;
-            end
             
         end
                

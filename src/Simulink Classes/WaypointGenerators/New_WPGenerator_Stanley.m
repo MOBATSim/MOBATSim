@@ -3,7 +3,10 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
     %
     
     % Pre-computed constants
-    properties(Access = private)           
+    properties(Access = private)
+        referencePose = [0; 0; 0];
+        trajPolynom = [];% Trajectory for lane changing
+
         % Temp variable, later should be created in the function
         refLatSpeed =0;
         RouteOrientation = 0;      
@@ -108,7 +111,6 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
         
         function trajPolynom=generateMinJerkTrajectory(obj,car,T,changeLane)
             obj.laneSwitchStartTime = obj.getCurrentTime;
-            car.dataLog.laneSwitchStartTime = [car.dataLog.laneSwitchStartTime obj.laneSwitchStartTime];%logging lane-switch start time
             
             %% Minimum Jerk Trajectory Generation
             x_f = T*car.dynamics.speed; % Target longitudinal - s coordinate

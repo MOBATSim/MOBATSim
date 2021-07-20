@@ -11,10 +11,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         currentPathPoints =[];
         laneChangingPoints =[];
         
-        laneChangeTime = 4;
-        laneChangeStartTime = [];
-        offset_d_flag = 0;
-        
+        laneChangeTime = 4;        
     end
     
     methods
@@ -73,7 +70,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                     nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints); % Output: PathPoints for Pure Pursuit
             else
                 % If there are no lane changing path points
-                if obj.offset_d_flag % If the vehicle is on the left lane +d must be added
+                if (obj.vehicle.pathInfo.laneId == 1) % If the vehicle is on the left lane +d must be added
                     s_next = (s:4:obj.vehicle.pathInfo.routeEndDistance+s)';
                     d_next=repmat(obj.ref_d,length(s_next),1);
                     
@@ -148,26 +145,20 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             [~,idx] = min(vecnorm(Vpos-nextWPs,2,2));
             nextWPs = nextWPs(idx:end,:);
             
-            % If the lane-changing is almost done, reset the trajPolynom so track the reference trajectory with +d
+            % If the lane-changing is almost done, reset the laneChangingPoints and only track the reference trajectory with +d
             if idx>size(obj.laneChangingPoints,1) 
-                obj.trajPolynom=[];%reset polynomial
                 obj.laneChangingPoints =[];
                 if (obj.ref_d-obj.vehicle.pathInfo.d) > 0 %left lane-changing
                     obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId+0.5;
-                    obj.offset_d_flag = 1;
                 elseif (obj.ref_d-obj.vehicle.pathInfo.d) < 0%right lane-changing
                     obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5;
-                    obj.offset_d_flag = 0;
                 end
             end
         end
         
                         
         function newWP_all=generateMinJerkTrajectory(obj,car,tf,changeLane)
-            obj.laneChangeStartTime = obj.getCurrentTime;
-            car.dataLog.laneChangeStartTime = [car.dataLog.laneSwitchStartTime obj.laneChangeStartTime];%logging lane-switch start time
-            
-            %% Minimum Jerk Trajectory Generation            
+            % Minimum Jerk Trajectory Generation            
             if changeLane ==1 % To the left
                 y_f = obj.laneWidth; % Target lateral - d coordinate
                 car.pathInfo.laneId = car.pathInfo.laneId + 0.5; % Means the vehicle is in between lanes - switching to left
@@ -176,7 +167,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 car.pathInfo.laneId = car.pathInfo.laneId - 0.5; % Means the vehicle is in between lanes - switching to right
             end
                         
-            %%  Minimun jerk trajectory function for the calculation in y direction (Lateral)
+            %  Minimun jerk trajectory function for the calculation in d direction (Lateral)
             syms t; % time
             % matrix with polynom coefficients for  lateral position, speed and acceleration
             %         a0   a1    a2     a3      a4       a5
@@ -198,9 +189,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             a3=A(4);
             a4=A(5);
             a5=A(6);
-            
-            obj.trajPolynom = [a0 a1 a2 a3 a4 a5];
-            
+                        
             tP = 0:0.2:tf;
             newWP_s=car.dynamics.speed*tP; % Target longitudinal - s coordinate
             newWP_d=a0+a1*tP+a2*tP.^2+a3*tP.^3+a4*tP.^4+a5*tP.^5;

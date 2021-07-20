@@ -15,10 +15,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
         
         %% TODO: Some of these variables will be deleted
         laneSwitchTime = 4;%delta_T, choosen by cost function
-        latOffset = 0;%variable to save reference delta_d in Frenet coordinate
-        trajPolynom = [];% Trajectory choosen
-        
-        referencePose = [0; 0; 0];
+        latOffset = 0;%variable to save reference delta_d in Frenet coordinate              
     end
     
     methods

@@ -4,7 +4,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
     
     % Pre-computed constants
     properties(Access = private)
-                
+        referencePose = [0; 0; 0];
     end
     
     methods

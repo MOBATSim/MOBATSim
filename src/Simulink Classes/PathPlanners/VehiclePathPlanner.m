@@ -100,15 +100,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
             if crossroadId ~=0
                 
-                %log speed and energydata for current crossroad
-                if crossroadZone > 1
-                    car.dataLog.speedInCrossroad = [car.dataLog.speedInCrossroad car.dynamics.speed];
-                end
-                
-                if crossroadZone > 0
-                    car.dataLog.speedInCrossroad2 = [car.dataLog.speedInCrossroad2 car.dynamics.speed];
-                end
-                
+                %log speed and energydata for current crossroad               
                 if car.map.crossroadUnits(crossroadId).params.conventionalTrafficLights == 1
                     car.map.crossroadUnits(crossroadId).updateTrafficStateFromConventionalSystem(obj.getCurrentTime);
                 end
