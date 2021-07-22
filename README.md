@@ -1,45 +1,58 @@
 # **MOBATSim**
 
-MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB Simulink that allows the user to assess vehicle level and traffic level safety by a 3D traffic simulation.
-
-Website: https://mobatsim.com/
-
 [![View MOBATSim_OpenSource on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/78444-mobatsim_opensource)
 [![Download](https://img.shields.io/badge/MATLAB-R2020a-brightgreen)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
+[![Download](https://img.shields.io/badge/MATLAB-R2020b-brightgreen)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
 [![View Article](https://img.shields.io/badge/DOI-https%3A%2F%2Fdoi.org%2F10.1016%2Fj.ifacol.2019.08.077-blue)](https://www.sciencedirect.com/science/article/pii/S2405896319304100)
 
+MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB Simulink that allows the user to assess vehicle level and traffic level safety by a 3D traffic simulation.
 
 <img src="img/logo_big.jpg" alt="Combined Image" />
 
-- [**MOBATSim**](#--mobatsim--)
-  * [Overview](#overview)
-  * [Author](#author)
-  * [Copyright Notice](#copyright-notice)
-- [**Requirements**](#--requirements--)
-  * [MATLAB version requirement](#matlab-version-requirement)
-  * [Toolbox requirements](#toolbox-requirements)
+Automated driving systems tend to be more important and sophisticated in the nearest future. The functional safety assessment for these systems becomes an urgent necessity for the transition to full autonomy. Testing these functions consisting of decision and control algorithms with a lot of variables and parameters in a unified manner is a daunting task. Threat assessment has to be made for vehicles to actively avoid hazardous situations. This requires the analysis of complex operational profiles such as routing, intersection management and collision prediction in an environment where multiple vehicles are in different positions, and traveling at different speeds. There is a need for a comprehensive traffic simulation framework which models not only the functionality of the vehicles but also the interactions between them.
 
-Overview
----
+More detailed information about the scientific papers related to MOBATSim can be found on the [website](https://mobatsim.com/)
+
+## **Requirements**
+
+#### MATLAB version requirement
+
+MOBATSim is continuously updated with the newest version of MATLABÂ®. Therefore, at this moment, the requirement is MATLAB 2020a or MATLAB 2020b.
+
+#### Toolbox Requirements
+
+* Simulink 3D Animation Toolboxâ„¢ (Only required for the 3D Animation Model)
+* Model Predictive Control Toolboxâ„¢  (will be soon required)
+* Simulink Coverageâ„¢ (will be required in the next versions for testing and code coverage analyses)
+
+## Workflow
+
 MOBATSim has a project file which includes the Simulink files and their paths. As you run `MOBATSim.prj`, a GUI will open and you can run simulations from that GUI. The live script is a more detailed documentation than this one.
 
 ```
 uiopen('\MOBATSim.prj',1)
 ```
+To get to know the whole workflow in MOBATSim, take a look at the documentation and tutorials on our [website](https://mobatsim.com/). They explain how to run a simulation (including map generation, initializing vehicles and loading a driving szenario) and how to edit/ analyse the simulation.
 
-Authors
----
+## Simulation Framework
+
+An overview of the simulation framework is shown in the figure below. For more details on the models, please refer to our [documentation](https://mobatsim.com/about-mobatsim/) on our website.
+
+<img src="img/SimulationEnvironment.png" alt="Combined Image" />
+
+## Authors and Contact
+
 Main Author: Mustafa Saraoglu
 
-Copyright Notice
----
-© 2017 MOBATSim.
+Message us via the [contact form](https://mobatsim.com/contact/) on our website
 
-## Citation
+## Copyright Notice
 
-Please cite as:
+Â© 2017 MOBATSim.
 
-Saraoglu, M., Morozov, A., & Janschek, K. (2019). MOBATSim: MOdel-Based Autonomous Traffic Simulation Framework for Fault-Error-Failure Chain Analysis. IFAC-PapersOnLine, 52(8), 239–244. Elsevier BV. Retrieved from https://doi.org/10.1016%2Fj.ifacol.2019.08.077
+### Please Cite as:
+
+Saraoglu, M., Morozov, A., & Janschek, K. (2019). MOBATSim: MOdel-Based Autonomous Traffic Simulation Framework for Fault-Error-Failure Chain Analysis. IFAC-PapersOnLine, 52(8), 239â€“244. Elsevier BV. Retrieved from https://doi.org/10.1016%2Fj.ifacol.2019.08.077
 
 BibTex:
 ```
@@ -58,15 +71,3 @@ BibTex:
                 keywords = "Autonomous driving, Fault injection, Error propagation, Safety analysis, Traffic simulator",
                 }
 ```
-
-# **Requirements**
-
-MATLAB version requirement
----
-MOBATSim is continuously updated with different versions of MATLAB. Therefore, at this moment, the requirement is MATLAB 2020a.
-
-Toolbox Requirements
----
-* Simulink 3D Animation Toolbox™ (required for the 3D Animation Model)
-* Model Predictive Control Toolbox™  (will be soon required)
-* Simulink Coverage™ (will be required in the next versions for testing and code coverage analyses)
