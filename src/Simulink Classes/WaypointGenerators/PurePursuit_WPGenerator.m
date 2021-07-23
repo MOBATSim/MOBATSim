@@ -93,9 +93,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             if radian == 0
                 route_Vector = route(2,:)-route(1,:);
                 route_UnitVector = route_Vector/norm(route_Vector);
-                yawAngle_in_Cartesian = atan2(route_UnitVector(2),route_UnitVector(1));
-                sideVector = [cos(yawAngle_in_Cartesian+pi/2) sin(yawAngle_in_Cartesian+pi/2)];
-                sideVector = round(sideVector,5);
+                yawAngle_in_Cartesian = atan2d(route_UnitVector(2),route_UnitVector(1));
+                sideVector = [cosd(yawAngle_in_Cartesian+90) sind(yawAngle_in_Cartesian+90)];
                 
                 % Lane Changing Points were already in Frenet - only "s" value should be added
                 % "d" is already the reference
@@ -230,9 +229,9 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             if radian ==0
                 route_Vector = endPoint-startPoint;
                 route_UnitVector = route_Vector/norm(route_Vector);
-                yawAngle_in_Cartesian = atan2(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate               
-                sideVector = [cos(yawAngle_in_Cartesian+pi/2) sin(yawAngle_in_Cartesian+pi/2)];%vector of the tangent line of reference line
-                sideVector = round(sideVector,5);
+                yawAngle_in_Cartesian = atan2d(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate               
+                sideVector = [cosd(yawAngle_in_Cartesian+90) sind(yawAngle_in_Cartesian+90)];%vector of the tangent line of reference line
+
                 position_Cart = s*route_UnitVector+d*sideVector+startPoint;% position= start point + length of journey
             else
 
