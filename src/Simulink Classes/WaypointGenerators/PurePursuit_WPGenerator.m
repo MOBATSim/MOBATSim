@@ -160,7 +160,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         end
         
                         
-        function newWP_all=generateMinJerkTrajectory(obj,car,tf,changeLane)
+        function newWP_all=generateMinJerkTrajectory(obj,car,t_f,changeLane)
             % Minimum Jerk Trajectory Generation            
             if changeLane ==1 % To the left
                 y_f = obj.laneWidth; % Target lateral - d coordinate
@@ -170,34 +170,34 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 car.pathInfo.laneId = car.pathInfo.laneId - 0.5; % Means the vehicle is in between lanes - switching to right
             end
                         
-            %  Minimun jerk trajectory function for the calculation in d direction (Lateral)
-            syms t; % time
-            % matrix with polynom coefficients for  lateral position, speed and acceleration
-            %         a0   a1    a2     a3      a4       a5
-            d(t) = [  1     t   t^2    t^3     t^4     t^5;
-                0     1   2*t  3*t^2   4*t^3   5*t^4;
-                0     0     2    6*t  12*t^2  20*t^3];
+            % Minimun jerk trajectory function for the calculation in "d" direction (Frenet Lateral)
+            % Determining the polynomial coefficients for  lateral position, speed and acceleration
+
             % Initial boundary conditions
-            ti = 0; % time
-            d_ti = [car.pathInfo.d; 0; 0]; % Initial position, speed, acceleration
+            t_i = 0; % initial time always set to zero (relatively makes no difference)
+            d_i =   [  1     t_i   t_i^2    t_i^3     t_i^4     t_i^5];
+            d_dot_i = [0     1   2*t_i  3*t_i^2   4*t_i^3   5*t_i^4];
+            d_ddot_i = [0     0     2    6*t_i  12*t_i^2  20*t_i^3];
+            
+            d_ti = [car.pathInfo.d; 0; 0]; % Initial lateral position, speed, acceleration
             
             % Final boundary conditions
-            d_tf = [y_f; 0; 0]; % Final position, speed, acceleration
-            % Solve all linear equations with conditions at t = ti and t = tf
-            A = linsolve([d(ti);d(tf)], [d_ti; d_tf]);
-            A = double(A);
-            a0=A(1);
-            a1=A(2);
-            a2=A(3);
-            a3=A(4);
-            a4=A(5);
-            a5=A(6);
+            d_f =   [  1     t_f   t_f^2    t_f^3     t_f^4     t_f^5];
+            d_dot_f = [0     1   2*t_f  3*t_f^2   4*t_f^3   5*t_f^4];
+            d_ddot_f = [0     0     2    6*t_f  12*t_f^2  20*t_f^3];
+            
+            d_tf = [y_f; 0; 0]; % Final lateral position, speed, acceleration
+            
+            A = [d_i;d_dot_i;d_ddot_i;d_f;d_dot_f;d_ddot_f];
+            B = [d_ti;d_tf];
+            % Solve for the coefficients using 6 linear equations with 6 boundary conditions at t = ti and t = tf
+            a = linsolve(A,B);
                         
-            tP = 0:0.2:tf;
-            newWP_s=car.dynamics.speed*tP; % Target longitudinal - s coordinate
-            newWP_d=a0+a1*tP+a2*tP.^2+a3*tP.^3+a4*tP.^4+a5*tP.^5;
-            newWP_all =  [newWP_s' newWP_d'];
-            obj.ref_d = a0+a1*tf+a2*tf^2+a3*tf^3+a4*tf^4+a5*tf^5;
+            tP = 0:0.2:t_f; % To calculate the lane changing path points for the trajectory with 0.2 s intervals
+            newWP_s=car.dynamics.speed*tP; % Target longitudinal - "s" coordinates of the path points
+            newWP_d=a(1)+a(2)*tP+a(3)*tP.^2+a(4)*tP.^3+a(5)*tP.^4+a(6)*tP.^5; % "d" coordinates corresponding to the trajectory
+            newWP_all =  [newWP_s' newWP_d']; % create a set of path points
+            obj.ref_d = a(1)+a(2)*t_f+a(3)*t_f^2+a(4)*t_f^3+a(5)*t_f^4+a(6)*t_f^5; % reference "d" value by the end of the lane changing maneuver
         end
         
         function currentPathPoints = generatePathFollowingWaypoints(~,Vpos,nextPoints,K)
@@ -218,65 +218,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
         end
   
         %% Override for experiment - Later incorparate into WaypointGenerator.m
-          
-        function [s,d,routeLength] = Cartesian2Frenet(obj,currentTrajectory,Vpos_C)
-            %Transform a position in Cartesian coordinate into Frenet coordinate
-            
-            %Function Inputs:
-            %route:                 2x2 array [x_s y_s;x_e y_e] the starting point and the ending point of the road
-            %vehiclePos_Cartesian:  1x2 array [x y] in Cartesian coordinate
-            %radian:                The angle of the whole curved road, positive for counterclockwise turn
-            
-            %Function Output:
-            %yawAngle_in_Cartesian: The angle of the tangent vector on the reference roadline(d=0)
-            %s:                     Traversed length along the reference roadline
-            %d:                     Vertical offset distance to the reference roadline,positive d means away from center
-            
-            route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
-            radian = currentTrajectory(3,1);%radian of the curved road, is 0 for straight road
-            Route_StartPoint = route(1,:);
-            Route_endPoint = route(2,:);
-            
-            
-            if radian == 0%straight road                
-                route_Vector = Route_endPoint-Route_StartPoint;
-                route_UnitVector = route_Vector/norm(route_Vector);
-                yawAngle_in_Cartesian = atan2(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate
-                posVector = Vpos_C-Route_StartPoint;
-                
-                sideVector = [cos(yawAngle_in_Cartesian+pi/2) sin(yawAngle_in_Cartesian+pi/2)];% side vector is perpendicular to the route
-                sideVector = round(sideVector,5); % Round is used to eliminate very small machine errors from calculation
-                                
-                s = dot(posVector,route_UnitVector);% the projection of posVector on route_UnitVector
-                
-                d = dot(posVector,sideVector);% the projection of posVector on sideVector
-                routeLength = norm(Route_endPoint-Route_StartPoint);% the length of the route_Vector
-                
-            else % Curved Road
-                
-                rotationCenter = obj.vehicle.pathInfo.currentTrajectory(3,[2 3]); % Get the rotation center
-                rotationCenter(2) = -rotationCenter(2); % Transform the coordinate
-                r = norm(Route_StartPoint-rotationCenter); % Get the radius of the rotation
-                startPointVector = Route_StartPoint-rotationCenter;% vector OP_1 in Frenet.xml
-                                
-                
-                l = Vpos_C-rotationCenter;% the vector from rotation center to position
-                d = abs(r-norm(l)); % Previously: d = norm(l)-r;
-                
-                start_dot_l = dot(startPointVector,l);% |startPointVetor|*|l|*sin(angle)
-                start_cross_l = sign(radian)*(startPointVector(1)*l(2)-startPointVector(2)*l(1));% |startPointVetor|*|l|*cos(angle)
-                % TODO: Check + - according to radian and
-                % obj.vehicle.pathInfo.currentTrajectory values
-                angle = -atan2(start_cross_l,start_dot_l);% the angle between startPointVector and vector l, tan(angle) = start_dot_l/start_cross_1
-                if mod(angle,2*pi) > abs(radian)% judge if the radian of the angle bigger than the radian of the road
-                    start_cross_l = -(startPointVector(1)*l(2)-startPointVector(2)*l(1));
-                    angle = -atan2(start_cross_l,start_dot_l);
-                end
-                s = angle*r;
-                routeLength = abs(radian)*r;
-            end
-        end
-        
+
         function position_Cart = array_Frenet2Cartesian(~,currentTrajectory,s,d)
             
             route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route

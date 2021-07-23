@@ -74,7 +74,64 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             end
         end
         
-        function [s,d,yawAngle_in_Cartesian,routeLength] = Cartesian2Frenet(obj,route,vehiclePos_Cartesian,radian)
+        function [s,d,routeLength] = Cartesian2Frenet(obj,currentTrajectory,Vpos_C)
+            %Transform a position in Cartesian coordinate into Frenet coordinate
+            
+            %Function Inputs:
+            %route:                 2x2 array [x_s y_s;x_e y_e] the starting point and the ending point of the road
+            %vehiclePos_Cartesian:  1x2 array [x y] in Cartesian coordinate
+            %radian:                The angle of the whole curved road, positive for counterclockwise turn
+            
+            %Function Output:
+            %yawAngle_in_Cartesian: The angle of the tangent vector on the reference roadline(d=0)
+            %s:                     Traversed length along the reference roadline
+            %d:                     Vertical offset distance to the reference roadline,positive d means away from center
+            
+            route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
+            radian = currentTrajectory(3,1);%radian of the curved road, is 0 for straight road
+            Route_StartPoint = route(1,:);
+            Route_endPoint = route(2,:);
+            
+            
+            if radian == 0%straight road
+                route_Vector = Route_endPoint-Route_StartPoint;
+                route_UnitVector = route_Vector/norm(route_Vector);
+                yawAngle_in_Cartesian = atan2d(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate
+                posVector = Vpos_C-Route_StartPoint;
+                
+                sideVector = [cosd(yawAngle_in_Cartesian+90) sind(yawAngle_in_Cartesian+90)];% side vector is perpendicular to the route
+                
+                s = dot(posVector,route_UnitVector);% the projection of posVector on route_UnitVector
+                
+                d = dot(posVector,sideVector);% the projection of posVector on sideVector
+                routeLength = norm(Route_endPoint-Route_StartPoint);% the length of the route_Vector
+                
+            else % Curved Road
+                
+                rotationCenter = obj.vehicle.pathInfo.currentTrajectory(3,[2 3]); % Get the rotation center
+                rotationCenter(2) = -rotationCenter(2); % Transform the coordinate
+                r = norm(Route_StartPoint-rotationCenter); % Get the radius of the rotation
+                startPointVector = Route_StartPoint-rotationCenter;% vector OP_1 in Frenet.xml
+                
+                
+                l = Vpos_C-rotationCenter;% the vector from rotation center to position
+                d = abs(r-norm(l)); % Previously: d = norm(l)-r;
+                
+                start_dot_l = dot(startPointVector,l);% |startPointVetor|*|l|*sin(angle)
+                start_cross_l = sign(radian)*(startPointVector(1)*l(2)-startPointVector(2)*l(1));% |startPointVetor|*|l|*cos(angle)
+                % TODO: Check + - according to radian and
+                % obj.vehicle.pathInfo.currentTrajectory values
+                angle = -atan2(start_cross_l,start_dot_l);% the angle between startPointVector and vector l, tan(angle) = start_dot_l/start_cross_1
+                if mod(angle,2*pi) > abs(radian)% judge if the radian of the angle bigger than the radian of the road
+                    start_cross_l = -(startPointVector(1)*l(2)-startPointVector(2)*l(1));
+                    angle = -atan2(start_cross_l,start_dot_l);
+                end
+                s = angle*r;
+                routeLength = abs(radian)*r;
+            end
+        end
+        
+        function [s,d,yawAngle_in_Cartesian,routeLength] = OLD_Cartesian2Frenet(obj,route,vehiclePos_Cartesian,radian)
             
             %this function transform a position in Cartesian coordinate into Frenet coordinate
             

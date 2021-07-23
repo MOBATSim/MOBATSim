@@ -47,7 +47,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             radian = currentTrajectory(3,1)*(-right);%radian of the curved road, is 0 for straight road
             
             % Cartesian to Frenet Coordinate Transformation
-            [s,d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,Vpos_C,radian);
+            %[s,d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,Vpos_C,radian);
+            [s,d,routeLength] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C);
             
             % Update Vehicle Frenet Coordinates
             obj.vehicle.updateVehicleFrenetPosition(s,d,routeLength)
@@ -67,7 +68,6 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             poseOut=pose';
             
         end
-        
         
         function icon = getIconImpl(~)
             % Define icon for System block
