@@ -17,13 +17,16 @@ More detailed information about the scientific papers related to MOBATSim can be
 
 #### MATLAB version requirement
 
-MOBATSim is continuously updated with the newest version of MATLAB®. Therefore, at this moment, the requirement is MATLAB 2020a or MATLAB 2020b.
+MOBATSim is continuously updated with the newest version of MATLAB®. Therefore, at this moment, the requirement is MATLAB R2021a or MATLAB R2020b.
 
 #### Toolbox Requirements
 
-* Simulink 3D Animation Toolbox™ (Only required for the 3D Animation Model)
-* Model Predictive Control Toolbox™  (will be soon required)
-* Simulink Coverage™ (will be required in the next versions for testing and code coverage analyses)
+* Simulink® and Stateflow®
+* Automated Driving Toolbox™
+* Robotics System Toolbox™
+* Control Toolbox™
+* Model Predictive Control Toolbox™  (only if MPC-Cruise Controller Block is used)
+* Simulink 3D Animation Toolbox™ (Only required for the 3D Animation Virtual World)
 
 ## Workflow
 
@@ -50,7 +53,7 @@ Message us via the [contact form](https://mobatsim.com/contact/) on our website
 
 © 2017 MOBATSim.
 
-### Please Cite as:
+### Please Cite Our Related Paper as:
 
 Saraoglu, M., Morozov, A., & Janschek, K. (2019). MOBATSim: MOdel-Based Autonomous Traffic Simulation Framework for Fault-Error-Failure Chain Analysis. IFAC-PapersOnLine, 52(8), 239–244. Elsevier BV. Retrieved from https://doi.org/10.1016%2Fj.ifacol.2019.08.077
 
