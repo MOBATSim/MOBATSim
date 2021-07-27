@@ -13,32 +13,12 @@ function prepare_simulator(options)
         options.destinationPoints   (1,:) double    = []                    % Custom destination points for vehicles
         options.maxSpeeds           (1,:) double    = []                    % Custom max speeds for vehicles
     end
-    
-    %% Clear all data and release maps including invisible handles to make sure that the simulations can be repeated
+       
     hold off
     warning off
-    
-    if evalin('base','exist(''Map'',''var'')')
-        evalin('base','clear all');
-        evalin('base','close all');
-    end
-    
-    %% MOBATSim Configurations
-    configs = MOBATSimConfigurations(options.modelName, ...
-                                     options.simStopTime, ...
-                                     options.simTs, ...
-                                     options.mapName, ...
-                                     options.scenarioName);
-
-    %% Load the Map
-    [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
-        startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
-
-    %% Generate the 2D Map and the instance from the Map class
-    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
 
     %% Load Scenario
-    [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName);    
+    [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName);
     
     % Check for custom starting options
     if ~isempty(options.startingPoints)
@@ -52,8 +32,43 @@ function prepare_simulator(options)
     if ~isempty(options.maxSpeeds)
         % Replace max speeds with custom
         maxSpeeds = options.maxSpeeds;
-    end  
+    end
+    
+
+    %% Check if configuration has changed
+    
+    if evalin('base','exist(''configs'',''var'')')
+        oldConfig = evalin('base','configs');
+        differences = oldConfig.compareConfigurations(options.modelName, ...
+                                                        options.mapName, ...
+                                                        options.simStopTime, ...
+                                                        options.simTs, ...                                     
+                                                        options.scenarioName, ...
+                                                        startingPoints, ...
+                                                        destinationPoints, ...
+                                                        maxSpeeds, ...
+                                                        options.Analysing);
         
+        % if there are no differences, preparation is done                                        
+        if ~any(differences)
+            return
+        end
+    end
+    
+    %% Clear all data and release maps including invisible handles to make sure that the simulations can be repeated
+    
+    if evalin('base','exist(''Map'',''var'')')
+        evalin('base','clear all');
+        evalin('base','close all');
+    end
+
+    %% Load the Map
+    [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
+        startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
+
+    %% Generate the 2D Map and the instance from the Map class
+    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
+
     %% Load Vehicles
     Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map);
 
@@ -80,6 +95,18 @@ function prepare_simulator(options)
         vehicleAnalysingWindow_Gui = false;
     end   
       
+    %% Make a MOBATSim Configuration
+    configs = MOBATSimConfigurations(options.modelName, ...
+                                     options.mapName, ...
+                                     options.simStopTime, ...
+                                     options.simTs, ...                                     
+                                     options.scenarioName, ...
+                                     startingPoints, ...
+                                     destinationPoints, ...
+                                     maxSpeeds, ...
+                                     options.Analysing);
+        
+
     %% Assign all needed workspace variables to the "base" workspace
     assignin('base','Sim_Ts',options.simTs);        % Used as the block sampling time
     assignin('base','Sim_t',options.simStopTime);   % Used by the model as the Simulation Time
