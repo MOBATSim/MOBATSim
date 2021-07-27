@@ -26,7 +26,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             
             obj.registerVehiclePoseAndSpeed(obj.vehicle,pose,speed); % Sets/Registers vehicle current Pose and speed
             
-            pose(3)=pose(3)*180/pi; % rad to deg
+            pose(3) = rad2deg(pose(3)); % rad to deg
             
             %This block shouldn't run if the ego vehicle: (destinationReached or Collided)
             if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
@@ -57,7 +57,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,-d,radian);%Coordinate Conversion function
             
             %Required format for the Stanley controller
-            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); roadOrientation*180/pi];
+            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); rad2deg(roadOrientation)];
             
             % Check if the Waypoint is Reached
             obj.vehicle.checkWaypointReached(currentTrajectory(2,:));
