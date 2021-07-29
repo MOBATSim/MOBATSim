@@ -35,9 +35,14 @@ function prepare_simulator(options)
     end
     
 
-    %% Check if configuration has changed
+    %% Check if preparation can be skipped
+
+    % initial conditions
+    simNotStarted = isempty(evalin('base','who(''-regexp'', ''V[0-9]*_'')'));
+    configExists = evalin('base','exist(''configs'',''var'')');
     
-    if evalin('base','exist(''configs'',''var'')')
+    if simNotStarted && configExists
+
         oldConfig = evalin('base','configs');
         differences = oldConfig.compareConfigurations(options.modelName, ...
                                                         options.mapName, ...
