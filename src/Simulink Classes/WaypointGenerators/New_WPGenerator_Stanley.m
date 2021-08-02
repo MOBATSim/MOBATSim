@@ -41,7 +41,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             obj.vehicle.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
             obj.vehicle.setYawAngle(pose(3));                               % Sets the vehicle yaw angle (4th column of orientation)
             
-            pose(3)=pose(3)*180/pi; % rad to deg
+            pose(3)= rad2deg(pose(3)); % rad to deg
             
             %This block shouldn't run if the ego vehicle: (destinationReached or Collided)
             if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
@@ -181,7 +181,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             latOffsetError = d-vehicle_d;%lateral offset error
             
             [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,latOffsetError+d,radian);%Coordinate Conversion function
-            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
+            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); rad2deg(orientation_C)];%Required format for the Stanley controller
             % TRY
             obj.RouteOrientation = roadOrientation;
         end
@@ -211,7 +211,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             
             latOffsetError = d-vehicle_d;%lateral offset error
             [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,latOffsetError+d,radian);%Coordinate Conversion function
-            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
+            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); rad2deg(orientation_C)];%Required format for the Stanley controller
             % TRY
             obj.RouteOrientation = roadOrientation;
         end
@@ -240,7 +240,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             
             latOffsetError = d-vehicle_d;%lateral offset error
             [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,latOffsetError+d,radian);%Coordinate Conversion function
-            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); orientation_C*180/pi];%Required format for the Stanley controller
+            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); rad2deg(orientation_C)];%Required format for the Stanley controller
             % TRY
             obj.RouteOrientation = roadOrientation;
         end

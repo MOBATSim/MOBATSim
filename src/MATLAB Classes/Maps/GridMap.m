@@ -2,18 +2,34 @@ classdef GridMap < Map
     % Grid-based Map object inherited from Map Class
     
     properties
-        bogMap;                        % Binary occupancy grid object
-        gridResolution = 0.25;         % Number of cells per 1 length unit on the map
-        gridLocationMap;               % Container object to store and load all GridLocation objects
-        xOffset;                       % Offset to transform visualization into bog coordinates if necessary
-        yOffset;
-        colorMatrix;
-        lineWidth;
+        bogMap                          % Binary occupancy grid object
+        gridResolution = 0.25           % Number of cells per 1 length unit on the map
+        gridLocationMap                 % Container object to store and load all GridLocation objects
+        xOffset                         % Offset to transform visualization into bog coordinates if necessary
+        yOffset
+        colorMatrix
+        lineWidth
     end
     
     methods
         %% constructor and visualization creation
-        function obj = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
+        function obj = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber, configuration)
+                        
+            arguments
+                mapName                         (1,1) string
+                waypoints                       (:,3) double
+                connections_circle              (:,7) double
+                connections_translation         (:,3) double
+                startingNodes                   (:,:) double
+                brakingNodes                    (:,:) double
+                stoppingNodes                   (:,:) double
+                leavingNodes                    (:,:) double
+                Route_LaneNumber                (:,2) double
+                configuration.showLaneNumbers   (1,1) logical   = true                 % Plot the number of every lane at the map
+                configuration.showNodeNumbers   (1,1) logical   = true                 % Plot the number of every node at the map
+            end
+            
+            
             obj = obj@Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber);
             
             obj.colorMatrix = [1 0 0;       %1  red
@@ -31,7 +47,7 @@ classdef GridMap < Map
             obj.lineWidth = 3;
             
             % Plot the map on the figure
-            generateMapVisual(obj,false,obj.lineWidth);
+            obj.generateMapVisual(false,obj.lineWidth, configuration.showLaneNumbers, configuration.showNodeNumbers);
             % BOG will be created in the prepare_simulator script, to include all vehicle data
             
             %create bog container map object
@@ -41,7 +57,7 @@ classdef GridMap < Map
             
         end %Constructor
         
-        function generateMapVisual(obj,displayInGridCoordinates,lineWidth)
+        function generateMapVisual(obj,displayInGridCoordinates,lineWidth, showLaneNumbers, showNodeNumbers)
             %This function plots any XML Map of MOBATSim. Keep in mind that you have to
             %do a coordinate transformation between normal coordinates and grid / mobatsim
             %Input: XML Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
@@ -127,12 +143,13 @@ classdef GridMap < Map
                 plot(points(:,1),points(:,2),'color',[0 1 0],'LineWidth',obj.Route_LaneNumber(c,2)*lineWidth);
                 % save text position in array
                 textPosCurves(c,:) = points(round(length(points)/2,0),:);                
+            end            
+            if showLaneNumbers
+                %plot text next to curve
+                text(textPosCurves(:,1),textPosCurves(:,2),num2str((1:nrCurves)'),'color',[0 0.5 0], ...
+                                                                                  'VerticalAlignment','top', ...
+                                                                                  'HorizontalAlignment','center');
             end
-            %plot text next to curve
-            text(textPosCurves(:,1),textPosCurves(:,2),num2str((1:nrCurves)'),'color',[0 0.5 0], ...
-                                                                              'VerticalAlignment','top', ...
-                                                                              'HorizontalAlignment','center');
-            
             %% generate straight lines
             
             % x positions of start and end of straight roads
@@ -151,20 +168,25 @@ classdef GridMap < Map
             % position text at the middle of the straight road
             textPosX = (xPositions(:,2) + xPositions(:,1))/2;
             textPosY = (yPositions(:,2) + yPositions(:,1))/2;
-            % plot text next to straight roads
-            text(textPosX,textPosY,num2str((nrCurves+1:nrCurves+nrStraights)'),'color',[0 0.5 0], ...
-                                                                               'VerticalAlignment','top', ...
-                                                                               'HorizontalAlignment','left');
             
+            if showLaneNumbers
+                % plot text next to straight roads
+                text(textPosX,textPosY,num2str((nrCurves+1:nrCurves+nrStraights)'),'color',[0 0.5 0], ...
+                                                                                   'VerticalAlignment','top', ...
+                                                                                   'HorizontalAlignment','left');
+            end
             %% plot nodes with numbers
             % 2D positions
             pos = [waypoints(:,1),waypoints(:,3)];
             %plot dot and number in a dark blue
             plot(pos(:,1),pos(:,2),'Marker','o','MarkerFaceColor',[0 0.2 0.5],'color',[0 0.2 0.5],'LineStyle','none');
-            % plot number next to waypoints           
-            text(pos(:,1),pos(:,2),num2str((1:nrWaypoints)'),'color',[0 0.2 0.5], ...
-                                                             'HorizontalAlignment','center', ...
-                                                             'VerticalAlignment','top');
+            
+            if showNodeNumbers
+                % plot number next to waypoints           
+                text(pos(:,1),pos(:,2),num2str((1:nrWaypoints)'),'color',[0 0.2 0.5], ...
+                                                                 'HorizontalAlignment','center', ...
+                                                                 'VerticalAlignment','top');
+            end
             %%
             hold off
             
