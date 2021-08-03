@@ -28,6 +28,10 @@ classdef CrossroadUnit < handle
                          % brakingFlag: 1 -> Stop!, 0 -> Go!
         dataLog
             % traffic state
+        
+        % Test new kind of checking:
+        overlappingTable   % each column contains the overlapping directions of direction in header
+        vehicleOrders      % array with rows containing the vehicle id and the order ( 0 = go, 1 = stop)
     end
     
     methods
@@ -75,8 +79,66 @@ classdef CrossroadUnit < handle
            
             
             obj.dataLog.trafficState = []; 
-            
+            % Test
+            obj.overlappingTable = obj.generateOverlappingTable();
         end %Constructor
+        
+        function overlappingTable = generateOverlappingTable(~)
+            % table containing all overlapping lanes on crossroad
+            
+            NE = ["ES";"EW";"SN";"WN"];
+            NS = ["EW";"SW";"WE";"WN"];
+            ES = ["NE";"SN";"SW";"WE"];
+            EW = ["NE";"NS";"SN";"WN"];
+            SN = ["NE";"ES";"EW";"WE"];
+            SW = ["NS";"ES";"WN";"WE"];
+            WN = ["NE";"NS";"EW";"SW"];
+            WE = ["NS";"ES";"SN";"SW"];
+            
+            
+            overlappingTable = table(NE,NS,ES,EW,SN,SW,WN,WE);
+        end
+        
+        function conflictingDirections = getConflictingDirections(obj, ownDirection, occupiedDirections)
+            % Check if the direction the car wants to travel isnt
+            % conflicting with a direction already occupied.
+            
+            % There are two different types of conflicting directions:
+            % 1. Direction is connected to own direction
+            % 2. Direction is crossing own direction
+            
+            % dont check if no occupied directions
+            if occupiedDirections == ""
+                conflictingDirections = [];
+                return
+            end
+                       
+            % get all directions with same start direction
+            conflictingStarts = occupiedDirections(ismember(extract(occupiedDirections,1), extract(ownDirection,1)));
+            
+            % get all directions with same destination direction
+            conflictingDestinations = occupiedDirections(ismember(extract(occupiedDirections,2), extract(ownDirection,2)));          
+            
+            % check if own direction is crossing other lanes that are occupied
+            if any(all(ownDirection == string(cat(1,obj.overlappingTable.Properties.VariableNames{:})),2))
+                % own direction is part of the overlapping table
+                
+                % get all occupied overlapping lanes
+                conflictingCrossings = occupiedDirections(ismember(string(occupiedDirections), obj.overlappingTable.(ownDirection)),:);                    
+            else
+                conflictingCrossings = [];
+            end
+            
+            % add all conflicting path to one array
+            conflictingDirections = [conflictingStarts; conflictingDestinations; conflictingCrossings];
+            
+            % remove directions that are the SAME as the own direction,
+            % because more than one vehicle can travel in same direction
+            % without colliding
+            conflictingDirections(string(conflictingDirections) == ownDirection,:) = [];
+
+                        
+        end
         
         function trafficStateLookupTable = generateLookupTable(~)
             
@@ -200,6 +262,7 @@ classdef CrossroadUnit < handle
                     % built up by the two following functions
                     obj.getPriorityGroup(vehicles, currentTime); % get first-order vehicle group
                     obj.deriveMPCSG(vehicles, currentTime); % derive the optimal CSG for this group of cars
+                    obj.calculateVehicleOrders(); % get a order for every vehicle in priority group
                 end
             end
             
@@ -245,6 +308,7 @@ classdef CrossroadUnit < handle
                     if obj.params.conventionalTrafficLights == 0
                         obj.getPriorityGroup(vehicles,currentTime); % get first order vehicle group
                         obj.deriveMPCSG(vehicles, currentTime); % derive the optimal CSG for this group of cars
+                        obj.calculateVehicleOrders(); % get a order for every vehicle in priority group
                     end
                 end
             end
@@ -389,7 +453,9 @@ classdef CrossroadUnit < handle
             % criticalDeltaTTR
             
             priorityQueue = sortrows( obj.arrivingQueue,4); % priority queue has the same structure as the arriving queue
-            difference = diff(priorityQueue(:,4)) < obj.params.criticalDeltaTTR;
+            difference = diff(priorityQueue(:,4)) < obj.params.criticalDeltaTTR; % TODO: Error when vehicle is too close behind an other,
+            % but without triggering criticalDeltaTTR is can make it over
+            % the crossroad without getting the brake flag
             
             % find first order priority group seperated by critical
             % delta ttr from other vehicles
@@ -402,23 +468,240 @@ classdef CrossroadUnit < handle
             
         end
         
+        function stringDirections = convertNumToStringDirection(~, numDirections)
+            % intermediate solution: convert direction in numberic numbers
+            % (13) to string direction ("NS")
+            stringDirections = strings(size(numDirections,1),1);
+            for i=1:size(numDirections,1)
+                for j=1:size(numDirections,2)
+                    switch numDirections(i,j)
+                        case 1
+                            stringDirections(i) = stringDirections(i) + "N";
+                        case 2
+                            stringDirections(i) = stringDirections(i) + "E";
+                        case 3
+                            stringDirections(i) = stringDirections(i) + "S";
+                        case 4
+                            stringDirections(i) = stringDirections(i) + "W";
+                    end
+                end
+            end
+        end
+        
+        function numDirections = convertStringToNumDirection(~, stringDirections)
+            % Convert direction in string ("NS") to numeric direction ("13")
+            
+            numDirections = zeros(size(stringDirections,1));
+            for i=1:length(stringDirections)
+                for j=1:strlength(stringDirections(i))
+                    switch extract(stringDirections(i),j)
+                        case "N"
+                            numDirections(i,j) = 1;
+                        case "E"
+                            numDirections(i,j) = 2;
+                        case "S"
+                            numDirections(i,j) = 3;
+                        case "W"
+                            numDirections(i,j) = 4;
+                    end
+                end
+            end
+        end
+
+        function calculateVehicleOrders(obj)
+             % find highest priority crossroad configuration
+            % 1. start with the first car in priority group
+            % 2. check if car can pass crossroad with current cars on it
+            % 3. when yes, add car to a crossroad list and select an other
+            % car
+            % 4. when no, choose an other car and start with point 2
+            % 5. also check next selected car and continue selecting until
+            % no car is left in list.
+            % 6. Save priority value
+            % 7. Do this for every car-combination in list.
+            
+            % get directions from cars already on crossroad
+            if ~isempty(obj.leavingQueue)
+                occupiedDirections = obj.convertNumToStringDirection(obj.leavingQueue(:,2:3)); % TODO: make this conversion unneccessaty
+            else
+                occupiedDirections = "";
+            end
+            
+            % group of vehicles that want to pass the crossroad in string
+            % directions TODO: dont convert, make priority group also in
+            % string
+            % vehicle id | direction ("NS") | priority
+            vehicleQueue = [obj.priorityGroup(:,1) obj.convertNumToStringDirection(obj.priorityGroup(:,2:3)) obj.priorityGroup(:,5)];
+            
+            % priority list contains the vehicle priorities and the
+            % matching directions
+            priorityList = [vehicleQueue(:,2) vehicleQueue(:,3)];
+            
+
+            % get all possible directions that are not blocked by vehicles
+            % at crossroad
+            possibleDirections = obj.getPossibleDirections(vehicleQueue(:,2), occupiedDirections);
+            
+            % add all possible directions for crossroad to list of possible
+            % combinations
+            allCombinations = possibleDirections;
+            
+            % a combination is a row of directions that could applied to
+            % the crossroad without overlapping or crossing
+            
+
+
+            % test every possible comibination and when there are more combinations,
+            % add them to the array and test them too until there are no more new combinations
+
+            % example combination array:
+            % 1. NS
+            % 2. NW
+            % 3. NS | EW
+            % 4. NS | ES
+            % 5. NW | ...
+            % ...
+            i=1;
+            while i <=size(allCombinations,1)
+                                
+                currentCombination = allCombinations(i,:);
+                
+                newCombinations = obj.extendCombinations(currentCombination, possibleDirections, occupiedDirections);
+                
+                % add the new combinations to all combinations
+                allCombinations(end+1:end+size(newCombinations,1),1:size(newCombinations,2)) = newCombinations;
+                
+                % select next combination entry
+                i = i+1;
+            end
+            
+            
+            %% Priority assignment
+            
+            combinationsPriority = zeros(size(allCombinations)); % used for manipulation
+            currentPriorityList = priorityList; % used for manipulation
+            
+            for i=1:size(allCombinations,1)
+                for j=1:size(allCombinations,2)
+                    % replace the direction in the combinations array with the corresponding priority
+                    % value from priority list
+                    if ~ismissing(allCombinations(i,j)) % dont check if there is no direction in combination array
+                        % find current direction in priority list to get
+                        % priority
+                        priorityIndex = find(allCombinations(i,j) == currentPriorityList(:,1));
+                        combinationsPriority(i,j) = str2double(currentPriorityList(priorityIndex(1),2));
+                        % more than one car can drive in one direction
+                        % so same directions could be in priority list multiple
+                        % times.
+                        % Order is not important, because same direction can
+                        % every time cross or not cross crossroad and only
+                        % highest priority sum is considered, so wrong partial
+                        % assignment does not matter.
+                        currentPriorityList(priorityIndex(1),:) = []; % delete entry for this combination
+                    end
+                end
+                % restore priority list
+                currentPriorityList = priorityList;
+            end
+            
+            % Sum the priority in the combinations
+            combinationsPriority = sum(combinationsPriority,2);
+
+            % Select combination with highest priority
+            [highestPriority, indexHighestPriority] = max(combinationsPriority);
+            selectedCombination = allCombinations(indexHighestPriority,:);
+            
+            % Define commands for every vehicle (stop, go)
+            obj.vehicleOrders = obj.defineVehicleOrders(vehicleQueue(:,1:2), selectedCombination);
+            
+            % print values to test for differences
+            %[obj.brakingFlagArray; 0,0; obj.vehicleOrders]
+        end
+        
+        function vehicleOrders = defineVehicleOrders(~, vehicleQueue, allowedDirections)
+            % define a order for every vehicle from vehicle queue
+            %   vehicleQueue        list of vehicle ids and direction they are driving
+            %   selectedCombination list of all allowed directions to drive on crossroad
+            
+            % no allowed direction exists
+            if isempty(allowedDirections)
+                allowedDirections = "";
+            end
+            
+            % vehicle orders contains car id and stop/go command
+            vehicleOrders = [str2double(vehicleQueue(:,1)) ones(size(vehicleQueue,1),1)];
+            % make a list with stop and go signals for all cars from vehicleQueue
+            for i=1:size(vehicleQueue,1)
+                % 'go' when own direction one of allowed directions
+                if any(vehicleQueue(i,2) == allowedDirections)
+                    vehicleOrders(i,2) = 0; % 0 means 'go' for the car
+                else
+                    vehicleOrders(i,2) = 1; % 1 means 'stop' for the car
+                end
+            end
+                
+        end
+        
+        function extendedCombinations = extendCombinations(obj, combination, possibleDirections, occupiedDirections)
+            % get all possible combinations that extend the input
+            % combination with one of the possible directions but do not
+            % conflict with the occupied directions
+                        
+            % do not use missing strings in combination (could happen when
+            % other combinations in array are longer)
+            combination = combination(~ismissing(combination));
+            
+            % assume that current combination is added to the occupied
+            % directions
+            assumedOccupied = [occupiedDirections;combination'];
+            
+            % remove current combination directions from the still possible
+            % directions
+            for j=1:length(combination)
+                % only remove the first direction there could be more
+                % vehicles driving in the same direction
+                directionIndex = find(combination(1,j) == possibleDirections);
+                possibleDirections(directionIndex(1)) = [];
+            end
+            
+            % return if there are no possible directions left
+            if isempty(possibleDirections)
+                extendedCombinations = [];
+                return
+            end
+            
+            % test which directions can still applied when the current
+            % combination is choosen
+            stillPossibleDirections = obj.getPossibleDirections(possibleDirections, assumedOccupied);
+            
+            % extend old combination with still possible directions
+            extendedCombinations = strings(length(stillPossibleDirections),length(combination)+1); % preallocation
+            for i=1:length(stillPossibleDirections)
+                extendedCombinations(i,:) = [combination stillPossibleDirections(i)];
+            end            
+        end
+        
+        function possibleDirections = getPossibleDirections(obj, vehicleDirections, occupiedDirections)
+            % check all vehicle directions if they are still possible
+            % without conflicting with one of the occupied directions
+            
+            % check every vehicle direction if conflicting with occupied
+            for i=length(vehicleDirections):-1:1
+                % delete from list when colliding with occupied directions
+                if ~isempty(obj.getConflictingDirections(vehicleDirections(i,:), occupiedDirections))
+                    vehicleDirections(i) = [];
+                end
+            end
+            
+            possibleDirections = vehicleDirections;
+        end
+        
         function deriveMPCSG(obj, vehicles, currentTime)
             % this function dervies the maximum priority CSG by using the
             % first-order vehicle group
-
-            % in the following the priority for each car in the first-order
-            % vehicle group (obj.priorityGroup) is calculated
-            for i=1:size(obj.priorityGroup,1)
-                priorityGroupMember = obj.priorityGroup(i,:);
-                vehicle = vehicles(priorityGroupMember(1));
-                if obj.params.energyEquation == 0
-                    priority = 1 + vehicle.dynamics.speed * obj.params.alpha;   % time optimized priority formula
-                else
-                    priority = 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass;   % energy optimized priority formula
-                end
-                obj.priorityGroup(i,5) = priority; % add priority to priority group
-            end
             
+            % at first calculate the priority for priority group
+            obj.calculatePriority(vehicles); 
             
             
             % finding the optimal traffic state for the priority car group
@@ -529,10 +812,25 @@ classdef CrossroadUnit < handle
                 end
                 
             end
-            obj.dataLog.trafficState(:,end+1) = [obj.trafficState;currentTime]; 
-
+            obj.dataLog.trafficState(:,end+1) = [obj.trafficState;currentTime];            
+        end
+        
+        function calculatePriority(obj, vehicles)
+            % the priority for each car in the first-order vehicle group (obj.priorityGroup) is calculated
             
-        end      
+            for i=1:size(obj.priorityGroup,1)
+                priorityGroupMember = obj.priorityGroup(i,:);
+                vehicle = vehicles(priorityGroupMember(1));
+                if obj.params.energyEquation == 0
+                    % time optimized priority formula
+                    priority = 1 + vehicle.dynamics.speed * obj.params.alpha;   
+                else
+                    % energy optimized priority formula
+                    priority = 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass;   
+                end
+                obj.priorityGroup(i,5) = priority; % add priority to priority group
+            end
+        end
  
         function updateTrafficStateFromConventionalSystem(obj ,currentTime)
             % this function calculates the current traffic state for a

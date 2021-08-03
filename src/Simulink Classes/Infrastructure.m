@@ -47,20 +47,24 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                     if V2Idata(i,2) == 1
                         % Car reaches the crossroad
                         obj.map.crossroadUnits(V2Idata(i,1)).carReachesCrossroad(vehicle, vehicle.pathInfo.lastWaypoint);
+                        [obj.map.crossroadUnits(1).brakingFlagArray; 0,0; obj.map.crossroadUnits(1).vehicleOrders]
                     elseif V2Idata(i,2) == 2
                         % Car reaches the braking point
                         obj.map.crossroadUnits(V2Idata(i,1)).carReachesBrakingPoint(vehicle, obj.Vehicles, vehicle.pathInfo.lastWaypoint, obj.getCurrentTime);
+                        [obj.map.crossroadUnits(1).brakingFlagArray; 0,0; obj.map.crossroadUnits(1).vehicleOrders]
                     elseif V2Idata(i,2) == 3
                         
                     elseif V2Idata(i,2) == 4
                         % Car leaves the crossroad
-                        obj.map.crossroadUnits(V2Idata(i,1)).carLeavesCrossroad(vehicle, obj.Vehicles, obj.getCurrentTime)
+                        obj.map.crossroadUnits(V2Idata(i,1)).carLeavesCrossroad(vehicle, obj.Vehicles, obj.getCurrentTime);
+                        [obj.map.crossroadUnits(1).brakingFlagArray; 0,0; obj.map.crossroadUnits(1).vehicleOrders]
                     end
                 end
             end
             
             % get the braking flag arrays from all crossroad units
             mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.brakingFlagArray);
+            mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.vehicleOrders); % Test!!!
 
             %% 2D Traffic Plot + Path Dynamic Highlight
             if mod(obj.getCurrentTime,0.2) == 0

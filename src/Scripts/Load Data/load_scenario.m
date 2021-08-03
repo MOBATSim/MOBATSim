@@ -6,9 +6,9 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
 %            destinationPoints = [13 15 18 27 26 40 27 32 16 10];
 %            maxSpeeds =         [13 13 11 9 13 13 12 14 4 13];
 % 
-            startingPoints =    [46 47 84 3  54 64 58 57 4 63];
-            destinationPoints = [54 78 82 26 3  42 27 25 26 47];
-            maxSpeeds =         [3  15  3 7  14 10 0.1 4 10 10];
+%             startingPoints =    [46 47 84 3  54 64 58 57 4 63];
+%             destinationPoints = [54 78 82 26 3  42 27 25 26 47];
+%             maxSpeeds =         [3  15  3 7  14 10 0.1 4 10 10];
          %% test scenario Qianwei
              %V4 and V3 on the same road testing front collision
             %startingPoints =    [46 47 7 27 85 52 64 57 15 63];
@@ -26,6 +26,11 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
 %             startingPoints =    [8  46 29 18 53 52 64 6 15 63];
 %             destinationPoints = [26 47 51 1  3  27 42 25 76 46];
 %             maxSpeeds = [20 15 10 10 14 20 10 12 10 10];
+            
+            %% Extra complex crossroad scenario
+            startingPoints =    [8  46 29 18 53 52 65 6 15 64];
+            destinationPoints = [59 47 51 1  3  27 42 25 76 46];
+            maxSpeeds = [20 20 10 10 14 20 10 12 10 10];
 
             %% temp goal test
     %         startingPoints =    [23 28 30 58 19 18 17 53 51 78];
@@ -74,6 +79,11 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
     %                 destinationPoints = [10  11 15 27 47 71 70 56 77 78];
     %                 maxSpeeds =         [20  11 20 20 20 20 20 20 20 20];
 
+            %% Counterexample crossroad safety
+%             startingPoints =    [18 72 84 3  21 65 79 19 4 20];
+%             destinationPoints = [17 78 82 26 17  42 76 17 26 17];
+%             maxSpeeds =         [3  8.7  3 7  14 10 0.1 4 10 10];
+    
         case 'Carmageddon'
             startingPoints =    [46 53 54 51 44 9  65 27 30 6];
             destinationPoints = [25 64 24 16 10 59 42 10 11 24];
