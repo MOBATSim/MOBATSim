@@ -34,6 +34,11 @@ classdef CrossroadUnit < handle
         vehicleOrders       % array with rows containing the vehicle id and the order ( 0 = go, 1 = stop)
         arrivingGroup       % all vehicles arriving at the crossroad
         leavingGroup        % all vehicles at the crossroad
+        % Conventional traffic lights
+        stateStartingTime       = 0   % when the new traffic state has started
+        currentState            = 1   % current traffic light state
+        stateDuration           = 5   % the duration a state stays active TODO: fine tune this
+        waitingBetweenStates    = 5  % the duration between to states TODO: fine tune this
     end
     
     methods
@@ -44,7 +49,7 @@ classdef CrossroadUnit < handle
                 brakingNodes                               (1,4) double
                 stoppingNodes                              (1,4) double
                 leavingNodes                               (1,4) double
-                configurations.conventionalTrafficLights   (1,1) logical   = false  % use conventional traffic lights
+                configurations.conventionalTrafficLights   (1,1) logical   = true  % use conventional traffic lights
                 configurations.intelligentDecision         (1,1) logical   = true   % 0 for FCFS, 1 for our algorithm
                 configurations.energyEquation              (1,1) logical   = false  % 0 for time optimized approach, 1 for energy optimized approach
             end
@@ -55,7 +60,6 @@ classdef CrossroadUnit < handle
             obj.leavingNodes = leavingNodes;
             
             obj.trafficStateLookupTable = obj.generateLookupTable();
-
             
             
             % edit all the parameters at this point to change the algorithm
@@ -71,7 +75,7 @@ classdef CrossroadUnit < handle
             obj.params.energyEquation               = configurations.energyEquation;
             
             
-            if obj.params.intelligentDecision == 0
+            if obj.params.intelligentDecision == 0 % TODO: think about usefullness in new algorithm
                 obj.params.criticalDeltaTTR = 1000;  % for FCFS we set delta TTR on 1000 to consider all(!) vehicles in the surrounding of the crossroad
             end
 
@@ -288,6 +292,11 @@ classdef CrossroadUnit < handle
                 
                 % Remove vehicle from leavingGroup: Test TODO
                 obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                if obj.params.conventionalTrafficLights == 0
+                    % Remove vehicle from arrivingGroup, because there is
+                    % no leaving group
+                    obj.arrivingGroup(obj.arrivingGroup(:,1)== vehicle.id,:) = [];
+                end
                 % Test TODO
                 % when there are still cars in the arriving queue then the
                 % main algorithm has to be executed again
@@ -896,6 +905,106 @@ classdef CrossroadUnit < handle
                     priority = 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass;   
                 end
                 priorityGroup(i,5) = priority; % add priority to priority group
+            end
+        end
+        
+        function updateConventionalTrafficLightSystem(obj, currentTime)
+            % this function regulate the current traffic for a
+            % conventional traffic light system
+            
+            % 4 traffic states: 
+            % 1.  NS direction with straight and right
+            % 2.  NS direction with left
+            % 3.  EW direction with straight and right
+            % 4.  EW direction with left
+            
+            % Change to waiting
+            if currentTime > (obj.stateStartingTime + obj.stateDuration)
+                % stop all cars
+                waitingState = true;
+            else
+                waitingState = false;
+            end
+            
+            % Go to next state
+            if currentTime > (obj.stateStartingTime + obj.stateDuration + obj.waitingBetweenStates)
+                obj.currentState = mod(obj.currentState,4)+1; % go to next state
+                obj.stateStartingTime = currentTime;
+            end
+            
+            % Get orders for every vehicle according to the traffic light
+            % state
+            obj.vehicleOrders = obj.getConventionalVehicleOrders(obj.arrivingGroup, obj.currentState, waitingState);
+            
+        end
+        
+        function vehicleOrders = getConventionalVehicleOrders(obj, arrivingGroup, currentState, waitingState)
+            % set the vehicle orders for vehilces using a traffic light at
+            % the crossroad
+            
+            % get vehicles that need orders
+            vehicleOrders = [arrivingGroup(:,1) ones(size(arrivingGroup,1),1)];
+            
+            % stop all cars if it is waiting state
+            if waitingState
+                vehicleOrders(:,2) = 1;
+                return
+            end
+            
+            % convert to string directions
+            directions = obj.convertNumToStringDirection(arrivingGroup(:,2:3));
+            
+            % Traffic State 1: NS direction with straight and right
+            if currentState == 1 
+                for i = 1:length(directions)
+                    % Check if traffic state allows driving for cars
+                    if any(directions(i) == ["NS";"NW";"SN";"SE"])
+                        % vehicle can drive: 0 == 'go'
+                        vehicleOrders(i,2) = 0;
+                    else
+                        % vehicle has to stop: 0 == 'stop'
+                        vehicleOrders(i,2) = 1;
+                    end
+                end
+                
+            % Traffic State 2: NS direction with left    
+            elseif currentState == 2
+                for i = 1:length(directions)
+                    % Check if traffic state allows driving for cars
+                    if any(directions(i) == ["NE";"SW"])
+                        % vehicle can drive: 0 == 'go'
+                        vehicleOrders(i,2) = 0;
+                    else
+                        % vehicle has to stop: 0 == 'stop'
+                        vehicleOrders(i,2) = 1;
+                    end
+                end
+                
+            % Traffic State 3: EW direction with straight and right
+            elseif currentState == 3
+                for i = 1:length(directions)
+                    % Check if traffic state allows driving for cars
+                    if any(directions(i) == ["EN";"EW";"WE";"WS"])
+                        % vehicle can drive: 0 == 'go'
+                        vehicleOrders(i,2) = 0;
+                    else
+                        % vehicle has to stop: 0 == 'stop'
+                        vehicleOrders(i,2) = 1;
+                    end
+                end
+                
+            % Traffic State 4: EW direction with left
+            elseif currentState == 4
+                for i = 1:length(directions)
+                    % Check if traffic state allows driving for cars
+                    if any(directions(i) == ["ES";"WN"])
+                        % vehicle can drive: 0 == 'go'
+                        vehicleOrders(i,2) = 0;
+                    else
+                        % vehicle has to stop: 0 == 'stop'
+                        vehicleOrders(i,2) = 1;
+                    end
+                end
             end
         end
  
