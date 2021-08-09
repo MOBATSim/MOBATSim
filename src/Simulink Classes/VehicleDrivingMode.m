@@ -73,7 +73,7 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
                     % Mode 2 = Follow leading vehicle at platoon mode
                     DrivingMode = 2;
                     
-                elseif (leadingVehicleSpeed - obj.vehicle.dynamics.speed)>0 % Too close but leading is leaving
+                elseif (leadingVehicleSpeed - obj.vehicle.dynamics.speed)>0 % Too close but leading is faster
                     % Mode 2 = Follow leading vehicle at platoon mode
                     DrivingMode = 2;
                     

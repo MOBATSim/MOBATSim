@@ -65,7 +65,6 @@ classdef Vehicle < handle
 
         decisionUnit
         %         Map
-        %         accelerationPhase
         %         initialFutureData
         %         futureData
         %         brakingFlag
@@ -131,7 +130,6 @@ classdef Vehicle < handle
             obj.map = map;
             
             obj.decisionUnit.Map = map;
-            obj.decisionUnit.accelerationPhase = zeros(1,5);
             obj.decisionUnit.initialFutureData = [];
             obj.decisionUnit.futureData = [];
             obj.decisionUnit.brakingFlag = 0;

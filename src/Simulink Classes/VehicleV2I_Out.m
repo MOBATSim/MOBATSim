@@ -25,13 +25,13 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
     % Pre-computed constants
     properties(Access = private)
         vehicle
-        accelerationPhase;
         futureData
         inCrossroad % [crossroadId crossroadZone]
         % crossroadZone:
         % 1 -> arrivingZone
-        % 2 -> stoppingZone
+        % 2 -> brakingZone
         % 3 -> intersectionZone
+        % 4 -> leavingZone
     end
     
     methods
@@ -46,9 +46,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
-            
-            obj.accelerationPhase =  zeros(1,5);
+            obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");           
             obj.inCrossroad = [0 0];
         end
           
