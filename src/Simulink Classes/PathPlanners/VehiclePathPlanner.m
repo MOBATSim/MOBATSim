@@ -11,13 +11,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
     properties(Access = protected)
         vehicle
         Map
-        accelerationPhase;
         futureData
-        inCrossroad % [crossroadId crossroadZone]
-        % crossroadZone:
-        % 1 -> arrivingZone
-        % 2 -> stoppingZone
-        % 3 -> intersectionZone
         
         % Variable for colored planned path visualization
         pathPlot;
@@ -36,9 +30,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
             obj.Map = obj.vehicle.map;
-            
-            obj.accelerationPhase =  zeros(1,5);
-            obj.inCrossroad = [0 0];
         end
         
         function waypointReached = stepImpl(obj,CommunicationIDs)
@@ -77,8 +68,9 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 else
                     %% If the Vehicle is still on Route -> Vehicle's future plan stays the same
                     %Output 1: Future plan of the vehicle
-                    FuturePlan = obj.vehicle.decisionUnit.futureData; %Output 1: Future plan of the vehicle
-                    waypointReached =0;                               %Output 2: Waypoint Reached enabler
+                    FuturePlan = obj.vehicle.decisionUnit.futureData;
+                    %Output 2: Waypoint Reached enabler
+                    waypointReached =0;                               
                 end
                 
                 %% Check if crossroad
@@ -99,10 +91,9 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             crossroadZone = car.decisionUnit.inCrossroad(2);
             
             if crossroadId ~=0
-                
-                %log speed and energydata for current crossroad               
+                          
                 if car.map.crossroadUnits(crossroadId).params.conventionalTrafficLights == 1
-                    car.map.crossroadUnits(crossroadId).updateTrafficStateFromConventionalSystem(obj.getCurrentTime);
+                    car.map.crossroadUnits(crossroadId).updateConventionalTrafficLightSystem(obj.getCurrentTime);
                 end
                 
                 if crossroadZone == 2

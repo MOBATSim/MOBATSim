@@ -42,25 +42,30 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             %% Crossroad units
             
             for i=1:size(V2Idata,1)
-                if V2Idata(i,1) ~= 0
+                
+                crossroadNr = V2Idata(i,1);     % number of crossroad the vehicle is passing
+                crossroadPart = V2Idata(i,2);   % part of the crossroad the vehicle is passing
+                
+                if crossroadNr ~= 0
                     vehicle = obj.Vehicles(i);
-                    if V2Idata(i,2) == 1
+                    if crossroadPart == 1
                         % Car reaches the crossroad
-                        obj.map.crossroadUnits(V2Idata(i,1)).carReachesCrossroad(vehicle, vehicle.pathInfo.lastWaypoint);
-                    elseif V2Idata(i,2) == 2
+                        obj.map.crossroadUnits(crossroadNr).carReachesCrossroad(vehicle, vehicle.pathInfo.lastWaypoint);
+                    elseif crossroadPart == 2
                         % Car reaches the braking point
-                        obj.map.crossroadUnits(V2Idata(i,1)).carReachesBrakingPoint(vehicle, obj.Vehicles, vehicle.pathInfo.lastWaypoint, obj.getCurrentTime);
-                    elseif V2Idata(i,2) == 3
-                        
-                    elseif V2Idata(i,2) == 4
+                        obj.map.crossroadUnits(crossroadNr).carReachesBrakingPoint(vehicle, obj.Vehicles, vehicle.pathInfo.lastWaypoint);
+                    elseif crossroadPart == 3
+                        % Car reaches the start of the crossroad
+                        obj.map.crossroadUnits(crossroadNr).carReachesStartingPoint(vehicle);
+                    elseif crossroadPart == 4
                         % Car leaves the crossroad
-                        obj.map.crossroadUnits(V2Idata(i,1)).carLeavesCrossroad(vehicle, obj.Vehicles, obj.getCurrentTime)
+                        obj.map.crossroadUnits(crossroadNr).carLeavesCrossroad(vehicle, obj.Vehicles);
                     end
                 end
             end
             
             % get the braking flag arrays from all crossroad units
-            mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.brakingFlagArray);
+            mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.vehicleOrders);
 
             %% 2D Traffic Plot + Path Dynamic Highlight
             if mod(obj.getCurrentTime,0.2) == 0
