@@ -30,7 +30,7 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
             %% Extra complex crossroad scenario
             startingPoints =    [8  46 29 18 53 52 65 6 15 64];
             destinationPoints = [59 47 51 1  3  27 42 25 76 46];
-            maxSpeeds = [20 20 10 10 14 20 15 12 10 10];
+            maxSpeeds = [20 20 10 10 14 20 15 12 10 20];
 
             %% temp goal test
     %         startingPoints =    [23 28 30 58 19 18 17 53 51 78];

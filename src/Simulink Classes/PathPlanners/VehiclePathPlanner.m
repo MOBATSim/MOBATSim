@@ -35,8 +35,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         function waypointReached = stepImpl(obj,CommunicationIDs)
             %% Check if destination is reached
             if obj.vehicle.checkifDestinationReached() % If true vehicle stops
-                FuturePlan = obj.vehicle.decisionUnit.futureData;   %Output 1: Future plan of the vehicle
-                waypointReached=0;                                  %Output 2: Waypoint Reached enabler
+                waypointReached=0;                                  %Output: Waypoint Reached enabler
             else            
                 %% Check if the vehicle has reached a waypoint / Then it should reupdate its plan
                 if obj.vehicle.pathInfo.calculateNewPathFlag == 1 
@@ -60,16 +59,14 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                         obj.vehicle.setCurrentTrajectory(currentTrajectory); % Generate the new current trajectory
                     end
                     
-                    obj.vehicle.decisionUnit.futureData = FuturePlan;
+                    obj.vehicle.pathInfo.futureData = FuturePlan;
                     obj.vehicle.pathInfo.calculateNewPathFlag = 0;
                     %% ------------------------------ FuturePlan Structure ------------------------------ nx6 --------------- 
                     % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | PlannerType
                     % PlannerType: DigraphA*= -1, D*ExtraLite= -2, Shortest= -3, GridA*= non negative value
                 else
                     %% If the Vehicle is still on Route -> Vehicle's future plan stays the same
-                    %Output 1: Future plan of the vehicle
-                    FuturePlan = obj.vehicle.decisionUnit.futureData;
-                    %Output 2: Waypoint Reached enabler
+                    %Output: Waypoint Reached enabler
                     waypointReached =0;                               
                 end
                 
@@ -118,7 +115,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             i = i(CommunicationIDs==1); % Remove the vehicles that don't have V2V connection to the car
             i(obj.vehicle.id)=[]; % Remove the car with the same id
             
-            futureData =cat(1,cat(1,[Vehicles(i).decisionUnit]).futureData);
+            futureData =cat(1,cat(1,[Vehicles(i).pathInfo]).futureData);
             
         end
         
