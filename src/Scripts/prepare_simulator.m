@@ -6,7 +6,7 @@ function prepare_simulator(options)
         options.Analysing           (1,1) logical   = false                 % Activate the analysing functions
         options.modelName           (1,1) string    = 'MOBATSim'            % Name of the simulink model
         options.mapName             (1,1) string    = 'Mobatkent'           % Name of the map
-        options.simStopTime         (1,1) double    = 80                    % Simulation stop time in seconds
+        options.simStopTime         (1,1) double    = 40                    % Simulation stop time in seconds
         options.simTs               (1,1) double    = 0.02                  % Simulation time step: sample time of the simulation (may not be stable if changed)
         options.scenarioName        (1,1) string    = 'Urban City Traffic'  % Scenario sets start points, destination points and maxSpeeds
         options.startingPoints      (1,:) double    = []                    % Custom starting points for vehicles

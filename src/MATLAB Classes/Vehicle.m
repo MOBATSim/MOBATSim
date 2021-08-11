@@ -303,7 +303,7 @@ classdef Vehicle < handle
             
             car.sensors.leadingVehicle = leadingVehicle;
             car.sensors.distanceToLeadingVehicle = distanceToLeading;
-            if isobject(leadingVehicle) % if there is a leading vehicle
+            if ~isempty(leadingVehicle) % if there is a leading vehicle
                 car.sensors.leadingVehicleId = leadingVehicle.id;
                 car.sensors.leadingVehicleSpeed = car.sensors.leadingVehicle.dynamics.speed;
                 relSpeed = car.dynamics.speed - car.sensors.leadingVehicle.dynamics.speed;
@@ -317,7 +317,7 @@ classdef Vehicle < handle
             %% Rear vehicle
             
             car.sensors.rearVehicle = rearVehicle;
-            if isobject(rearVehicle) % if there is a rear vehicle
+            if ~isempty(rearVehicle) % if there is a rear vehicle
                 relSpeed = car.sensors.rearVehicle.dynamics.speed - car.dynamics.speed;
             else
                 relSpeed = 0; % to get an infinite rear safety margin
