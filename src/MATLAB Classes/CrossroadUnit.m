@@ -133,7 +133,7 @@ classdef CrossroadUnit < handle
                 [obj.arrivingGroup, obj.leavingGroup] = obj.moveFromArrivingToLeavingGroup(obj.arrivingGroup, obj.leavingGroup, [vehicle.id 0]); % the current car is leaving the crossroad
             else
                 % call crossroad algorithm
-                [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runIntelligentAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
             end
         end
         
@@ -156,12 +156,12 @@ classdef CrossroadUnit < handle
                 
                 if obj.params.conventionalTrafficLights == 0
                     % call crossroad algorithm
-                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runIntelligentAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                 end
             end
         end
         
-        function [vehicleOrders, arrivingGroup, leavingGroup] = runIntelligentAlgorithm(obj, vehicles, arrivingGroup, leavingGroup)
+        function [vehicleOrders, arrivingGroup, leavingGroup] = runCrossroadAlgorithm(obj, vehicles, arrivingGroup, leavingGroup)
             % This is the main method for the intelligent crossroad manager
             % algorithm.
             
@@ -255,7 +255,24 @@ classdef CrossroadUnit < handle
                 % crossroad starting point in time critical estimated time
                 % of arrival
                 priorityGroup = arrivingGroup(arrivingGroup(:,4) <= obj.params.criticalETA,:);
-                % if there is no car in the group take the nearest car
+
+		% Remove vehicles behind an other one on the same line but with other direction, so that the one behind couldnt be allowed to drive before the one in front
+		for i=1:size(priorityGroup,1)
+
+			vehiclesInFront = priorityGroup;
+			% remove different starting point
+			vehiclesInFront(vehiclesInFront(i,2) ~= vehiclesInFront(:,2),:) = [];
+			% remove when also same destination
+			vehiclesInFront(vehiclesInFront(i,3) == vehiclesInFront(:,3)) = [];
+			% remove vehicles behind
+			vehiclesInFront(vehiclesInFront(:,4) >= vehiclesInFront(i,4)) = []; 
+
+			% remove current vehicle because a car in front can block its direction
+			if ~isempty(vehiclesInFront)
+    				priorityGroup(i,:) = [];
+			end
+		end
+		% if there is no car in the group take the nearest car
                 if isempty(priorityGroup)
                     priorityGroup = sortrows(arrivingGroup,4);
                     priorityGroup = priorityGroup(1,:);
