@@ -82,16 +82,12 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             
         end
         
-        function crossroadCheck(obj,car)
+        function crossroadCheck(~,car)
             
             crossroadId = car.decisionUnit.inCrossroad(1);
             crossroadZone = car.decisionUnit.inCrossroad(2);
             
             if crossroadId ~=0
-                          
-                if car.map.crossroadUnits(crossroadId).params.conventionalTrafficLights == 1
-                    car.map.crossroadUnits(crossroadId).updateConventionalTrafficLightSystem(obj.getCurrentTime);
-                end
                 
                 if crossroadZone == 2
                     

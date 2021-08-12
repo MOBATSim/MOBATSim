@@ -41,6 +41,8 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             
             %% Crossroad units
             
+            crossroadUnits = obj.map.crossroadUnits;
+            
             for i=1:size(V2Idata,1)
                 
                 crossroadNr = V2Idata(i,1);     % number of crossroad the vehicle is passing
@@ -50,19 +52,27 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                     vehicle = obj.Vehicles(i);
                     if crossroadPart == 1
                         % Car reaches the crossroad
-                        obj.map.crossroadUnits(crossroadNr).carReachesCrossroad(vehicle, vehicle.pathInfo.lastWaypoint);
+                        crossroadUnits(crossroadNr).carReachesCrossroad(vehicle);
                     elseif crossroadPart == 2
                         % Car reaches the braking point
-                        obj.map.crossroadUnits(crossroadNr).carReachesBrakingPoint(vehicle, obj.Vehicles, vehicle.pathInfo.lastWaypoint);
+                        crossroadUnits(crossroadNr).carReachesBrakingPoint(vehicle, obj.Vehicles);
                     elseif crossroadPart == 3
                         % Car reaches the start of the crossroad
-                        obj.map.crossroadUnits(crossroadNr).carReachesStartingPoint(vehicle);
+                        crossroadUnits(crossroadNr).carReachesStartingPoint(vehicle);
                     elseif crossroadPart == 4
                         % Car leaves the crossroad
-                        obj.map.crossroadUnits(crossroadNr).carLeavesCrossroad(vehicle, obj.Vehicles);
+                        crossroadUnits(crossroadNr).carLeavesCrossroad(vehicle, obj.Vehicles);
                     end
                 end
+            end           
+            
+            % Update conventional traffic systems
+            for i=1:length(crossroadUnits)
+                if crossroadUnits(i).params.conventionalTrafficLights == 1
+                    crossroadUnits(i).updateConventionalTrafficLightSystem(obj.getCurrentTime);
+                end
             end
+            
             
             % get the braking flag arrays from all crossroad units
             mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.vehicleOrders);

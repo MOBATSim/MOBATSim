@@ -39,8 +39,8 @@ classdef CrossroadUnit < handle
                 brakingNodes                               (1,4) double
                 stoppingNodes                              (1,4) double
                 leavingNodes                               (1,4) double
-                configurations.conventionalTrafficLights   (1,1) logical   = false  % use conventional traffic lights
-                configurations.intelligentDecision         (1,1) logical   = true   % 0 for FCFS, 1 for our algorithm
+                configurations.conventionalTrafficLights   (1,1) logical   = true  % use conventional traffic lights
+                configurations.intelligentDecision         (1,1) logical   = false  % 0 for FCFS, 1 for intelligent algorithm
                 configurations.energyEquation              (1,1) logical   = false  % 0 for time optimized approach, 1 for energy optimized approach
             end
             obj.id = id;          
@@ -82,65 +82,85 @@ classdef CrossroadUnit < handle
             overlappingTable = table(NE,NS,ES,EW,SN,SW,WN,WE);
         end        
         
-        function carReachesCrossroad(obj,car,startingNode)
+        function carReachesCrossroad(obj,vehicle)
             % when a car is reaching the starting node of a crossroad, the
             % car has to be registrated in the arriving queue
             
-            if obj.params.intelligentDecision == 1 % for normal algorithm
+            % Traffic lights activated
+            if obj.params.conventionalTrafficLights == 1
                 
-                % check that cars destination is not  before crossroad
-                if length(car.pathInfo.path)>3
-                    arrivingDirection = find(startingNode == obj.startingNodes); % from which direction the car is coming 1=N, 2=E, 3=S, 4=W
-                    
-                    
-                    index = find(ismember(car.pathInfo.path,obj.leavingNodes));                   
-
-                    try
-                        leavingDirection = find(car.pathInfo.path(index(1)) == obj.leavingNodes); % in which direction the car is going 1=N, 2=E, 3=S, 4=W
-                        
-                    catch
-                        
-                        disp('crossroad error');
-                        
-                    end
-                    
-                    % arring queue definition (one vehicle entry):
-                    % | vehicle id | arriving direction | leaving direction |
-                    obj.arrivingGroup(end+1,:) = [car.id arrivingDirection leavingDirection];
+                % PLACEHOLDER
+                
+            % Intelligent algorithm activated
+            elseif obj.params.intelligentDecision == 1
+                
+                % Add vehicle to arriving queue
+                arrivingGroupEntry = obj.makeArrivingGroupEntry(vehicle, obj.startingNodes, obj.leavingNodes);
+                if ~isempty(arrivingGroupEntry)
+                    obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
                 end
+                
+            % FCFS algorithm activated
+            elseif obj.params.intelligentDecision == 0
+                
+                % PLACEHOLDER
+                
             end            
             
         end
         
-        function carReachesBrakingPoint(obj, vehicle, vehicles, brakingNode)
+        function carReachesBrakingPoint(obj, vehicle, vehicles)
             % this function is executed when a car reaches the braking
-            % point. Now the main algorithm has to be executed to derive
-            % the optimal CSG
-            
-            % When we are in FCFS the car hasn't been added in the arriving
-            % queue yet. This is done here.
-            if obj.params.intelligentDecision == 0
+            % point.
+             % Traffic lights activated
+            if obj.params.conventionalTrafficLights == 1               
                 
-                arrivingDirection = find(brakingNode == obj.brakingNodes);
-                leavingDirection = find(vehicle.pathInfo.path(3) == obj.leavingNodes);
+                % Add vehicle to arriving queue
+                arrivingGroupEntry = obj.makeArrivingGroupEntry(vehicle, obj.brakingNodes, obj.leavingNodes);
+                if ~isempty(arrivingGroupEntry)
+                    obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
+                end
                 
-                obj.arrivingGroup(end+1,:) = [vehicle.id arrivingDirection leavingDirection];% TODO: encapsulate entry generation in a function
+            % Intelligent algorithm activated
+            elseif obj.params.intelligentDecision == 1
                 
-            end
-            
-            if obj.params.conventionalTrafficLights == 1
-                % transfer the current vehicle that is on the crossroad
-                [obj.arrivingGroup, obj.leavingGroup] = obj.moveFromArrivingToLeavingGroup(obj.arrivingGroup, obj.leavingGroup, [vehicle.id 0]); % the current car is leaving the crossroad
-            else
                 % call crossroad algorithm
                 [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+            
+            % FCFS algorithm activated
+            elseif obj.params.intelligentDecision == 0
+                               
+                % Add vehicle to arriving queue
+                arrivingGroupEntry = obj.makeArrivingGroupEntry(vehicle, obj.brakingNodes, obj.leavingNodes);
+                if ~isempty(arrivingGroupEntry)
+                    obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
+                end
+                % call crossroad algorithm
+                [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+            
             end
+            
         end
         
-        function carReachesStartingPoint(~, ~)
+        function carReachesStartingPoint(obj, ~)
             % car reaches the start of the crossroad
             
-            % PLACEHOLDER
+            % Traffic lights activated
+            if obj.params.conventionalTrafficLights == 1
+                
+                % PLACEHOLDER
+                
+            % Intelligent algorithm activated
+            elseif obj.params.intelligentDecision == 1
+                
+                % PLACEHOLDER
+            
+            % FCFS algorithm activated
+            elseif obj.params.intelligentDecision == 0
+                
+                % PLACEHOLDER
+                
+            end
         end
         
         function carLeavesCrossroad(obj,vehicle, vehicles)
@@ -148,17 +168,42 @@ classdef CrossroadUnit < handle
             % main algorithm has to be executed again and the car has to be
             % deleted from the leaving queue
             
-            if ~isempty(obj.leavingGroup)
+            % Traffic lights activated
+            if obj.params.conventionalTrafficLights == 1
                 
-                % Remove vehicle from leavingGroup
-                obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                if ~isempty(obj.leavingGroup)
+                    
+                    % Remove vehicle from leavingGroup
+                    obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                    
+                end
                 
+            % Intelligent algorithm activated
+            elseif obj.params.intelligentDecision == 1
                 
-                if obj.params.conventionalTrafficLights == 0
+                if ~isempty(obj.leavingGroup)
+                    
+                    % Remove vehicle from leavingGroup
+                    obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                    
                     % call crossroad algorithm
                     [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                 end
+                
+            % FCFS algorithm activated
+            elseif obj.params.intelligentDecision == 0
+                
+                if ~isempty(obj.leavingGroup)
+                    
+                    % Remove vehicle from leavingGroup
+                    obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                    
+                    % call crossroad algorithm
+                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                end
+                
             end
+            
         end
         
         function [vehicleOrders, arrivingGroup, leavingGroup] = runCrossroadAlgorithm(obj, vehicles, arrivingGroup, leavingGroup)
@@ -177,10 +222,41 @@ classdef CrossroadUnit < handle
                 vehicleOrders = [];
             end
         end
+        
+        function entry = makeArrivingGroupEntry(~, vehicle, startingNodes, leavingNodes)
+            % add a vehicle to arriving group
+                
+                entry = [];
+                % check that cars destination is not  before crossroad
+                if length(vehicle.pathInfo.path)>3
+                    arrivingDirection = find(vehicle.pathInfo.lastWaypoint == startingNodes); % from which direction the car is coming 1=N, 2=E, 3=S, 4=W
+                    
+                    
+                    index = find(ismember(vehicle.pathInfo.path,leavingNodes));                   
+
+                    try
+                        leavingDirection = find(vehicle.pathInfo.path(index(1)) == leavingNodes); % in which direction the car is going 1=N, 2=E, 3=S, 4=W
+                        
+                    catch
+                        
+                        disp('crossroad error');
+                        
+                    end
+                    
+                    % arring queue definition (one vehicle entry):
+                    % | vehicle id | arriving direction | leaving direction |
+                    entry = [vehicle.id arrivingDirection leavingDirection];
+                end
+        end
 
         function [arrivingGroup, leavingGroup] = moveFromArrivingToLeavingGroup(~, arrivingGroup, leavingGroup, vehicleOrders)
             % Move all vehicles that got a 'go' command from the arriving
             % group to the leaving group
+            
+            % no vehicles to move
+            if isempty(arrivingGroup)
+                return
+            end
             
             % get all vehicles that have a 'go' command
             passingVehicles = vehicleOrders(vehicleOrders(:,2) == 0,1);
@@ -612,13 +688,16 @@ classdef CrossroadUnit < handle
             % Go to next state
             if currentTime > (obj.stateStartingTime + obj.stateDuration + obj.waitingBetweenStates)
                 obj.currentState = mod(obj.currentState,4)+1; % go to next state
-                obj.stateStartingTime = currentTime;
+                obj.stateStartingTime = obj.stateStartingTime + obj.stateDuration + obj.waitingBetweenStates;
             end
             
             % Get orders for every vehicle according to the traffic light
             % state
             obj.vehicleOrders = obj.getConventionalVehicleOrders(obj.arrivingGroup, obj.currentState, waitingState);
             
+            % Move all vehicles with GO order to leaving group
+            [obj.arrivingGroup, obj.leavingGroup] = obj.moveFromArrivingToLeavingGroup(obj.arrivingGroup, obj.leavingGroup, obj.vehicleOrders);
+                   
         end
         
         function vehicleOrders = getConventionalVehicleOrders(obj, arrivingGroup, currentState, waitingState)
@@ -626,7 +705,12 @@ classdef CrossroadUnit < handle
             % the crossroad
             
             % get vehicles that need orders
-            vehicleOrders = [arrivingGroup(:,1) ones(size(arrivingGroup,1),1)];
+            if isempty(arrivingGroup)
+                vehicleOrders = [];
+                return
+            else
+                vehicleOrders = [arrivingGroup(:,1) ones(size(arrivingGroup,1),1)];
+            end
             
             % stop all cars if it is waiting state
             if waitingState
