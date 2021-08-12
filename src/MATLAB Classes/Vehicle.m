@@ -51,6 +51,8 @@ classdef Vehicle < handle
         %         stop
         %         collided
         %         ttc                           time to collision
+        %         brakingFlag                   vehicle stops at next waypoint
+        %         inCrossroad                   at which crossroad unit and in which section 
         pathInfo
         %         currentRoute
         %         destinationReached
@@ -66,10 +68,6 @@ classdef Vehicle < handle
         %         s
         %         d
         %         routeEndDistance
-
-        decisionUnit
-        %         brakingFlag
-        %         inCrossroad
         V2I
         V2VdataLink
         V2IdataLink
@@ -111,7 +109,9 @@ classdef Vehicle < handle
             obj.setCollided(false); % vehicle has no collision
             obj.status.canLaneSwitch = 0; % Check where they are set and get
             obj.status.ttc = 1000;
-            
+            obj.status.brakingFlag = 0;
+            obj.status.inCrossroad = [0 0];
+                        
             obj.pathInfo.currentTrajectory = [];
             obj.pathInfo.currentRoute =0;
             obj.pathInfo.destinationReached = false;
@@ -131,9 +131,7 @@ classdef Vehicle < handle
             obj.pathInfo.routeEndDistance = []; % Check where they are set and get
                         
             obj.map = map;
-            
-            obj.decisionUnit.brakingFlag = 0;
-            obj.decisionUnit.inCrossroad = [0 0];
+           
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
@@ -285,6 +283,16 @@ classdef Vehicle < handle
         end
         
         %% SET/GET Functions to control the changes in the properties
+        
+        function setStopAtNextWaypoint(car, brakingFlag)
+            % set stopAt if the vehicle should stop at next waypoint
+            
+            if brakingFlag
+                car.pathInfo.stopAt = car.pathInfo.path(2);
+            else
+                car.pathInfo.stopAt = 0;
+            end
+        end
         
         function setStopStatus(car, stop)
             car.status.stop = stop;

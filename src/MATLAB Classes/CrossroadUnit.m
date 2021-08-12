@@ -39,8 +39,8 @@ classdef CrossroadUnit < handle
                 brakingNodes                               (1,4) double
                 stoppingNodes                              (1,4) double
                 leavingNodes                               (1,4) double
-                configurations.conventionalTrafficLights   (1,1) logical   = true  % use conventional traffic lights
-                configurations.intelligentDecision         (1,1) logical   = false  % 0 for FCFS, 1 for intelligent algorithm
+                configurations.conventionalTrafficLights   (1,1) logical   = false  % use conventional traffic lights
+                configurations.intelligentDecision         (1,1) logical   = true   % 0 for FCFS, 1 for intelligent algorithm
                 configurations.energyEquation              (1,1) logical   = false  % 0 for time optimized approach, 1 for energy optimized approach
             end
             obj.id = id;          
@@ -344,7 +344,7 @@ classdef CrossroadUnit < handle
             % the priority for each car in the first-order vehicle group (priorityGroup) is calculated
             
             if obj.params.intelligentDecision == 1
-                for i=1:size(priorityGroup,1)
+                for i=size(priorityGroup,1):-1:1
                     priorityGroupMember = priorityGroup(i,:);
                     vehicle = vehicles(priorityGroupMember(1));
                     if obj.params.energyEquation == 0

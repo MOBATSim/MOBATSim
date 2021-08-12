@@ -76,6 +76,14 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             
             % get the braking flag arrays from all crossroad units
             mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.vehicleOrders);
+            
+            % Only brake when in crossroad zone 2 (between braking and stopping point)
+            for i=size(mergedBrakingFlagArrays,1):-1:1
+                if obj.Vehicles(mergedBrakingFlagArrays(i)).status.inCrossroad(2) ~= 2
+                    % Delete when not in this zone from braking array
+                    mergedBrakingFlagArrays(i,:) = [];
+                end
+            end
 
             %% 2D Traffic Plot + Path Dynamic Highlight
             if mod(obj.getCurrentTime,0.2) == 0
