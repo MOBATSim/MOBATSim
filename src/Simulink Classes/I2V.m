@@ -30,7 +30,7 @@ classdef I2V < matlab.System & matlab.system.mixin.CustomIcon
                         % find which row of the Flags refer to the current vehicle
                         row = vehicle.id==Flags(:,1);
                         % get the braking flag value determined by the infrastructure
-                        vehicle.decisionUnit.brakingFlag = Flags(row,2);
+                        vehicle.status.brakingFlag = Flags(row,2);
                     end          
                 end
             end

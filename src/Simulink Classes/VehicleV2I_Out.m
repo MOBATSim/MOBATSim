@@ -74,7 +74,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             
             if nnz(cat(1,map.crossroadUnits.startingNodes)==current_point)
                 crossroadId = find(any(cat(1,map.crossroadUnits.startingNodes)==current_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 1];
+                car.status.inCrossroad = [crossroadId 1];
                                 
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 1];
@@ -82,7 +82,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                 
             elseif nnz(cat(1,map.crossroadUnits.brakingNodes)==current_point) % car reaches Braking Point 
                 crossroadId = find(any(cat(1,map.crossroadUnits.brakingNodes)==current_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 2];
+                car.status.inCrossroad = [crossroadId 2];
                 
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 2];
@@ -90,7 +90,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                 
             elseif nnz(cat(1,map.crossroadUnits.stoppingNodes)==current_point) % car reaches Stopping Point
                 crossroadId = find(any(cat(1,map.crossroadUnits.stoppingNodes)==current_point,2));
-                car.decisionUnit.inCrossroad = [crossroadId 3];
+                car.status.inCrossroad = [crossroadId 3];
                 V2Idata = [crossroadId 3];
                 
             elseif nnz(cat(1,map.crossroadUnits.leavingNodes)==current_point)>0 % car leaves crossroad
@@ -98,7 +98,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 4];   
                 end
-                car.decisionUnit.inCrossroad = [0 0];
+                car.status.inCrossroad = [0 0];
             else
                 V2Idata = [0 0];
             end

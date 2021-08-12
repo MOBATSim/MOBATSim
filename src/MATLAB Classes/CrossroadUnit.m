@@ -11,7 +11,7 @@ classdef CrossroadUnit < handle
         leavingNodes
         params
              % alpha
-             % criticalDeltaTTR
+             % criticalETA
              % intelligentDecision
              % platooningTimeBehind
              % conventionalTrafficLights
@@ -27,8 +27,8 @@ classdef CrossroadUnit < handle
         % Conventional traffic lights
         stateStartingTime       = 0   % when the new traffic state has started
         currentState            = 1   % current traffic light state
-        stateDuration           = 7   % the duration a state stays active TODO: fine tune this
-        waitingBetweenStates    = 5  % the duration between to states TODO: fine tune this
+        stateDuration           = 7   % the duration a state stays active
+        waitingBetweenStates    = 7   % the duration between to states
     end
     
     methods
@@ -40,7 +40,7 @@ classdef CrossroadUnit < handle
                 stoppingNodes                              (1,4) double
                 leavingNodes                               (1,4) double
                 configurations.conventionalTrafficLights   (1,1) logical   = false  % use conventional traffic lights
-                configurations.intelligentDecision         (1,1) logical   = true   % 0 for FCFS, 1 for our algorithm
+                configurations.intelligentDecision         (1,1) logical   = true   % 0 for FCFS, 1 for intelligent algorithm
                 configurations.energyEquation              (1,1) logical   = false  % 0 for time optimized approach, 1 for energy optimized approach
             end
             obj.id = id;          
@@ -50,7 +50,7 @@ classdef CrossroadUnit < handle
             obj.leavingNodes = leavingNodes;                      
             
             % edit all the parameters at this point to change the algorithm
-            obj.params.criticalDeltaTTR = 1.5; % delta_TTR in our paper
+            obj.params.criticalETA = 10; % delta_TTR in our paper
             obj.params.alpha = 0.072;
             obj.params.alpha2 = 0.001;
             %platooning control isn't working as expected, therefore a
@@ -82,77 +82,84 @@ classdef CrossroadUnit < handle
             overlappingTable = table(NE,NS,ES,EW,SN,SW,WN,WE);
         end        
         
-        function carReachesCrossroad(obj,car,startingNode)
+        function carReachesCrossroad(obj,vehicle)
             % when a car is reaching the starting node of a crossroad, the
             % car has to be registrated in the arriving queue
             
-            if obj.params.intelligentDecision == 1 % for normal algorithm
+            % Traffic lights activated
+            if obj.params.conventionalTrafficLights == 1
                 
-                % check that cars destination is not  before crossroad
-                if length(car.pathInfo.path)>3
-                    arrivingDirection = find(startingNode == obj.startingNodes); % from which direction the car is coming 1=N, 2=E, 3=S, 4=W
-                    
-                    
-                    index = find(ismember(car.pathInfo.path,obj.leavingNodes));                   
-
-                    try
-                        leavingDirection = find(car.pathInfo.path(index(1)) == obj.leavingNodes); % in which direction the car is going 1=N, 2=E, 3=S, 4=W
-                        
-                    catch
-                        
-                        disp('crossroad error');
-                        
-                    end
-                    
-                    % arring queue definition:
-                    % [car id; arrving direction; leaving direction; ETA]
-                    % the cars will be added in this style to the arriving
-                    % queue. One line is one car.                  
-                    %direction = obj.convertNumToStringDirection([arrivingDirection leavingDirection]); TODO
-                    obj.arrivingGroup(end+1,:) = [car.id arrivingDirection leavingDirection];
+                % PLACEHOLDER
+                
+            % Intelligent algorithm activated
+            elseif obj.params.intelligentDecision == 1
+                
+                % Add vehicle to arriving queue
+                arrivingGroupEntry = obj.makeArrivingGroupEntry(vehicle, obj.startingNodes, obj.leavingNodes);
+                if ~isempty(arrivingGroupEntry)
+                    obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
                 end
+                
+            % FCFS algorithm activated
+            elseif obj.params.intelligentDecision == 0
+                
+                % PLACEHOLDER
+                
             end            
             
         end
         
-        function carReachesBrakingPoint(obj, vehicle, vehicles, brakingNode)
+        function carReachesBrakingPoint(obj, vehicle, vehicles)
             % this function is executed when a car reaches the braking
-            % point. Now the main algorithm has to be executed to derive
-            % the optimal CSG
-            
-            % When we are in FCFS the car hasn't been added in the arriving
-            % queue yet. This is done here.
-            if obj.params.intelligentDecision == 0
+            % point.
+             % Traffic lights activated
+            if obj.params.conventionalTrafficLights == 1               
                 
-                arrivingDirection = find(brakingNode == obj.brakingNodes);
-                leavingDirection = find(vehicle.pathInfo.path(3) == obj.leavingNodes);
-                
-                obj.arrivingGroup(end+1,:) = [vehicle.id arrivingDirection leavingDirection];
-                
-            end
-            
-            if ~isempty(obj.arrivingGroup)
-                if obj.params.conventionalTrafficLights == 0
-                        % get all prioritized vehicles (vehicles nearest to
-                        % crossroad) and their priorities
-                        priorityGroup = obj.buildPriorityGroup(vehicles, obj.arrivingGroup);
-                        % give every priority vehicle a GO/STOP order based
-                        % on their priority
-                        obj.vehicleOrders = obj.getVehicleOrders(priorityGroup, obj.leavingGroup);
-                        % transfer vehicles that will pass crossroad to
-                        % leaving group
-                        [obj.arrivingGroup, obj.leavingGroup] = obj.moveFromArrivingToLeavingGroup(obj.arrivingGroup, obj.leavingGroup, obj.vehicleOrders); 
+                % Add vehicle to arriving queue
+                arrivingGroupEntry = obj.makeArrivingGroupEntry(vehicle, obj.brakingNodes, obj.leavingNodes);
+                if ~isempty(arrivingGroupEntry)
+                    obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
                 end
+                
+            % Intelligent algorithm activated
+            elseif obj.params.intelligentDecision == 1
+                
+                % call crossroad algorithm
+                [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+            
+            % FCFS algorithm activated
+            elseif obj.params.intelligentDecision == 0
+                               
+                % Add vehicle to arriving queue
+                arrivingGroupEntry = obj.makeArrivingGroupEntry(vehicle, obj.brakingNodes, obj.leavingNodes);
+                if ~isempty(arrivingGroupEntry)
+                    obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
+                end
+                % call crossroad algorithm
+                [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+            
             end
-                        
+            
         end
         
-        function carReachesStartingPoint(obj, vehicle)
+        function carReachesStartingPoint(obj, ~)
             % car reaches the start of the crossroad
             
-            if obj.params.conventionalTrafficLights == 1 % TODO: maybe this is better also made in reaching braking point?
-                % transfer the current vehicle that is on the crossroad
-                [obj.arrivingGroup, obj.leavingGroup] = obj.moveFromArrivingToLeavingGroup(obj.arrivingGroup, obj.leavingGroup, [vehicle.id 0]); % the current car is leaving the crossroad
+            % Traffic lights activated
+            if obj.params.conventionalTrafficLights == 1
+                
+                % PLACEHOLDER
+                
+            % Intelligent algorithm activated
+            elseif obj.params.intelligentDecision == 1
+                
+                % PLACEHOLDER
+            
+            % FCFS algorithm activated
+            elseif obj.params.intelligentDecision == 0
+                
+                % PLACEHOLDER
+                
             end
         end
         
@@ -161,32 +168,95 @@ classdef CrossroadUnit < handle
             % main algorithm has to be executed again and the car has to be
             % deleted from the leaving queue
             
-            if ~isempty(obj.leavingGroup)
+            % Traffic lights activated
+            if obj.params.conventionalTrafficLights == 1
                 
-                % Remove vehicle from leavingGroup
-                obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
-                
-                % when there are still cars in the arriving queue then the
-                % main algorithm has to be executed again
-                if ~isempty(obj.arrivingGroup)
-                    if obj.params.conventionalTrafficLights == 0
-                        % get all prioritized vehicles (vehicles nearest to
-                        % crossroad) and their priorities
-                        priorityGroup = obj.buildPriorityGroup(vehicles, obj.arrivingGroup);
-                        % give every priority vehicle a GO/STOP order based
-                        % on their priority
-                        obj.vehicleOrders = obj.getVehicleOrders(priorityGroup, obj.leavingGroup);
-                        % transfer vehicles that will pass crossroad to
-                        % leaving group
-                        [obj.arrivingGroup, obj.leavingGroup] = obj.moveFromArrivingToLeavingGroup(obj.arrivingGroup, obj.leavingGroup, obj.vehicleOrders); 
-                    end
+                if ~isempty(obj.leavingGroup)
+                    
+                    % Remove vehicle from leavingGroup
+                    obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                    
                 end
+                
+            % Intelligent algorithm activated
+            elseif obj.params.intelligentDecision == 1
+                
+                if ~isempty(obj.leavingGroup)
+                    
+                    % Remove vehicle from leavingGroup
+                    obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                    
+                    % call crossroad algorithm
+                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                end
+                
+            % FCFS algorithm activated
+            elseif obj.params.intelligentDecision == 0
+                
+                if ~isempty(obj.leavingGroup)
+                    
+                    % Remove vehicle from leavingGroup
+                    obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                    
+                    % call crossroad algorithm
+                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                end
+                
             end
+            
+        end
+        
+        function [vehicleOrders, arrivingGroup, leavingGroup] = runCrossroadAlgorithm(obj, vehicles, arrivingGroup, leavingGroup)
+            % This is the main method for the intelligent crossroad manager
+            % algorithm.
+            
+            % Only when a vehicle is arriving execute the algorithm
+            if ~isempty(obj.arrivingGroup)
+                % get all prioritized vehicles and their priorities
+                priorityGroup = obj.buildPriorityGroup(vehicles, arrivingGroup);
+                % give every priority vehicle a GO/STOP order
+                vehicleOrders = obj.getVehicleOrders(priorityGroup, leavingGroup);
+                % transfer vehicles that will pass to leaving group
+                [arrivingGroup, leavingGroup] = obj.moveFromArrivingToLeavingGroup(arrivingGroup, leavingGroup, vehicleOrders);
+            else
+                vehicleOrders = [];
+            end
+        end
+        
+        function entry = makeArrivingGroupEntry(~, vehicle, startingNodes, leavingNodes)
+            % add a vehicle to arriving group
+                
+                entry = [];
+                % check that cars destination is not  before crossroad
+                if length(vehicle.pathInfo.path)>3
+                    arrivingDirection = find(vehicle.pathInfo.lastWaypoint == startingNodes); % from which direction the car is coming 1=N, 2=E, 3=S, 4=W
+                    
+                    
+                    index = find(ismember(vehicle.pathInfo.path,leavingNodes));                   
+
+                    try
+                        leavingDirection = find(vehicle.pathInfo.path(index(1)) == leavingNodes); % in which direction the car is going 1=N, 2=E, 3=S, 4=W
+                        
+                    catch
+                        
+                        disp('crossroad error');
+                        
+                    end
+                    
+                    % arring queue definition (one vehicle entry):
+                    % | vehicle id | arriving direction | leaving direction |
+                    entry = [vehicle.id arrivingDirection leavingDirection];
+                end
         end
 
         function [arrivingGroup, leavingGroup] = moveFromArrivingToLeavingGroup(~, arrivingGroup, leavingGroup, vehicleOrders)
             % Move all vehicles that got a 'go' command from the arriving
             % group to the leaving group
+            
+            % no vehicles to move
+            if isempty(arrivingGroup)
+                return
+            end
             
             % get all vehicles that have a 'go' command
             passingVehicles = vehicleOrders(vehicleOrders(:,2) == 0,1);
@@ -220,31 +290,31 @@ classdef CrossroadUnit < handle
         
         function priorityGroup = getPriorityGroup(obj, vehicles, arrivingGroup) % get first order vehicle group which only is considered in the algorithm
             % in this function we delimitate vehicles with close ETAs. The
-            % parameter we are using is criticalDeltaTTR (in our paper: deltaETA)
+            % parameter we are using is criticalETA (in our paper: deltaETA)
+            
+            % directions from that the vehicles enter the crossroad
+            arrivingDirection = arrivingGroup(:,2);
             
             % we loop through all vehicles to get the estimated time of
             % arrival at the conflict zone (ETA)
-            for i=1:size(arrivingGroup,1)          
+            for i=1:size(arrivingGroup,1)                         
                 
-                % to get exact estimations of all vehicles in the arriving
-                % queue, it has to be checked if there is another vehicle
-                % ahead. The next lines evaluate if there is another car
-                % ahead and if so then the ETA of the car ahead is saved in
-                % 'ETAcarInFront'. If there is no other car ahead
-                % ETAcarInFront = 0.                
-                tempArrivingGroup = arrivingGroup(1:i-1,:);
+                % Find a vehicle in front of current vehicle.
+                % Vehicle in front is the last vehicle added to arriving
+                % queue before the current vehicle with same arriving
+                % direction
+                indexVehicleInFront = find(arrivingDirection(i) == arrivingDirection(1:i-1),1,'last');
                 
-                if any(tempArrivingGroup(:,2)== arrivingGroup(i,2))
-                    % take ETA from vehicle in front if there is one
-                    rowIndexCarInFront = find(tempArrivingGroup(:,2)== arrivingGroup(i,2));
-                    ETAcarInFront = arrivingGroup(rowIndexCarInFront(end),4);
+                % Take ETA from vehicle in front.
+                if ~isempty(indexVehicleInFront)
+                    ETAcarInFront = arrivingGroup(indexVehicleInFront,4);
                 else
                     ETAcarInFront = 0;
                 end
                 
                 % get the current vehicle of arriving queue
                 vehicle = vehicles(arrivingGroup(i,1));
-                stoppingNode = obj.stoppingNodes(arrivingGroup(i,2));
+                stoppingNode = obj.stoppingNodes(arrivingDirection(i));
                 % the following line requests the ETA of the current
                 % vehicle using the stopping node and the ETA of the
                 % vehicle ahead (in case there is one)
@@ -252,57 +322,63 @@ classdef CrossroadUnit < handle
                 
             end
             
-            % now we have updated the estimated time of arrival for all
-            % vehicles in the arriving queue. The next step is to
-            % delimitate vehicles with close ETA by using the parameter
-            % criticalDeltaTTR
-            
-            priorityGroup = sortrows(arrivingGroup,4); % priority queue has the same structure as the arriving queue
-            difference = diff(priorityGroup(:,4)) < obj.params.criticalDeltaTTR; % TODO: Error when vehicle is too close behind an other,
-            % but without triggering criticalDeltaTTR is can make it over
-            % the crossroad without getting the brake flag
-            
-%             % find first order priority group seperated by critical
-%             % delta ttr from other vehicles
-%             if ~isempty(find( difference == 0, 1, 'first'))
-%                 carIds = priorityGroup(1:find( difference == 0, 1, 'first'),1);
-%                 % find the lines with matching carIds
-%                 priorityGroup = priorityGroup(ismember(priorityGroup(:,1),carIds),:);
-%             end
-            if obj.params.intelligentDecision == 0
-                % use all vehicles arriving if FCFS is selected
-                priorityGroup = arrivingGroup;
-            else
-                priorityGroup = priorityGroup(priorityGroup(:,4) <= 25,:); % TODO: quickfix
-                % add least one arriving car should be in priority group
+            % Build priority group with close vehicles         
+            if obj.params.intelligentDecision == 1
+                % add all vehicles to priority group that reach the
+                % crossroad starting point in time critical estimated time
+                % of arrival
+                priorityGroup = arrivingGroup(arrivingGroup(:,4) <= obj.params.criticalETA,:);
+                
+                % if there is no car in the group take the nearest car
                 if isempty(priorityGroup)
                     priorityGroup = sortrows(arrivingGroup,4);
                     priorityGroup = priorityGroup(1,:);
                 end
+            else
+                % add all vehicles arriving if FCFS is selected
+                priorityGroup = arrivingGroup;
             end
         end
         
         function priorityGroup = calculatePriority(obj, priorityGroup, vehicles)
             % the priority for each car in the first-order vehicle group (priorityGroup) is calculated
             
-            for i=1:size(priorityGroup,1)
-                priorityGroupMember = priorityGroup(i,:);
-                vehicle = vehicles(priorityGroupMember(1));
-                if obj.params.energyEquation == 0
-                    % time optimized priority formula
-                    priority = 1 + vehicle.dynamics.speed * obj.params.alpha;
-                else
-                    % energy optimized priority formula
-                    priority = 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass;
-                end
-                priorityGroup(i,5) = priority; % add priority to priority group
-            end
-            
-            if obj.params.intelligentDecision == 0
+            if obj.params.intelligentDecision == 1
+                for i=size(priorityGroup,1):-1:1
+                    priorityGroupMember = priorityGroup(i,:);
+                    vehicle = vehicles(priorityGroupMember(1));
+                    if obj.params.energyEquation == 0
+                        % time optimized priority formula
+                        priority = 1 + vehicle.dynamics.speed * obj.params.alpha;
+                    else
+                        % energy optimized priority formula
+                        priority = 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass;
+                    end
+                                        
+                    % Vehicles that are blocked by other vehicles in front
+                    % should not get a priority that allows them to pass
+                    
+                    % Check every vehicle that arrived earlier (higher in group)
+                    vehiclesInFront = ones(i-1,1);
+                    % ignore different starting points (not on same lane)
+                    vehiclesInFront(priorityGroup(i,2) ~= priorityGroup(1:i-1,2)) = false;
+                    % ignore when also same destination (can pass together)
+                    vehiclesInFront(priorityGroup(i,3) == priorityGroup(1:i-1,3)) = false;
+                    
+                    % Set negative priority so that this vehicle is not
+                    % considerd in passing the crossroad
+                    if any(vehiclesInFront)
+                        priority = -1;
+                    end
+                    
+                    % Add priority to priority group
+                    priorityGroup(i,5) = priority;
+                end                
+            else
                 % first come, first serve FCFS
                 % use the first entry of priority group, it is the first
                 % one that reaches the crossroad
-
+                
                 % give every member a negative priority so that they are
                 % not used in combinations because of bad priority
                 priorityGroup(:,5) = -1;
@@ -367,16 +443,15 @@ classdef CrossroadUnit < handle
             
             % get directions from cars already on crossroad
             if ~isempty(leavingGroup)
-                occupiedDirections = obj.convertNumToStringDirection(leavingGroup(:,2:3)); % TODO: make this conversion unneccessary
+                occupiedDirections = obj.convertNumToStringDirection(leavingGroup(:,2:3));
             else
                 occupiedDirections = [];
             end
             
             % group of vehicles that want to pass the crossroad in string
-            % directions TODO: dont convert, make priority group also in
-            % string
+            % directions
             % vehicle id | direction ("NS") | priority
-            vehicleQueue = [priorityGroup(:,1) obj.convertNumToStringDirection(priorityGroup(:,2:3)) priorityGroup(:,5)]; % TODO: check for non empty
+            vehicleQueue = [priorityGroup(:,1) obj.convertNumToStringDirection(priorityGroup(:,2:3)) priorityGroup(:,5)];
             
             % priority list contains the vehicle priorities and the
             % matching directions
@@ -613,13 +688,16 @@ classdef CrossroadUnit < handle
             % Go to next state
             if currentTime > (obj.stateStartingTime + obj.stateDuration + obj.waitingBetweenStates)
                 obj.currentState = mod(obj.currentState,4)+1; % go to next state
-                obj.stateStartingTime = currentTime;
+                obj.stateStartingTime = obj.stateStartingTime + obj.stateDuration + obj.waitingBetweenStates;
             end
             
             % Get orders for every vehicle according to the traffic light
             % state
             obj.vehicleOrders = obj.getConventionalVehicleOrders(obj.arrivingGroup, obj.currentState, waitingState);
             
+            % Move all vehicles with GO order to leaving group
+            [obj.arrivingGroup, obj.leavingGroup] = obj.moveFromArrivingToLeavingGroup(obj.arrivingGroup, obj.leavingGroup, obj.vehicleOrders);
+                   
         end
         
         function vehicleOrders = getConventionalVehicleOrders(obj, arrivingGroup, currentState, waitingState)
@@ -627,7 +705,12 @@ classdef CrossroadUnit < handle
             % the crossroad
             
             % get vehicles that need orders
-            vehicleOrders = [arrivingGroup(:,1) ones(size(arrivingGroup,1),1)];
+            if isempty(arrivingGroup)
+                vehicleOrders = [];
+                return
+            else
+                vehicleOrders = [arrivingGroup(:,1) ones(size(arrivingGroup,1),1)];
+            end
             
             % stop all cars if it is waiting state
             if waitingState

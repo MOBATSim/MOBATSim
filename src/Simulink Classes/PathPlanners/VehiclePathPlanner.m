@@ -70,8 +70,9 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                     waypointReached =0;                               
                 end
                 
-                %% Check if crossroad
-                obj.crossroadCheck(obj.vehicle);
+                %% Stop at next waypoint
+                obj.vehicle.setStopAtNextWaypoint(obj.vehicle.status.brakingFlag)
+
             end
             
             %% Grid path generation
@@ -79,33 +80,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 % BOGPath is used for the colorful path visualization, as well as path points for the local trajectory
                 obj.vehicle.pathInfo.BOGPath = obj.Map.generate_BOGPath(obj.Map,obj.vehicle.pathInfo.path,obj.vehicle.id,obj.vehicle.pathInfo.BOGPath);
             end
-            
-        end
-        
-        function crossroadCheck(obj,car)
-            
-            crossroadId = car.decisionUnit.inCrossroad(1);
-            crossroadZone = car.decisionUnit.inCrossroad(2);
-            
-            if crossroadId ~=0
-                          
-                if car.map.crossroadUnits(crossroadId).params.conventionalTrafficLights == 1
-                    car.map.crossroadUnits(crossroadId).updateConventionalTrafficLightSystem(obj.getCurrentTime);
-                end
-                
-                if crossroadZone == 2
-                    
-                    if car.decisionUnit.brakingFlag == 1
-                        car.pathInfo.stopAt = car.pathInfo.path(2);
-                    else
-                        car.pathInfo.stopAt = 0;
-                        car.setStopStatus(false);
-                    end
-                end
-            else
-                car.pathInfo.stopAt = 0;
-            end
-            
             
         end
         
