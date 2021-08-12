@@ -35,7 +35,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             car.updateActualSpeed(speed);                       % Sets the vehicle speed
         end
                 
-        function [position_Cart,orientation_Cart] = Frenet2Cartesian(~,route,s,d,radian)
+        function [refPos,refOrientation] = Frenet2Cartesian(~,currentTrajectory,s,d,radian)
             
             %this function transfer a position in Frenet coordinate into Cartesian coordinate
             %input:
@@ -48,29 +48,36 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             %position_Cart is the 1x2 array [x y] in Cartesian coordinate
             %orientation_Cart is the angle of the tangent vector on the reference roadline and the x axis of cartesian
             %detail information check Frenet.mlx
+            route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];
+            cclockwise = currentTrajectory(4,1);
             startPoint = route(1,:);
             endPoint = route(2,:);
+            %d = -d;
             if radian == 0%straight road
                 route_Vector = endPoint-startPoint;
                 local_route_Vector_i = route_Vector/norm(route_Vector);% unit vector of the route_vector
-                orientation_Cart = atan2(local_route_Vector_i(2),local_route_Vector_i(1)); % reverse tangent of unit vector
-                sideVector = [cos(orientation_Cart+pi/2) sin(orientation_Cart+pi/2)];%vector of the tangent line of reference line
-                position_Cart = s*local_route_Vector_i+d*sideVector+startPoint;% position= start point + length of journey
+                refOrientation = atan2d(local_route_Vector_i(2),local_route_Vector_i(1)); % reverse tangent of unit vector
+                %sideVector = [cosd(refOrientation+90) sind(refOrientation+90)];%vector of the tangent line of reference line
+                %refPos = s*local_route_Vector_i+d*sideVector+startPoint;% position= start point + length of journey
+                refPos = (s+0.01)*local_route_Vector_i+startPoint;
             else %curved road
-                r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
-                targetVector = (endPoint-startPoint)/norm(endPoint-startPoint); %Unit vector of route vector (p in Frenet.xml)
-                beta = atan2(targetVector(2),targetVector(1)); %the angle of target vector and x axis in cartesian coordinate (theta 1 in Frenet.xml)
-                plumbLength = cos(radian/2)*r; % the distance from circle center to targetVector (OG in Frenet.xml)
-                plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
-                center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
-                startPointVector = startPoint-center;%OP1 in Frenet.xml
+                rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
+                r = norm(startPoint-rotationCenter); % Get the radius of the rotation
+                
+                %targetVector = (endPoint-startPoint)/norm(endPoint-startPoint); %Unit vector of route vector (p in Frenet.xml)
+                %beta = atan2(targetVector(2),targetVector(1)); %the angle of target vector and x axis in cartesian coordinate (theta 1 in Frenet.xml)
+                %plumbLength = cos(radian/2)*r; % the distance from circle center to targetVector (OG in Frenet.xml)
+                %plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
+                %center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
+                startPointVector = startPoint-rotationCenter;%OP1 in Frenet.xml
                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
-                l = r+d;%current distance from rotation center to position
+                l = r-(d*cclockwise);%current distance from rotation center to position
                 lAng = sign(radian)*s/r+startPointVectorAng;% the angle of vector l
-                position_Cart = l*[cos(lAng) sin(lAng)]+center;% the position in Cartesion coordinate
-                orientation_Cart = lAng+sign(radian)*pi/2;
-                orientation_Cart = mod(orientation_Cart,2*pi);
-                orientation_Cart = orientation_Cart.*(0<=orientation_Cart & orientation_Cart <= pi) + (orientation_Cart - 2*pi).*(pi<orientation_Cart & orientation_Cart<2*2*pi);   % angle in (-pi,pi]
+                refPos = l*[cos(lAng) sin(lAng)]+rotationCenter;% the position in Cartesion coordinate
+                refOrientation = lAng+sign(radian)*pi/2;
+                refOrientation = mod(refOrientation,2*pi);
+                refOrientation = refOrientation.*(0<=refOrientation & refOrientation <= pi) + (refOrientation - 2*pi).*(pi<refOrientation & refOrientation<2*2*pi);   % angle in (-pi,pi]
+                refOrientation = rad2deg(refOrientation);
             end
         end
         

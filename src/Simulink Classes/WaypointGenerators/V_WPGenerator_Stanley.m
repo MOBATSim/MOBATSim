@@ -42,7 +42,6 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             % Calculate helping variables for the reference path calculation
             currentTrajectory = obj.vehicle.pathInfo.currentTrajectory;
             Vpos_C = [pose(1) pose(2)];
-            route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route         
             right = currentTrajectory(4,1); % -1 left -> +1 right           
             radian = currentTrajectory(3,1)*(-right);%radian of the curved road, is 0 for straight road
             
@@ -53,11 +52,11 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             % Update Vehicle Frenet Coordinates
             obj.vehicle.updateVehicleFrenetPosition(s,d)
             
-            % Generate Target Position for Stanley
-            [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,-d,radian);%Coordinate Conversion function
+            % Generate Reference Pose for Stanley
+            [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,d,radian);%Coordinate Conversion function
             
             %Required format for the Stanley controller
-            obj.referencePose = [targetPosition_C(1); targetPosition_C(2); rad2deg(roadOrientation)];
+            obj.referencePose = [refPos(1); refPos(2); refOrientation];
             
             % Check if the Waypoint is Reached
             obj.vehicle.checkWaypointReached(currentTrajectory(2,:));
