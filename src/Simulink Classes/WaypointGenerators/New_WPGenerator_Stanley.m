@@ -167,7 +167,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             
             [s,vehicle_d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,position_Cart,radian);%Coordinate Conversion function
             
-            car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates       
+            car.updateVehicleFrenetPosition(s,vehicle_d); % Update Vehicle Frenet Coordinates       
             %% If lane-changing trajectory exists
             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
                 obj.generateLaneChanging_WPs(car)
@@ -198,7 +198,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             car.pathInfo.s = s;% Arc length
             car.pathInfo.routeEndDistance = routeLength-s; %distance to the current route's endpoint
 
-            car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates
+            car.updateVehicleFrenetPosition(s,vehicle_d); % Update Vehicle Frenet Coordinates
             %% If lane-changing trajectory exists
             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
                 obj.generateLaneChanging_WPs(car)
@@ -227,7 +227,7 @@ classdef New_WPGenerator_Stanley < WaypointGenerator
             car.pathInfo.s = s;% Arc length
             car.pathInfo.routeEndDistance = routeLength-s;%distance to the current route's endpoint
             
-            car.updateVehicleFrenetPosition(s,vehicle_d,routeLength); % Update Vehicle Frenet Coordinates
+            car.updateVehicleFrenetPosition(s,vehicle_d); % Update Vehicle Frenet Coordinates
             %% If lane-changing trajectory exists
             if(~isempty(obj.trajPolynom))% if lane-changing trajectory exists
                 obj.generateLaneChanging_WPs(car)

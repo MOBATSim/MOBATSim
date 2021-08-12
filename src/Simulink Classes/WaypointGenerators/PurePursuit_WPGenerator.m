@@ -50,8 +50,8 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
             obj.currentPathPoints = obj.generatePathFollowingWaypoints(Vpos_C,obj.vehicle.pathInfo.BOGPath,obj.Kpoints);
             
             % Update Vehicle Frenet Coordinates
-            [s,d,routeLength] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C); % Convert from Cartesian to Frenet
-            obj.vehicle.updateVehicleFrenetPosition(s,d,routeLength); % Register the current vehicle Frenet coordinates
+            [s,d] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C); % Convert from Cartesian to Frenet
+            obj.vehicle.updateVehicleFrenetPosition(s,d); % Register the current vehicle Frenet coordinates
             
             % Check if the Waypoint is Reached
             obj.vehicle.checkWaypointReached(currentTrajectory(2,:));          

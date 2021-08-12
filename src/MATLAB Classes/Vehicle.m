@@ -59,9 +59,13 @@ classdef Vehicle < handle
         %         destinationPoint
         %         lastWaypoint
         %         routeCompleted
+        %         routeLength
         %         calculateNewPathFlag
         %         path
         %         BOGPath
+        %         s
+        %         d
+        %         routeEndDistance
 
         decisionUnit
         %         brakingFlag
@@ -120,6 +124,7 @@ classdef Vehicle < handle
             obj.pathInfo.path = 0;
             obj.pathInfo.futureData = [];
             obj.pathInfo.BOGPath = [];
+            obj.pathInfo.routeLength = 0;
             obj.pathInfo.laneId = 0;  % Left Lane = 1, in between = 0.5, Right Lane = 0
             obj.pathInfo.s = 0; % Check where they are set and get
             obj.pathInfo.d = 0; % Check where they are set and get
@@ -336,16 +341,27 @@ classdef Vehicle < handle
         
         function setCurrentTrajectory(car, currentTrajectory)
             car.pathInfo.currentTrajectory = currentTrajectory;
+            
+            % Calculate the current route length
+            if currentTrajectory(3,1) % if curved
+                startingPoint = currentTrajectory(1,[1 3]).*[1 -1]; % Get the starting point
+                rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
+                R = norm(startingPoint-rotationCenter); % Get the radius of the rotation
+                
+                car.pathInfo.routeLength = currentTrajectory(3,1)*R; % Arc length := theta*Radius
+            else % if straight
+                car.pathInfo.routeLength = norm(currentTrajectory(2,:)-currentTrajectory(1,:)); % Straight road length
+            end
         end
         
         function updateActualSpeed(car,speed)
             car.dynamics.speed = speed;
         end
         
-        function updateVehicleFrenetPosition(car, s,d,routeLength)
+        function updateVehicleFrenetPosition(car, s,d)
             car.pathInfo.s = s; % driven length in Frenet
             car.pathInfo.d = d; % lateral offset in Frenet
-            car.pathInfo.routeEndDistance = routeLength-s; % Distance until the end of the current route
+            car.pathInfo.routeEndDistance = car.pathInfo.routeLength-s; % Distance until the end of the current route
         end
         
         function setLastWaypoint(car,lastWaypoint)
