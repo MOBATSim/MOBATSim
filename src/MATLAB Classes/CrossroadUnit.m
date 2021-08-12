@@ -247,60 +247,62 @@ classdef CrossroadUnit < handle
             end
             
             % Build priority group with close vehicles         
-            if obj.params.intelligentDecision == 0
-                % use all vehicles arriving if FCFS is selected
-                priorityGroup = arrivingGroup;
-            else
+            if obj.params.intelligentDecision == 1
                 % add all vehicles to priority group that reach the
                 % crossroad starting point in time critical estimated time
                 % of arrival
                 priorityGroup = arrivingGroup(arrivingGroup(:,4) <= obj.params.criticalETA,:);
-
-		% Remove vehicles behind an other one on the same line but with other direction, so that the one behind couldnt be allowed to drive before the one in front
-		for i=1:size(priorityGroup,1)
-
-			vehiclesInFront = priorityGroup;
-			% remove different starting point
-			vehiclesInFront(vehiclesInFront(i,2) ~= vehiclesInFront(:,2),:) = [];
-			% remove when also same destination
-			vehiclesInFront(vehiclesInFront(i,3) == vehiclesInFront(:,3)) = [];
-			% remove vehicles behind
-			vehiclesInFront(vehiclesInFront(:,4) >= vehiclesInFront(i,4)) = []; 
-
-			% remove current vehicle because a car in front can block its direction
-			if ~isempty(vehiclesInFront)
-    				priorityGroup(i,:) = [];
-			end
-		end
-		% if there is no car in the group take the nearest car
+                
+                % if there is no car in the group take the nearest car
                 if isempty(priorityGroup)
                     priorityGroup = sortrows(arrivingGroup,4);
                     priorityGroup = priorityGroup(1,:);
                 end
+            else
+                % add all vehicles arriving if FCFS is selected
+                priorityGroup = arrivingGroup;
             end
         end
         
         function priorityGroup = calculatePriority(obj, priorityGroup, vehicles)
             % the priority for each car in the first-order vehicle group (priorityGroup) is calculated
             
-            for i=1:size(priorityGroup,1)
-                priorityGroupMember = priorityGroup(i,:);
-                vehicle = vehicles(priorityGroupMember(1));
-                if obj.params.energyEquation == 0
-                    % time optimized priority formula
-                    priority = 1 + vehicle.dynamics.speed * obj.params.alpha;
-                else
-                    % energy optimized priority formula
-                    priority = 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass;
-                end
-                priorityGroup(i,5) = priority; % add priority to priority group
-            end
-            
-            if obj.params.intelligentDecision == 0
+            if obj.params.intelligentDecision == 1
+                for i=1:size(priorityGroup,1)
+                    priorityGroupMember = priorityGroup(i,:);
+                    vehicle = vehicles(priorityGroupMember(1));
+                    if obj.params.energyEquation == 0
+                        % time optimized priority formula
+                        priority = 1 + vehicle.dynamics.speed * obj.params.alpha;
+                    else
+                        % energy optimized priority formula
+                        priority = 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass;
+                    end
+                                        
+                    % Vehicles that are blocked by other vehicles in front
+                    % should not get a priority that allows them to pass
+                    
+                    % Check every vehicle that arrived earlier (higher in group)
+                    vehiclesInFront = ones(i-1,1);
+                    % ignore different starting points (not on same lane)
+                    vehiclesInFront(priorityGroup(i,2) ~= priorityGroup(1:i-1,2)) = false;
+                    % ignore when also same destination (can pass together)
+                    vehiclesInFront(priorityGroup(i,3) == priorityGroup(1:i-1,3)) = false;
+                    
+                    % Set negative priority so that this vehicle is not
+                    % considerd in passing the crossroad
+                    if any(vehiclesInFront)
+                        priority = -1;
+                    end
+                    
+                    % Add priority to priority group
+                    priorityGroup(i,5) = priority;
+                end                
+            else
                 % first come, first serve FCFS
                 % use the first entry of priority group, it is the first
                 % one that reaches the crossroad
-
+                
                 % give every member a negative priority so that they are
                 % not used in combinations because of bad priority
                 priorityGroup(:,5) = -1;
