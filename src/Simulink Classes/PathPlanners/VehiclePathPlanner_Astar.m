@@ -133,9 +133,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             for i = 1: (length(path)-1)
                 newFutureData(i,:) = [car.id waypoints(path(i+1),3) waypoints(path(i+1),4) waypoints(path(i),5)  waypoints(path(i+1),5) -1];
             end
-            
-            car.logInitialFuturePlan(newFutureData,global_timesteps);
-                        
+                                    
         end
         
         function OtherVehiclesFutureData = deleteCollidedVehicleFutureData(obj,OtherVehiclesFutureData)       

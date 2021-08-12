@@ -64,9 +64,6 @@ classdef Vehicle < handle
         %         BOGPath
 
         decisionUnit
-        %         Map
-        %         initialFutureData
-        %         futureData
         %         brakingFlag
         %         inCrossroad
         V2I
@@ -121,6 +118,7 @@ classdef Vehicle < handle
             obj.pathInfo.routeCompleted = true;
             obj.pathInfo.calculateNewPathFlag = true;
             obj.pathInfo.path = 0;
+            obj.pathInfo.futureData = [];
             obj.pathInfo.BOGPath = [];
             obj.pathInfo.laneId = 0;  % Left Lane = 1, in between = 0.5, Right Lane = 0
             obj.pathInfo.s = 0; % Check where they are set and get
@@ -129,9 +127,6 @@ classdef Vehicle < handle
                         
             obj.map = map;
             
-            obj.decisionUnit.Map = map;
-            obj.decisionUnit.initialFutureData = [];
-            obj.decisionUnit.futureData = [];
             obj.decisionUnit.brakingFlag = 0;
             obj.decisionUnit.inCrossroad = [0 0];
             
@@ -291,13 +286,7 @@ classdef Vehicle < handle
             if stop % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
                 car.updateActualSpeed(0);
             end
-        end
-        
-        function logInitialFuturePlan(car,newFutureData,global_timesteps)
-            if global_timesteps == 0 % save the future data at the beginning of the simulation for validation after simulation
-                car.decisionUnit.initialFutureData = newFutureData;
-            end
-        end
+        end      
         
         function setCurrentRoute(car, RouteID)
             car.pathInfo.currentRoute = RouteID;
@@ -314,7 +303,7 @@ classdef Vehicle < handle
             
             car.sensors.leadingVehicle = leadingVehicle;
             car.sensors.distanceToLeadingVehicle = distanceToLeading;
-            if isobject(leadingVehicle) % if there is a leading vehicle
+            if ~isempty(leadingVehicle) % if there is a leading vehicle
                 car.sensors.leadingVehicleId = leadingVehicle.id;
                 car.sensors.leadingVehicleSpeed = car.sensors.leadingVehicle.dynamics.speed;
                 relSpeed = car.dynamics.speed - car.sensors.leadingVehicle.dynamics.speed;
@@ -328,7 +317,7 @@ classdef Vehicle < handle
             %% Rear vehicle
             
             car.sensors.rearVehicle = rearVehicle;
-            if isobject(rearVehicle) % if there is a rear vehicle
+            if ~isempty(rearVehicle) % if there is a rear vehicle
                 relSpeed = car.sensors.rearVehicle.dynamics.speed - car.dynamics.speed;
             else
                 relSpeed = 0; % to get an infinite rear safety margin
