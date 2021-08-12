@@ -74,7 +74,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             end
         end
         
-        function [s,d,routeLength] = Cartesian2Frenet(obj,currentTrajectory,Vpos_C)
+        function [s,d] = Cartesian2Frenet(obj,currentTrajectory,Vpos_C)
             %Transform a position in Cartesian coordinate into Frenet coordinate
             
             %Function Inputs:
@@ -85,7 +85,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             %Function Output:
             %yawAngle_in_Cartesian: The angle of the tangent vector on the reference roadline(d=0)
             %s:                     Traversed length along the reference roadline
-            %d:                     Vertical offset distance to the reference roadline,positive d means away from center
+            %d:                     Lateral offset - positive d means to the left of the reference road 
             
             route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
             radian = currentTrajectory(3,1);%radian of the curved road, is 0 for straight road
@@ -96,42 +96,44 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
             if radian == 0%straight road
                 route_Vector = Route_endPoint-Route_StartPoint;
                 route_UnitVector = route_Vector/norm(route_Vector);
-                yawAngle_in_Cartesian = atan2d(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate
-                posVector = Vpos_C-Route_StartPoint;
+                posVector = Vpos_C-Route_StartPoint; % Vector pointing from the route start point to the vehicle
                 
-                sideVector = [cosd(yawAngle_in_Cartesian+90) sind(yawAngle_in_Cartesian+90)];% side vector is perpendicular to the route
-                
+                % Calculate "s" the longitudinal traversed distance
                 s = dot(posVector,route_UnitVector);% the projection of posVector on route_UnitVector
                 
-                d = dot(posVector,sideVector);% the projection of posVector on sideVector
-                routeLength = norm(Route_endPoint-Route_StartPoint);% the length of the route_Vector
+                % Calculate "d" the lateral distance to the reference road frame
+                yawAngle_in_Cartesian = atan2d(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate
+                sideVector = [cosd(yawAngle_in_Cartesian+90) sind(yawAngle_in_Cartesian+90)];% side vector is perpendicular to the route
+                
+                d = dot(posVector,sideVector);% the projection of posVector on sideVector - positive d value means to the left
                 
             else % Curved Road
                 
-                rotationCenter = obj.vehicle.pathInfo.currentTrajectory(3,[2 3]); % Get the rotation center
-                rotationCenter(2) = -rotationCenter(2); % Transform the coordinate
+                rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
                 r = norm(Route_StartPoint-rotationCenter); % Get the radius of the rotation
                 startPointVector = Route_StartPoint-rotationCenter;% vector OP_1 in Frenet.xml
                 
                 
-                l = Vpos_C-rotationCenter;% the vector from rotation center to position
-                d = abs(r-norm(l)); % Previously: d = norm(l)-r;
+                posVector = Vpos_C-rotationCenter;% the vector from rotation center to position
+                % currentTrajectory(4,1) == -1 for counterclockwise, +1 for clockwise route
+                d=(norm(posVector)-r)*currentTrajectory(4,1); % Previously: d = abs(r-norm(posVector));
                 
-                start_dot_l = dot(startPointVector,l);% |startPointVetor|*|l|*sin(angle)
-                start_cross_l = sign(radian)*(startPointVector(1)*l(2)-startPointVector(2)*l(1));% |startPointVetor|*|l|*cos(angle)
+                
+                %start_dot_l = dot(startPointVector,posVector);% |startPointVetor|*|l|*sin(angle)
+                %start_cross_l = sign(radian)*(startPointVector(1)*posVector(2)-startPointVector(2)*posVector(1));% |startPointVetor|*|l|*cos(angle)
                 % TODO: Check + - according to radian and
                 % obj.vehicle.pathInfo.currentTrajectory values
-                angle = -atan2(start_cross_l,start_dot_l);% the angle between startPointVector and vector l, tan(angle) = start_dot_l/start_cross_1
-                if mod(angle,2*pi) > abs(radian)% judge if the radian of the angle bigger than the radian of the road
-                    start_cross_l = -(startPointVector(1)*l(2)-startPointVector(2)*l(1));
-                    angle = -atan2(start_cross_l,start_dot_l);
-                end
+                angle = real(acos(dot(posVector,startPointVector)/(norm(posVector)*norm(startPointVector))));
+%                 angle = -atan2(start_cross_l,start_dot_l);% the angle between startPointVector and vector l, tan(angle) = start_dot_l/start_cross_1
+%                 if mod(angle,2*pi) > abs(radian)% judge if the radian of the angle bigger than the radian of the road
+%                     start_cross_l = -(startPointVector(1)*posVector(2)-startPointVector(2)*posVector(1));
+%                     angle = -atan2(start_cross_l,start_dot_l);
+%                 end
                 s = angle*r;
-                routeLength = abs(radian)*r;
             end
         end
         
-        function [s,d,yawAngle_in_Cartesian,routeLength] = OLD_Cartesian2Frenet(obj,route,vehiclePos_Cartesian,radian)
+        function [s,d,yawAngle_in_Cartesian] = OLD_Cartesian2Frenet(obj,route,vehiclePos_Cartesian,radian)
             
             %this function transform a position in Cartesian coordinate into Frenet coordinate
             
@@ -160,9 +162,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
                 
                 s = dot(posVector,route_UnitVector);% the projection of posVector on local_route_vector_i
                 
-                d = dot(posVector,sideVector);% the projection of posVector on sideVector
-                routeLength = norm(Route_endPoint-Route_StartPoint);% the length of the route_Vector
-                
+                d = dot(posVector,sideVector);% the projection of posVector on sideVector                
             else
                 r = sqrt((norm(Route_endPoint-Route_StartPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
                 targetVector = (Route_endPoint-Route_StartPoint)/norm(Route_endPoint-Route_StartPoint);%Unit vector of route vector (p in Frenet.xml)
@@ -184,7 +184,6 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
                     angle = -atan2(start_cross_l,start_dot_l);
                 end
                 s = angle*r;
-                routeLength = abs(radian)*r;
                 yawAngle_in_Cartesian = lAng+sign(radian)*pi/2;% the orientation of the current point of the road(phi 4 in Frenet.xml) in cartesian coordinate
                 yawAngle_in_Cartesian = mod(yawAngle_in_Cartesian,2*pi);% orientation can not bigger than 2pi
                 yawAngle_in_Cartesian = yawAngle_in_Cartesian.*(0<=yawAngle_in_Cartesian & yawAngle_in_Cartesian <= pi) + (yawAngle_in_Cartesian - 2*pi).*(pi<yawAngle_in_Cartesian & yawAngle_in_Cartesian<2*2*pi);   % angle in (-pi,pi]

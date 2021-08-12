@@ -47,11 +47,11 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             radian = currentTrajectory(3,1)*(-right);%radian of the curved road, is 0 for straight road
             
             % Cartesian to Frenet Coordinate Transformation
-            %[s,d,orientation_C,routeLength] = obj.Cartesian2Frenet(route,Vpos_C,radian);
-            [s,d,routeLength] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C);
+            %[s,d,orientation_C] = obj.Cartesian2Frenet(route,Vpos_C,radian);
+            [s,d] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C);
             
             % Update Vehicle Frenet Coordinates
-            obj.vehicle.updateVehicleFrenetPosition(s,d,routeLength)
+            obj.vehicle.updateVehicleFrenetPosition(s,d)
             
             % Generate Target Position for Stanley
             [targetPosition_C,roadOrientation] = obj.Frenet2Cartesian(route,s,-d,radian);%Coordinate Conversion function
