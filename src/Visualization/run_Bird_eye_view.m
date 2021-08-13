@@ -92,7 +92,7 @@ speed = V10_speed.Data(1:step_length:end);
 defineTrajectory(car10, waypoints, speed);
 
 %% Open the Simulink Model for the ScenarioReader block and the Bird-Eye View visualization
-open('ScenarioAnimation.slx')
+open('BirdsEyeViewModel.slx')
 
 function defineTrajectory(car, waypoints, speed)
 try

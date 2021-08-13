@@ -2,13 +2,13 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
     switch scenarioName
         case 'Urban City Traffic'
 %% Vehicle 2 makes lane change on straight road + Vehicle 5 change planned Path
-%             startingPoints =    [46 47 84 3  54 64 58 57 4 63];
-%             destinationPoints = [54 78 82 26 3  42 27 25 26 47];
-%             maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
-%% Vehicle 2 makes lane change on curved road + Vehicle 5 change planned Path
-            startingPoints =    [46 29 84 3  54 64 58 57 4 63];
+            startingPoints =    [46 47 84 3  54 64 58 57 4 63];
             destinationPoints = [54 78 82 26 3  42 27 25 26 47];
             maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
+%% Vehicle 2 makes lane change on curved road + Vehicle 5 change planned Path
+%             startingPoints =    [46 29 84 3  54 64 58 57 4 63];
+%             destinationPoints = [54 78 82 26 3  42 27 25 26 47];
+%             maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
 %% Platoon control test for vehicle convoy         
 %            startingPoints =    [51 47 48 3 55 53 6 7 22 45];
 %            destinationPoints = [13 15 18 27 26 40 27 32 16 10];
