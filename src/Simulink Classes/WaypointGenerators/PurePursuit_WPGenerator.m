@@ -1,4 +1,4 @@
-classdef PurePursuit_WPGenerator < WaypointGenerator
+classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
     % This blocks generates waypoints for the Pure Pursuit lateral controller.
     %
     
@@ -25,7 +25,7 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
     methods(Access = protected)
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            setupImpl@WaypointGenerator(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
+            setupImpl@LocalTrajectoryPlanner(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
         end
         
         function nextWPs = stepImpl(obj,pose,speed,changeLane)

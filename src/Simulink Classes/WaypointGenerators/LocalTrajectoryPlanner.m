@@ -1,5 +1,5 @@
-classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propagates & matlab.system.mixin.SampleTime & matlab.system.mixin.CustomIcon
-    %WAYPOINTGENERATOR Superclass for waypoint generators
+classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.Propagates & matlab.system.mixin.SampleTime & matlab.system.mixin.CustomIcon
+    %LocalTrajectoryPlanner Superclass for generating necessary inputs for the lateral controllers.
     %   Detailed explanation goes here
     
     properties
@@ -15,7 +15,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
     end
     
     methods
-        function obj = WaypointGenerator(varargin)
+        function obj = LocalTrajectoryPlanner(varargin)
             %WAYPOINTGENERATOR Construct an instance of this class
             %   Detailed explanation goes here
             setProperties(obj,nargin,varargin{:});

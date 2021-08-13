@@ -1,4 +1,4 @@
-classdef V_WPGenerator_Stanley < WaypointGenerator
+classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
     % This blocks generates the reference pose required by the Stanley Lateral Controller.
     %
     
@@ -10,7 +10,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
     
     methods
         % Constructor
-        function obj = V_WPGenerator_Stanley(varargin)
+        function obj = Stanley_RefPoseGenerator(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:});
         end
@@ -19,7 +19,7 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
     methods(Access = protected)
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            setupImpl@WaypointGenerator(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
+            setupImpl@LocalTrajectoryPlanner(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
         end
         
         function [poseOut, referencePose] = stepImpl(obj,pose,speed,changeLane)
