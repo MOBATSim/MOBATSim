@@ -162,7 +162,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             if ~isempty(currentFutureData)
                 %% Another car on same route
                 %search for the highest exit time, that will slow us down the most
-                index = find(max(currentFutureData(:,5)));%TODO use max function properly
+                index = find(max(currentFutureData(:,5)));
                 timeToReachSlowerVehicle = currentFutureData(index,5);
                 %get speed of the slower vehicle
                 speedDisturbingVehicle =  currentFutureData(index,3);
