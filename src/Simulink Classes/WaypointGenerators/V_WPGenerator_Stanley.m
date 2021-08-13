@@ -42,19 +42,27 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             % Calculate helping variables for the reference path calculation
             currentTrajectory = obj.vehicle.pathInfo.currentTrajectory;
             Vpos_C = [pose(1) pose(2)];
-            %right = currentTrajectory(4,1); % -1 left -> +1 right           
-            radian = currentTrajectory(3,1);%*(-right);%radian of the curved road, is 0 for straight road
+            radian = currentTrajectory(3,1);
             
             % Cartesian to Frenet Coordinate Transformation
-            %[s,d,orientation_C] = obj.Cartesian2Frenet(route,Vpos_C,radian);
-            [s,d] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C);
+            [s,d] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C); % Determine current <s,d>
             
-            % Update Vehicle Frenet Coordinates
+            % Update Vehicle Frenet Coordinates <s,d>
             obj.vehicle.updateVehicleFrenetPosition(s,d)
             
-            % Generate Reference Pose for Stanley
-            [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,d,radian);%Coordinate Conversion function
-            
+            if changeLane % Add <delta s, delta d>
+                s = s+0.01;
+                %TODO: Not implemented yet
+                d = d;
+                % Generate Reference Pose for Stanley
+                [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,d,radian);%Coordinate Conversion function
+                
+            else % Add <delta s>
+                s = s+0.01;
+                % Generate Reference Pose for Stanley
+                [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,d,radian);%Coordinate Conversion function
+            end
+   
             %Required format for the Stanley controller
             obj.referencePose = [refPos(1); refPos(2); refOrientation];
             

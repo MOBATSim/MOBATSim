@@ -1,8 +1,5 @@
 classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
-    % Path Planner Plans paths.
-    %
-    % NOTE: When renaming the class name Untitled, the file name
-    % and constructor name must be updated to use the class name.
+    % VehiclePathPlanner_shortestPathFinder Inherits the VehiclePathPlanner. Finds the minimum distance path to reach the destination waypoint.
     %
     % This template includes most, but not all, possible properties, attributes,
     % and methods that you can implement for a System object in Simulink.

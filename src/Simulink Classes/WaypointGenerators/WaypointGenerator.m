@@ -57,7 +57,7 @@ classdef WaypointGenerator < matlab.System & handle & matlab.system.mixin.Propag
                 route_Vector = endPoint-startPoint;
                 routeUnitVector = route_Vector/norm(route_Vector);% unit vector of the route_vector
                 refOrientation = atan2d(routeUnitVector(2),routeUnitVector(1)); % reverse tangent of unit vector
-                refPos = (s+0.01)*routeUnitVector+startPoint; % The ref position on the path with 0.01 "s" ahead
+                refPos = s*routeUnitVector+startPoint; % The ref position on the path with 0.01 "s" ahead
             else %curved road
                 rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
                 r = norm(startPoint-rotationCenter); % Get the radius of the rotation
