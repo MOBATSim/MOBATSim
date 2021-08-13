@@ -42,8 +42,8 @@ classdef V_WPGenerator_Stanley < WaypointGenerator
             % Calculate helping variables for the reference path calculation
             currentTrajectory = obj.vehicle.pathInfo.currentTrajectory;
             Vpos_C = [pose(1) pose(2)];
-            right = currentTrajectory(4,1); % -1 left -> +1 right           
-            radian = currentTrajectory(3,1)*(-right);%radian of the curved road, is 0 for straight road
+            %right = currentTrajectory(4,1); % -1 left -> +1 right           
+            radian = currentTrajectory(3,1);%*(-right);%radian of the curved road, is 0 for straight road
             
             % Cartesian to Frenet Coordinate Transformation
             %[s,d,orientation_C] = obj.Cartesian2Frenet(route,Vpos_C,radian);

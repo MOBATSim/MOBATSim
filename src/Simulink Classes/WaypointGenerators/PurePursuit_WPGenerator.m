@@ -103,14 +103,14 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 updatedLaneChangingPoints_Cartesian = updatedLaneChangingPoints_Frenet(:,1)*route_UnitVector+updatedLaneChangingPoints_Frenet(:,2)*sideVector+route(1,:);
             else
                 startPoint = route(1,:);
-                endPoint = route(2,:);
-                r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
-                center = [currentTrajectory(3,2) -currentTrajectory(3,3)];
-                startPointVector = startPoint-center;%OP1 in Frenet.xml
+                rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
+                r = norm(startPoint-rotationCenter); % Get the radius of the rotation
+                
+                startPointVector = startPoint-rotationCenter;%OP1 in Frenet.xml
                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
                 l = r+(left*d);%current distance from rotation center to position
                 lAng = sign(radian)*s/r+startPointVectorAng;% the angle of vector l
-                position_Cart = l*[cos(lAng) sin(lAng)]+center;% the position in Cartesion coordinate
+                position_Cart = l*[cos(lAng) sin(lAng)]+rotationCenter;% the position in Cartesion coordinate
                 orientation_Cart = lAng+sign(radian)*pi/2;
                 orientation_Cart = mod(orientation_Cart,2*pi);
                 orientation_Cart = orientation_Cart.*(0<=orientation_Cart & orientation_Cart <= pi) + (orientation_Cart - 2*pi).*(pi<orientation_Cart & orientation_Cart<2*2*pi);   % angle in (-pi,pi]
@@ -235,17 +235,14 @@ classdef PurePursuit_WPGenerator < WaypointGenerator
                 position_Cart = s*route_UnitVector+d*sideVector+startPoint;% position= start point + length of journey
             else
 
-                r = sqrt((norm(endPoint-startPoint))^2/(1-cos(radian))/2);%The radius of the road segment， according to the law of the cosines
-                targetVector = (endPoint-startPoint)/norm(endPoint-startPoint); %Unit vector of route vector (p in Frenet.xml)
-                beta = atan2(targetVector(2),targetVector(1)); %the angle of target vector and x axis in cartesian coordinate (theta 1 in Frenet.xml)
-                plumbLength = cos(radian/2)*r; % the distance from circle center to targetVector (OG in Frenet.xml)
-                plumbVector = [cos(beta+sign(radian)*pi/2) sin(beta+sign(radian)*pi/2)]*plumbLength;
-                center = startPoint + targetVector*norm(endPoint-startPoint)/2 + plumbVector;%rotation center of the road in Cartesian coordinate
-                startPointVector = startPoint-center;%OP1 in Frenet.xml
+                rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
+                r = norm(startPoint-rotationCenter); % Get the radius of the rotation
+                
+                startPointVector = startPoint-rotationCenter;%OP1 in Frenet.xml
                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
-                l = r-(sign(radian)*d);%current distance from rotation center to position
-                lAng = sign(radian)*s/r+startPointVectorAng;% the angle of vector l
-                position_Cart = l.*[cos(lAng) sin(lAng)]+center;% the position in Cartesion coordinate
+                l = r-d;%current distance from rotation center to position
+                lAng = s/r+startPointVectorAng;% the angle of vector l
+                position_Cart = l.*[cos(lAng) sin(lAng)]+rotationCenter;% the position in Cartesion coordinate
             end
             
         end
