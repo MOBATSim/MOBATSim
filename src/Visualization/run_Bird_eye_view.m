@@ -1,7 +1,7 @@
 %% Run this script for the Bird-Eye View of the 2D simulation
 % update the map information file after every map update by running this
 % function which creates the drivingScenario object that is to be used by
-% the ScenarioReader block in ScenarioAnimation.slx
+% the ScenarioReader block in BirdsEyeViewModel.slx
 
 %% Add all road segments
 MOBATKent_Scenario = scenario_map_v1(); % export from drivingScenarioDesigner
@@ -110,10 +110,20 @@ catch
         try
             trajectory(car, waypoints, speed);
         catch
-            % The last try to generate waypoints by skipping the first 10 waypoints
+            % Try to generate waypoints by skipping the first 10 waypoints
             waypoints = waypoints(10:end,:,:);
             speed = speed(10:end);
-            trajectory(car, waypoints, speed);
+            try
+                trajectory(car, waypoints, speed);
+            catch
+                % The last try: Sample each waypoint in 5
+                I = 1:5:length(waypoints);
+                waypoints = waypoints(I,:,:);
+                speed = speed(I,:,:);
+                
+                % If this also doesn't work, then it simply fails, try reducing the simulation time.
+                trajectory(car, waypoints, speed);
+            end
         end
     end
 end

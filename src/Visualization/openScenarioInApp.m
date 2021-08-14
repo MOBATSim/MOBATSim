@@ -106,15 +106,25 @@ catch
     catch
         idx =(speed~=0);
         speed = (speed(idx));
-        waypoints = waypoints(idx,:,:);        
+        waypoints = waypoints(idx,:,:);
         try
             trajectory(car, waypoints, speed);
         catch
-            % The last try to generate waypoints by skipping the first 10 waypoints
+            % Try to generate waypoints by skipping the first 10 waypoints
             waypoints = waypoints(10:end,:,:);
             speed = speed(10:end);
-            trajectory(car, waypoints, speed);
+            try
+                trajectory(car, waypoints, speed);
+            catch
+                % The last try: Sample each waypoint in 5
+                I = 1:5:length(waypoints);
+                waypoints = waypoints(I,:,:);
+                speed = speed(I,:,:);
+                
+                % If this also doesn't work, then it simply fails, try changing the scenario.
+                trajectory(car, waypoints, speed);
+            end
         end
-    end  
+    end
 end
 end
