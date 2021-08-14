@@ -61,7 +61,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             % Generate lane changing trajectory if commanded and not generated yet
             if ~(changeLane==0) && isempty(obj.laneChangingPoints)
                     Frenet_LaneChangingPoints = obj.generateMinJerkTrajectory(obj.vehicle,obj.laneChangeTime,changeLane);
-                    obj.laneChangingPoints = obj.Frenet2Cartesian(s,d,Frenet_LaneChangingPoints,currentTrajectory);
+                    obj.laneChangingPoints = obj.Frenet2Cartesian(s,Frenet_LaneChangingPoints,currentTrajectory);
             end
             
             % If there are already lane changing path points            
@@ -74,8 +74,8 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                 if (obj.vehicle.pathInfo.laneId == 1) % If the vehicle is on the left lane +d must be added
                     s_next = (s:4:obj.vehicle.pathInfo.routeEndDistance+s)';
                     d_next=repmat(obj.ref_d,length(s_next),1);
-                    
-                    nextWPs = obj.array_Frenet2Cartesian(currentTrajectory,s_next,d_next);
+                    % s_next already starts from "s" therefore "0" is sent as the current "s" to the function below
+                    nextWPs = obj.Frenet2Cartesian(0,[s_next,d_next],currentTrajectory);
                     nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints);
 
                 else % If the vehicle is on the right lane, it follows the generated path points
@@ -178,7 +178,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
   
         %% Override for experiment - Later incorparate into WaypointGenerator.m
         
-        function updatedLaneChangingPoints_Cartesian = Frenet2Cartesian(obj,s,d,laneChangingPoints,currentTrajectory)
+        function updatedPathPoints_Cartesian = Frenet2Cartesian(~,s,laneChangingPoints,currentTrajectory)
             route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];
             radian = currentTrajectory(3,1);
             cclockwise = currentTrajectory(4,1);
@@ -191,14 +191,14 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                 
                 % Lane Changing Points were already in Frenet - only "s" value should be added
                 % "d" is already the reference
-                updatedLaneChangingPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
+                updatedPathPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
                 
-                updatedLaneChangingPoints_Cartesian = updatedLaneChangingPoints_Frenet(:,1)*route_UnitVector+updatedLaneChangingPoints_Frenet(:,2)*sideVector+route(1,:);
+                updatedPathPoints_Cartesian = updatedPathPoints_Frenet(:,1)*route_UnitVector+updatedPathPoints_Frenet(:,2)*sideVector+route(1,:);
             else
 
-                updatedLaneChangingPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
-                all_s = updatedLaneChangingPoints_Frenet(:,1);
-                all_d = updatedLaneChangingPoints_Frenet(:,2);
+                updatedPathPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
+                all_s = updatedPathPoints_Frenet(:,1);
+                all_d = updatedPathPoints_Frenet(:,2);
                 
                 startPoint = route(1,:);
                 rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
@@ -208,43 +208,13 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
                 l = r+(all_d*cclockwise);%current distance from rotation center to position
                 lAng = all_s/r+startPointVectorAng;% the angle of vector l
-                updatedLaneChangingPoints_Cartesian = l.*[cos(lAng) sin(lAng)]+rotationCenter;% the positions in Cartesian
+                updatedPathPoints_Cartesian = l.*[cos(lAng) sin(lAng)]+rotationCenter;% the positions in Cartesian
             end
             
             
 
         end
-        
-        function position_Cart = array_Frenet2Cartesian(~,currentTrajectory,s,d)
-            
-            route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route
-            radian = currentTrajectory(3,1);%radian of the curved road, is 0 for straight road
-            
-            startPoint = route(1,:);
-            endPoint = route(2,:);
-            
-            if radian ==0
-                route_Vector = endPoint-startPoint;
-                route_UnitVector = route_Vector/norm(route_Vector);
-                yawAngle_in_Cartesian = atan2d(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate               
-                sideVector = [cosd(yawAngle_in_Cartesian+90) sind(yawAngle_in_Cartesian+90)];%vector of the tangent line of reference line
-
-                position_Cart = s*route_UnitVector+d*sideVector+startPoint;% position= start point + length of journey
-            else
-
-                rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
-                r = norm(startPoint-rotationCenter); % Get the radius of the rotation
-                
-                startPointVector = startPoint-rotationCenter;%OP1 in Frenet.xml
-                startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
-                l = r-d;%current distance from rotation center to position
-                lAng = s/r+startPointVectorAng;% the angle of vector l
-                position_Cart = l.*[cos(lAng) sin(lAng)]+rotationCenter;% the position in Cartesion coordinate
-            end
-            
-        end
-        
-                     
+                    
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("WaypointGenerator.png");
