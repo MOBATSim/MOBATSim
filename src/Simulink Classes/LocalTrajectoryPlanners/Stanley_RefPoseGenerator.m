@@ -51,9 +51,8 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
             obj.vehicle.updateVehicleFrenetPosition(s,d)
             
             if changeLane % Add <delta s, delta d>
-                s = s+0.01;
-                %TODO: Not implemented yet
-                d = d;
+                s = s+0.01; 
+                %TODO: Not implemented yet + delta "d"
                 % Generate Reference Pose for Stanley
                 [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,d,radian);%Coordinate Conversion function
                 
