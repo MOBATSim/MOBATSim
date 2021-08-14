@@ -689,12 +689,19 @@ laneSpecification = lanespec(2, 'Width', 3.7);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road3');
 
 roadCenters = [226.84 -517.2 0;
+    208.93 -530.406 0;
     189.777 -541.137 0;
+    167.365 -550.107 0;
     147.953 -555.189 0;
+    125.672 -558.239 0;
     103.956 -558.486 0;
+    81.4942 -555.923 0;
     60.505 -550.824 0;
+    39.2626 -542.749 0;
     20.2884 -532.678 0;
+    1.6032 -519.536 0;
     -14.2067 -505.169 0;
+    -29.1425 -487.728 0;
     -40.85 -470 0];
 roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
 laneSpecification = lanespec(2, 'Width', 3.7);
