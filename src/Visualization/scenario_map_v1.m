@@ -654,15 +654,15 @@ roadCenters = [370 -370 0;
     390 -390 0;
     388.79 -396.84 0;
     387.32 -400 0];
-roadCenters(2:end,2) = roadCenters(2:end,2)+1.85;% y+1.85 to shift road to the left
-roadCenters(1,2) = roadCenters(1,2)-1.85;% shift last point to make sure the right lane connect with next single road
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(2:end,2) = roadCenters(2:end,2)+1.85;% y+1.85 to shift road to the left
+%roadCenters(1,2) = roadCenters(1,2)-1.85;% shift last point to make sure the right lane connect with next single road
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road');
 
 roadCenters = [387.32 -400 0;
     320 -516.6 0];
-roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road1');
 
 roadCenters = [320 -516.6 0;
@@ -673,8 +673,8 @@ roadCenters = [320 -516.6 0;
     283.711 -530.336 0;
     276.209 -526.606 0;
     270 -520.98 0];
-roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road2');
 
 roadCenters = [270 -520.98 0;
@@ -684,8 +684,8 @@ roadCenters = [270 -520.98 0;
     241.213 -510.499 0;
     233.585 -512.904 0;
     226.84 -517.2 0];
-roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road3');
 
 roadCenters = [226.84 -517.2 0;
@@ -703,8 +703,8 @@ roadCenters = [226.84 -517.2 0;
     -14.2067 -505.169 0;
     -29.1425 -487.728 0;
     -40.85 -470 0];
-roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road4');
 
 roadCenters = [-40.85 -470 0;
@@ -716,8 +716,8 @@ roadCenters = [-40.85 -470 0;
     -91.2109 -456.505 0;
     -98.8471 -462.362 0;
     -104.7 -470 0];
-roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road5');
 
 roadCenters = [-104.7 -470 0;
@@ -727,8 +727,8 @@ roadCenters = [-104.7 -470 0;
     -155.062 -483.499 0;
     -162.698 -477.64 0;
     -168.55 -470 0];
-roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road6');
 
 roadCenters = [-168.55 -470 0;
@@ -739,19 +739,20 @@ roadCenters = [-168.55 -470 0;
     -212.212 -453.492 0;
     -221.237 -457.978 0;
     -228.71 -464.74 0];
-roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road94');
 
 roadCenters = [-228.71 -464.74 0;
     -233.77 -468.62 0;
+    -239.9 -470 0;
     -240 -470 0];
-roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road95');
 
 roadCenters = [-240 -470 0;
     -300 -470 0];
-roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
-laneSpecification = lanespec(2, 'Width', 3.7);
+%roadCenters(:,2) = roadCenters(:,2)+1.85;% y+1.85 to shift road to the left
+laneSpecification = lanespec(3, 'Width', 3.7,'Marking',[laneMarking('DoubleSolid','Color','yellow') laneMarking('DoubleSolid','Color','yellow') laneMarking('Dashed','Color','y') laneMarking('Solid','Color','w')]);
 road(scenario, roadCenters, 'Lanes', laneSpecification, 'Name', 'Road96');
