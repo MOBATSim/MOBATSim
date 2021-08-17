@@ -68,7 +68,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             
             % Update conventional traffic systems
             for i=1:length(crossroadUnits)
-                if crossroadUnits(i).params.conventionalTrafficLights == 1
+                if crossroadUnits(i).mode == CrossroadModeEnum.TrafficLight
                     crossroadUnits(i).updateConventionalTrafficLightSystem(obj.getCurrentTime);
                 end
             end
