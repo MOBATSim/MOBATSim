@@ -72,6 +72,19 @@ function prepare_simulator(options)
     %% Load the Map
     [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
         startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
+        
+    %% Generate the 2D Map and the instance from the Map class
+    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap);
+
+    %% Load Vehicles    
+    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map);
+
+    %% Initialize Vehicles on the Map
+    Map.Vehicles = Vehicles;
+    Map.initCarDescriptionPlot();
+
+    % Create Binary Occupancy Grid Map
+    [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
     
     % Check selected starting and destination points are valid
     forbiddenNodes = [brakingNodes; stoppingNodes]; % vehicles should not stop in front or on crossroad
@@ -81,22 +94,9 @@ function prepare_simulator(options)
         % braking nodes and stopping nodes are forbidden
         brakingNodes %#ok<NOPRT>
         stoppingNodes %#ok<NOPRT>
-       return; 
+        return;
     end
     
-    %% Generate the 2D Map and the instance from the Map class
-    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap);
-
-    %% Load Vehicles
-    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map);
-
-    %% Initialize Vehicles on the Map
-    Map.Vehicles = Vehicles;
-    Map.initCarDescriptionPlot();
-
-    % Create Binary Occupancy Grid Map
-    [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
-
     % Open the MOBATSim Simulink Model
     open_system(options.modelName)
     
