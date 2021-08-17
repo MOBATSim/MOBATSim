@@ -6,9 +6,9 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
 %             destinationPoints = [54 78 82 26 3  42 27 25 26 47];
 %             maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
 %% Vehicle 2 makes lane change on curved road + Vehicle 5 change planned Path
-            startingPoints =    [46 29 84 3  54 64 58 57 4 63];
-            destinationPoints = [54 78 82 26 3  42 27 25 26 47];
-            maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
+%             startingPoints =    [46 29 84 3  54 64 58 57 4 63];
+%             destinationPoints = [54 78 82 26 3  42 27 25 26 47];
+%             maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
 %% Road merging Vehicle Convoy Scenario + V5 stops and blocks the road merge causing a collision
 %     startingPoints      = [50  46    15   3    54  52  6    7    47  30];
 %     destinationPoints   = [13  17    20   11   25  41  18   31   15  39];
@@ -30,9 +30,9 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
 %             destinationPoints = [26 47 51 1  3  27 42 25 76 46];
 %             maxSpeeds = [20 15 10 10 14 20 10 12 10 10];           
 %% Extra complex crossroad scenario
-%             startingPoints =    [8  46 29 18 53 52 65 6 15 64];
-%             destinationPoints = [59 47 51 1  3  27 42 25 76 46];
-%             maxSpeeds = [20 20 10 10 14 20 15 12 10 20];
+            startingPoints =    [8  46 29 18 53 52 65 6 15 64];
+            destinationPoints = [59 47 51 1  3  27 42 25 60 46];
+            maxSpeeds = [20 20 10 10 14 20 15 12 10 20];
 %% Counterexample crossroad safety
 %             startingPoints =    [18 72 84 3  21 65 79 19 4 20];
 %             destinationPoints = [17 78 82 26 17  42 76 17 26 17];
