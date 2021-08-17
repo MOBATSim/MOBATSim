@@ -12,6 +12,7 @@ function prepare_simulator(options)
         options.startingPoints      (1,:) double    = []                    % Custom starting points for vehicles
         options.destinationPoints   (1,:) double    = []                    % Custom destination points for vehicles
         options.maxSpeeds           (1,:) double    = []                    % Custom max speeds for vehicles
+        options.simpleMap           (1,1) logical   = false                 % Displays the map in a simpler way
     end
        
     hold off
@@ -52,7 +53,8 @@ function prepare_simulator(options)
                                                         startingPoints, ...
                                                         destinationPoints, ...
                                                         maxSpeeds, ...
-                                                        options.Analysing);
+                                                        options.Analysing, ...
+                                                        options.simpleMap);
         
         % if there are no differences, preparation is done                                        
         if ~any(differences)
@@ -72,7 +74,7 @@ function prepare_simulator(options)
         startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
 
     %% Generate the 2D Map and the instance from the Map class
-    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber);
+    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap);
 
     %% Load Vehicles
     Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map);
@@ -109,7 +111,8 @@ function prepare_simulator(options)
                                      startingPoints, ...
                                      destinationPoints, ...
                                      maxSpeeds, ...
-                                     options.Analysing);
+                                     options.Analysing, ...
+                                     options.simpleMap);
         
 
     %% Assign all needed workspace variables to the "base" workspace
