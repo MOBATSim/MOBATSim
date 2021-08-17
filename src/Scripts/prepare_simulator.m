@@ -72,7 +72,18 @@ function prepare_simulator(options)
     %% Load the Map
     [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
         startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
-
+    
+    % Check selected starting and destination points are valid
+    forbiddenNodes = [brakingNodes; stoppingNodes]; % vehicles should not stop in front or on crossroad
+    if ~checkNodesValid([startingPoints, destinationPoints], forbiddenNodes)
+        disp('Preparation error: invalid start and/or destination points!');
+        disp('Vehicle routes should not start or end on following crossroad nodes: ')
+        % braking nodes and stopping nodes are forbidden
+        brakingNodes %#ok<NOPRT>
+        stoppingNodes %#ok<NOPRT>
+       return; 
+    end
+    
     %% Generate the 2D Map and the instance from the Map class
     Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap);
 
