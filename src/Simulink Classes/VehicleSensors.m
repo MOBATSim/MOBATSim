@@ -36,8 +36,8 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             % Output1 : V2VcommIDs      -> V2V Data Links (0,1)                       
             V2VcommIDs = obj.vehicle.V2VdataLink;
             
-            vehicleDetected = false;
             % Default values for no detection
+            vehicleDetected = false;
             if obj.vehicle.pathInfo.destinationReached ...              % No detection when destination reached
                     || obj.vehicle.status.stop == true ...              % or vehicle stopped
                     || isempty(obj.vehicle.pathInfo.currentTrajectory)  % or has no planned trajectory
@@ -81,12 +81,17 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             rearVehicleID = -1;
             distanceToRear = Inf;
             
-            % Sensor information about front and behinds vehicle nearby (on the same route)
+            % Sensor information about front and rear vehicles nearby (on the same route)
             [frontDetection,rearDetection] = obj.findVehiclesOnTheSameRoute(car,Vehicles);
             
             % Sensor information about a vehicle ahead (on the next route if not already found on the same route)
             if isempty(frontDetection)
                 frontDetection = obj.findVehiclesOnTheNextRoute(car,Vehicles);
+            end
+            
+            % Sensor information about a vehicle behind (on one of the previous routes if not already found on the same route)
+            if isempty(rearDetection)
+                rearDetection = obj.findVehiclesOnThePreviousRoutes(car,Vehicles);
             end
             
             if ~isempty(frontDetection)
@@ -109,8 +114,6 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     rearVehicleID = rearDetection(rowId,1);
                     distanceToRear = min(rearDetection(:,2));
                 end
-            else
-                %% TODO: Use Map getBackwardNeighbourRoutes to find vehicles behind
             end
             
         end
@@ -169,6 +172,20 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 frontDetection = [frontDetection; [Vehicles(idx(j)).id relativeDistance]];                           
             end
                     
+        end
+        
+        function rearDetection = findVehiclesOnThePreviousRoutes(~,car,Vehicles)
+            rearDetection = [];
+            i = 1:length(Vehicles);
+            idx = car.map.getBackwardNeighbourRoutes(car.pathInfo.currentRoute) == cat(2,cat(2,Vehicles(i).pathInfo).currentRoute);
+            [~, idx] = find(idx,length(i), 'first');
+            
+            for j=1:length(idx)
+                %Check if there is a vehicle on one of the previous routes
+                relativeDistance = (car.pathInfo.s + Vehicles(idx(j)).pathInfo.routeEndDistance)-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
+                rearDetection = [rearDetection; [Vehicles(idx(j)).id relativeDistance]];
+            end
+            
         end
         
         
