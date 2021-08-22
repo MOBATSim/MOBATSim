@@ -1,16 +1,12 @@
 classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagates & matlab.system.mixin.CustomIcon
     % This block initializes the vehicles on the map, draws and updates their positions on the 2D plot. When a collision happens, the MAP instance detects it and stops the colliding vehicles. Apart from that, it contains an AIM (Autonomous Intersection Manager) to avoid conflictions on intersections. The decisions are sent to the vehicles as stop, wait, and go.
     %
-
-    % These properties are nontunable. When you use the System object™, 
-    % you can only change nontunable properties before calling the object 
-    % or after calling the release function.
+    
     properties (Nontunable)
-        % This properties are needed to set the output size of this block
-               
+        % This property is needed to set the output size of this block       
         nrVehicles % Number of vehicles
     end
-  
+    
     % Public, tunable properties
     properties(Access = private)
         map = evalin('base','Map');
@@ -24,23 +20,17 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     end
     
     methods(Access = protected)
-
+        
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("logo_small.png");
-        end
+        end      
         
-        function setupImpl(~)
-            % Perform one-time calculations, such as computing constants
-        end
-       
-        
-        function mergedBrakingFlagArrays = stepImpl(obj, V2Idata)
+        function StopCommands = stepImpl(obj, V2Idata)
             % Implement algorithm. Calculate y as a function of input u and
             % discrete states.
             
-            %% Crossroad units
-            
+            %% Crossroad units           
             crossroadUnits = obj.map.crossroadUnits;
             
             for i=1:size(V2Idata,1)
@@ -64,7 +54,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                         crossroadUnits(crossroadNr).carLeavesCrossroad(vehicle, obj.Vehicles);
                     end
                 end
-            end           
+            end
             
             % Update conventional traffic systems
             for i=1:length(crossroadUnits)
@@ -75,23 +65,23 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             
             
             % get the braking flag arrays from all crossroad units
-            mergedBrakingFlagArrays = cat(1,obj.map.crossroadUnits.vehicleOrders);
+            StopCommands = cat(1,obj.map.crossroadUnits.vehicleOrders);
             
             % Only brake when in crossroad zone 2 (between braking and stopping point)
-            for i=size(mergedBrakingFlagArrays,1):-1:1
-                if obj.Vehicles(mergedBrakingFlagArrays(i)).status.inCrossroad(2) ~= 2
+            for i=size(StopCommands,1):-1:1
+                if obj.Vehicles(StopCommands(i)).status.inCrossroad(2) ~= 2
                     % Delete when not in this zone from braking array
-                    mergedBrakingFlagArrays(i,:) = [];
+                    StopCommands(i,:) = [];
                 end
             end
-
+            
             %% 2D Traffic Plot + Path Dynamic Highlight
             if mod(obj.getCurrentTime,0.2) == 0
                 obj.map.dynamicTrafficPlot(); % Update Vehicle locations and speeds
                 
                 if mod(obj.getCurrentTime,1) == 0
                     obj.map.dynamicRouteHighlighting(); % Update hightlighted paths
-                end   
+                end
             end
             
             %% Collision detection
@@ -99,7 +89,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                 allVehiclePositions = cat(1,cat(1,cat(1,obj.map.Vehicles).dynamics).position);
                 allVehicleDistancesMatrix = dist(allVehiclePositions'); % Distance between all vehicles
                 [row,column] = find(triu(allVehicleDistancesMatrix<20,1)); % The value 20 is the threshold for checking for collision
-                if ~isempty(column) 
+                if ~isempty(column)
                     for k = 1:length(column) % If there are vehicle closer than 20 meters, check the collision for vehicle column(k) to row(k)
                         obj.map.Vehicles(column(k)).checkCollision(obj.map.Vehicles(row(k)));
                     end
@@ -110,14 +100,14 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                 obj.vehicleAnalysingWindow.update(obj.getCurrentTime);
             end
         end
-
-  %%      
+        
+        %%
         % These have to be specified because of
         % matlab.system.mixin.Propagates, to have variable size of outputs
         % and to avoid code generation which does not support the digraph
-        function mergedBrakingFlagArrays = isOutputFixedSizeImpl(~)
+        function StopCommands = isOutputFixedSizeImpl(~)
             %Both outputs are always variable-sized
-            mergedBrakingFlagArrays = false;
+            StopCommands = false;
             
         end
     end
@@ -128,20 +118,20 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         end
         
         
-        function mergedBrakingFlagArrays = getOutputSizeImpl(obj)
+        function StopCommands = getOutputSizeImpl(obj)
             % Maximum length of the output
-            mergedBrakingFlagArrays = [obj.nrVehicles 2];
+            StopCommands = [obj.nrVehicles 2];
             
         end
         
-        function mergedBrakingFlagArrays = getOutputDataTypeImpl(~)
-            mergedBrakingFlagArrays = 'double'; %Linear indices are always double values
+        function StopCommands = getOutputDataTypeImpl(~)
+            StopCommands = 'double'; %Linear indices are always double values
             
         end
         
-        function mergedBrakingFlagArrays = isOutputComplexImpl(~)
-            mergedBrakingFlagArrays = false; %Linear indices are always real values
-           
+        function StopCommands = isOutputComplexImpl(~)
+            StopCommands = false; %Linear indices are always real values
+            
         end
     end
 end
