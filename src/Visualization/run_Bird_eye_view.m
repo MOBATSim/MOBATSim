@@ -8,7 +8,7 @@
 MOBATKent_Scenario = scenario_map_v1(); % Output of a function automatically generated from the drivingScenarioDesigner after designing the roads
 
 %% Load all vehicles and generate Trajectories
-step_length = 5; % Sampling of WAYPOINTS and SPEEDS -> if this script takes too long to run, increase this number!
+step_length = 20; % Sampling of WAYPOINTS and SPEEDS -> if this script takes too long to run, increase this number!
 
 % To define the Ego Vehicle, just put the code of the corresponding vehicle to the first place.
 egoVehicle = vehicle(MOBATKent_Scenario, ...
