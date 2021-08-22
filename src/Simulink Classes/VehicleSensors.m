@@ -6,8 +6,8 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
     % Public, tunable properties
     properties
         Vehicle_id
-        Tsample = 0.01;
-        OffsetTime =0;
+        Tsample
+        OffsetTime
     end
     
     % Pre-computed constants
@@ -33,42 +33,41 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         
         function [V2VcommIDs, vehicleDetected] = stepImpl(obj)
             
-            % Output1 : V2VcommIDs      -> V2V Data Links (0,1)                       
+            % Output1 : V2VcommIDs -> V2V Data Links <0 or 1>                       
             V2VcommIDs = obj.vehicle.V2VdataLink;
+
+            % Output2 : vehicleDetected -> <false or true>
+            vehicleDetected = false;             
+            leadingVehicle = [];
+            rearVehicle = [];
             
-            % Default values for no detection
-            vehicleDetected = false;
-            if obj.vehicle.pathInfo.destinationReached ...              % No detection when destination reached
-                    || obj.vehicle.status.stop == true ...              % or vehicle stopped
-                    || isempty(obj.vehicle.pathInfo.currentTrajectory)  % or has no planned trajectory
+            % Default values for NO DETECTION ->
+            if obj.vehicle.pathInfo.destinationReached ...              % IF the vehicle has reached destination
+                    || obj.vehicle.status.stop == true ...              % OR the vehicle has stopped
+                    || isempty(obj.vehicle.pathInfo.currentTrajectory)  % OR the vehicle has no planned trajectory
                 
-                leadingVehicle = [];
-                rearVehicle = [];
                 distanceToLeading = Inf;
                 distanceToRear = Inf;                
             else
-                % Detection function
-                % Output2: distanceToLeading    -> distance to vehicle in front
+                % Detection Function
                 [leadingVehicleID, distanceToLeading, rearVehicleID, distanceToRear] = obj.detectVehicles(obj.vehicle,obj.Vehicles);
-                % get front vehicle if exists
+                
+                % Get leading vehicle if exists
                 if leadingVehicleID > 0
                     leadingVehicle = obj.Vehicles(leadingVehicleID);
                     % Output2: vehicle detected
                     vehicleDetected = true;
-                else
-                    leadingVehicle = [];
                 end
+                
                 % get rear vehicle if exists
                 if rearVehicleID > 0
                     rearVehicle = obj.Vehicles(rearVehicleID);
                     % Output2: vehicle detected
                     vehicleDetected = true;
-                else
-                    rearVehicle = [];
                 end
             end
                                             
-            % update vehicle sensor data
+            % Register the detected vehicles to Vehicle Sensor Detection Data
             obj.vehicle.setVehicleSensorDetection(leadingVehicle,distanceToLeading,rearVehicle, distanceToRear);
         end        
         
@@ -130,10 +129,10 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 for vehicle_=VehiclesOnSameRoute
                     % This exception happens only when following vehicles
                     % reach waypoints and not update their trajectory at the right place
-                    if ~(car.pathInfo.laneId == vehicle_.pathInfo.laneId) %TODO: Check if this logic about different lanes holds for all situations
-                        % Sense side vehicle for a safe lane-changing (TODO: Either carry to Side vehicle or update Rear Vehicle)
+                    if ~(car.pathInfo.laneId == vehicle_.pathInfo.laneId)
+                        % Sense side vehicle for a safe lane-changing (TODO: Register as Side vehicle for more complicated algorithms)
                         relativeDistance = (car.pathInfo.s - vehicle_.pathInfo.s)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
-                        rearDetection = [rearDetection; [vehicle_.id relativeDistance]];
+                        rearDetection(end+1,:) = [vehicle_.id relativeDistance]; %#ok<AGROW>
                     else
                         
                         relativeDistance = abs(car.pathInfo.s - vehicle_.pathInfo.s)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
@@ -142,15 +141,15 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                             % If the "egoVehicle" is behind the "vehicle_"
                             % and "vehicle_" has reached it's destination
                             relativeDistance=norm(vehicle_.dynamics.position-car.dynamics.position)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
-                            frontDetection = [frontDetection; [vehicle_.id relativeDistance]];
+                            frontDetection(end+1,:) = [vehicle_.id relativeDistance]; %#ok<AGROW>
                             
                         elseif (car.pathInfo.s < vehicle_.pathInfo.s)
                             % If the "egoVehicle" is behind the "vehicle_"
-                            frontDetection = [frontDetection; [vehicle_.id relativeDistance]];
+                            frontDetection(end+1,:) = [vehicle_.id relativeDistance]; %#ok<AGROW>
                             
                         elseif (car.pathInfo.s > vehicle_.pathInfo.s)
                             % If the "egoVehicle" is ahead of the "vehicle_"
-                            rearDetection = [rearDetection; [vehicle_.id relativeDistance]];
+                            rearDetection(end+1,:) = [vehicle_.id relativeDistance]; %#ok<AGROW>
                         end
                     end
                 end
@@ -169,7 +168,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                 %Check if there is a vehicle on the next
                 %neighbouring routes                
                 relativeDistance = (norm(car.dynamics.position-car.pathInfo.currentTrajectory(2,:)) + Vehicles(idx(j)).pathInfo.s)-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
-                frontDetection = [frontDetection; [Vehicles(idx(j)).id relativeDistance]];                           
+                frontDetection(end+1,:) = [Vehicles(idx(j)).id relativeDistance]; %#ok<AGROW>                          
             end
                     
         end
@@ -183,7 +182,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             for j=1:length(idx)
                 %Check if there is a vehicle on one of the previous routes
                 relativeDistance = (car.pathInfo.s + Vehicles(idx(j)).pathInfo.routeEndDistance)-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
-                rearDetection = [rearDetection; [Vehicles(idx(j)).id relativeDistance]];
+                rearDetection(end+1,:) = [Vehicles(idx(j)).id relativeDistance];  %#ok<AGROW>
             end
             
         end

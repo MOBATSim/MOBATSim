@@ -6,13 +6,13 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
 %             destinationPoints = [54 51 82 26 3  42 27 25 26 47];
 %             maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
 %% Vehicle 2 makes lane change on curved road + Vehicle 5 change planned Path
-%             startingPoints =    [46 29 84 3  54 64 58 57 4 63];
-%             destinationPoints = [54 24 82 26 3  42 27 25 26 47];
-%             maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
+            startingPoints =    [46 29 84 3  54 64 58 57 4 63];
+            destinationPoints = [54 24 82 26 3  42 27 25 26 47];
+            maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
 %% Road merging Vehicle Convoy Scenario + V5 stops and blocks the road merge causing a collision
-    startingPoints      = [50  46    15   3    54  52  6    7    47  30];
-    destinationPoints   = [13  17    20   11   25  41  18   31   15  39];
-    maxSpeeds           = [13  12.9  12   9.2  13  13  12.8 13.8  6  13];
+%     startingPoints      = [50  46    15   3    54  52  6    7    47  30];
+%     destinationPoints   = [13  17    20   11   25  41  18   31   15  39];
+%     maxSpeeds           = [13  12.9  12   9.2  13  13  12.8 13.8  6  13];
 %% Platoon control test for vehicle convoy         
 %            startingPoints =    [51 47 48 3 55 53 6 7 22 45];
 %            destinationPoints = [13 15 18 27 26 40 27 32 16 10];
