@@ -1,13 +1,14 @@
 %% Run this script for the Cuboid World or Unreal Engine 4 Simulation of the 2D MOBATSim simulation
-% update the map information file after every map update by running this
-% function which creates the drivingScenario object that is to be used by
-% the DrivingScenarioDesigner APP
+% This script:
+% 1- should be run after finishing the main simulation on the 2D plot because the logged data is required for this script.
+% 2- has to be run in order to update the trajectories after each driving scenario in the main simulation.
+% 3- opens the drivingScenarioDesigner APP to simulate the vehicle trajectories in the Cuboid World or using Unreal Engine 4
 
-%% Add all road segments
-MOBATKent_Scenario = scenario_map_v1(); % export from drivingScenarioDesigner
+%% Load all the road information 
+MOBATKent_Scenario = scenario_map_v1(); % Output of a function automatically generated from the drivingScenarioDesigner after designing the roads
 
-%% Load all trajectories
-step_length = 1; % Sampling of WAYPOINTS and SPEEDS
+%% Load all vehicles and generate Trajectories
+step_length = 5; % Sampling of WAYPOINTS and SPEEDS -> if this script takes too long to run, increase this number!
 
 % To define the Ego Vehicle, just put the code of the corresponding vehicle to the first place.
 egoVehicle = vehicle(MOBATKent_Scenario, ...
@@ -94,6 +95,7 @@ car10 = defineTrajectory(car10, waypoints, speed);
 %% Open the scenario in drivingScenarioDesigner (This way it can be also edited or simulated 3D in Unreal Engine)
 drivingScenarioDesigner(MOBATKent_Scenario)
 
+%% This function uses try-catch-try structure as a workaround the geometric errors caused by the "trajectory" function
 function car = defineTrajectory(car, waypoints, speed)
 try
     trajectory(car, waypoints, speed)
