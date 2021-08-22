@@ -126,11 +126,9 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 if (obj.vehicle.pathInfo.laneId==0)... % if vehicle is already on the right lane
                         &&(obj.vehicle.dynamics.maxSpeed >obj.vehicle.sensors.leadingVehicleSpeed*2)... % and the vehicle is more than 2 times faster than the lead vehicle
                         &&(obj.vehicle.sensors.distanceToLeadingVehicle <(obj.vehicle.dynamics.speed-obj.vehicle.sensors.leadingVehicleSpeed)*4)% and the vehicle can overtake in 4 seconds
-                    obj.vehicle.status.canLaneSwitch = 1;%left lane-changing command
-                    laneChange = 1;
-                elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.rearVehicleSafetyMargin)>2)&&(obj.vehicle.status.ttc>3.5)%conditions for right lane-changing
-                    obj.vehicle.status.canLaneSwitch = 2;%right lane-changing command
-                    laneChange = 2;
+                    laneChange = 1; %left lane-changing command
+                elseif (obj.vehicle.pathInfo.laneId==1)&&(abs(obj.vehicle.sensors.rearVehicleSafetyMargin)>2)&&(obj.vehicle.status.ttc>3.5)%conditions for right lane-changing       
+                    laneChange = 2;%right lane-changing command
                 else
                     laneChange = 0;
                 end

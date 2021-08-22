@@ -2,28 +2,33 @@ classdef Vehicle < handle
     %VEHICLE Vehicle Class is used to generate Vehicle instances for each vehicle in the simulation.
     %
     % VEHICLE Methods:
-    %    Vehicle - Constructer Method
-    %    checkCollision - Checks if a collision has happened with another vehicle
-    %    getHitbox - Gets the hitbox of vehicles to check for collision
-    %    vehiclesCollide - Stops the vehicles if a collision has happened
-    %    checkIntersection - Checks if hitboxes intersect to raise the collision flag
-    %    checkifDestinationReached - Checks if the vehicle has reached its destination waypoint
+    %    Vehicle - Constructer Method   - Generates the vehicle with the initial values as inputs
+    %    checkWaypointReached           - Checks if the vehicle has reached its next waypoint
+    %    generateTrajectoryFromPath     - Generates a trajectory from the path information
+    %    generateCurrentRoute           - Finds the current route from the path and the last waypoint information
+    %    checkCollision                 - Checks if a collision has happened with another vehicle
+    %    getHitbox                      - Gets the hitbox of vehicles to check for collision
+    %    vehiclesCollide                - Stops the vehicles if a collision has happened
+    %    checkIntersection              - Checks if hitboxes intersect to raise the collision flag
+    %    checkifDestinationReached      - Checks if the vehicle has reached its destination waypoint
 
     % SET Methods:
-    %    setStopStatus - Stops the vehicle
-    %    setCurrentRoute
-    %    setPath
-    %    setVehicleSensorDetection
-    %    setDrivingMode
-    %    setCollided
-    %    setCurrentTrajectory
-    %    updateActualSpeed
-    %    updateVehicleFrenetPosition
-    %    setLastWaypoint
-    %    setRouteCompleted
-    %    setDestinationReached
-    %    setYawAngle
-    %    setPosition
+    %    setStopAtNextWaypoint          - Makes the vehicle stop at the next waypoint
+    %    setStopStatus                  - Stops the vehicle
+    %    setCurrentRoute                - Sets the current route
+    %    setPath                        - Sets the current path
+    %    setVehicleSensorDetection      - Registers the front and rear vehicle detections
+    %    setDrivingMode                 - Sets the vehicle's driving mode
+    %    setCollided                    - Changes the vehicle's collided status
+    %    setCurrentTrajectory           - Sets the current trajectory
+    %    updateActualSpeed              - Sets the vehicle dynamics speed value
+    %    updateVehicleFrenetPosition    - Updates vehicle's <s,d> values according to its own Frenet Frame
+    %    setLastWaypoint                - Sets the last waypoint
+    %    setRouteCompleted              - Sets the value for when a route is completed
+    %    setDestinationReached          - Sets the value for when the destination is reached
+    %    setYawAngle                    - Sets the yaw angle value
+    %    setPosition                    - Sets the position value
+    %    setInitialRouteAndTrajectory   - Sets the initial route and trajectory for a vehicle to start
 
     properties
         id              %    id - Unique id of a vehicle
@@ -46,6 +51,8 @@ classdef Vehicle < handle
         %         leadingVehicleId
         %         distanceToLeadingVehicle
         %         leadingVehicleSpeed
+        %         leadingVehicle
+        %         rearVehicleSafetyMargin
         status
         %         drivingMode
         %         stop
@@ -54,6 +61,7 @@ classdef Vehicle < handle
         %         brakingFlag                   vehicle stops at next waypoint
         %         inCrossroad                   at which crossroad unit and in which section 
         pathInfo
+        %         currentTrajectory
         %         currentRoute
         %         destinationReached
         %         stopAt
@@ -61,17 +69,19 @@ classdef Vehicle < handle
         %         destinationPoint
         %         lastWaypoint
         %         routeCompleted
-        %         routeLength
         %         calculateNewPathFlag
         %         path
+        %         futureData
         %         BOGPath
+        %         routeLength
+        %         laneId                        Left Lane = 1, in between = 0.5, Right Lane = 0
         %         s
         %         d
         %         routeEndDistance
         V2I
         V2VdataLink
         V2IdataLink
-        map
+        map             %    map - Every vehicle takes an instance of the map
     end
     
     methods
@@ -96,18 +106,12 @@ classdef Vehicle < handle
             obj.sensors.leadingVehicleId            = 0;
             obj.sensors.distanceToLeadingVehicle    = Inf;
             obj.sensors.leadingVehicleSpeed         = -1;
-            % TODO: check following, if they are needed
-            obj.sensors.leadingVehicle = []; % Check where they are set and get
-            obj.sensors.readVehicle = []; % Check where they are set and get
-            obj.sensors.rearVehicleSafetyMargin = 1000; % Check where they are set and get
-            obj.sensors.rearVehicleDistance = Inf; % Check where they are set and get
-            
-            
+            obj.sensors.leadingVehicle = [];
+            obj.sensors.rearVehicleSafetyMargin = 1000; % Only used by the Ego Vehicle at the moment                       
             
             obj.setDrivingMode(0);
             obj.setStopStatus(true);
-            obj.setCollided(false); % vehicle has no collision
-            obj.status.canLaneSwitch = 0; % Check where they are set and get
+            obj.setCollided(false);
             obj.status.ttc = 1000;
             obj.status.brakingFlag = 0;
             obj.status.inCrossroad = [0 0];
@@ -126,9 +130,9 @@ classdef Vehicle < handle
             obj.pathInfo.BOGPath = [];
             obj.pathInfo.routeLength = 0;
             obj.pathInfo.laneId = 0;  % Left Lane = 1, in between = 0.5, Right Lane = 0
-            obj.pathInfo.s = 0; % Check where they are set and get
-            obj.pathInfo.d = 0; % Check where they are set and get
-            obj.pathInfo.routeEndDistance = []; % Check where they are set and get
+            obj.pathInfo.s = 0;
+            obj.pathInfo.d = 0;
+            obj.pathInfo.routeEndDistance = [];
                         
             obj.map = map;
            
@@ -189,8 +193,23 @@ classdef Vehicle < handle
             else % Destination Reached // CurrentRoute stays the same
                 currentRoute = car.pathInfo.currentRoute;
             end
+        end       
+        
+        function reached = checkifDestinationReached(car)
+            reached = false;
+            if ~car.pathInfo.destinationReached % The vehicle hasn't reached before so it is equal to zero
+                if car.pathInfo.lastWaypoint == car.pathInfo.destinationPoint
+                    % Vehicle has reached its destination
+                    reached = car.setDestinationReached(true);
+                    % Stop the vehicle
+                    car.setStopStatus(true);
+                    % Close the V2V connection
+                    car.V2VdataLink(car.V2VdataLink==1) =0;
+                end
+            end
         end
         
+        %% Collision Detection Functions             
         function checkCollision(vehicle,car)
             %this function should be seperate from the sensor because sensor can be faulty but collision will appear as
             %an accident so to create the conditions for instant stop we need to keep it as a seperate function
@@ -268,21 +287,7 @@ classdef Vehicle < handle
             
         end
         
-        function reached = checkifDestinationReached(car)
-            reached = false;
-            if ~car.pathInfo.destinationReached % The vehicle hasn't reached before so it is equal to zero
-                if car.pathInfo.lastWaypoint == car.pathInfo.destinationPoint
-                    % Vehicle has reached its destination
-                    reached = car.setDestinationReached(true);
-                    % Stop the vehicle
-                    car.setStopStatus(true);
-                    % Close the V2V connection
-                    car.V2VdataLink(car.V2VdataLink==1) =0;
-                end
-            end
-        end
-        
-        %% SET/GET Functions to control the changes in the properties
+        %% SET/GET Functions to control the value changes in the properties
         
         function setStopAtNextWaypoint(car, brakingFlag)
             % set stopAt if the vehicle should stop at next waypoint
@@ -385,12 +390,8 @@ classdef Vehicle < handle
             car.setRouteCompleted(bool);
             
         end
-               
-        function setOrientation(car,newOrientation) % Might be obsolete after implementing setYawAngle function
-            car.dynamics.orientation = newOrientation;
-        end
-        
-        function setYawAngle(car,YawAngle) % Might replace set Orientation after careful analysis
+                      
+        function setYawAngle(car,YawAngle)
             % Set the yaw angle in rad
             car.dynamics.orientation = [0 1 0 YawAngle];
         end
