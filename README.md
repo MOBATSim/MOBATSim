@@ -24,7 +24,7 @@ MOBATSim is continuously updated with the newest version of MATLAB®. Therefore,
 * Simulink® and Stateflow®
 * Automated Driving Toolbox™
 * Robotics System Toolbox™
-* Control Toolbox™
+* Control System Toolbox™
 * Model Predictive Control Toolbox™  (only if MPC-Cruise Controller Block is used)
 * Simulink 3D Animation Toolbox™ (Only required for the 3D Animation Virtual World)
 
