@@ -82,11 +82,11 @@ If you find MOBATSim useful and you would like to improve it by implementing you
 1. "Fork" the repository from the top right corner.
 2. Go to your forked repository and switch to the development branch.
 3. Make your changes in the development repository. Make sure your contributions fit the format in terms of coding or input/output properties of the Simulink blocks.
-4. To make sure that your changes work, you should run the "MOBATSimAutoTesting.m" and if you get "passed" from all the tests you should "commit" and then "Push" to your forked repository.
+4. To make sure that your changes work, you should run the "MOBATSimAutoTesting.m" and if you get "passed" from all the tests, you should "commit" and then "Push" to your forked repository.
 5. Then if you would like to contribute, send a "Pull Request" to the corresponding branch on the MOBATSim/MOBATSim repository.
-6. Once it is reviewed it will be approved or changes will be requested along with the comments of the reviewer regarding the issue with your Pull Request.
+6. Once it is reviewed, it will be approved or changes will be requested along with the comments of the reviewer regarding the issue with your Pull Request.
 
-We would like to encourage everyone who would like to contribute so you can also contact us for a more detailed explanation of the structure!
+We would like to encourage everyone who would like to contribute, so you can also contact us for a more detailed explanation of the structure!
 
 <a name="releasenotes"></a>
 ## Release Notes - Version 2.0
@@ -105,18 +105,13 @@ We would like to encourage everyone who would like to contribute so you can also
 
 * Vehicles are not allowed to start or finish on the intersection points to avoid congestion.
 * Bird's Eye View or DrivingScenarioDesigner APP might work slowly because of the size of the road network.
-* Some road merges do not have the safety guarantees which means that a vehicle just merging another road at the same time with another vehicle or there is a stopping vehicle at the merging point of the joining road may cause collisions.
+* Some road merges do not have safety guarantees which means that a vehicle just merging another road at the same time with another vehicle or there is a stopping vehicle at the merging point of the joining road may cause collisions.
 * Changing the default sample time value of 0.02 or playing with different Simulink Solver options other than "auto" may cause unexpected behavior.
 
 <a name="gettingstarted"></a>
 ## Getting Started
 
-MOBATSim has a project file that includes the Simulink files and their paths. The project can be opened by double-clicking on "MOBATSim.prj" and a GUI will appear, which can be used to start simulation.
+MOBATSim has a project file that includes the Simulink files and their paths. The project can be opened by double-clicking on "MOBATSim.prj" and a GUI will appear, which can be used to start the simulation. Simply click on "Start Simulation" and wait for the simulation to start.
 
-## The Simulation Framework
-
-An overview of the simulation framework is shown in the figure below. For more details on the models, please refer to our [documentation](https://mobatsim.com/about-mobatsim/) on our website.
-
-<img src="img/SimulationEnvironment.png" alt="Combined Image" />
-
+Please refer to the .mlx file "GettingStarted.mlx" for more detailed documentation, which you open with MATLAB.
 
