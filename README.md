@@ -16,7 +16,8 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation f
 4. [Contributing to MOBATSim](#contribution)
 5. [Release Notes](#releasenotes)
 
-## Introduction <a name="introduction"></a>
+<a name="introduction"></a>
+## Introduction
 
 Automated driving systems tend to be more important and sophisticated in the nearest future. The functional safety assessment for these systems becomes an urgent necessity for the transition to full autonomy. Testing these functions consisting of decision and control algorithms with a lot of variables and parameters in a unified manner is a daunting task. Threat assessment has to be made for vehicles to actively avoid hazardous situations. This requires the analysis of complex operational profiles such as routing, intersection management and collision prediction in an environment where multiple vehicles are in different positions, and traveling at different speeds. There is a need for a comprehensive traffic simulation framework which models not only the functionality of the vehicles but also the interactions between them.
 
@@ -25,7 +26,8 @@ More detailed information about the scientific papers related to MOBATSim can be
 or you can visit our YouTube Channel where we publish the latest updates with tutorial videos:
 [![YouTube Channel](http://img.youtube.com/vi/3Wz3D1v-lL8/0.jpg)](https://www.youtube.com/c/MOBATSim)
 
-## **Requirements** <a name="requirements"></a>
+<a name="requirements"></a>
+## **Requirements** 
 
 #### MATLAB version requirement
 
@@ -55,7 +57,8 @@ An overview of the simulation framework is shown in the figure below. For more d
 
 <img src="img/SimulationEnvironment.png" alt="Combined Image" />
 
-## Authors and Contact <a name="citation"></a>
+<a name="citation"></a>
+## Authors and Contact 
 
 Main Author: Mustafa Saraoglu
 
@@ -86,8 +89,8 @@ BibTex:
                 keywords = "Autonomous driving, Fault injection, Error propagation, Safety analysis, Traffic simulator",
                 }
 ```
-
-## Contributing to MOBATSim <a name="contribution"></a>
+<a name="contribution"></a>
+## Contributing to MOBATSim 
 
 If you find MOBATSim useful and you would like to improve it by implementing your own automated driving algorithms:
 1. "Fork" the repository from the top right corner.
