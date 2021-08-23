@@ -1,13 +1,13 @@
 function blkStruct = slblocks
-% This function specifies that the library 'mylib'
+% This function specifies that the library 'MOBATSim_Library'
 % should appear in the Library Browser with the 
-% name 'My Library'
+% name 'MOBATSim'
 
     Browser.Library = 'MOBATSim_Library';
-    % 'mylib' is the name of the library
+    % 'MOBATSim_Library' is the name of the library
 
-    Browser.Name = 'MOBATSim Library';
-    % 'My Library' is the library name that appears
+    Browser.Name = 'MOBATSim';
+    % 'MOBATSim' is the library name that appears
     % in the Library Browser
 
     blkStruct.Browser = Browser;
