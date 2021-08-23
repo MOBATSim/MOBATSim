@@ -89,3 +89,22 @@ If you find MOBATSim useful and you would like to improve it by implementing you
 6. Once it is reviewed it will be approved or changes will be requested along with the comments of the reviewer regarding the issue with your Pull Request.
 
 We would like to encourage everyone who would like to contribute so you can also contact us for a more detailed explanation of the structure!
+
+## Release Notes - Version 2.0
+
+* New ways to visualize your driving scenario: Unreal Engine support via DrivingScenarioDesigner App, Bird's Eye View.
+* New vehicle kinematic bicycle models taken from the Automated Driving Toolbox library.
+* A more detailed road structure with actual units as meters and double lane roads.
+* New lateral controllers: Stanley lateral controller for common vehicles, Pure Pursuit lateral controller for the Ego Vehicle (Vehicle 2).
+* Implementation of Frenet Coordinate system for local trajectory planning.
+* Implementation of lane-changing maneuver on double lane roads (at the moment only allowed for Pure Pursuit controller - Ego Vehicle)
+* An improved coding structure using superclasses, name-value pairs to also enhance the flexibility of MOBATSim and also code optimization using vectorizations and memory preallocations to increase the performance.
+* Detailed documentation for the people who are interested and would like to understand and contribute to MOBATSim
+* Bonus content: 3D Animation World with the new Dinosaur park.
+
+## Known Issues and Bugs
+
+* Vehicles are not allowed to start or finish on the intersection points to avoid congestion.
+* Bird's Eye View or DrivingScenarioDesigner APP might work slowly because of the size of the road network.
+* Some road merges do not have the safety guarantees which means that a vehicle just merging another road at the same time with another vehicle or there is a stopping vehicle at the merging point of the joining road may cause collisions.
+* Changing the default sample time value of 0.02 or playing with different Simulink Solver options other than "auto" may cause unexpected behavior.
