@@ -99,7 +99,8 @@ If you find MOBATSim useful and you would like to improve it by implementing you
 
 We would like to encourage everyone who would like to contribute so you can also contact us for a more detailed explanation of the structure!
 
-## Release Notes - Version 2.0 <a name="releasenotes"></a>
+<a name="releasenotes"></a>
+## Release Notes - Version 2.0
 
 * New ways to visualize your driving scenario: Unreal Engine support via DrivingScenarioDesigner App, Bird's Eye View.
 * New vehicle kinematic bicycle models taken from the Automated Driving Toolbox library.
