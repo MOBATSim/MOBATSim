@@ -1,0 +1,43 @@
+function MOBATSimAutoTesting(options)
+%MOBATSIMTESTER Test the simulation with different scenarios.
+%   All scenarios have to produce the right output and no errors to pass
+%   the test.
+    arguments
+        options.simStopTime         (1,1) double    = 80                    % Time to test the scenarios in seconds
+        options.scenarioNames       (1,:) string    = [ "Urban City Traffic", ...
+                                                        "Planned Path Change V5", ...
+                                                        "Road Merge Collision V5,Convoy", ...
+                                                        "Platoon Control", ...
+                                                        "High Speed Collision", ...
+                                                        "Road Merge Collision V3,V4", ...
+                                                        "Complex Crossroad", ...
+                                                        "Extra Complex Crossroad", ...
+                                                        "Counterexample Crossroad Safety", ...
+                                                        "Carmageddon", ...
+                                                        "Convoy Platoons"];     % Scenarios to test
+    end
+
+    % a list of results for every scenario
+    passed = strings(size(options.scenarioNames));
+    
+    % test every scenario
+    for i=1:length(options.scenarioNames)
+        try
+            % prepare and run simulation
+            prepare_simulator("scenarioName",options.scenarioNames(i),"simStopTime",options.simStopTime);
+            run_Sim();
+            passed(i) = "PASSED";
+        catch ME
+            passed(i) = "ERROR";
+        end
+
+        % display scenario name and if passed    
+        disp("<strong>" + options.scenarioNames(i) + ":</strong>" + " [" + passed(i) +"]");
+
+        % display only the exception message, but dont interrupt the execution
+        if  passed(i) ~= "PASSED"
+            fprintf(2,ME.message + "\n");
+        end
+    end
+end
+
