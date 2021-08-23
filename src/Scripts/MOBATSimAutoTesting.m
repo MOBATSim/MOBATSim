@@ -20,6 +20,7 @@ function MOBATSimAutoTesting(options)
     % a list of results for every scenario
     passed = strings(size(options.scenarioNames));
     
+    tic;
     % test every scenario
     for i=1:length(options.scenarioNames)
         try
@@ -39,5 +40,6 @@ function MOBATSimAutoTesting(options)
             fprintf(2,ME.message + "\n");
         end
     end
+    toc;
 end
 
