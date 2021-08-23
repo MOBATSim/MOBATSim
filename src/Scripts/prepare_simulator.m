@@ -88,13 +88,13 @@ function prepare_simulator(options)
     
     % Check selected starting and destination points are valid
     forbiddenNodes = [brakingNodes; stoppingNodes]; % vehicles should not stop in front or on crossroad
-    if ~checkNodesValid([startingPoints, destinationPoints], forbiddenNodes)
-        disp('Preparation error: invalid start and/or destination points!');
-        disp('Vehicle routes should not start or end on following crossroad nodes: ')
-        % braking nodes and stopping nodes are forbidden
-        brakingNodes %#ok<NOPRT>
-        stoppingNodes %#ok<NOPRT>
-        return;
+    invalidNodes = checkNodesValid([startingPoints, destinationPoints], forbiddenNodes);
+    if ~isempty(invalidNodes)
+        % Construct an exception for wrong waypoints
+        errID = 'PREPARATION:NodesOccupied';
+        msg = "Vehicles starting waypoint or destination waypoint is on forbidden nodes: " + strjoin(string(invalidNodes));
+        baseException = MException(errID,msg);
+        throw(baseException);
     end
     
     % Open the MOBATSim Simulink Model
