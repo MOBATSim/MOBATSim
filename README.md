@@ -5,7 +5,7 @@
 [![Download](https://img.shields.io/badge/MATLAB-R2020b-brightgreen)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
 [![View Article](https://img.shields.io/badge/DOI-https%3A%2F%2Fdoi.org%2F10.1016%2Fj.ifacol.2019.08.077-blue)](https://www.sciencedirect.com/science/article/pii/S2405896319304100)
 
-MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB Simulink that allows the user to assess vehicle level and traffic level safety by a 3D traffic simulation.
+MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB and Simulink that allows users to develop automated driving algorithms to assess their safety and performance. By running a traffic simulation, the safety of the implemented component or algorithm is measured on both the vehicle level and the traffic level, supported by 2D and 3D visualization options.
 
 <img src="img/logo_big.jpg" alt="Combined Image" />
 
@@ -15,6 +15,7 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation f
 3. [Citation](#citation)
 4. [Contributing to MOBATSim](#contribution)
 5. [Release Notes](#releasenotes)
+6. [Getting Started](#gettingstarted)
 
 <a name="introduction"></a>
 ## Introduction
@@ -31,7 +32,7 @@ or you can visit our YouTube Channel where we publish the latest updates with tu
 
 #### MATLAB version requirement
 
-MOBATSim is continuously updated with the newest version of MATLAB®. Therefore, at this moment, the requirement is MATLAB R2021a or MATLAB R2020b.
+MOBATSim is continuously updated with the latest version of MATLAB®. Therefore the requirement is MATLAB R2021a or MATLAB R2020b.
 
 #### Toolbox Requirements
 
@@ -40,29 +41,14 @@ MOBATSim is continuously updated with the newest version of MATLAB®. Therefore,
 * Robotics System Toolbox™
 * Control System Toolbox™
 * Model Predictive Control Toolbox™  (only if MPC-Cruise Controller Block is used)
-* Simulink 3D Animation Toolbox™ (Only required for the 3D Animation Virtual World)
-
-## Workflow
-
-MOBATSim has a project file which includes the Simulink files and their paths. As you run `MOBATSim.prj`, a GUI will open and you can run simulations from that GUI. The live script is a more detailed documentation than this one.
-
-```
-uiopen('\MOBATSim.prj',1)
-```
-To get to know the whole workflow in MOBATSim, take a look at the documentation and tutorials on our [website](https://mobatsim.com/). They explain how to run a simulation (including map generation, initializing vehicles and loading a driving szenario) and how to edit/ analyse the simulation.
-
-## Simulation Framework
-
-An overview of the simulation framework is shown in the figure below. For more details on the models, please refer to our [documentation](https://mobatsim.com/about-mobatsim/) on our website.
-
-<img src="img/SimulationEnvironment.png" alt="Combined Image" />
+* Simulink 3D Animation Toolbox™ (only required for the 3D Animation Virtual World)
 
 <a name="citation"></a>
 ## Authors and Contact 
 
 Main Author: Mustafa Saraoglu
 
-Message us via the [contact form](https://mobatsim.com/contact/) on our website
+Message us via the [contact form](https://mobatsim.com/contact/) on our website!
 
 ## Copyright Notice
 
@@ -121,3 +107,16 @@ We would like to encourage everyone who would like to contribute so you can also
 * Bird's Eye View or DrivingScenarioDesigner APP might work slowly because of the size of the road network.
 * Some road merges do not have the safety guarantees which means that a vehicle just merging another road at the same time with another vehicle or there is a stopping vehicle at the merging point of the joining road may cause collisions.
 * Changing the default sample time value of 0.02 or playing with different Simulink Solver options other than "auto" may cause unexpected behavior.
+
+<a name="gettingstarted"></a>
+## Getting Started
+
+MOBATSim has a project file that includes the Simulink files and their paths. The project can be opened by double-clicking on "MOBATSim.prj" and a GUI will appear, which can be used to start simulation.
+
+## The Simulation Framework
+
+An overview of the simulation framework is shown in the figure below. For more details on the models, please refer to our [documentation](https://mobatsim.com/about-mobatsim/) on our website.
+
+<img src="img/SimulationEnvironment.png" alt="Combined Image" />
+
+
