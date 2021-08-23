@@ -77,3 +77,7 @@ BibTex:
                 keywords = "Autonomous driving, Fault injection, Error propagation, Safety analysis, Traffic simulator",
                 }
 ```
+
+## Contributing to MOBATSim
+
+If you find MOBATSim useful and you would like to improve it by implementing your own automated driving algorithms you can simply "Fork" the repository, then switch to the development branch and make your changes there. Make sure your contributions fit the format in terms of coding or input/output properties of the Simulink blocks. To make sure that your changes work, you should run the "MOBATSimAutoTesting.m" and if you get "passed" from all the tests, you can simply send a "Pull Request" to the corresponding branch on the MOBATSim/MOBATSim repository. We would like to encourage everyone who would like to contribute so you can also contact us for a more detailed explanation of the structure!
