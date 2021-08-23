@@ -5,12 +5,6 @@
 [![Download](https://img.shields.io/badge/MATLAB-R2020b-brightgreen)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
 [![View Article](https://img.shields.io/badge/DOI-https%3A%2F%2Fdoi.org%2F10.1016%2Fj.ifacol.2019.08.077-blue)](https://www.sciencedirect.com/science/article/pii/S2405896319304100)
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/rG8B0ip4dpk/0.jpg)](https://www.youtube.com/c/MOBATSim)
-
-https://www.youtube.com/watch?v=rG8B0ip4dpk
-
-[![YouTube Channel](https://img.youtube.com/vi/rG8B0ip4dpk/0.jpg)](https://www.youtube.com/c/MOBATSim)]
-
 MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB Simulink that allows the user to assess vehicle level and traffic level safety by a 3D traffic simulation.
 
 <img src="img/logo_big.jpg" alt="Combined Image" />
@@ -18,6 +12,9 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation f
 Automated driving systems tend to be more important and sophisticated in the nearest future. The functional safety assessment for these systems becomes an urgent necessity for the transition to full autonomy. Testing these functions consisting of decision and control algorithms with a lot of variables and parameters in a unified manner is a daunting task. Threat assessment has to be made for vehicles to actively avoid hazardous situations. This requires the analysis of complex operational profiles such as routing, intersection management and collision prediction in an environment where multiple vehicles are in different positions, and traveling at different speeds. There is a need for a comprehensive traffic simulation framework which models not only the functionality of the vehicles but also the interactions between them.
 
 More detailed information about the scientific papers related to MOBATSim can be found on the [website](https://mobatsim.com/)
+
+or you can visit our YouTube Channel where we publish the latest updates with tutorial videos:
+[![YouTube Channel](http://img.youtube.com/vi/rG8B0ip4dpk/0.jpg)](https://www.youtube.com/c/MOBATSim)
 
 ## **Requirements**
 
