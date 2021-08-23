@@ -113,5 +113,5 @@ We would like to encourage everyone who would like to contribute, so you can als
 
 MOBATSim has a project file that includes the Simulink files and their paths. The project can be opened by double-clicking on **MOBATSim.prj** and a GUI will appear, which can be used to start the simulation. Simply click on "Start Simulation" and wait for the simulation to start.
 
-Please refer to the .mlx file **GettingStarted.mlx** for more detailed documentation, which you open with MATLAB.
+Please refer to the live script file **GettingStarted.mlx** for more detailed documentation.
 
