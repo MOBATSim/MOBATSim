@@ -115,4 +115,4 @@ MOBATSim has a project file that includes the Simulink files and their paths. Th
 
 
 
-First it would be best if you [fork the MOBATSim repository](https://github.com/user/repository/fork) and then **clone** it to your computer. After opening the **MOBATSim** folder please refer to the live script file **GettingStarted.mlx** for more detailed documentation.
+First it would be best if you [fork the MOBATSim repository](https://github.com/MOBATSim/MOBATSim/fork) and then **clone** it to your computer. After opening the **MOBATSim** folder please refer to the live script file **GettingStarted.mlx** for more detailed documentation.
