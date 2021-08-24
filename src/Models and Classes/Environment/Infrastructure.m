@@ -23,7 +23,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
         
         function icon = getIconImpl(~)
             % Define icon for System block
-            icon = matlab.system.display.Icon("logo_small.png");
+            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_5- Intersection.png");
         end      
         
         function StopCommands = stepImpl(obj, V2Idata)

@@ -40,7 +40,7 @@ classdef I2V < matlab.System & matlab.system.mixin.CustomIcon
 
         function icon = getIconImpl(~)
             % Define icon for System block
-            icon = matlab.system.display.Icon("I2V.png");
+            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_3- Flags.png");
         end
     end
     methods(Static,Access = protected)
