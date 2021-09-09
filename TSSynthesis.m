@@ -2,6 +2,22 @@ function [S, Act, Tr, I, AP, L] = TSSynthesis(S1, Act1, Tr1, I1, AP1, L1, S2, Ac
 %TSSYNTHESIS Synthesise two transition systems
 %   Detailed explanation goes here
 
+    arguments
+        S1      (1,:) string    % states for TS1
+        Act1    (1,:) string    % actions for TS1
+        Tr1     (:,3) string    % transitions for TS1
+        I1      (1,:) string    % initial states for TS1
+        AP1     (1,:) string    % atomic propositions for TS1
+        L1      (:,2) string    % labels for TS1 ( state | label )
+        S2      (1,:) string    % states for TS2
+        Act2    (1,:) string    % actions for TS2
+        Tr2     (:,3) string    % transitions for TS2
+        I2      (1,:) string    % initial states for TS2
+        AP2     (1,:) string    % atomic propositions for TS2
+        L2      (:,2) string    % labels for TS2 ( state | label )
+    end
+    % TODO: implement checks for right transition systems
+    
 %% States
 % Combine to new states (S1 x S2)
 S = S1'+ S2;
@@ -94,10 +110,10 @@ AP = [AP1, AP2];
 
 
 %% Labels
-% Combine to new labels like the states
-L = L1' + L2;
-% rearrange to row vector
-L = L(:)';
+% Combine to new state-label combination
+L(:,1) = S'; % label states
+labels = L1(:,2)' +" "+ L2(:,2); % combine the labels like the states
+L(:,2) = labels(:);
 
 
 end
