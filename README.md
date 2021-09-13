@@ -28,13 +28,10 @@ or you can visit our YouTube Channel where we publish the latest updates with tu
 [![YouTube Channel](http://img.youtube.com/vi/3Wz3D1v-lL8/0.jpg)](https://www.youtube.com/c/MOBATSim)
 
 <a name="requirements"></a>
-## **Requirements** 
+## **MATLAB Version and Toolbox Requirements** 
 
-#### MATLAB version requirement
 
-MOBATSim is continuously updated with the latest version of MATLAB®. Therefore the requirement is **MATLAB R2021a** or **MATLAB R2020b**.
-
-#### Toolbox Requirements
+MOBATSim is continuously updated with the latest version of MATLAB®. Therefore the requirement is **MATLAB R2021a** or **MATLAB R2020b**. The following toolboxes are required for running MOBATSim:
 
 * Simulink® and Stateflow®
 * Automated Driving Toolbox™
@@ -48,13 +45,12 @@ MOBATSim is continuously updated with the latest version of MATLAB®. Therefore 
 <a name="citation"></a>
 ## Authors and Contact 
 
-Main Author: Mustafa Saraoglu
+Main Author: Mustafa Saraoğlu
+Contributors: Johannes Pintscher, Laura Slabon, Qianwei Yang, Qihang Shi, Wenkai Wu, Maoxuan Zhao, Erick Noack, Fabian Hart
 
 Message us via the [contact form](https://mobatsim.com/contact/) on our website!
 
-## Copyright Notice
-
-© 2017 MOBATSim.
+Copyright © 2017 MOBATSim.
 
 ### Please Cite Our Related Paper as:
 
