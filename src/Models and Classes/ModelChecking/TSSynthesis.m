@@ -26,7 +26,7 @@ S = S(:)';
 
 %% Actions
 % Combine and add actions
-Act = [Act1, Act2, Act1 + Act2];
+Act = [Act1, Act2, Act1+" "+ Act2];
 
 
 %% Transitions
@@ -90,7 +90,7 @@ for  transition = Tr1'
                         break;
                     end
                     % make a transition
-                    Tr(end+1,1:3) = [S(i) S(j) actionS1+actionS2]; %#ok<AGROW> % TODO: not nice, better try to use matching action
+                    Tr(end+1,1:3) = [S(i) S(j) actionS1+" "+actionS2]; %#ok<AGROW> % TODO: not nice, better try to use matching action
                 end
             end
         end
@@ -112,7 +112,7 @@ AP = [AP1, AP2];
 %% Labels
 % Combine to new state-label combination
 L(:,1) = S'; % label states
-labels = L1(:,2)' +" "+ L2(:,2); % combine the labels like the states
+labels = L1(:,2) +" "+ L2(:,2)'; % combine the labels like the states
 L(:,2) = labels(:);
 
 
