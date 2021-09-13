@@ -80,7 +80,7 @@ If you find MOBATSim useful and you would like to improve it by implementing you
 1. **"Fork"** the repository from the top right corner.
 2. Go to your **forked repository** and switch to the **development branch**.
 3. Make your changes in the development branch. Make sure your contributions fit the format in terms of coding or input/output properties of the Simulink blocks.
-4. To make sure that your changes work, you should run the `MOBATSimAutoTesting.m` and if you get `passed` from all the tests, you should **"commit"** and then **"Push"** to your forked repository.
+4. To make sure that your changes work, you should run `MOBATSimAutoTesting.m` in `src/Scripts` folder and if you get `passed` from all the tests, you should **"commit"** and then **"Push"** to your forked repository.
 5. Then if you would like to contribute, send a **"Pull Request"** to the corresponding branch on the MOBATSim/MOBATSim repository.
 6. Once it is reviewed, it will be **approved** or **changes will be requested along with the comments of the reviewer** regarding the issue with your **Pull Request**.
 
