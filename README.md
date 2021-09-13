@@ -5,7 +5,7 @@
 [![Download](https://img.shields.io/badge/MATLAB-R2020b-brightgreen)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
 [![View Article](https://img.shields.io/badge/DOI-https%3A%2F%2Fdoi.org%2F10.1016%2Fj.ifacol.2019.08.077-blue)](https://www.sciencedirect.com/science/article/pii/S2405896319304100)
 
-MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB and Simulink that allows users to develop automated driving algorithms to assess their safety and performance. By running a traffic simulation, the safety of the implemented component or algorithm is measured on both the vehicle level and the traffic level, supported by 2D and 3D visualization options.
+MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB and Simulink that allows users to develop automated driving algorithms and assess their safety and performance. By running a traffic simulation, the safety of the implemented component or algorithm is measured on both the vehicle level and the traffic level, supported by 2D and 3D visualization options.
 
 <img src="img/logo_big.jpg" alt="Combined Image" />
 
