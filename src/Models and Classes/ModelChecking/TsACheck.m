@@ -1,19 +1,20 @@
-function [S, Act, Tr, I, AP, L] = TsACheck(S, Act, Tr, I, AP, L, Q, Sig, delta, Q0, F)
+function [S, Act, Tr, I, AP, L] = TsACheck(S, Act, Tr, I, AP, L, Q, Sig, delta, Q0, F, loopDetectionActive)
 %TSASYNTHESIS Check transition system TS with buchi automata BA
 %   Detailed explanation goes here
 
     arguments
-        S       (1,:) string    % states for TS
-        Act     (1,:) string    % actions for TS
-        Tr      (:,3) string    % transitions for TS
-        I       (1,:) string    % initial states for TS
-        AP      (1,:) string    % atomic propositions for TS
-        L       (:,2) string    % labels for TS ( state | label )
-        Q       (1,:) string    % states for BA
-        Sig     (1,:) cell      % actions for BA
-        delta   (:,3) cell      % transitions for BA
-        Q0      (1,:) string    % initial states for BA
-        F       (1,:) string    % final states for BA
+        S                       (1,:) string    % states for TS
+        Act                     (1,:) string    % actions for TS
+        Tr                      (:,3) string    % transitions for TS
+        I                       (1,:) string    % initial states for TS
+        AP                      (1,:) string    % atomic propositions for TS
+        L                       (:,2) string    % labels for TS ( state | label )
+        Q                       (1,:) string    % states for BA
+        Sig                     (1,:) cell      % actions for BA
+        delta                   (:,3) cell      % transitions for BA
+        Q0                      (1,:) string    % initial states for BA
+        F                       (1,:) string    % final states for BA
+        loopDetectionActive     (1,1) logical = false; % detection for loops in BA deactivated for performance reasons
     end
 %% merge TS and BA
 % States
@@ -28,7 +29,7 @@ for i = 1:size(Tr,1)
     transition = Tr(i,:); 
     labelTarget = L(transition(2)==L(:,1),2); % get the label from the transition target
     labelSource = L(transition(1)==L(:,1),2); % get the label from the transition target
-    currentAPs = stringToAPs(labelTarget, labelSource); % get current active atomic propositions from label
+    [~, currentAPs] = stringToAPs(labelTarget, labelSource); % get current active atomic propositions from label
     % TODO: check transition between every vehicle combination: 1 vehicle -> 1 mal 
                                                                %2 vehicle -> 1 mal
                                                                %3 vehicle -> 3 mal
@@ -41,26 +42,19 @@ for i = 1:size(Tr,1)
     for j=1:size(delta,1)
         % test BA transitions with every partial action pairs
         % solution for only one partial action
-        if length(partialActs) == 1
-            result = true; % there is only one car taht could not collide with an other 
-        else
+        %if length(partialActs) == 1
+        %    result = true; % there is only one car taht could not collide with an other 
+        %else
             % solution for more then one partial action
             results = [];
-            for k=1:length(partialActs)-1
-                for m=k+1:length(partialActs)
-                    results(end+1) = delta{j,3}(currentAPs{k}, currentAPs{m}); % check which transition becomes true
-                end
-            end
-%             if length(partialActs) == 2
-%                 result = partialResult;
-%             elseif length(partialActs) == 3
-%                 result = partialResult(1,1)&&partialResult(1,2)&&partialResult(2,1);
-%             else
-%                 result = false;
-%             end
-            %result = istril(flip(partialResult)); % TODO: fix this!!!
+            %for k=1:length(partialActs)-1
+            %    for m=k+1:length(partialActs)
+                    results(end+1) = delta{j,3}(currentAPs, currentAPs); % check which transition becomes true
+                    %results(end+1) = delta{j,3}(currentAPs{k}, currentAPs{m}); % check which transition becomes true
+            %    end
+            %end
             result = all(results);
-        end        
+        %end        
         if result == true %
             % Build transition in TS x A
             Trm(end+1,:) = [join([Tr(i,1) delta{j,1}]) join([Tr(i,2) delta{j,2}]) Tr(i,3)];
@@ -118,7 +112,6 @@ for state = Sm
 end
 
 % find all final states in Sm
-
 FSm = strings(0,0);
 % get all states that are also final state of A
 for i=1:length(F)
@@ -132,60 +125,84 @@ for i=1:length(F)
         end
     end
 end
-% Digraph
-% table with all states
-NodeTable = table(Sm', 'VariableNames',{'Name'});
-% table with all edges (transitions) and labled with actions
-EdgeTable = table([Trm(:,1) Trm(:,2)], Trm(:,3), 'VariableNames',{'EndNodes' 'Code'});
-% build digraph with it
-graph = digraph(EdgeTable,NodeTable);
-% graph with connections to every reachable state from graph
-graphReachableStates = transclosure(graph);
-% adjacency matrix of graph reachable states
-adjMatrixReachable = full(adjacency(graphReachableStates));
 
-% remove all states not reachable from init state
-for i=length(FSm):-1:1
-    % check if state can be reached by any init state
-    allPreStates = predecessors(graphReachableStates,FSm(i));
-    if ~any(Im == allPreStates)
-        FSm(i) = []; % remove because could not be reached by any init state
-    end
-end
-% remove all not stable states (not final infinetly often)
-for i=length(FSm):-1:1
-    allPreStates = predecessors(graphReachableStates,FSm(i)); % get all states leading to this one
-    postStates = successors(graph,FSm(i));
-    % check if there are post states and if the post states could not reach this final state   
-    if ~isempty(postStates)
-        % check if the post states are also prepre...States from our state, when not delete them
-        validFinal = false;
-        for postState = postStates'
-            if any(postState == allPreStates)
-                % post state is also pre state, all fine
-                validFinal = true;
-            end            
-        end
-        % delete from final list, because there is not one post state that
-        % is also prepre... state from this state 
-        if  ~validFinal
-            FSm(i) = [];
-        end
-    end
-end
-
-% delete dead targets and dead loops
-% find all states that is no transition leaving and they are not a final
-% state and also unconnected loops
+% find all dead targets
+% remove not final states without any further state
 for state = Sm
-    % must be init state or final state or could be reached from a init
-    % state and lead to final state
-    if all(state ~= Im) && all(state ~= FSm)
-        % not from init reachable or not reaches a final state
-        if ~any(Im == Sm(logical(adjMatrixReachable(:,Sm == state)))) ... % from a init state not reachable
-            || ~any(FSm == Sm(logical(adjMatrixReachable(Sm == state,:)))) % not leading to a final state
-            Sm(state == Sm) = []; % remove state
-            Trm(any(state == Trm(:,[1 2]),2),:) = []; % remove all transitions to and from this state            
+    if ~any(state == FSm) && ~any(state == Trm(:,1))
+        Trm(state == Trm(:,2),:) = []; % remove all transitions to this state
+        Sm(state == Sm) = []; % remove state
+    end
+end
+
+if ~loopDetectionActive
+    % find all not stable final states
+    % remove final states that have a successor
+    % ATTENTION: this does not work with loops, final state is stable when a
+    % loop lead from this state back the state
+    for finalState = FSm
+        if any(finalState == Trm(:,1))
+            FSm(finalState == FSm) = [];
+        end
+    end
+else
+    % find all dead loops TODO: performance optimize this part
+    % delete all loops that are not connected to a init and final state
+    % Digraph
+    % table with all states
+    NodeTable = table(Sm', 'VariableNames',{'Name'});
+    % table with all edges (transitions) and labled with actions
+    EdgeTable = table([Trm(:,1) Trm(:,2)], Trm(:,3), 'VariableNames',{'EndNodes' 'Code'});
+    % build digraph with it
+    graph = digraph(EdgeTable,NodeTable);
+    % graph with connections to every reachable state from graph
+    graphReachableStates = transclosure(graph);
+    % adjacency matrix of graph reachable states
+    adjMatrixReachable = full(adjacency(graphReachableStates));
+    
+    % remove all states not reachable from init state
+    for i=length(FSm):-1:1
+        % check if state can be reached by any init state
+        allPreStates = predecessors(graphReachableStates,FSm(i));
+        if ~any(Im == allPreStates)
+            FSm(i) = []; % remove because could not be reached by any init state
+        end
+    end
+    % remove all not stable states (not final infinetly often)
+    for i=length(FSm):-1:1
+        allPreStates = predecessors(graphReachableStates,FSm(i)); % get all states leading to this one
+        postStates = successors(graph,FSm(i));
+        % check if there are post states and if the post states could not reach this final state
+        if ~isempty(postStates)
+            % check if the post states are also prepre...States from our state, when not delete them
+            validFinal = false;
+            for postState = postStates'
+                if any(postState == allPreStates)
+                    % post state is also pre state, all fine
+                    validFinal = true;
+                end
+            end
+            % delete from final list, because there is not one post state that
+            % is also prepre... state from this state
+            if  ~validFinal
+                FSm(i) = [];
+            end
+        end
+    end
+    
+    % delete dead targets and dead loops
+    % find all states that is no transition leaving and they are not a final
+    % state and also unconnected loops
+    for state = Sm
+        % must be init state or final state or could be reached from a init
+        % state and lead to final state
+        if all(state ~= Im) && all(state ~= FSm)
+            % not from init reachable or not reaches a final state
+            if ~any(Im == Sm(logical(adjMatrixReachable(:,Sm == state)))) ... % from a init state not reachable
+                    || ~any(FSm == Sm(logical(adjMatrixReachable(Sm == state,:)))) % not leading to a final state
+                Sm(state == Sm) = []; % remove state
+                Trm(any(state == Trm(:,[1 2]),2),:) = []; % remove all transitions to and from this state
+            end
         end
     end
 end

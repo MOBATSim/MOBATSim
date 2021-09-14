@@ -40,6 +40,55 @@ L3 = ["i" "in";
       "o" "ow"];
 L4 = ["i" "is";
       "o" "oe"];
+  
+%   % States
+% S1 = ["i" "p" "o"];
+% S2 = ["i" "p" "o"];
+% S3 = ["i" "p" "o"];
+% S4 = ["i" "p" "o"];
+% 
+% % Actions
+% Act1 = ["g1"];
+% Act2 = ["g2"];
+% Act3 = ["g3"];
+% Act4 = ["g4"];
+% 
+% % Transitions
+% % source | target | action
+% Tr1 = ["i" "p" "g1";
+%        "p" "o" "g1"];
+% Tr2 = ["i" "p" "g2";
+%        "p" "o" "g2"];
+% Tr3 = ["i" "p" "g3";
+%        "p" "o" "g3"];
+% Tr4 = ["i" "p" "g4";
+%        "p" "o" "g4"];
+% 
+% % Initial states
+% I1 = ["i"];
+% I2 = ["i"];
+% I3 = ["i"];
+% I4 = ["i"];
+% 
+% % Atomic propositions
+% AP1 = ["ie" "ow"];
+% AP2 = ["iw" "on"]; 
+% AP3 = ["in" "ow"];
+% AP4 = ["is" "oe"];
+% 
+% % Labels
+% L1 = ["i" "ie";
+%       "p" "pew";
+%       "o" "ow"];
+% L2 = ["i" "iw";
+%       "p" "pin";
+%       "o" "on"];
+% L3 = ["i" "in";
+%       "p" "pnw";
+%       "o" "ow"];
+% L4 = ["i" "is";
+%       "p" "pse";
+%       "o" "oe"];
 
 % 2 vehicles
 [S, Act, Tr, I, AP, L] = TSSynthesis(S1, Act1, Tr1, I1, AP1, L1, S2, Act2, Tr2, I2, AP2, L2);
@@ -48,7 +97,15 @@ L4 = ["i" "is";
 % 4 vehicles
 [S, Act, Tr, I, AP, L] = TSSynthesis(S, Act, Tr, I, AP, L, S4, Act4, Tr4, I4, AP4, L4);
 
-
+% Digraph
+% table with all states
+NodeTable = table(S', 'VariableNames',{'Name'});
+% table with all edges (transitions) and labled with actions
+EdgeTable = table([Tr(:,1) Tr(:,2)], Tr(:,3), 'VariableNames',{'EndNodes' 'Code'});
+% build digraph with it
+graph = digraph(EdgeTable,NodeTable);
+figure(2)
+p = plot(graph,'EdgeLabel', graph.Edges.Code);
 
 % Include safety properties
  
@@ -83,6 +140,8 @@ forbiddenPaths = {{'in','oe'}, {'ie','ow'};
                  {'is','on'}, {'iw','oe'};
                  {'is','on'}, {'iw','on'};
                  {'is','oe'}, {'iw','oe'}};
+             
+forbiddenPaths = {{'ie','ow'}, {'iw','on'}};
              
 % Preallocate function handle array
   SFs = {@(APs1, APs2, eqNr) SafetyCondition(forbiddenPaths{1,1},forbiddenPaths{1,2}, APs1, APs2, eqNr)};
