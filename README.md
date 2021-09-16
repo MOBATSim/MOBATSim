@@ -5,7 +5,7 @@
 [![Download](https://img.shields.io/badge/MATLAB-R2020b-brightgreen)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
 [![View Article](https://img.shields.io/badge/DOI-https%3A%2F%2Fdoi.org%2F10.1016%2Fj.ifacol.2019.08.077-blue)](https://www.sciencedirect.com/science/article/pii/S2405896319304100)
 
-MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB and Simulink that allows users to develop automated driving algorithms and assess their safety and performance. By running a traffic simulation, the safety of the implemented component or algorithm is measured on both the vehicle level and the traffic level, supported by 2D and 3D visualization options.
+MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework based on MATLAB® Simulink® that allows users to develop automated driving algorithms and assess their safety and performance. By running a traffic simulation, the safety of the implemented component or algorithm can be measured on both the vehicle level and the traffic level, supported by 2D and 3D visualization options.
 
 <img src="img/logo_big.jpg" alt="Combined Image" />
 
@@ -20,7 +20,7 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation f
 <a name="introduction"></a>
 ## Introduction
 
-MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB® Simulink® that allows the user to assess vehicle and traffic level safety by a 3D traffic simulation. Automated driving systems tend to be more critical and sophisticated in the nearest future. The functional safety assessment for these systems becomes an urgent necessity for the transition to full autonomy. Testing these functions consisting of decision and control algorithms with many variables and parameters in a unified manner is a daunting task. Threat assessment has to be made for vehicles to avoid hazardous situations actively. This requires analyzing complex operational profiles such as routing, intersection management, and collision prediction in an environment where multiple vehicles are in different positions and traveling at different speeds. There is a need for a comprehensive traffic simulation framework that models the functionality of the vehicles and the interactions between them.
+Automated driving systems tend to be more critical and sophisticated in the nearest future. The functional safety assessment for these systems becomes an urgent necessity for the transition to full autonomy. Testing these functions consisting of decision and control algorithms with many variables and parameters in a unified manner is a daunting task. Threat assessment has to be made for vehicles to avoid hazardous situations actively. This requires analyzing complex operational profiles such as routing, intersection management, and collision prediction in an environment where multiple vehicles are in different positions and traveling at different speeds. There is a need for a comprehensive traffic simulation framework that models the functionality of the vehicles and the interactions between them.
 
 More detailed information about the scientific papers related to MOBATSim can be found on the [website](https://mobatsim.com/)
 
