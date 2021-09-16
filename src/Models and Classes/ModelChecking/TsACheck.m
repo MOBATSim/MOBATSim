@@ -28,34 +28,10 @@ Trm = strings(0,0);
 for i = 1:size(Tr,1)
     transition = Tr(i,:); 
     labelTarget = L(transition(2)==L(:,1),2); % get the label from the transition target
-    labelSource = L(transition(1)==L(:,1),2); % get the label from the transition target
-    [~, currentAPs] = stringToAPs(labelTarget, labelSource); % get current active atomic propositions from label
-    % TODO: check transition between every vehicle combination: 1 vehicle -> 1 mal 
-                                                               %2 vehicle -> 1 mal
-                                                               %3 vehicle -> 3 mal
-                                                               %4 vehicle -> 6 mal, but stop as soon as it didnt work
-    partialActs = split(Tr(i,3)); % all partial actions in this action
-    if length(partialActs) >= 3
-        test = 1;
-    end
-    % try transitions in buchi with propositions
+    positiveAPs = stringToStructAPs(AP, labelTarget); % get current active atomic propositions from label
+    % test which transitions are possible with buchi automata
     for j=1:size(delta,1)
-        % test BA transitions with every partial action pairs
-        % solution for only one partial action
-        %if length(partialActs) == 1
-        %    result = true; % there is only one car taht could not collide with an other 
-        %else
-            % solution for more then one partial action
-            results = [];
-            %for k=1:length(partialActs)-1
-            %    for m=k+1:length(partialActs)
-                    results(end+1) = delta{j,3}(currentAPs, currentAPs); % check which transition becomes true
-                    %results(end+1) = delta{j,3}(currentAPs{k}, currentAPs{m}); % check which transition becomes true
-            %    end
-            %end
-            result = all(results);
-        %end        
-        if result == true %
+        if delta{j,3}(positiveAPs) % check which transition becomes true   
             % Build transition in TS x A
             Trm(end+1,:) = [join([Tr(i,1) delta{j,1}]) join([Tr(i,2) delta{j,2}]) Tr(i,3)];
         end
@@ -67,29 +43,16 @@ end
 Im = strings(0,0);
 for i=1:length(I) % check every TS initial state
     labelInitState = L(I(i)==L(:,1),2);
-    stringAPsInit = split(labelInitState);
-    % get all non init state APs
-    stringAPsNotInit = strings(0,0);
-    for stringAP = AP
-        if stringAP ~= stringAPsInit
-            stringAPsNotInit(end+1) = stringAP;
-        end
-    end
-    % get all input 
-    [~, activeAPs] = stringToAPs(stringAPsInit,stringAPsNotInit); % get active APs from this init state
+    activeAPs = stringToStructAPs(AP, labelInitState); % get active APs from this init state
     for j=1:size(delta,1)
         fromBASourceState = any(delta{j,1} == Q0); % this BA transition starts at a source state
-        % TODO: check this when more safety conditions are used, could
-        % maybe not work.
-        initStateReachable = delta{j,3}(activeAPs,activeAPs); % BA transition action works with TS initial state label
+        initStateReachable = delta{j,3}(activeAPs); % BA transition action works with TS initial state label
         if fromBASourceState && initStateReachable
             % this is a valid source state in TS x A
-            Im(end+1) = I(i) +" "+delta{j,2}; % the new state is the TS init state + target of delta transition
+            Im(end+1) = I(i) +" "+ delta{j,2}; % the new state is a TS init state + target of BA transition
         end
     end
 end
-% TODO: fix this
-Im = I(1) +" "+ delta{1,2};
 
 % Atomic propositions
 APm = Q;
@@ -98,6 +61,17 @@ APm = Q;
 % Combine to new state-label combination
 Lm(1:length(Sm),1) = Sm'; % label states
 Lm(:,2) = repelem(Q,length(S))'; % matching labels
+
+% % Digraph
+% % table with all states
+% NodeTable = table(Sm', 'VariableNames',{'Name'});
+% % table with all edges (transitions) and labled with actions
+% EdgeTable = table([Trm(:,1) Trm(:,2)], Trm(:,3), 'VariableNames',{'EndNodes' 'Code'});
+% % build digraph with it
+% graph = digraph(EdgeTable,NodeTable);
+% 
+% p = plot(graph,'EdgeLabel', graph.Edges.Code);
+
 
 %% delete states and transitions from TS with merged TSm
 
@@ -146,7 +120,7 @@ if ~loopDetectionActive
         end
     end
 else
-    % find all dead loops TODO: performance optimize this part
+    % find all dead loops
     % delete all loops that are not connected to a init and final state
     % Digraph
     % table with all states
@@ -210,7 +184,7 @@ end
 % delete all states, transitions, etc, from TS when they are not in TSm
 % States
 for state = S
-     if isempty(strfind(Sm,state,'ForceCellOutput',true)) % search if state is in Sm
+     if ~any(contains(Sm,state)) % search if state is in Sm
          % if the state is not in Sm, delete it
          S(state == S) = [];
      end
