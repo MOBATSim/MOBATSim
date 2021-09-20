@@ -98,25 +98,25 @@ open('BirdsEyeViewModel.slx')
 %% This function uses try-catch-try structure as a workaround the geometric errors caused by the "trajectory" function
 function defineTrajectory(car, waypoints, speed)
 try
-    trajectory(car, waypoints, speed)
+    car.trajectory(waypoints, speed)
 catch
     [~,I,~] = unique(waypoints, 'rows','stable');
     waypoints = waypoints(I,:,:);
     speed = speed(I,:,:);
     try
-        trajectory(car, waypoints, speed)
+        car.trajectory(waypoints, speed)
     catch
         idx =(speed~=0);
         speed = (speed(idx));
         waypoints = waypoints(idx,:,:);
         try
-            trajectory(car, waypoints, speed);
+            car.trajectory(waypoints, speed);
         catch
             % Try to generate waypoints by skipping the first 10 waypoints
             waypoints = waypoints(10:end,:,:);
             speed = speed(10:end);
             try
-                trajectory(car, waypoints, speed);
+                car.trajectory(waypoints, speed);
             catch
                 % The last try: Sample each waypoint in 5
                 I = 1:5:length(waypoints);
@@ -124,7 +124,7 @@ catch
                 speed = speed(I,:,:);
                 
                 % If this also doesn't work, then it simply fails, try reducing the simulation time.
-                trajectory(car, waypoints, speed);
+                car.trajectory(waypoints, speed);
             end
         end
     end

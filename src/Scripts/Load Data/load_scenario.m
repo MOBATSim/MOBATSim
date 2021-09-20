@@ -5,12 +5,12 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
             startingPoints =    [46 47 84 3  54 64 58 57 4 63];
             destinationPoints = [54 51 82 26 3  42 27 25 26 47];
             maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
-        case 'Planned Path Change V5'
+        case 'Curved Road Overtaking'
         % Vehicle 2 makes lane change on curved road + Vehicle 5 change planned Path
             startingPoints =    [46 29 84 3  54 64 58 57 4 63];
             destinationPoints = [54 24 82 26 3  42 27 25 26 47];
             maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
-        case 'Road Merge Collision V5,Convoy'
+        case 'Road Merge Collision'
         % Road merging Vehicle Convoy Scenario + V5 stops and blocks the road merge causing a collision
             startingPoints      = [50  46    15   3    54  52  6    7    47  30];
             destinationPoints   = [13  17    20   11   25  41  18   31   15  39];

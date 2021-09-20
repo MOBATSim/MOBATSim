@@ -179,7 +179,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
         
         function icon = getIconImpl(~)
             % Define icon for System block
-            icon = matlab.system.display.Icon("situationAwareness.png");
+            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_7- Behavioural Planner.png");
         end
         
         function loadObjectImpl(obj,s,wasLocked)

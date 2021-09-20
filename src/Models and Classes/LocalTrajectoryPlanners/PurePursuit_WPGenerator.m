@@ -217,7 +217,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                     
         function icon = getIconImpl(~)
             % Define icon for System block
-            icon = matlab.system.display.Icon("WaypointGenerator.png");
+            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_9- PurePursuit WP Generator.png");
         end
         
     end

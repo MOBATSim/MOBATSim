@@ -227,7 +227,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         
         function icon = getIconImpl(~)
             % Define icon for System block
-            icon = matlab.system.display.Icon("sensor.png");
+            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_4- Sensor.png");
         end
     end
     
