@@ -118,7 +118,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
 
         function icon = getIconImpl(~)
             % Define icon for System block
-            icon = matlab.system.display.Icon("V2I.png");
+            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_6- V2l.png");
         end
         
         function loadObjectImpl(obj,s,wasLocked)

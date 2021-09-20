@@ -134,7 +134,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         
         function icon = getIconImpl(~)
             % Define icon for System block
-            icon = matlab.system.display.Icon("PathPlanner.png");
+            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_8- Navigation.png");
         end
         
         function loadObjectImpl(obj,s,wasLocked)
