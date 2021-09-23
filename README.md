@@ -1,11 +1,29 @@
 # **MOBATSim**
 
-[![View MOBATSim_OpenSource on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/78444-mobatsim_opensource)
-[![Download](https://img.shields.io/badge/MATLAB-R2020a-brightgreen)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
-[![Download](https://img.shields.io/badge/MATLAB-R2020b-brightgreen)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
-[![View Article](https://img.shields.io/badge/DOI-https%3A%2F%2Fdoi.org%2F10.1016%2Fj.ifacol.2019.08.077-blue)](https://www.sciencedirect.com/science/article/pii/S2405896319304100)
-
 MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework based on MATLAB® Simulink® that allows users to develop automated driving algorithms and assess their safety and performance. By running a traffic simulation, the safety of the implemented component or algorithm can be measured on both the vehicle level and the traffic level, supported by 2D and 3D visualization options.
+
+
+[![MOBATSim - MOBATSim](https://img.shields.io/static/v1?label=MOBATSim&message=MOBATSim&color=96D1AA&logo=github)](https://github.com/MOBATSim/MOBATSim)
+[![Contributors - MOBATSim](https://img.shields.io/github/contributors/MOBATSim/MOBATSim)](https://github.com/MOBATSim/MOBATSim)
+[![Pull Requests - MOBATSim](https://img.shields.io/github/issues-pr-closed/MOBATSim/MOBATSim?color=g&logoColor=0)](https://github.com/MOBATSim/MOBATSim/pulls)
+[![stars - MOBATSim](https://img.shields.io/github/stars/MOBATSim/MOBATSim?style=social)](https://github.com/MOBATSim/MOBATSim/stargazers)
+[![forks - MOBATSim](https://img.shields.io/github/forks/MOBATSim/MOBATSim?style=social)](https://github.com/MOBATSim/MOBATSim/fork)
+[![YouTube](https://img.shields.io/youtube/channel/views/UCVP9SDdAH_TcXCfGsGFQ09Q?style=social)](https://www.youtube.com/c/MOBATSim)
+[![YouTube](https://img.shields.io/youtube/channel/subscribers/UCVP9SDdAH_TcXCfGsGFQ09Q?style=social)](https://www.youtube.com/c/MOBATSim)
+
+[![View MOBATSim_OpenSource on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/78444-mobatsim_opensource)
+[![Download](https://img.shields.io/badge/MATLAB-R2020b-orange)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
+[![GitHub tag](https://img.shields.io/github/tag/MOBATSim/MOBATSim?include_prereleases=&sort=semver&color=96D1AA)](https://github.com/MOBATSim/MOBATSim/releases/)
+[![Cite our paper](https://img.shields.io/badge/Cite%20our%20paper-BibTex-blueviolet)](#citation)
+
+**Autonomous Vehicle Modeling and Simulation in Simulink Tutorials**
+
+[![MustafaSaraoglu - AutonomousVehicleModeling](https://img.shields.io/static/v1?label=MustafaSaraoglu&message=AutonomousVehicleModeling&color=orange&logo=github)](https://github.com/MustafaSaraoglu/AutonomousVehicleModeling)
+[![stars - AutonomousVehicleModeling](https://img.shields.io/github/stars/MustafaSaraoglu/AutonomousVehicleModeling?style=social)](https://github.com/MustafaSaraoglu/AutonomousVehicleModeling/stargazers)
+[![forks - AutonomousVehicleModeling](https://img.shields.io/github/forks/MustafaSaraoglu/AutonomousVehicleModeling?style=social)](https://github.com/MustafaSaraoglu/AutonomousVehicleModeling/fork)
+[![Follow](https://img.shields.io/github/followers/MustafaSaraoglu?style=social)](https://github.com/MustafaSaraoglu)
+[![YouTube](https://img.shields.io/youtube/likes/MS66nlDOmRY?style=social&withDislikes)](https://www.youtube.com/watch?v=MS66nlDOmRY&list=PLNNL3443z4lHTmBFrrur6aYhJnwvITqWM)
+
 
 <img src="img/logo_big.jpg" alt="Combined Image" />
 
