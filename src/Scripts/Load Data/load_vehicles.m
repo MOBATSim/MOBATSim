@@ -1,24 +1,64 @@
-Vehicles =[];
-VehicleNames = [{'V1'} {'V2'} {'V3'} {'V4'} {'V5'} {'V6'} {'V7'} {'V8'} {'V9'} {'V10'}];
-sizes = [[9 12 16];[9 12 16];[9 12 16];[9 12 16]; [9 12 40]; [9 12 36]; [9 12 16]; [9 12 34]; [9 12 16]; [9 12 16]];
-mass = [1800,3000,900,3000,900, 900,1000,1000,1000,1000,];
-dataLinksV2V = ones(10,10);
-dataLinksV2I = ones(1,length(VehicleNames));
-
-
-frontSensorRange = 100.* ones(1,length(VehicleNames));
-AEBdistance = 25.* ones(1,length(VehicleNames));
-minDeceleration = -40.* ones(1,length(VehicleNames)); % -9.15 m/s^2 dec
-
-
-
-
-for j=1:length(VehicleNames)
+function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, map)
+    % Generation of vehicles
     
-    VehicleVariable = strcat('Vehicle',num2str(j));
-    assignin('caller',VehicleVariable,Vehicle(j,VehicleNames{j},startingPoints(j),destinationPoints(j),...
-    startingTimes(j),maxSpeeds(j),sizes(j,:),dataLinksV2V(j,:),dataLinksV2I(j),mass(j),...
-    simSpeed,frontSensorRange(j),AEBdistance(j),minDeceleration(j)) );
-    NewVehicle = evalin('base',strcat('Vehicle',int2str(j)));
-    Vehicles =[Vehicles NewVehicle];
+    %% Names
+    % To add a vehicle just add a new name to VehicleNames
+    VehicleNames = [{'V1 - Sally Carrera'} ...
+                    {'V2 - Lightning McQueen'} ...
+                    {'V3 - Luigi'} ...
+                    {'V4 - Chick Hicks'} ...
+                    {'V5 - Doc Hudson'} ...
+                    {'V6 - Red'} ...
+                    {'V7 - Fillmore'} ...
+                    {'V8 - Guido'} ...
+                    {'V9 - Mater'} ...
+                    {'V10 - Sheriff'}];
+    nrVehicles = length(VehicleNames);
+    
+    %% Dimensions
+    % According to the Cuboid world standard vehicle dimensions
+    size = [2 1.8 4.7]; % => [height, width, length] in meters
+    sizes = repmat(size,nrVehicles,1);
+    % To specifically change a vehicle's size:
+    % sizes(vehicleId,:) = [2 1.8 10];
+    
+    %% Masses
+    masses(1:nrVehicles) = 1800; % kilogram
+    % To specifically change a vehicle's mass:
+    % masses(vehicleId) = 5000;
+    
+    %% Data links
+    dataLinksV2V = ones(nrVehicles,nrVehicles);
+    dataLinksV2I = ones(1,nrVehicles);
+
+    %% Starting points
+    % add default starting point 2 for every vehicle where no starting point is given
+    startingPoints(end+1:nrVehicles) = 2;
+    
+    %% Destination points
+    % add default destination point 1 for every vehicle where no destination point is given
+    destinationPoints(end+1:nrVehicles) = 1;
+    
+    %% Sensors
+    frontSensorRange = 100.* ones(1,nrVehicles);
+    AEBdistance = 15.* ones(1,nrVehicles);
+    
+    %% Dynamics
+    % add default max speed 10 for every vehicle where no max speed is given
+    maxSpeeds(end+1:nrVehicles) = 10;
+    
+    minDeceleration = -9.15.* ones(1,nrVehicles); % -9.15 m/s^2 dec
+
+   
+    %% Generate vehicles
+    Vehicles = [];
+    for j=1:nrVehicles
+        % Generate vehicle
+        NewVehicle = Vehicle(j,VehicleNames{j},startingPoints(j),destinationPoints(j),...
+        maxSpeeds(j),sizes(j,:),dataLinksV2V(j,:),dataLinksV2I(j),masses(j),...
+        frontSensorRange(j),AEBdistance(j),minDeceleration(j),map);
+    
+        % Add vehicle to array
+        Vehicles = [Vehicles NewVehicle];  %#ok<AGROW>
+    end
 end
