@@ -47,7 +47,7 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework ba
 
 Automated driving systems tend to be more critical and sophisticated in the nearest future. The functional safety assessment for these systems becomes an urgent necessity for the transition to full autonomy. Testing these functions consisting of decision and control algorithms with many variables and parameters in a unified manner is a daunting task. Threat assessment has to be made for vehicles to avoid hazardous situations actively. This requires analyzing complex operational profiles such as routing, intersection management, and collision prediction in an environment where multiple vehicles are in different positions and traveling at different speeds. There is a need for a comprehensive traffic simulation framework that models the functionality of the vehicles and the interactions between them.
 
-More detailed information about the scientific papers related to MOBATSim can be found on the [website](https://mobatsim.com/)
+More detailed information about the scientific papers related to MOBATSim can be found on our [website](https://mobatsim.com/),
 
 or you can visit our YouTube Channel where we publish the latest updates with tutorial videos:
 [![YouTube Channel](http://img.youtube.com/vi/3Wz3D1v-lL8/0.jpg)](https://www.youtube.com/c/MOBATSim)
