@@ -22,3 +22,6 @@ octave-workspace
 # Simulink autosave extension
 .autosave
 *.slxc
+
+# Automated testing report MOBATSim
+AutoTestReport.txt

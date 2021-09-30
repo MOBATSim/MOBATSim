@@ -1,6 +1,6 @@
 # **MOBATSim**
 
-MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework based on MATLAB® Simulink® that allows users to develop automated driving algorithms and assess their safety and performance. By running a traffic simulation, the safety of the implemented component or algorithm can be measured on both the vehicle level and the traffic level, supported by 2D and 3D visualization options.
+MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework based on MATLAB® and Simulink® that allows users to develop automated driving algorithms and assess their safety and performance. By running a traffic simulation, the safety of the implemented component or algorithm can be measured on both the vehicle level and the traffic level, supported by 2D and 3D visualization options.
 
 [![MOBATSim - MOBATSim](https://img.shields.io/static/v1?label=MOBATSim&message=MOBATSim&color=96D1AA&logo=github)](https://github.com/MOBATSim/MOBATSim)
 [![Contributors - MOBATSim](https://img.shields.io/github/contributors/MOBATSim/MOBATSim)](https://github.com/MOBATSim/MOBATSim/graphs/contributors)
@@ -36,25 +36,40 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework ba
 
 # Table of contents
 1. [Introduction](#introduction)
-2. [Requirements](#requirements)
-3. [Citation](#citation)
-4. [Contributing to MOBATSim](#contribution)
-5. [Release Notes](#releasenotes)
-6. [Getting Started](#gettingstarted)
+2. [Key Features of MOBATSim](#keyfeatures)
+3. [Requirements](#requirements)
+4. [Citation](#citation)
+5. [Contributing to MOBATSim](#contribution)
+6. [Release Notes](#releasenotes)
+7. [Getting Started](#gettingstarted)
 
 <a name="introduction"></a>
 ## Introduction
 
 Automated driving systems tend to be more critical and sophisticated in the nearest future. The functional safety assessment for these systems becomes an urgent necessity for the transition to full autonomy. Testing these functions consisting of decision and control algorithms with many variables and parameters in a unified manner is a daunting task. Threat assessment has to be made for vehicles to avoid hazardous situations actively. This requires analyzing complex operational profiles such as routing, intersection management, and collision prediction in an environment where multiple vehicles are in different positions and traveling at different speeds. There is a need for a comprehensive traffic simulation framework that models the functionality of the vehicles and the interactions between them.
 
-More detailed information about the scientific papers related to MOBATSim can be found on the [website](https://mobatsim.com/)
+More detailed information about the scientific papers related to MOBATSim can be found on our [website](https://mobatsim.com/),
 
 or you can visit our YouTube Channel where we publish the latest updates with tutorial videos:
 [![YouTube Channel](http://img.youtube.com/vi/3Wz3D1v-lL8/0.jpg)](https://www.youtube.com/c/MOBATSim)
 
-<a name="requirements"></a>
-## **MATLAB Version and Toolbox Requirements** 
+<a name="keyfeatures"></a>
 
+## **Key Features of MOBATSim** 
+
+* All the scripts, class files, and functions used in MOBATSim are open for editing. Users can control all the vehicles, traffic management algorithms, and the map.
+* Each vehicle is considered as an agent, and the traffic is simulated as a closed-loop multi-agent system. The vehicles generate their trajectories during the simulation according to the states and intentions of the other vehicles around in the environment. This feature also allows reactive planning algorithms to be developed and tested.
+* Users can either develop an algorithm or a controller for a single vehicle (usually referred to as the ego vehicle) or different implementations for different vehicles simultaneously.
+* Full control over all the states regarding the simulation allows for fault injection and error propagation analysis. States can be easily manipulated during the simulation by implementing either Simulink fault injection blocks or code snippets in MATLAB System Block functions.
+* MOBATSim can be used for benchmarking control and decision algorithms regarding safety and performance on different abstraction levels such as component level, vehicle level, and traffic level.
+* Object-oriented programming structure (MATLAB Classes) combined with a block diagram environment (Simulink) allows a flexible framework suitable for collaboration.
+* Data logging can be extended to states and signals of interest other than the default vehicle states used by the post-simulation 3D visualization.
+* The compatible data structure allows for various post-simulation visualization options (e.g., Unreal Engine 4 support, Bird's Eye View Scope, or Simulink 3D Animation).
+* MOBATSim's compatible map structure allows road network extensions through a user-friendly interface using the Driving Scenario Designer app.
+
+<a name="requirements"></a>
+
+## **MATLAB Version and Toolbox Requirements** 
 
 MOBATSim is continuously updated with the latest version of MATLAB®. Therefore the requirement is **MATLAB R2021a** or **MATLAB R2020b**. The following toolboxes are required for running MOBATSim:
 
