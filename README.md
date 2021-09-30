@@ -36,11 +36,12 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework ba
 
 # Table of contents
 1. [Introduction](#introduction)
-2. [Requirements](#requirements)
-3. [Citation](#citation)
-4. [Contributing to MOBATSim](#contribution)
-5. [Release Notes](#releasenotes)
-6. [Getting Started](#gettingstarted)
+2. [Key Features of MOBATSim](#keyfeatures)
+3. [Requirements](#requirements)
+4. [Citation](#citation)
+5. [Contributing to MOBATSim](#contribution)
+6. [Release Notes](#releasenotes)
+7. [Getting Started](#gettingstarted)
 
 <a name="introduction"></a>
 ## Introduction
@@ -52,7 +53,7 @@ More detailed information about the scientific papers related to MOBATSim can be
 or you can visit our YouTube Channel where we publish the latest updates with tutorial videos:
 [![YouTube Channel](http://img.youtube.com/vi/3Wz3D1v-lL8/0.jpg)](https://www.youtube.com/c/MOBATSim)
 
-<a name="requirements"></a>
+<a name="keyfeatures"></a>
 
 ## **Key Features of MOBATSim** 
 
@@ -66,8 +67,9 @@ or you can visit our YouTube Channel where we publish the latest updates with tu
 * The compatible data structure allows for various post-simulation visualization options (e.g., Unreal Engine 4 support, Bird's Eye View Scope, or Simulink 3D Animation).
 * MOBATSim's compatible map structure allows road network extensions through a user-friendly interface using the Driving Scenario Designer app.
 
-## **MATLAB Version and Toolbox Requirements** 
+<a name="requirements"></a>
 
+## **MATLAB Version and Toolbox Requirements** 
 
 MOBATSim is continuously updated with the latest version of MATLAB®. Therefore the requirement is **MATLAB R2021a** or **MATLAB R2020b**. The following toolboxes are required for running MOBATSim:
 
