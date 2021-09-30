@@ -53,6 +53,19 @@ or you can visit our YouTube Channel where we publish the latest updates with tu
 [![YouTube Channel](http://img.youtube.com/vi/3Wz3D1v-lL8/0.jpg)](https://www.youtube.com/c/MOBATSim)
 
 <a name="requirements"></a>
+
+## **Key Features of MOBATSim** 
+
+* All the scripts, class files, and functions used in MOBATSim are open for editing. Users can control all the vehicles, traffic management algorithms, and the map.
+* Each vehicle is considered as an agent, and the traffic is simulated as a closed-loop multi-agent system. The vehicles generate their trajectories during the simulation according to the states and intentions of the other vehicles around in the environment. This feature also allows reactive planning algorithms to be developed and tested.
+* Users can either develop an algorithm or a controller for a single vehicle (usually referred to as the ego vehicle) or different implementations for different vehicles simultaneously.
+* Full control over all the states regarding the simulation allows for fault injection and error propagation analysis. States can be easily manipulated during the simulation by implementing either Simulink fault injection blocks or code snippets in MATLAB System Block functions.
+* MOBATSim can be used for benchmarking control and decision algorithms regarding safety and performance on different abstraction levels such as component level, vehicle level, and traffic level.
+* Object-oriented programming structure (MATLAB Classes) combined with a block diagram environment (Simulink) allows a flexible framework suitable for collaboration.
+* Data logging can be extended to states and signals of interest other than the default vehicle states used by the post-simulation 3D visualization.
+* The compatible data structure allows for various post-simulation visualization options (e.g., Unreal Engine 4 support, Bird's Eye View Scope, or Simulink 3D Animation).
+* MOBATSim's compatible map structure allows road network extensions through a user-friendly interface using the Driving Scenario Designer app.
+
 ## **MATLAB Version and Toolbox Requirements** 
 
 
