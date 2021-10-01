@@ -31,15 +31,57 @@ classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Prop
             if obj.vehicle.status.collided || obj.vehicle.pathInfo.destinationReached
                 Acc =0;
                 Steering = 0;
-                Stop = 1;
-            else
-                
+                Stop = 1;                
+            else                
                 Stop = 0;
+                
+                [Acc, Stop] = obj.injectFaultsScenario(Acc, Stop);
+                
             end
+            
             
             % safe values in vehicle properties
             obj.vehicle.dynamics.acceleration = Acc;
             obj.vehicle.dynamics.steeringAngle = Steering;
+        end
+        
+        function [Acc, Stop] = injectFaultsScenario(obj, Acc, Stop)
+            % This is a test for fault injection with a reactive action
+            % tested with scenario "Vehicle Safety Filter Test"
+            
+            if obj.vehicle.id == 3 % following vehicle
+                % choose acc so that stopping with acc  = -3 is possible
+                % before the current position of vehicle in front
+                
+                % get distance to stop
+                curSpeed = obj.vehicle.dynamics.speed;
+                minAcceleration = -2;
+                defaultSafeDistance = 8;
+                % calculate distance to stop
+                distToStop = 0.5*-curSpeed^2/minAcceleration;
+                
+                % get distance to vehicle in front
+                deltaDistance = obj.vehicle.sensors.distanceToLeadingVehicle;
+                
+                % brake when to near to vehicle
+                if (distToStop+defaultSafeDistance) > deltaDistance
+                    Acc = minAcceleration;
+                end
+                
+            % add uncertainty to acceleration of leading
+            elseif obj.vehicle.id == 1 % leading vehicle
+                
+                meanValue = 0;
+                variance = 1;
+                Acc_wnoise = Acc + sqrt(variance)*randn(size(Acc)) + meanValue;
+                
+                Acc = Acc_wnoise;
+                
+                % suddenly stop at 20 seconds
+                if get_param('MOBATSim','SimulationTime') >= 7
+                    Stop = 1;
+                end
+            end
         end
 
         function resetImpl(obj)
