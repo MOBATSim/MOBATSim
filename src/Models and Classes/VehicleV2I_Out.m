@@ -1,13 +1,7 @@
 classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
     % Sends requests to the Infrastructure for crossroads and right of way.
-    %
-    % NOTE: When renaming the class name Untitled, the file name
-    % and constructor name must be updated to use the class name.
-    %
-    % This template includes most, but not all, possible properties, attributes,
-    % and methods that you can implement for a System object in Simulink.
-    
+
     % Public, tunable properties
     properties
         Vehicle_id

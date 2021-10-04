@@ -497,6 +497,48 @@ classdef CrossroadUnit < handle
             [~, indexHighestPriority] = max(combinationPriorities);
             selectedCombination = allCombinations(indexHighestPriority);
             
+            %--------------------------------------------------------------
+            % Verify the selected crossroad commands
+            %--------------------------------------------------------------
+            if obj.id == 1
+                atInput = lower(split(selectedCombination,"-"));
+                atPassing = lower(occupiedDirections);
+                crossingPaths = ["pne", "pew";
+                    "pne", "pwn";
+                    "pne", "pes";
+                    "pne", "psn";
+                    "pne", "pwe";
+                    "pne", "pse";
+                    "pns", "pew";
+                    "pns", "psw";
+                    "pns", "pwn";
+                    "pns", "pwe";
+                    "pns", "pws";
+                    "pns", "pes";
+                    "pnw", "pew";
+                    "pnw", "psw";
+                    "pes", "psn";
+                    "pes", "psw";
+                    "pes", "pwe";
+                    "pes", "pws";
+                    "pew", "psn";
+                    "pew", "pwn";
+                    "pew", "psw";
+                    "pen", "psn";
+                    "pen", "pwn";
+                    "psw", "pwe";
+                    "psw", "pwn";
+                    "psn", "pwe";
+                    "psn", "pwn";
+                    "pse", "pwe"];
+                
+                verified = verifyWithModel(atInput, atPassing, crossingPaths);
+                
+                if ~verified
+                    error("CrossroadManager" +obj.id+ " wanted to take a forbidden action with a possible collision!");
+                end
+            end
+            %--------------------------------------------------------------
             % Define commands for every vehicle (stop, go)
             vehicleOrders = obj.defineVehicleOrders(vehicleQueue(:,1:2), selectedCombination);
             

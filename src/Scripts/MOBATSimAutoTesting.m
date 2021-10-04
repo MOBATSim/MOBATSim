@@ -19,7 +19,10 @@ function MOBATSimAutoTesting(options)
 
     % a list of results for every scenario
     passed = strings(size(options.scenarioNames));
-    
+    % make or open a file for the report
+    fileID = fopen('AutoTestReport.txt','w');
+    % header
+    fprintf(fileID,'Automatic Test Report\n\r');
     tic;
     % test every scenario
     for i=1:length(options.scenarioNames)
@@ -34,12 +37,16 @@ function MOBATSimAutoTesting(options)
 
         % display scenario name and if passed    
         disp("<strong>" + options.scenarioNames(i) + ":</strong>" + " [" + passed(i) +"]");
+        % add this information also to the report
+        fprintf(fileID,'%s: [%s]\n',options.scenarioNames(i),passed(i));
 
         % display only the exception message, but dont interrupt the execution
         if  passed(i) ~= "PASSED"
             fprintf(2,ME.message + "\n");
         end
     end
+    % finish report
+    fclose(fileID);
     toc;
 end
 
