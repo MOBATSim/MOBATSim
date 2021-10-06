@@ -266,16 +266,29 @@ classdef VehiclePredictor < handle
             end
             
             if obj.currentSimTime == 15
-                varNames = {'Time','Position','Predicted Position','Position Error'};
+                varNames = {'Time','Position','Vor Position','Position Error'};
                 % resize
                 obj.tablePredictedPosition = obj.tablePredictedPosition(1:length(obj.tableTimeStamp),1);
-                   
+                
+                % delta between estimated and real position
+                deltaPos = (obj.tablePosition - obj.tablePredictedPosition);
+                
+                % plot for delta pos over time
+                %figure(3);
+                %plot(obj.tableTimeStamp(1:end-40),deltaPos(1:end-40));
+                %legend("Differenz Istwert - Schätzwert");
+                %xlabel('Zeit [s]')
+                %ylabel('Distanz [m]')
+                % table showing all the values
                 obj.predictionErrorTable = table(obj.tableTimeStamp, ...
                                                  obj.tablePosition, ...
                                                  obj.tablePredictedPosition, ...
-                                                 (obj.tablePosition - obj.tablePredictedPosition), ...
-                                                 'VariableNames', varNames);               
-            end 
+                                                 deltaPos, ...
+                                                 'VariableNames', varNames);
+                %figure(4);
+                %uitable('Data',obj.predictionErrorTable{:,:},'ColumnName',obj.predictionErrorTable.Properties.VariableNames,...
+                %        'RowName',obj.predictionErrorTable.Properties.RowNames, 'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
+            end  
         end
         
         

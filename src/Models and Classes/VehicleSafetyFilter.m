@@ -35,7 +35,7 @@ classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Prop
             else                
                 Stop = 0;
                 
-                [Acc, Stop] = obj.injectFaultsScenario(Acc, Stop);
+                %[Acc, Stop] = obj.injectFaultsScenario(Acc, Stop);
                 
             end
             
@@ -48,6 +48,7 @@ classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Prop
         function [Acc, Stop] = injectFaultsScenario(obj, Acc, Stop)
             % This is a test for fault injection with a reactive action
             % tested with scenario "Vehicle Safety Filter Test"
+            
             
             if obj.vehicle.id == 3 % following vehicle
                 % choose acc so that stopping with acc  = -3 is possible
@@ -67,7 +68,8 @@ classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Prop
                 if (distToStop+defaultSafeDistance) > deltaDistance
                     Acc = minAcceleration;
                 end
-                
+                              
+              
             % add uncertainty to acceleration of leading
             elseif obj.vehicle.id == 1 % leading vehicle
                 
@@ -77,11 +79,18 @@ classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Prop
                 
                 Acc = Acc_wnoise;
                 
-                % suddenly stop at 20 seconds
+                % suddenly stop at 7 seconds
                 if get_param('MOBATSim','SimulationTime') >= 7
                     Stop = 1;
                 end
+                if Stop == 1
+                    Acc = 0;
+                end
+                
+                
             end
+            
+            
         end
 
         function resetImpl(obj)
