@@ -266,7 +266,7 @@ classdef VehiclePredictor < handle
             end
             
             if obj.currentSimTime == 15
-                varNames = {'Time','Position','Vor Position','Position Error'};
+                varNames = {'Time','Position','Predicted Position','Position Error'};
                 % resize
                 obj.tablePredictedPosition = obj.tablePredictedPosition(1:length(obj.tableTimeStamp),1);
                 
