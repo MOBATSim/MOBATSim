@@ -42,7 +42,7 @@ function MOBATSimAutoTesting(options)
 
         % display only the exception message, but dont interrupt the execution
         if  passed(i) ~= "PASSED"
-            fprintf(2,ME.message + "\n");
+            fprintf(2,ME.cause{1}.message + "\n");
         end
     end
     % finish report
