@@ -501,8 +501,11 @@ classdef CrossroadUnit < handle
             % Verify the selected crossroad commands
             %--------------------------------------------------------------
             if obj.id == 1
-                atInput = lower(split(selectedCombination,"-"));
-                atPassing = lower(occupiedDirections);
+                % for positive result test
+                atInput = split(selectedCombination,"-");
+                % for negative result test
+                %atInput = vehicleQueue(:,2)';
+                atPassing = occupiedDirections;
                 crossingPaths = ["pne", "pew";
                     "pne", "pwn";
                     "pne", "pes";
@@ -532,10 +535,11 @@ classdef CrossroadUnit < handle
                     "psn", "pwn";
                     "pse", "pwe"];
                 
-                verified = verifyWithModel(atInput, atPassing, crossingPaths);
+                verified = verifyWithModel(lower(atInput), lower(atPassing), crossingPaths);
                 
                 if ~verified
-                    error("CrossroadManager" +obj.id+ " wanted to take a forbidden action with a possible collision!");
+                    error("CrossroadManager " +obj.id+ " wanted to take a forbidden action with a possible collision!\n" + ...
+                          get_param('MOBATSim','SimulationTime')+"s Forbidden Directions:" + sprintf(' %s %s', atInput, atPassing));
                 end
             end
             %--------------------------------------------------------------

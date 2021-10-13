@@ -54,7 +54,10 @@ function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenario
             startingPoints =    [51 47 48 3 55 53 6 7 22 45];
             destinationPoints = [13 15 18 11 26 40 17 32 16 10];
             maxSpeeds = [13 13 11 9 13 13 8 14 4 13];
-
+        case 'Vehicle Safety Filter Test'
+            startingPoints =    [46 85 47 3  54 64 58 57 4 63];
+            destinationPoints = [52 51 51 26 3  42 27 25 26 47];
+            maxSpeeds =         [5  18 20 7  14 10 0.1 4 10 10];
 
     end
     
