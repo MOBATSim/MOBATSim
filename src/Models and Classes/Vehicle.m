@@ -71,6 +71,7 @@ classdef Vehicle < handle
         %         routeCompleted
         %         calculateNewPathFlag
         %         path
+        %         pathChangedCounter
         %         futureData
         %         BOGPath
         %         routeLength
@@ -126,6 +127,7 @@ classdef Vehicle < handle
             obj.pathInfo.routeCompleted = true;
             obj.pathInfo.calculateNewPathFlag = true;
             obj.pathInfo.path = 0;
+            obj.pathInfo.pathChangedCounter =0;
             obj.pathInfo.futureData = [];
             obj.pathInfo.BOGPath = [];
             obj.pathInfo.routeLength = 0;

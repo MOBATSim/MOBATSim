@@ -36,7 +36,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             %% Check if destination is reached
             if obj.vehicle.checkifDestinationReached() % If true vehicle stops
                 waypointReached=0;                                  %Output: Waypoint Reached enabler
-            else            
+            else
                 %% Check if the vehicle has reached a waypoint / Then it should reupdate its plan
                 if obj.vehicle.pathInfo.calculateNewPathFlag == 1 
                     
@@ -57,6 +57,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                         obj.vehicle.setCurrentRoute(currentRoute); % Set the new current Route
                         currentTrajectory = obj.vehicle.generateTrajectoryFromPath(obj.vehicle.pathInfo.path);
                         obj.vehicle.setCurrentTrajectory(currentTrajectory); % Generate the new current trajectory
+                        obj.vehicle.pathInfo.pathChangedCounter = obj.vehicle.pathInfo.pathChangedCounter + 1;
                     end
                     
                     obj.vehicle.pathInfo.futureData = FuturePlan;
