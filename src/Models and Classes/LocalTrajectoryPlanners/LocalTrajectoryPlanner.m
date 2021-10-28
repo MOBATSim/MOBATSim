@@ -103,10 +103,12 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
                 s = dot(posVector,route_UnitVector);% the projection of posVector on route_UnitVector
                 
                 % Calculate "d" the lateral distance to the reference road frame
-                yawAngle_in_Cartesian = atan2d(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate
-                sideVector = [cosd(yawAngle_in_Cartesian+90) sind(yawAngle_in_Cartesian+90)];% side vector is perpendicular to the route
+                %yawAngle_in_Cartesian = atan2d(route_UnitVector(2),route_UnitVector(1));% orientation angle of the vehicle in Cartesian Coordinate
+                %sideVector = [cosd(yawAngle_in_Cartesian+90) sind(yawAngle_in_Cartesian+90)];% side vector is perpendicular to the route
                 
-                d = dot(posVector,sideVector);% the projection of posVector on sideVector - positive d value means to the left
+                normalVector = [-route_UnitVector(2),route_UnitVector(1)];% Fast rotation by 90 degrees to find the normal vector  
+                
+                d = dot(posVector,normalVector);% the projection of posVector on sideVector - positive d value means to the left
                 
             else % Curved Road
                 
