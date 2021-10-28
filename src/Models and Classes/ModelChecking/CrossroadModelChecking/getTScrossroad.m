@@ -14,6 +14,7 @@ nrVeh = length(vehDirs);
 %[S, Act, Tr, I, AP, L] = getTSvehicle(vehDirs(1));
 % finished when only one vehicle
 if nrVeh == 1
+    [S, Act, Tr, I, AP, L] = getTSvehicle(vehDirs(1)); %TODO: Check if it works for all, resolves the empty S issue
     return;
 end
 % Generate Transition Systems for the rest
