@@ -60,17 +60,21 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
                 refPos = s*routeUnitVector+startPoint; % The ref position on the path with 0.01 "s" ahead
             else %curved road
                 rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
-                r = norm(startPoint-rotationCenter); % Get the radius of the rotation
-                
                 startPointVector = startPoint-rotationCenter;% Vector pointing from the rotation point to the start
+                
+                r = norm(startPointVector); % Get the radius of the rotation
+                
                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1)); % The initial angle of the starting point
-                l = r-(d*cclockwise);% Vehicle distance from the rotation center
+                l = r-(d*cclockwise);% Vehicle reference lateral distance from the rotation center (d=0 for the right lane)
                 lAng = (-cclockwise)*s/r+startPointVectorAng;% the angle of vector l
-                refPos = l*[cos(lAng) sin(lAng)]+rotationCenter;% the position in Cartesion coordinate
-                refOrientation = lAng+(-cclockwise)*pi/2;
-                refOrientation = mod(refOrientation,2*pi);
-                refOrientation = refOrientation.*(0<=refOrientation & refOrientation <= pi) + (refOrientation - 2*pi).*(pi<refOrientation & refOrientation<2*2*pi);   % angle in (-pi,pi]
-                refOrientation = rad2deg(refOrientation);
+                refPos = rotationCenter+ l*[cos(lAng) sin(lAng)];% the reference position in Cartesian coordinates
+
+                refOrientation = rad2deg(lAng+(-cclockwise)*pi/2);
+                
+                % refOrientation = lAng+(-cclockwise)*pi/2;
+                % refOrientation = mod(refOrientation,2*pi);
+                % refOrientation = refOrientation.*(0<=refOrientation & refOrientation <= pi) + (refOrientation - 2*pi).*(pi<refOrientation & refOrientation<2*2*pi);   % angle in (-pi,pi]
+                
             end
         end
         
