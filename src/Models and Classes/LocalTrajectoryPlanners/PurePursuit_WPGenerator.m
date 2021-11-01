@@ -3,15 +3,13 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
     %
     
     % Pre-computed constants
-    properties(Access = private)
-        
+    properties(Access = private)  
         Kpoints = 6; % The number of next path points to be output to the Pure Pursuit controller
-        ref_d = 0; % The reference lateral coordinate "d" for tracking the right or the left lane
         
-        currentPathPoints =[];
-        laneChangingPoints =[];
+        currentPathPoints =[];  % Arrays of waypoints to follow
+        laneChangingPoints =[]; % Arrays of waypoints to follow for lane changing
         
-        laneChangeTime = 4;
+        laneChangeTime = 4; % Default lane-changing maneuver time duration
     end
     
     methods
@@ -28,8 +26,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             setupImpl@LocalTrajectoryPlanner(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
         end
         
-        function nextWPs = stepImpl(obj,pose,speed,changeLane)
-            
+        function nextWPs = stepImpl(obj,pose,speed,changeLane) 
             % Sets/Registers vehicle current Pose and speed
             obj.registerVehiclePoseAndSpeed(obj.vehicle,pose,speed); 
             
@@ -81,14 +78,10 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                 else % If the vehicle is on the right lane, it follows the generated path points
                     nextWPs = obj.currentPathPoints;  % Output: PathPoints for Pure Pursuit
                 end
-            end
-            
-            
-            
+            end   
         end
 
-        function nextWPs = checkNextWPsOutputSize(obj,nextWPs,K)
-            
+        function nextWPs = checkNextWPsOutputSize(obj,nextWPs,K) 
             % Adjust the nextWPs so that it fits the getOutputSizeMethod specifications
             if size(nextWPs,1) < K
                 missingRowNr = K-size(nextWPs,1);
@@ -113,8 +106,6 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                     else
                         obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5; %right lane-changing completed
                     end
-                    
-                    
                 end
             end
         end
@@ -176,7 +167,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             end
         end
   
-        %% Override for experiment - Later incorparate into WaypointGenerator.m
+        %% Override for experiment - Later incorparate into LocalTrajectoryPlanner.m
         
         function updatedPathPoints_Cartesian = Frenet2Cartesian(~,s,laneChangingPoints,currentTrajectory)
             route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];
@@ -186,14 +177,14 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             if radian == 0
                 route_Vector = route(2,:)-route(1,:);
                 route_UnitVector = route_Vector/norm(route_Vector);
-                yawAngle_in_Cartesian = atan2d(route_UnitVector(2),route_UnitVector(1));
-                sideVector = [cosd(yawAngle_in_Cartesian+90) sind(yawAngle_in_Cartesian+90)];
+                normalVector = [-route_UnitVector(2),route_UnitVector(1)];% Fast rotation by 90 degrees to find the normal vector  
+                
                 
                 % Lane Changing Points were already in Frenet - only "s" value should be added
                 % "d" is already the reference
                 updatedPathPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
                 
-                updatedPathPoints_Cartesian = updatedPathPoints_Frenet(:,1)*route_UnitVector+updatedPathPoints_Frenet(:,2)*sideVector+route(1,:);
+                updatedPathPoints_Cartesian = updatedPathPoints_Frenet(:,1)*route_UnitVector+updatedPathPoints_Frenet(:,2)*normalVector+route(1,:);
             else
 
                 updatedPathPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
@@ -202,16 +193,16 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                 
                 startPoint = route(1,:);
                 rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
-                r = norm(startPoint-rotationCenter); % Get the radius of the rotation
                 
                 startPointVector = startPoint-rotationCenter;% Vector pointing from the rotation point to the start
+                r = norm(startPointVector); % Get the radius of the rotation
+                
                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
+                
                 l = r+(all_d*cclockwise);%current distance from rotation center to position
                 lAng = all_s/r+startPointVectorAng;% the angle of vector l
-                updatedPathPoints_Cartesian = l.*[cos(lAng) sin(lAng)]+rotationCenter;% the positions in Cartesian
+                updatedPathPoints_Cartesian = rotationCenter + l.*[cos(lAng) sin(lAng)];% the positions in Cartesian
             end
-            
-            
 
         end
                     
