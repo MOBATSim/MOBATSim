@@ -328,7 +328,8 @@ classdef VehiclePredictor < handle
             % Emergency stop
             [obj.predictedDeltaDistances, obj.predictedDeltaSpeeds] = obj.predictEgoEmergencyStop();
             % Test prediction error
-            obj.testPredictionError();
+            %obj.testPredictionError(); % this was only for testing the
+            % uncertaincy of prediction 
             
             % Vehicles
             % get all vehicles and their poses, that are close as 150m to ego vehicle
