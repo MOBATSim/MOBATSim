@@ -74,7 +74,7 @@ function prepare_simulator(options)
         startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
         
     %% Generate the 2D Map and the instance from the Map class
-    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap);
+    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap,"showNodeNumbers",~options.simpleMap);
 
     %% Load Vehicles    
     Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map);
