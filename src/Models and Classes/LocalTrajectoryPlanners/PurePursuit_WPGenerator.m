@@ -5,6 +5,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
     % Pre-computed constants
     properties(Access = private)  
         Kpoints = 6; % The number of next path points to be output to the Pure Pursuit controller
+        ref_d = 0; % The reference lateral coordinate "d" for tracking the right or the left lane
         
         currentPathPoints =[];  % Arrays of waypoints to follow
         laneChangingPoints =[]; % Arrays of waypoints to follow for lane changing
@@ -106,6 +107,8 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                     else
                         obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5; %right lane-changing completed
                     end
+                    
+                    
                 end
             end
         end
@@ -203,6 +206,8 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                 lAng = all_s/r+startPointVectorAng;% the angle of vector l
                 updatedPathPoints_Cartesian = rotationCenter + l.*[cos(lAng) sin(lAng)];% the positions in Cartesian
             end
+            
+            
 
         end
                     

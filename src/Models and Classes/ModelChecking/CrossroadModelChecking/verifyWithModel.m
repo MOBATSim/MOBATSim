@@ -25,10 +25,10 @@ if ~isempty(atPassing)
 end
 
 % Generate Transition System for the crossroad
-[S, Act, Tr, I, AP, L] = getTScrossroad(directions);
+TS = getTScrossroad(directions);
 
 % Generate a verified Transition System with Büchi Automata
-[S, Act, Tr, I, AP, L] = getVerifiedTS(S, Act, Tr, I, AP, L, crossingPaths);
+[S, Act, Tr, I, AP, L] = getVerifiedTS(TS.states, TS.actions, TS.transitions, TS.initialStates, TS.atomicProps, TS.labels, crossingPaths);
 
 
 % check if state exists

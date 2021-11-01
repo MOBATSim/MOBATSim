@@ -1,4 +1,4 @@
-function [S, Act, Tr, I, AP, L] = getTSvehicle(dir)
+function TS = getTSvehicle(dir)
 %GETVEHICLEMODEL Generate the transition system of a vehicle on a crossroad
 %driving in direction dir.
 %   Detailed explanation goes here
@@ -22,5 +22,8 @@ AP = [S(1)+dir S(2)+dir S(3)+dir];
 
 % Labels
 L = [S' AP'];
+
+% generate transition system object
+TS = TransitionSystem(S, Act, Tr, I, AP, L);
 end
 

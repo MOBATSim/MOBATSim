@@ -10,10 +10,10 @@ dirs = ["ew","wn","nw"];
 %dirs = ["ew","wn","nw","se"];
 
 % Generate Transition System for the crossroad
-[S, Act, Tr, I, AP, L] = getTScrossroad(dirs);
+TS = getTScrossroad(dirs);
 
 % Plot the crossroad TS
-plotTS(S, Act, Tr, I, AP, L);
+TS.plotTS();
 
 % array with paths that are crossing in each line        
 crossingPaths = ["pne", "pew";
@@ -46,7 +46,7 @@ crossingPaths = ["pne", "pew";
                  "pse", "pwe"];          
 
 % Generate a verified Transition System with Büchi Automata
-[S, Act, Tr, I, AP, L] = getVerifiedTS(S, Act, Tr, I, AP, L, crossingPaths);
+[S, Act, Tr, I, AP, L] = getVerifiedTS(TS.states, TS.actions, TS.transitions, TS.initialStates, TS.atomicProps, TS.labels, crossingPaths);
 
 % Plot the verified TS
 plotTS(S, Act, Tr, I, AP, L);
