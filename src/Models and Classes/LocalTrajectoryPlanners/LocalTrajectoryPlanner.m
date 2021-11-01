@@ -11,6 +11,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
         vehicle
         
         laneWidth = 3.7; % Standard road width
+        ref_d = 0; % The reference lateral coordinate "d" for tracking the right or the left lane
         
     end
     

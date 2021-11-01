@@ -5,7 +5,6 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
     % Pre-computed constants
     properties(Access = private)
         referencePose = [0; 0; 0];
-        latOffset = 0;%variable to save reference delta_d in Frenet coordinate
     end
     
     methods
@@ -58,8 +57,8 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
                 
             else % Add <delta s>
                 s = s+0.01;
-                % Generate Reference Pose for Stanley
-                [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,d,radian);%Coordinate Conversion function
+                % Generate Reference Pose for Stanley / obj.ref_d is the reference lateral displacement value
+                [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,obj.ref_d,radian);%Coordinate Conversion function
             end
    
             %Required format for the Stanley controller

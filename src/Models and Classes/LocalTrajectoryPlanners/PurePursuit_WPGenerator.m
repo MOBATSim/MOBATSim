@@ -3,15 +3,13 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
     %
     
     % Pre-computed constants
-    properties(Access = private)
-        
+    properties(Access = private)  
         Kpoints = 6; % The number of next path points to be output to the Pure Pursuit controller
-        ref_d = 0; % The reference lateral coordinate "d" for tracking the right or the left lane
         
-        currentPathPoints =[];
-        laneChangingPoints =[];
+        currentPathPoints =[];  % Arrays of waypoints to follow
+        laneChangingPoints =[]; % Arrays of waypoints to follow for lane changing
         
-        laneChangeTime = 4;
+        laneChangeTime = 4; % Default lane-changing maneuver time duration
     end
     
     methods
@@ -28,8 +26,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             setupImpl@LocalTrajectoryPlanner(obj);  % Inherit the setupImpl function of the Superclass @WaypointGenerator
         end
         
-        function nextWPs = stepImpl(obj,pose,speed,changeLane)
-            
+        function nextWPs = stepImpl(obj,pose,speed,changeLane) 
             % Sets/Registers vehicle current Pose and speed
             obj.registerVehiclePoseAndSpeed(obj.vehicle,pose,speed); 
             
@@ -81,14 +78,10 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                 else % If the vehicle is on the right lane, it follows the generated path points
                     nextWPs = obj.currentPathPoints;  % Output: PathPoints for Pure Pursuit
                 end
-            end
-            
-            
-            
+            end   
         end
 
-        function nextWPs = checkNextWPsOutputSize(obj,nextWPs,K)
-            
+        function nextWPs = checkNextWPsOutputSize(obj,nextWPs,K) 
             % Adjust the nextWPs so that it fits the getOutputSizeMethod specifications
             if size(nextWPs,1) < K
                 missingRowNr = K-size(nextWPs,1);
@@ -113,8 +106,6 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                     else
                         obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5; %right lane-changing completed
                     end
-                    
-                    
                 end
             end
         end
@@ -210,10 +201,8 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                 
                 l = r+(all_d*cclockwise);%current distance from rotation center to position
                 lAng = all_s/r+startPointVectorAng;% the angle of vector l
-                updatedPathPoints_Cartesian = l.*[cos(lAng) sin(lAng)]+rotationCenter;% the positions in Cartesian
+                updatedPathPoints_Cartesian = rotationCenter + l.*[cos(lAng) sin(lAng)];% the positions in Cartesian
             end
-            
-            
 
         end
                     
