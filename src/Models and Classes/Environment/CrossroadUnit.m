@@ -506,36 +506,36 @@ classdef CrossroadUnit < handle
                 % for negative result test
                 %atInput = vehicleQueue(:,2)';
                 atPassing = occupiedDirections;
-                crossingPaths = ["pne", "pew";
-                    "pne", "pwn";
-                    "pne", "pes";
-                    "pne", "psn";
-                    "pne", "pwe";
-                    "pne", "pse";
-                    "pns", "pew";
-                    "pns", "psw";
-                    "pns", "pwn";
-                    "pns", "pwe";
-                    "pns", "pws";
-                    "pns", "pes";
-                    "pnw", "pew";
-                    "pnw", "psw";
-                    "pes", "psn";
-                    "pes", "psw";
-                    "pes", "pwe";
-                    "pes", "pws";
-                    "pew", "psn";
-                    "pew", "pwn";
-                    "pew", "psw";
-                    "pen", "psn";
-                    "pen", "pwn";
-                    "psw", "pwe";
-                    "psw", "pwn";
-                    "psn", "pwe";
-                    "psn", "pwn";
-                    "pse", "pwe"];
+                crossingPaths = ["ne", "ew";
+                    "ne", "wn";
+                    "ne", "es";
+                    "ne", "sn";
+                    "ne", "we";
+                    "ne", "se";
+                    "ns", "ew";
+                    "ns", "sw";
+                    "ns", "wn";
+                    "ns", "we";
+                    "ns", "ws";
+                    "ns", "es";
+                    "nw", "ew";
+                    "nw", "sw";
+                    "es", "sn";
+                    "es", "sw";
+                    "es", "we";
+                    "es", "ws";
+                    "ew", "sn";
+                    "ew", "wn";
+                    "ew", "sw";
+                    "en", "sn";
+                    "en", "wn";
+                    "sw", "we";
+                    "sw", "wn";
+                    "sn", "we";
+                    "sn", "wn";
+                    "se", "we"];
                 
-                verified = verifyWithModel(lower(atInput), lower(atPassing), crossingPaths);
+                verified = TScrossroad.verifyModel(lower(atInput), lower(atPassing), crossingPaths);
                 
                 if ~verified
                     error("CrossroadManager " +obj.id+ " wanted to take a forbidden action with a possible collision!\n" + ...
