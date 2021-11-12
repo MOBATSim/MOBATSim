@@ -41,7 +41,6 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
             % Calculate helping variables for the reference path calculation
             currentTrajectory = obj.vehicle.pathInfo.currentTrajectory;
             Vpos_C = [pose(1) pose(2)];
-            radian = currentTrajectory(3,1);
             
             % Cartesian to Frenet Coordinate Transformation
             [s,d] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C); % Determine current <s,d>
@@ -51,18 +50,18 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
             
             if changeLane % Add <delta s, delta d>
                 s = s+0.01; 
-                %TODO: Not implemented yet + delta "d"
-                % Generate Reference Pose for Stanley
-                [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,d,radian);%Coordinate Conversion function
+
+                [refPos, refOrientation] = obj.Frenet2Cartesian(s, d, currentTrajectory);%Coordinate Conversion function
                 
             else % Add <delta s>
                 s = s+0.01;
+                
                 % Generate Reference Pose for Stanley / obj.ref_d is the reference lateral displacement value
-                [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,obj.ref_d,radian);%Coordinate Conversion function
+                [refPos, refOrientation] = obj.Frenet2Cartesian(s, obj.ref_d, currentTrajectory);%Coordinate Conversion function
             end
    
             %Required format for the Stanley controller
-            obj.referencePose = [refPos(1); refPos(2); refOrientation];
+            obj.referencePose = [refPos(1); refPos(2); rad2deg(refOrientation)]; % Orientation in degree for Stanley
             
             % Check if the Waypoint is Reached
             obj.vehicle.checkWaypointReached(currentTrajectory(2,:));
@@ -77,9 +76,7 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_10- Stanley.png");
-        end
-        
-        
+        end   
     end
     %% Standard Simulink Output functions
     methods(Static,Access = protected)
