@@ -7,7 +7,6 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
         Kpoints = 6; % The number of next path points to be output to the Pure Pursuit controller
         
         currentPathPoints =[];  % Arrays of waypoints to follow
-        laneChangingPoints =[]; % Arrays of waypoints to follow for lane changing
     end
     
     methods
@@ -55,8 +54,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             
             % Generate lane changing trajectory if commanded and not generated yet
             if ~(changeLane==0) && isempty(obj.laneChangingPoints)
-                    Frenet_LaneChangingPoints = obj.generateMinJerkTrajectory(obj.vehicle,obj.laneChangeTime,changeLane,s);
-                    [obj.laneChangingPoints, ~] = obj.Frenet2Cartesian(Frenet_LaneChangingPoints(:, 1),Frenet_LaneChangingPoints(:, 2),currentTrajectory);
+                [obj.laneChangingPoints, ~, ~]  = obj.generateLaneChangingPoints(s, changeLane, currentTrajectory);
             end
             
             % If there are already lane changing path points            
@@ -98,13 +96,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             % If the lane-changing is almost done, reset the laneChangingPoints and only track the reference trajectory with +d
             if idx>size(obj.laneChangingPoints,1) 
                 obj.laneChangingPoints =[];
-                if abs(obj.ref_d-obj.vehicle.pathInfo.d) < 0.05 % lane-changing completed                    
-                    if obj.ref_d > 0
-                        obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId+0.5; %left lane-changing completed
-                    else
-                        obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5; %right lane-changing completed
-                    end
-                end
+                obj.finishLaneChangingManeuver(0.05);
             end
         end
         

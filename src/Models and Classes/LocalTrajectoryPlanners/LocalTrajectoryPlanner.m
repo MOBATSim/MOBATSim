@@ -14,6 +14,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
         ref_d = 0; % The reference lateral coordinate "d" for tracking the right or the left lane
         
         laneChangeTime = 4; % Default lane-changing maneuver time duration
+        laneChangingPoints =[]; % Arrays of waypoints to follow for lane changing
     end
     
     methods
@@ -130,7 +131,15 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             car.updateActualSpeed(speed);                       % Sets the vehicle speed
         end
         
-        function newWP_all = generateMinJerkTrajectory(obj,car,t_f,changeLane,s_current)
+        function [Cartesian_LaneChangingPoints, roadOrientation, d_dot_ref] = generateLaneChangingPoints(obj, s, changeLane, currentTrajectory)
+        % Generate waypoints for lane changing in Cartesian coordinates, 
+        % also return the road orientation and the lateral reference speed at each point
+            
+            [Frenet_LaneChangingPoints, d_dot_ref] = obj.generateMinJerkTrajectory(obj.vehicle, obj.laneChangeTime, changeLane, s);
+            [Cartesian_LaneChangingPoints, roadOrientation]  = obj.Frenet2Cartesian(Frenet_LaneChangingPoints(:, 1), Frenet_LaneChangingPoints(:, 2), currentTrajectory);
+        end
+        
+        function [newWP_all, d_dot] = generateMinJerkTrajectory(obj,car,t_f,changeLane,s_current)
             % Minimum Jerk Trajectory Generation            
             if changeLane ==1 % To the left
                 y_f = obj.laneWidth; % Target lateral - d coordinate
@@ -163,12 +172,25 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             % Solve for the coefficients using 6 linear equations with 6 boundary conditions at t = ti and t = tf
             a = linsolve(A,B);
                         
-            tP = 0:0.2:t_f; % To calculate the lane changing path points for the trajectory with 0.2 s intervals
+            tP = 0:0.02:t_f; % To calculate the lane changing path points for the trajectory with 0.2 s intervals
             newWP_s = s_current + car.dynamics.speed*tP; % Target longitudinal - "s" coordinates of the path points
             newWP_d=a(1)+a(2)*tP+a(3)*tP.^2+a(4)*tP.^3+a(5)*tP.^4+a(6)*tP.^5; % "d" coordinates corresponding to the trajectory
-            newWP_d_dot = a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4;
-            newWP_all =  [newWP_s' newWP_d' newWP_d_dot']; % create a set of path points
+            d_dot = (a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4)';
+            newWP_all =  [newWP_s' newWP_d']; % create a set of path points
             obj.ref_d = a(1)+a(2)*t_f+a(3)*t_f^2+a(4)*t_f^3+a(5)*t_f^4+a(6)*t_f^5; % reference "d" value by the end of the lane changing maneuver
+        end
+        
+        function finishLaneChangingManeuver(obj, tolerance)
+        % When vehicle is almost (according to a tolerance) at the center
+        % of the destination lane, the lane changing maneuver is completed
+            
+            if abs(obj.ref_d-obj.vehicle.pathInfo.d) < tolerance % lane-changing completed                    
+                if obj.ref_d > 0
+                    obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId+0.5; % left lane-changing completed
+                else
+                    obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5; % right lane-changing completed
+                end
+            end
         end
                 
 %         function [refPos,refOrientation] = Frenet2Cartesian2(~,currentTrajectory,s,d,radian)
