@@ -19,28 +19,6 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
         end
     end
     
-     methods(Static)
-        function centerFrontAxle = getVehicleFrontAxleCenterPoint(poseRearAxle, wheelBase)
-        % Get the center of the vehicle's front axle by transforming the vehicle's location
-
-            x_RearAxle = poseRearAxle(1);
-            y_RearAxle = poseRearAxle(2);
-            yaw = poseRearAxle(3);
-
-            x_centerFrontAxle = x_RearAxle + wheelBase*cos(yaw);
-            y_centerFrontAxle = y_RearAxle + wheelBase*sin(yaw);
-
-            centerFrontAxle = [x_centerFrontAxle, y_centerFrontAxle];
-        end
-        
-        function [closestPoint, idxInTrajectory] = getClosestPointOnTrajectory(point, trajectory)
-        % Calculate which point on a trajectory is closest to a given point
-            
-            [~, idxInTrajectory] = min(sum((trajectory - point).^2, 2));
-            closestPoint = trajectory(idxInTrajectory, :);
-        end
-    end
-    
     methods(Access = protected)
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
@@ -114,6 +92,29 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
             icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_10- Stanley.png");
         end   
     end
+    
+    methods(Static)
+        function centerFrontAxle = getVehicleFrontAxleCenterPoint(poseRearAxle, wheelBase)
+            % Get the center of the vehicle's front axle by transforming the vehicle's location
+            
+            x_RearAxle = poseRearAxle(1);
+            y_RearAxle = poseRearAxle(2);
+            yaw = poseRearAxle(3);
+            
+            x_centerFrontAxle = x_RearAxle + wheelBase*cos(yaw);
+            y_centerFrontAxle = y_RearAxle + wheelBase*sin(yaw);
+            
+            centerFrontAxle = [x_centerFrontAxle, y_centerFrontAxle];
+        end
+        
+        function [closestPoint, idxInTrajectory] = getClosestPointOnTrajectory(point, trajectory)
+            % Calculate which point on a trajectory is closest to a given point
+            
+            [~, idxInTrajectory] = min(sum((trajectory - point).^2, 2));
+            closestPoint = trajectory(idxInTrajectory, :);
+        end
+    end
+    
     %% Standard Simulink Output functions
     methods(Static,Access = protected)
         
