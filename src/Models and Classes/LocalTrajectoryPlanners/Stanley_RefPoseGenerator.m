@@ -5,6 +5,10 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
     % Pre-computed constants
     properties(Access = private)
         referencePose = [0; 0; 0];
+        
+        wheelBase = 3;
+        d_dot_ref % Reference lateral speed during lane changing maneuver
+        roadOrientation % Orientation of the current trajectory
     end
     
     methods
@@ -12,6 +16,28 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
         function obj = Stanley_RefPoseGenerator(varargin)
             % Support name-value pair arguments when constructing object
             setProperties(obj,nargin,varargin{:});
+        end
+    end
+    
+     methods(Static)
+        function centerFrontAxle = getVehicleFrontAxleCenterPoint(poseRearAxle, wheelBase)
+        % Get the center of the vehicle's front axle by transforming the vehicle's location
+
+            x_RearAxle = poseRearAxle(1);
+            y_RearAxle = poseRearAxle(2);
+            yaw = poseRearAxle(3);
+
+            x_centerFrontAxle = x_RearAxle + wheelBase*cos(yaw);
+            y_centerFrontAxle = y_RearAxle + wheelBase*sin(yaw);
+
+            centerFrontAxle = [x_centerFrontAxle, y_centerFrontAxle];
+        end
+        
+        function [closestPoint, idxInTrajectory] = getClosestPointOnTrajectory(point, trajectory)
+        % Calculate which point on a trajectory is closest to a given point
+            
+            [~, idxInTrajectory] = min(sum((trajectory - point).^2, 2));
+            closestPoint = trajectory(idxInTrajectory, :);
         end
     end
     
@@ -24,6 +50,8 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
         function [poseOut, referencePose] = stepImpl(obj,pose,speed,changeLane)
             
             obj.registerVehiclePoseAndSpeed(obj.vehicle,pose,speed); % Sets/Registers vehicle current Pose and speed
+            
+            centerFrontAxle_C = obj.getVehicleFrontAxleCenterPoint(pose, obj.wheelBase);
             
             pose(3) = rad2deg(pose(3)); % rad to deg
             
@@ -41,7 +69,6 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
             % Calculate helping variables for the reference path calculation
             currentTrajectory = obj.vehicle.pathInfo.currentTrajectory;
             Vpos_C = [pose(1) pose(2)];
-            radian = currentTrajectory(3,1);
             
             % Cartesian to Frenet Coordinate Transformation
             [s,d] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C); % Determine current <s,d>
@@ -49,20 +76,28 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
             % Update Vehicle Frenet Coordinates <s,d>
             obj.vehicle.updateVehicleFrenetPosition(s,d)
             
-            if changeLane % Add <delta s, delta d>
-                s = s+0.01; 
-                %TODO: Not implemented yet + delta "d"
-                % Generate Reference Pose for Stanley
-                [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,d,radian);%Coordinate Conversion function
-                
-            else % Add <delta s>
-                s = s+0.01;
-                % Generate Reference Pose for Stanley / obj.ref_d is the reference lateral displacement value
-                [refPos,refOrientation] = obj.Frenet2Cartesian(currentTrajectory,s,obj.ref_d,radian);%Coordinate Conversion function
+            if changeLane 
+                [obj.laneChangingPoints, obj.roadOrientation, obj.d_dot_ref]  = obj.generateLaneChangingPoints(s, changeLane, currentTrajectory);
+                % TODO: Update necessary when current trajectory changes during maneuver
             end
-   
+            
+            if ~isempty(obj.laneChangingPoints) % Executing maneuver
+                [refPos, idxReference] = obj.getClosestPointOnTrajectory(centerFrontAxle_C, obj.laneChangingPoints);
+                refOrientation = atan2(obj.d_dot_ref(idxReference), speed) + obj.roadOrientation(idxReference); 
+                if idxReference >= size(obj.laneChangingPoints, 1)
+                    obj.laneChangingPoints = [];
+                    obj.finishLaneChangingManeuver(0.05);
+                end
+            else % Add <delta s>
+                %s = s+0.01;
+                
+                [s, ~] = obj.Cartesian2Frenet(currentTrajectory, centerFrontAxle_C); % Projection of font axle positon on current Frenet reference trajectory
+                % Generate Reference Pose for Stanley / obj.ref_d is the reference lateral displacement value
+                [refPos, refOrientation] = obj.Frenet2Cartesian(s, obj.ref_d, currentTrajectory);%Coordinate Conversion function
+            end
+            
             %Required format for the Stanley controller
-            obj.referencePose = [refPos(1); refPos(2); refOrientation];
+            obj.referencePose = [refPos(1); refPos(2); rad2deg(refOrientation)]; % Orientation in degree for Stanley
             
             % Check if the Waypoint is Reached
             obj.vehicle.checkWaypointReached(currentTrajectory(2,:));
@@ -77,9 +112,7 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_10- Stanley.png");
-        end
-        
-        
+        end   
     end
     %% Standard Simulink Output functions
     methods(Static,Access = protected)
