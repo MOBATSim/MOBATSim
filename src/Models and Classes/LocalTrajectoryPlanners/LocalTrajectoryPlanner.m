@@ -38,21 +38,20 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             %detail information check Frenet.mlx
             
             route = currentTrajectory([1, 2], [1, 3]).*[1, -1; 1, -1];
-            radian = currentTrajectory(3, 1); % radian of the whole curved road, is positive when counterclockwise turns
-            cclockwise = currentTrajectory(4, 1);
 
-            if radian == 0
+            if currentTrajectory(3, 1) == 0 % Check if the road segment is straight
                 route_Vector = route(2, :) - route(1, :);
                 route_UnitVector = route_Vector/norm(route_Vector);
                 normalVector = [-route_UnitVector(2), route_UnitVector(1)];% Fast rotation by 90 degrees to find the normal vector  
 
                 refPosition = s*route_UnitVector + d*normalVector + route(1, :);
                 refOrientation = atan2(route_UnitVector(2), route_UnitVector(1))*ones(length(s), 1); % reverse tangent of unit vector
-            else
-                startPoint = route(1,:);
+                
+            else  % If it is not straight, then it is curved
                 rotationCenter = currentTrajectory(3, [2, 3]).*[1, -1]; % Get the rotation center
+                cclockwise = currentTrajectory(4, 1); % Get if the turning is clockwise or counterclockwise
 
-                startPointVector = startPoint - rotationCenter;% Vector pointing from the rotation point to the start
+                startPointVector = route(1,:) - rotationCenter;% Vector pointing from the rotation point to the start point
                 r = norm(startPointVector); % Get the radius of the rotation
 
                 startPointVectorAng = atan2(startPointVector(2), startPointVector(1));
@@ -123,8 +122,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
-        
-                 
+                         
         function registerVehiclePoseAndSpeed(~,car,pose,speed)
             car.setPosition(Map.transformPoseTo3DAnim(pose));   % Sets the vehicle position
             car.setYawAngle(pose(3));                           % Sets the vehicle yaw angle (4th column of orientation)
@@ -192,49 +190,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
                 end
             end
         end
-                
-%         function [refPos,refOrientation] = Frenet2Cartesian2(~,currentTrajectory,s,d,radian)
-%             
-%             %this function transfer a position in Frenet coordinate into Cartesian coordinate
-%             %input:
-%             %route is a 2x2 array [x_s y_s;x_e y_e]contains the startpoint and the endpoint of the road
-%             %s is the journey on the reference roadline(d=0)
-%             %d is the vertical offset distance to the reference roadline,positive d means away from center
-%             %radian is the radian of the whole curved road,is positive when
-%             %counterclockwise turns
-%             %output:
-%             %position_Cart is the 1x2 array [x y] in Cartesian coordinate
-%             %orientation_Cart is the angle of the tangent vector on the reference roadline and the x axis of cartesian
-%             %detail information check Frenet.mlx
-%             route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];
-%             cclockwise = currentTrajectory(4,1);
-%             startPoint = route(1,:);
-%             endPoint = route(2,:);
-%             
-%             if radian == 0%straight road
-%                 route_Vector = endPoint-startPoint;
-%                 routeUnitVector = route_Vector/norm(route_Vector);% unit vector of the route_vector
-%                 refOrientation = atan2d(routeUnitVector(2),routeUnitVector(1)); % reverse tangent of unit vector
-%                 refPos = s*routeUnitVector+startPoint; % The ref position on the path with 0.01 "s" ahead
-%             else %curved road
-%                 rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
-%                 startPointVector = startPoint-rotationCenter;% Vector pointing from the rotation point to the start
-%                 
-%                 r = norm(startPointVector); % Get the radius of the rotation
-%                 
-%                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1)); % The initial angle of the starting point
-%                 l = r-(d*cclockwise);% Vehicle reference lateral distance from the rotation center (d=0 for the right lane)
-%                 lAng = (-cclockwise)*s/r+startPointVectorAng;% the angle of vector l
-%                 refPos = rotationCenter+ l*[cos(lAng) sin(lAng)];% the reference position in Cartesian coordinates
-% 
-%                 refOrientation = rad2deg(lAng+(-cclockwise)*pi/2);
-%                 
-%                 % refOrientation = lAng+(-cclockwise)*pi/2;
-%                 % refOrientation = mod(refOrientation,2*pi);
-%                 % refOrientation = refOrientation.*(0<=refOrientation & refOrientation <= pi) + (refOrientation - 2*pi).*(pi<refOrientation & refOrientation<2*2*pi);   % angle in (-pi,pi]
-%                 
-%             end
-%         end
+
     end
 end
 
