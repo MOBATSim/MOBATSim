@@ -37,7 +37,7 @@ function [Route_LaneNumber, waypoints, connections_translation, connections_circ
 
     [connections_translation,connections_circle] = convertBackToMOBATSimfromAPP(DSD_WPs,data);
 
-    %% Fine lane number of corresponding route_id
+    %% Find lane number of corresponding route_id
     Route_LaneNumber =  getLaneNumber(data,waypoints,connections_circle,connections_translation);
 
 end
