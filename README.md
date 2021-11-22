@@ -22,6 +22,7 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework ba
 [![View MOBATSim_OpenSource on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/78444-mobatsim)
 [![Download](https://img.shields.io/badge/MATLAB-R2020b-orange)](https://github.com/MOBATSim/MOBATSim/releases/tag/v1.0.2)
 [![Cite our paper](https://img.shields.io/badge/Cite%20our%20paper-BibTex-blueviolet)](#citation)
+[![View MathWorks Article](https://img.shields.io/badge/MathWorks-Technical_Article-orange)](https://www.mathworks.com/company/newsletters/articles/developing-an-autonomous-traffic-simulation-framework-for-functional-safety-testing.html)
 
 **Autonomous Vehicle Modeling and Simulation in Simulink Tutorials**
 
@@ -87,7 +88,7 @@ MOBATSim is continuously updated with the latest version of MATLAB®. Therefore 
 
 **Main Author:** Mustafa Saraoğlu
 
-**Contributors:** Johannes Pintscher, Laura Slabon, Qianwei Yang, Qihang Shi, Wenkai Wu, Maoxuan Zhao, Erik Noack, Fabian Hart, Müjdat Korkmaz, Marta Valdes Martin
+**Contributors:** Manuel Schirmer, Johannes Pintscher, Laura Slabon, Qianwei Yang, Qihang Shi, Wenkai Wu, Maoxuan Zhao, Erik Noack, Fabian Hart, Müjdat Korkmaz, Marta Valdes Martin
 
 Message us via the [contact form](https://mobatsim.com/contact/) on our website!
 

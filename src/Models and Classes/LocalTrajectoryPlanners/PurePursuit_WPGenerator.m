@@ -7,9 +7,6 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
         Kpoints = 6; % The number of next path points to be output to the Pure Pursuit controller
         
         currentPathPoints =[];  % Arrays of waypoints to follow
-        laneChangingPoints =[]; % Arrays of waypoints to follow for lane changing
-        
-        laneChangeTime = 4; % Default lane-changing maneuver time duration
     end
     
     methods
@@ -57,8 +54,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             
             % Generate lane changing trajectory if commanded and not generated yet
             if ~(changeLane==0) && isempty(obj.laneChangingPoints)
-                    Frenet_LaneChangingPoints = obj.generateMinJerkTrajectory(obj.vehicle,obj.laneChangeTime,changeLane);
-                    obj.laneChangingPoints = obj.Frenet2Cartesian(s,Frenet_LaneChangingPoints,currentTrajectory);
+                [obj.laneChangingPoints, ~, ~]  = obj.generateLaneChangingPoints(s, changeLane, currentTrajectory);
             end
             
             % If there are already lane changing path points            
@@ -72,7 +68,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                     s_next = (s:4:obj.vehicle.pathInfo.routeEndDistance+s)';
                     d_next=repmat(obj.ref_d,length(s_next),1);
                     % s_next already starts from "s" therefore "0" is sent as the current "s" to the function below
-                    nextWPs = obj.Frenet2Cartesian(0,[s_next,d_next],currentTrajectory);
+                    [nextWPs, ~] = obj.Frenet2Cartesian(s_next,d_next,currentTrajectory);
                     nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints);
 
                 else % If the vehicle is on the right lane, it follows the generated path points
@@ -100,54 +96,8 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             % If the lane-changing is almost done, reset the laneChangingPoints and only track the reference trajectory with +d
             if idx>size(obj.laneChangingPoints,1) 
                 obj.laneChangingPoints =[];
-                if abs(obj.ref_d-obj.vehicle.pathInfo.d) < 0.05 % lane-changing completed                    
-                    if obj.ref_d > 0
-                        obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId+0.5; %left lane-changing completed
-                    else
-                        obj.vehicle.pathInfo.laneId = obj.vehicle.pathInfo.laneId-0.5; %right lane-changing completed
-                    end
-                end
+                obj.finishLaneChangingManeuver(0.05);
             end
-        end
-                                
-        function newWP_all=generateMinJerkTrajectory(obj,car,t_f,changeLane)
-            % Minimum Jerk Trajectory Generation            
-            if changeLane ==1 % To the left
-                y_f = obj.laneWidth; % Target lateral - d coordinate
-                car.pathInfo.laneId = car.pathInfo.laneId + 0.5; % Means the vehicle is in between lanes - switching to left
-            elseif changeLane ==2 % To the right
-                y_f = 0; % Target lateral - d coordinate
-                car.pathInfo.laneId = car.pathInfo.laneId - 0.5; % Means the vehicle is in between lanes - switching to right
-            end
-                        
-            % Minimun jerk trajectory function for the calculation in "d" direction (Frenet Lateral)
-            % Determining the polynomial coefficients for  lateral position, speed and acceleration
-
-            % Initial boundary conditions
-            t_i = 0; % initial time always set to zero (relatively makes no difference)
-            d_i =   [  1     t_i   t_i^2    t_i^3     t_i^4     t_i^5];
-            d_dot_i = [0     1   2*t_i  3*t_i^2   4*t_i^3   5*t_i^4];
-            d_ddot_i = [0     0     2    6*t_i  12*t_i^2  20*t_i^3];
-            
-            d_ti = [car.pathInfo.d; 0; 0]; % Initial lateral position, speed, acceleration
-            
-            % Final boundary conditions
-            d_f =   [  1     t_f   t_f^2    t_f^3     t_f^4     t_f^5];
-            d_dot_f = [0     1   2*t_f  3*t_f^2   4*t_f^3   5*t_f^4];
-            d_ddot_f = [0     0     2    6*t_f  12*t_f^2  20*t_f^3];
-            
-            d_tf = [y_f; 0; 0]; % Final lateral position, speed, acceleration
-            
-            A = [d_i;d_dot_i;d_ddot_i;d_f;d_dot_f;d_ddot_f];
-            B = [d_ti;d_tf];
-            % Solve for the coefficients using 6 linear equations with 6 boundary conditions at t = ti and t = tf
-            a = linsolve(A,B);
-                        
-            tP = 0:0.2:t_f; % To calculate the lane changing path points for the trajectory with 0.2 s intervals
-            newWP_s=car.dynamics.speed*tP; % Target longitudinal - "s" coordinates of the path points
-            newWP_d=a(1)+a(2)*tP+a(3)*tP.^2+a(4)*tP.^3+a(5)*tP.^4+a(6)*tP.^5; % "d" coordinates corresponding to the trajectory
-            newWP_all =  [newWP_s' newWP_d']; % create a set of path points
-            obj.ref_d = a(1)+a(2)*t_f+a(3)*t_f^2+a(4)*t_f^3+a(5)*t_f^4+a(6)*t_f^5; % reference "d" value by the end of the lane changing maneuver
         end
         
         function currentPathPoints = generatePathFollowingWaypoints(~,Vpos,nextPoints,K)
@@ -167,44 +117,44 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             end
         end
   
-        %% Override for experiment - Later incorparate into LocalTrajectoryPlanner.m
-        
-        function updatedPathPoints_Cartesian = Frenet2Cartesian(~,s,laneChangingPoints,currentTrajectory)
-            route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];
-            radian = currentTrajectory(3,1);
-            cclockwise = currentTrajectory(4,1);
-            
-            if radian == 0
-                route_Vector = route(2,:)-route(1,:);
-                route_UnitVector = route_Vector/norm(route_Vector);
-                normalVector = [-route_UnitVector(2),route_UnitVector(1)];% Fast rotation by 90 degrees to find the normal vector  
-                
-                
-                % Lane Changing Points were already in Frenet - only "s" value should be added
-                % "d" is already the reference
-                updatedPathPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
-                
-                updatedPathPoints_Cartesian = updatedPathPoints_Frenet(:,1)*route_UnitVector+updatedPathPoints_Frenet(:,2)*normalVector+route(1,:);
-            else
-
-                updatedPathPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
-                all_s = updatedPathPoints_Frenet(:,1);
-                all_d = updatedPathPoints_Frenet(:,2);
-                
-                startPoint = route(1,:);
-                rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
-                
-                startPointVector = startPoint-rotationCenter;% Vector pointing from the rotation point to the start
-                r = norm(startPointVector); % Get the radius of the rotation
-                
-                startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
-                
-                l = r+(all_d*cclockwise);%current distance from rotation center to position
-                lAng = all_s/r+startPointVectorAng;% the angle of vector l
-                updatedPathPoints_Cartesian = rotationCenter + l.*[cos(lAng) sin(lAng)];% the positions in Cartesian
-            end
-
-        end
+%         %% Override for experiment - Later incorparate into LocalTrajectoryPlanner.m
+%         
+%         function updatedPathPoints_Cartesian = Frenet2Cartesian2(~,s,laneChangingPoints,currentTrajectory)
+%             route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];
+%             radian = currentTrajectory(3,1);
+%             cclockwise = currentTrajectory(4,1);
+%             
+%             if radian == 0
+%                 route_Vector = route(2,:)-route(1,:);
+%                 route_UnitVector = route_Vector/norm(route_Vector);
+%                 normalVector = [-route_UnitVector(2),route_UnitVector(1)];% Fast rotation by 90 degrees to find the normal vector  
+%                 
+%                 
+%                 % Lane Changing Points were already in Frenet - only "s" value should be added
+%                 % "d" is already the reference
+%                 updatedPathPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
+%                 
+%                 updatedPathPoints_Cartesian = updatedPathPoints_Frenet(:,1)*route_UnitVector+updatedPathPoints_Frenet(:,2)*normalVector+route(1,:);
+%             else
+% 
+%                 updatedPathPoints_Frenet=[s+laneChangingPoints(:,1) laneChangingPoints(:,2)];
+%                 all_s = updatedPathPoints_Frenet(:,1);
+%                 all_d = updatedPathPoints_Frenet(:,2);
+%                 
+%                 startPoint = route(1,:);
+%                 rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
+%                 
+%                 startPointVector = startPoint-rotationCenter;% Vector pointing from the rotation point to the start
+%                 r = norm(startPointVector); % Get the radius of the rotation
+%                 
+%                 startPointVectorAng = atan2(startPointVector(2),startPointVector(1));
+%                 
+%                 l = r+(all_d*cclockwise);%current distance from rotation center to position
+%                 lAng = all_s/r+startPointVectorAng;% the angle of vector l
+%                 updatedPathPoints_Cartesian = rotationCenter + l.*[cos(lAng) sin(lAng)];% the positions in Cartesian
+%             end
+% 
+%         end
                     
         function icon = getIconImpl(~)
             % Define icon for System block
