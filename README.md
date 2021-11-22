@@ -88,7 +88,7 @@ MOBATSim is continuously updated with the latest version of MATLAB®. Therefore 
 
 **Main Author:** Mustafa Saraoğlu
 
-**Contributors:** Johannes Pintscher, Laura Slabon, Qianwei Yang, Qihang Shi, Wenkai Wu, Maoxuan Zhao, Erik Noack, Fabian Hart, Müjdat Korkmaz, Marta Valdes Martin
+**Contributors:** Manuel Schirmer, Johannes Pintscher, Laura Slabon, Qianwei Yang, Qihang Shi, Wenkai Wu, Maoxuan Zhao, Erik Noack, Fabian Hart, Müjdat Korkmaz, Marta Valdes Martin
 
 Message us via the [contact form](https://mobatsim.com/contact/) on our website!
 
