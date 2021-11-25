@@ -12,9 +12,6 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         vehicle
         Map
         futureData
-        
-        % Variable for colored planned path visualization
-        pathPlot;
     end
     
     methods
