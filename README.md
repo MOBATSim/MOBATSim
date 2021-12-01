@@ -84,7 +84,7 @@ MOBATSim is continuously updated with the latest version of MATLAB®. Therefore 
 * Simulink 3D Animation Toolbox™ (only required for the 3D Animation Virtual World)
 
 <a name="citation"></a>
-## Authors and Contact 
+## Contributors and Contact 
 
 **Main Author:** Mustafa Saraoğlu
 
@@ -132,11 +132,11 @@ We would like to encourage everyone who would like to contribute, so you can als
 ## Release Notes - Version 2.0
 
 * New ways to visualize your driving scenario: **Unreal Engine 4** support via **DrivingScenarioDesigner App**, **Bird's Eye View**.
-* New vehicle **kinematic bicycle models** taken from the **Automated Driving Toolbox library**.
+* New vehicle **kinematic bicycle models** from the **Automated Driving Toolbox library**.
 * A more detailed road structure with actual units as meters and double lane roads.
-* New lateral controllers: **Stanley lateral controller** for common vehicles, **Pure Pursuit lateral controller** for the Ego Vehicle (Vehicle 2).
-* Implementation of **Frenet Coordinate system** for local trajectory planning.
-* Implementation of **lane-changing maneuver on double lane roads** (at the moment only allowed for Pure Pursuit controller - Ego Vehicle)
+* New lateral controllers are easily chosen using a variant subsystem: **Stanley lateral controller** and **Pure Pursuit lateral controller** with lane-changing capabilities.
+* Implementation of the **Frenet Coordinate system** for local trajectory planning and optimal trajectory generation for maneuvers.
+* Implementation of **lane-changing maneuver** on double lane roads.
 * An improved coding structure using superclasses, name-value pairs to also enhance the flexibility of MOBATSim and also code optimization using vectorizations and memory preallocations to increase the performance.
 * Detailed documentation for the people who are interested and would like to understand and contribute to MOBATSim
 * Bonus content: **3D Animation World** with the new Dinosaur Park.
