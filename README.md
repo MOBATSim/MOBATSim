@@ -134,7 +134,7 @@ We would like to encourage everyone who would like to contribute, so you can als
 * New ways to visualize your driving scenario: **Unreal Engine 4** support via **DrivingScenarioDesigner App**, **Bird's Eye View**.
 * New vehicle **kinematic bicycle models** from the **Automated Driving Toolbox library**.
 * A more detailed road structure with actual units as meters and double lane roads.
-* New lateral controllers easily choosen using a variant subsystem: **Stanley lateral controller** and **Pure Pursuit lateral controller** with lane-changing capabilities.
+* New lateral controllers are easily chosen using a variant subsystem: **Stanley lateral controller** and **Pure Pursuit lateral controller** with lane-changing capabilities.
 * Implementation of the **Frenet Coordinate system** for local trajectory planning and optimal trajectory generation for maneuvers.
 * Implementation of **lane-changing maneuver** on double lane roads.
 * An improved coding structure using superclasses, name-value pairs to also enhance the flexibility of MOBATSim and also code optimization using vectorizations and memory preallocations to increase the performance.
