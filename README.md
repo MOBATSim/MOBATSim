@@ -51,8 +51,8 @@ Automated driving systems tend to be more critical and sophisticated in the near
 
 More detailed information about the scientific papers related to MOBATSim can be found on our [website](https://mobatsim.com/),
 
-or you can visit our YouTube Channel where we publish the latest updates with tutorial videos:
-[![YouTube Channel](http://img.youtube.com/vi/3Wz3D1v-lL8/0.jpg)](https://www.youtube.com/c/MOBATSim)
+or you can visit our [YouTube Channel](https://www.youtube.com/c/MOBATSim/featured) where we publish the latest updates with [tutorial videos](https://www.youtube.com/watch?v=EjUDVksA7gA&list=PLNNL3443z4lG8Gz6Ar-7aPvqy0MTz2EL6):
+[![YouTube Channel](http://img.youtube.com/vi/EjUDVksA7gA/0.jpg)](https://www.youtube.com/watch?v=EjUDVksA7gA&list=PLNNL3443z4lG8Gz6Ar-7aPvqy0MTz2EL6)
 
 <a name="keyfeatures"></a>
 
