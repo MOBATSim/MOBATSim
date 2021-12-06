@@ -129,15 +129,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             car.updateActualSpeed(speed);                       % Sets the vehicle speed
         end
         
-        function [Cartesian_LaneChangingPoints, roadOrientation, d_dot_ref] = generateLaneChangingPoints(obj, s, changeLane, currentTrajectory)
-        % Generate waypoints for lane changing in Cartesian coordinates, 
-        % also return the road orientation and the lateral reference speed at each point
-            
-            [Frenet_LaneChangingPoints, d_dot_ref] = obj.generateMinJerkTrajectory(obj.vehicle, obj.laneChangeTime, changeLane, s);
-            [Cartesian_LaneChangingPoints, roadOrientation]  = obj.Frenet2Cartesian(Frenet_LaneChangingPoints(:, 1), Frenet_LaneChangingPoints(:, 2), currentTrajectory);
-        end
-        
-        function [newWP_all, d_dot] = generateMinJerkTrajectory(obj,car,t_f,changeLane,s_current)
+        function newWP_Cartesian = generateMinJerkTrajectory(obj,car,t_f,changeLane,s_current,currentTrajectory)
             % Minimum Jerk Trajectory Generation            
             if changeLane ==1 % To the left
                 y_f = obj.laneWidth; % Target lateral - d coordinate
@@ -171,11 +163,26 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             a = linsolve(A,B);
                         
             tP = 0:0.02:t_f; % To calculate the lane changing path points for the trajectory with 0.2 s intervals
-            newWP_s = s_current + car.dynamics.speed*tP; % Target longitudinal - "s" coordinates of the path points
+
             newWP_d=a(1)+a(2)*tP+a(3)*tP.^2+a(4)*tP.^3+a(5)*tP.^4+a(6)*tP.^5; % "d" coordinates corresponding to the trajectory
-            d_dot = (a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4)';
-            newWP_all =  [newWP_s' newWP_d']; % create a set of path points
             obj.ref_d = a(1)+a(2)*t_f+a(3)*t_f^2+a(4)*t_f^3+a(5)*t_f^4+a(6)*t_f^5; % reference "d" value by the end of the lane changing maneuver
+            newWP_d_dot = (a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4); % Speed in d direction
+            
+            newWP_s_dot = sqrt(car.dynamics.speed^2 - newWP_d_dot.^2); % Speed in longitudinal direction along the road (for constant vehicle speed)
+            
+            % Future prediction longitudinal s along the road
+            newWP_s = zeros(1, length(tP)); 
+            s = s_current;
+            for k = 1:length(tP) % Numerical integration: Sum up speed in s direction * deltaT 
+                newWP_s(k) = s;
+                s = s + newWP_s_dot(k)*0.02;
+            end
+            
+            [laneChangingPositionCartesian, roadOrientation] = obj.Frenet2Cartesian(newWP_s', newWP_d', currentTrajectory);
+            newWP_orientation = atan2(newWP_d_dot', newWP_s_dot') + roadOrientation;
+            
+            % newWP_Frenet =  [newWP_s' newWP_d']; % Path points in Frenet coordinates [s, d]
+            newWP_Cartesian = [laneChangingPositionCartesian, newWP_orientation]; % Path points in Cartesian coordinates [x, y, orientation]
         end
         
         function finishLaneChangingManeuver(obj, tolerance)
