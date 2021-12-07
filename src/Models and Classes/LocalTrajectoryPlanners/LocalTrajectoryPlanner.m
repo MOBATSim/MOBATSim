@@ -115,6 +115,24 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
                 s = angle*r; % Traversed distance along the reference arc
             end
         end
+        
+        function maxAcceleration = getMaximumAcceleration(currentVelocity)
+        % Return maximum acceleration according to the current velocity and the gear logic
+            
+            if currentVelocity > 14 % Gear 6
+                maxAcceleration = 1.4;
+            elseif currentVelocity > 12 % Gear 5
+                maxAcceleration = 2.2;
+            elseif currentVelocity > 9 % Gear 4
+                maxAcceleration = 3;
+            elseif currentVelocity > 6 % Gear 3
+                maxAcceleration = 3.8;
+            elseif currentVelocity > 3 % Gear 2
+                maxAcceleration = 5;
+            else
+                maxAcceleration = 6; % Gear 1
+            end
+        end
     end
     
     methods(Access = protected)
@@ -129,7 +147,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             car.updateActualSpeed(speed);                       % Sets the vehicle speed
         end
         
-        function newWP_Cartesian = generateMinJerkTrajectory(obj,car,t_f,changeLane,s_current,currentTrajectory)
+        function newWPs_Cartesian = generateMinJerkTrajectory(obj,car,t_f,changeLane,s_current,currentTrajectory)
             % Minimum Jerk Trajectory Generation            
             if changeLane ==1 % To the left
                 y_f = obj.laneWidth; % Target lateral - d coordinate
@@ -164,25 +182,30 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
                         
             tP = 0:0.02:t_f; % To calculate the lane changing path points for the trajectory with 0.2 s intervals
 
-            newWP_d=a(1)+a(2)*tP+a(3)*tP.^2+a(4)*tP.^3+a(5)*tP.^4+a(6)*tP.^5; % "d" coordinates corresponding to the trajectory
+            d_trajectory = a(1)+a(2)*tP+a(3)*tP.^2+a(4)*tP.^3+a(5)*tP.^4+a(6)*tP.^5; % "d" coordinates corresponding to the trajectory
             obj.ref_d = a(1)+a(2)*t_f+a(3)*t_f^2+a(4)*t_f^3+a(5)*t_f^4+a(6)*t_f^5; % reference "d" value by the end of the lane changing maneuver
-            newWP_d_dot = (a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4); % Speed in d direction
+            d_dot_trajectory = (a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4); % Speed in d direction
             
-            newWP_s_dot = sqrt(car.dynamics.speed^2 - newWP_d_dot.^2); % Speed in longitudinal direction along the road (for constant vehicle speed)
+            % Predict future velocity profile v(t) = v_0 + a*t for a = const.
+            maxAcceleration = obj.getMaximumAcceleration(car.dynamics.speed); 
+            v_trajectory = car.dynamics.speed + maxAcceleration*tP;
+            v_trajectory(v_trajectory > car.dynamics.maxSpeed) = car.dynamics.maxSpeed; % Saturation
+            
+            s_dot_trajectory = sqrt(v_trajectory.^2 - d_dot_trajectory.^2); % Speed in longitudinal direction along the road
             
             % Future prediction longitudinal s along the road
-            newWP_s = zeros(1, length(tP)); 
+            s_trajectory = zeros(1, length(tP)); 
             s = s_current;
             for k = 1:length(tP) % Numerical integration: Sum up speed in s direction * deltaT 
-                newWP_s(k) = s;
-                s = s + newWP_s_dot(k)*0.02;
+                s_trajectory(k) = s;
+                s = s + s_dot_trajectory(k)*0.02;
             end
             
-            [laneChangingPositionCartesian, roadOrientation] = obj.Frenet2Cartesian(newWP_s', newWP_d', currentTrajectory);
-            newWP_orientation = atan2(newWP_d_dot', newWP_s_dot') + roadOrientation;
+            [laneChangingPositionsCartesian, roadOrientation] = obj.Frenet2Cartesian(s_trajectory', d_trajectory', currentTrajectory);
+            orientation_trajectory = atan2(d_dot_trajectory', s_dot_trajectory') + roadOrientation;
             
-            % newWP_Frenet =  [newWP_s' newWP_d']; % Path points in Frenet coordinates [s, d]
-            newWP_Cartesian = [laneChangingPositionCartesian, newWP_orientation]; % Path points in Cartesian coordinates [x, y, orientation]
+            % newWPs_Frenet =  [s_trajectory' d_trajectory']; % Path points in Frenet coordinates [s, d]
+            newWPs_Cartesian = [laneChangingPositionsCartesian, orientation_trajectory]; % Path points in Cartesian coordinates [x, y, orientation]
         end
         
         function finishLaneChangingManeuver(obj, tolerance)
