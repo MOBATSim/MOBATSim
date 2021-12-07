@@ -115,6 +115,24 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
                 s = angle*r; % Traversed distance along the reference arc
             end
         end
+        
+        function maxAcceleration = getMaximumAcceleration(currentVelocity)
+        % Return maximum acceleration according to the current velocity and the gear logic
+            
+            if currentVelocity > 14 % Gear 6
+                maxAcceleration = 1.4;
+            elseif currentVelocity > 12 % Gear 5
+                maxAcceleration = 2.2;
+            elseif currentVelocity > 9 % Gear 4
+                maxAcceleration = 3;
+            elseif currentVelocity > 6 % Gear 3
+                maxAcceleration = 3.8;
+            elseif currentVelocity > 3 % Gear 2
+                maxAcceleration = 5;
+            else
+                maxAcceleration = 6; % Gear 1
+            end
+        end
     end
     
     methods(Access = protected)
@@ -168,7 +186,12 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             obj.ref_d = a(1)+a(2)*t_f+a(3)*t_f^2+a(4)*t_f^3+a(5)*t_f^4+a(6)*t_f^5; % reference "d" value by the end of the lane changing maneuver
             d_dot_trajectory = (a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4); % Speed in d direction
             
-            s_dot_trajectory = sqrt(car.dynamics.speed^2 - d_dot_trajectory.^2); % Speed in longitudinal direction along the road (for constant vehicle speed)
+            % Predict future velocity profile v(t) = v_0 + a*t for a = const.
+            maxAcceleration = obj.getMaximumAcceleration(car.dynamics.speed); 
+            v_trajectory = car.dynamics.speed + maxAcceleration*tP;
+            v_trajectory(v_trajectory > car.dynamics.maxSpeed) = car.dynamics.maxSpeed; % Saturation
+            
+            s_dot_trajectory = sqrt(v_trajectory.^2 - d_dot_trajectory.^2); % Speed in longitudinal direction along the road
             
             % Future prediction longitudinal s along the road
             s_trajectory = zeros(1, length(tP)); 
