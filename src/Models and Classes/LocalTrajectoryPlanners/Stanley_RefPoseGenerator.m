@@ -55,20 +55,18 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
             obj.vehicle.updateVehicleFrenetPosition(s,d)
             
             if changeLane 
-                [obj.laneChangingPoints, obj.roadOrientation, obj.d_dot_ref]  = obj.generateLaneChangingPoints(s, changeLane, currentTrajectory);
+                obj.laneChangingPoints  = obj.generateMinJerkTrajectory(obj.vehicle, obj.laneChangeTime, changeLane, s, currentTrajectory);
                 % TODO: Update necessary when current trajectory changes during maneuver
             end
             
             if ~isempty(obj.laneChangingPoints) % Executing maneuver
-                [refPos, idxReference] = obj.getClosestPointOnTrajectory(centerFrontAxle_C, obj.laneChangingPoints);
-                refOrientation = atan2(obj.d_dot_ref(idxReference), speed) + obj.roadOrientation(idxReference); 
+                [refPos, idxReference] = obj.getClosestPointOnTrajectory(centerFrontAxle_C, obj.laneChangingPoints(:, 1:2));
+                refOrientation = obj.laneChangingPoints(idxReference, 3); 
                 if idxReference >= size(obj.laneChangingPoints, 1)
                     obj.laneChangingPoints = [];
                     obj.finishLaneChangingManeuver(0.05);
                 end
             else % Add <delta s>
-                %s = s+0.01;
-                
                 [s, ~] = obj.Cartesian2Frenet(currentTrajectory, centerFrontAxle_C); % Projection of font axle positon on current Frenet reference trajectory
                 % Generate Reference Pose for Stanley / obj.ref_d is the reference lateral displacement value
                 [refPos, refOrientation] = obj.Frenet2Cartesian(s, obj.ref_d, currentTrajectory);%Coordinate Conversion function
