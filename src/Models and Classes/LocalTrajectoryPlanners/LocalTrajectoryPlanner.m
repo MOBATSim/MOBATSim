@@ -203,7 +203,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             d_trajectory = a(1)+a(2)*tP+a(3)*tP.^2+a(4)*tP.^3+a(5)*tP.^4+a(6)*tP.^5; % "d" coordinates corresponding to the trajectory
             obj.ref_d = a(1)+a(2)*t_f+a(3)*t_f^2+a(4)*t_f^3+a(5)*t_f^4+a(6)*t_f^5; % reference "d" value by the end of the lane changing maneuver
             d_dot_trajectory = a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4; % Speed in d direction
-            d_ddot_trajectory = 2*a(3) + 6*a(4)*tP + 12*a(5)*tP.^2 + 20*a(6)*tP.^3; % Speed in d direction
+            d_ddot_trajectory = 2*a(3) + 6*a(4)*tP + 12*a(5)*tP.^2 + 20*a(6)*tP.^3; % Acceleration in d direction
             
             % Predict future velocity profile v(t) = v_0 + a*t for a = const.
             maxAcceleration = obj.getMaximumAcceleration(car.dynamics.speed); 
