@@ -133,6 +133,24 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
                 maxAcceleration = 6; % Gear 1
             end
         end
+        
+        function isFeasible = checkFeasibilityTrajectory(x, y, orientation, a_lateral)
+        % Check if trajectory is feasible accoording to curvature and lateral acceleration
+            
+            % Arbitrary limit values
+            curvature_max = 0.5;
+            a_lateral_max = 30;
+        
+            delta_orientation = diff(orientation);
+            delta_position = sqrt((diff(x)).^2 + (diff(y)).^2);
+            
+            curvature = delta_orientation./delta_position;
+            
+            isFeasibleCurvature = all(abs(curvature) < curvature_max);
+            isFeasibleCentrifugalAcceleration = all(abs(a_lateral) < a_lateral_max); 
+            
+            isFeasible = isFeasibleCurvature && isFeasibleCentrifugalAcceleration;
+        end
     end
     
     methods(Access = protected)
@@ -184,7 +202,8 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
 
             d_trajectory = a(1)+a(2)*tP+a(3)*tP.^2+a(4)*tP.^3+a(5)*tP.^4+a(6)*tP.^5; % "d" coordinates corresponding to the trajectory
             obj.ref_d = a(1)+a(2)*t_f+a(3)*t_f^2+a(4)*t_f^3+a(5)*t_f^4+a(6)*t_f^5; % reference "d" value by the end of the lane changing maneuver
-            d_dot_trajectory = (a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4); % Speed in d direction
+            d_dot_trajectory = a(2) + 2*a(3)*tP + 3*a(4)*tP.^2 + 4*a(5)*tP.^3 + 5*a(6)*tP.^4; % Speed in d direction
+            d_ddot_trajectory = 2*a(3) + 6*a(4)*tP + 12*a(5)*tP.^2 + 20*a(6)*tP.^3; % Speed in d direction
             
             % Predict future velocity profile v(t) = v_0 + a*t for a = const.
             maxAcceleration = obj.getMaximumAcceleration(car.dynamics.speed); 
@@ -203,6 +222,10 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             
             [laneChangingPositionsCartesian, roadOrientation] = obj.Frenet2Cartesian(s_trajectory', d_trajectory', currentTrajectory);
             orientation_trajectory = atan2(d_dot_trajectory', s_dot_trajectory') + roadOrientation;
+            
+            isFeasible = obj.checkFeasibilityTrajectory(laneChangingPositionsCartesian(:, 1), ...
+                                                        laneChangingPositionsCartesian(:, 2), ...
+                                                        orientation_trajectory, d_ddot_trajectory);
             
             % newWPs_Frenet =  [s_trajectory' d_trajectory']; % Path points in Frenet coordinates [s, d]
             newWPs_Cartesian = [laneChangingPositionsCartesian, orientation_trajectory]; % Path points in Cartesian coordinates [x, y, orientation]
@@ -223,4 +246,3 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
 
     end
 end
-
