@@ -74,14 +74,15 @@ or you can visit our [YouTube Channel](https://www.youtube.com/c/MOBATSim/featur
 
 MOBATSim is continuously updated with the latest version of MATLAB®. Therefore the requirement is **MATLAB R2021a** or **MATLAB R2020b**. The following toolboxes are required for running MOBATSim:
 
-* Simulink® and Stateflow®
+* Simulink®
 * Automated Driving Toolbox™
-* Robotics System Toolbox™
 * Control System Toolbox™
 * Deep Learning Toolbox™
-* Symbolic Math Toolbox™
 * Model Predictive Control Toolbox™  (only if MPC-Cruise Controller Block is used)
+* Robotics System Toolbox™
 * Simulink 3D Animation Toolbox™ (only required for the 3D Animation Virtual World)
+* Stateflow®
+* Symbolic Math Toolbox™
 
 <a name="citation"></a>
 ## Contributors and Contact 
