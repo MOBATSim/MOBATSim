@@ -47,11 +47,10 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework ba
 <a name="introduction"></a>
 ## Introduction
 
-Automated driving systems tend to be more critical and sophisticated in the nearest future. The functional safety assessment for these systems becomes an urgent necessity for the transition to full autonomy. Testing these functions consisting of decision and control algorithms with many variables and parameters in a unified manner is a daunting task. Threat assessment has to be made for vehicles to avoid hazardous situations actively. This requires analyzing complex operational profiles such as routing, intersection management, and collision prediction in an environment where multiple vehicles are in different positions and traveling at different speeds. There is a need for a comprehensive traffic simulation framework that models the functionality of the vehicles and the interactions between them.
+MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a tool developed in MATLAB® and Simulink® for educational purposes, where interested users can implement and simulate automated control and decision-making algorithms in an urban traffic environment.
+If you would like to read more about MOBATSim and how we use it for simulation-based testing, make sure you check our [scientific paper](https://www.sciencedirect.com/science/article/pii/S2405896319304100).
 
-More detailed information about the scientific papers related to MOBATSim can be found on our [website](https://mobatsim.com/),
-
-or you can visit our [YouTube Channel](https://www.youtube.com/c/MOBATSim/featured) where we publish the latest updates with [tutorial videos](https://www.youtube.com/watch?v=EjUDVksA7gA&list=PLNNL3443z4lG8Gz6Ar-7aPvqy0MTz2EL6):
+You can also visit our [YouTube Channel](https://www.youtube.com/c/MOBATSim/featured)!
 [![YouTube Channel](http://img.youtube.com/vi/EjUDVksA7gA/0.jpg)](https://www.youtube.com/watch?v=EjUDVksA7gA&list=PLNNL3443z4lG8Gz6Ar-7aPvqy0MTz2EL6)
 
 <a name="keyfeatures"></a>
@@ -72,30 +71,24 @@ or you can visit our [YouTube Channel](https://www.youtube.com/c/MOBATSim/featur
 
 ## **MATLAB Version and Toolbox Requirements** 
 
-MOBATSim is continuously updated with the latest version of MATLAB®. Therefore the requirement is **MATLAB R2021a** or **MATLAB R2020b**. The following toolboxes are required for running MOBATSim:
+MOBATSim's current version is developed and updated with MATLAB and Simulink, release 2020b. Therefore the requirement to run MOBATSim is at least **MATLAB R2020b** or higher. Please let us know if you have issues running MOBATSim. Some of the components and systems require the following toolboxes:
 
 * Simulink®
 * Automated Driving Toolbox™
 * Control System Toolbox™
 * Deep Learning Toolbox™
-* Model Predictive Control Toolbox™  (only if MPC-Cruise Controller Block is used)
+* Model Predictive Control Toolbox™
 * Robotics System Toolbox™
 * Simulink 3D Animation Toolbox™ (only required for the 3D Animation Virtual World)
 * Stateflow®
 * Symbolic Math Toolbox™
 
+
+**Contributors:** Sheng Ding, Manuel Schirmer, Johannes Pintscher, Laura Slabon, Qianwei Yang, Qihang Shi, Wenkai Wu, Maoxuan Zhao, Erik Noack, Fabian Hart, Müjdat Korkmaz, Marta Valdes Martin, Mustafa Saraoğlu
+
 <a name="citation"></a>
-## Contributors and Contact 
 
-**Main Author:** Mustafa Saraoğlu
-
-**Contributors:** Manuel Schirmer, Johannes Pintscher, Laura Slabon, Qianwei Yang, Qihang Shi, Wenkai Wu, Maoxuan Zhao, Erik Noack, Fabian Hart, Müjdat Korkmaz, Marta Valdes Martin
-
-Message us via the [contact form](https://mobatsim.com/contact/) on our website!
-
-Copyright © 2017 MOBATSim.
-
-### Please Cite Our Related Paper as:
+### If you use MOBATSim for scientific work please cite our related paper as:
 
 Saraoglu, M., Morozov, A., & Janschek, K. (2019). MOBATSim: MOdel-Based Autonomous Traffic Simulation Framework for Fault-Error-Failure Chain Analysis. IFAC-PapersOnLine, 52(8), 239–244. Elsevier BV. Retrieved from https://doi.org/10.1016%2Fj.ifacol.2019.08.077
 
@@ -132,28 +125,25 @@ We would like to encourage everyone who would like to contribute, so you can als
 <a name="releasenotes"></a>
 ## Release Notes - Version 2.0
 
-* New ways to visualize your driving scenario: **Unreal Engine 4** support via **DrivingScenarioDesigner App**, **Bird's Eye View**.
-* New vehicle **kinematic bicycle models** from the **Automated Driving Toolbox library**.
+* New ways to visualize your driving scenario: **Unreal Engine 4** support via **Driving Scenario Designer App** and **Bird's-Eye Scope** options added.
+* New vehicle **kinematic bicycle models**.
 * A more detailed road structure with actual units as meters and double lane roads.
 * New lateral controllers are easily chosen using a variant subsystem: **Stanley lateral controller** and **Pure Pursuit lateral controller** with lane-changing capabilities.
 * Implementation of the **Frenet Coordinate system** for local trajectory planning and optimal trajectory generation for maneuvers.
 * Implementation of **lane-changing maneuver** on double lane roads.
 * An improved coding structure using superclasses, name-value pairs to also enhance the flexibility of MOBATSim and also code optimization using vectorizations and memory preallocations to increase the performance.
 * Detailed documentation for the people who are interested and would like to understand and contribute to MOBATSim
-* Bonus content: **3D Animation World** with the new Dinosaur Park.
+* Bonus content: **3D Animation World** with new dinosaurs.
 
 ## Known Issues and Bugs
 
-* Vehicles are not allowed to start or finish on the intersection points to avoid congestion.
-* **Bird's Eye View** or **DrivingScenarioDesigner APP** might work slowly because of the size of the road network.
-* Some road merges do not have safety guarantees which means that a vehicle just merging another road at the same time with another vehicle or there is a stopping vehicle at the merging point of the joining road may cause collisions.
+* Vehicles are not allowed to choose any node inside or around the intersection as starting or destination points.
+* **Bird's-Eye Scope** or **Driving Scenario Designer App** might work slowly because of the size of the road network.
+* Some road merges do not have safety guarantees which means that collisions may happen if two vehicles join at the same time.
 * Changing the default sample time value of `0.02` or playing with different **Simulink Solver** options other than `auto` may cause unexpected behavior.
 
 <a name="gettingstarted"></a>
 ## Getting Started
 
 MOBATSim has a project file that includes the Simulink files and their paths. The project can be opened by double-clicking on `MOBATSim.prj` and a GUI will appear, which can be used to start the simulation. Simply click on `Start Simulation` and wait for the simulation to start.
-
-
-
-First it would be best if you [fork the MOBATSim repository](https://github.com/MOBATSim/MOBATSim/fork) and then **clone** it to your computer. After opening the **MOBATSim** folder please refer to the live script file `GettingStarted.mlx` for more detailed documentation.
+After opening the **MOBATSim** folder please refer to the live script file `GettingStarted.mlx` for more detailed documentation.
