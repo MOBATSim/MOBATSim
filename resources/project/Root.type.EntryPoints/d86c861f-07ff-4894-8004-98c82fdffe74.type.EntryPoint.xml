@@ -1,0 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Info Type="StartUp" Visible="0" Icon="" File="MOBATSim_Gui.mlapp" Name="MOBATSim_Gui">
+    <Extension Value="05fcc87d-5d49-45a3-9a4d-5193db7c0aa0" Name="StartUpPrev" />
+</Info>
