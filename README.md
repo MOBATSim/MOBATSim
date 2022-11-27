@@ -7,7 +7,7 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a framework ba
 [![Pull Requests - MOBATSim](https://img.shields.io/github/issues-pr-closed/MOBATSim/MOBATSim?color=g&logoColor=0)](https://github.com/MOBATSim/MOBATSim/pulls)
 [![Commit Activity - MOBATSim](https://img.shields.io/github/commit-activity/m/MOBATSim/MOBATSim)](https://github.com/MOBATSim/MOBATSim/pulse)
 [![GitHub tag](https://img.shields.io/github/tag/MOBATSim/MOBATSim?include_prereleases=&sort=semver&color=96D1AA)](https://github.com/MOBATSim/MOBATSim/releases/)
-[![Commit Activity - MOBATSim](https://img.shields.io/github/commits-since/MOBATSim/MOBATSim/v2.0.0?color=%23ccff00&label=commits%20since%20last%20release)](https://github.com/MOBATSim/MOBATSim/commits)
+(https://github.com/MOBATSim/MOBATSim/commits)
 
 
 
