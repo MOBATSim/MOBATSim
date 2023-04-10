@@ -95,3 +95,6 @@ After opening the **MOBATSim** folder please refer to the live script file `Gett
 * Vehicles are not allowed to choose any node inside or around the intersection as starting or destination points.
 * Some road merges do not have safety guarantees which means that collisions may happen if two vehicles join at the same time.
 * Changing the default sample time value of `0.02` or playing with different **Simulink Solver** options other than `auto` may cause unexpected behavior.
+
+
+Contributors: Mustafa Saraoğlu, Laura Slabon, Erik Noack, Müjdat Korkmaz, Marta Valdes Martin
