@@ -2,6 +2,8 @@ classdef TSvehicle < TransitionSystem
     %TSVEHICLE Transition system of a vehicle on a crossroad.
     %   Detailed explanation goes here
     
+    % Contributors: Johannes Pintscher
+    
     properties
         Property1
     end

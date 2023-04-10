@@ -1,6 +1,9 @@
 classdef Vehicle < handle
     %VEHICLE Vehicle Class is used to generate Vehicle instances for each vehicle in the simulation.
     %
+    
+    % Contributors: Mustafa Saraoglu, Fabian Hart, Qihang Shi, Johannes Pintscher, Laura Slabon
+    
     % VEHICLE Methods:
     %    Vehicle - Constructer Method   - Generates the vehicle with the initial values as inputs
     %    checkWaypointReached           - Checks if the vehicle has reached its next waypoint

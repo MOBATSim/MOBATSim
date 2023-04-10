@@ -2,6 +2,8 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
     %LocalTrajectoryPlanner Superclass for generating necessary inputs for the lateral controllers.
     %   Detailed explanation goes here
     
+    % Contributors: Mustafa Saraoglu, Qihang Shi, Qianwei Yang, Johannes Pintscher, Manuel Schirmer
+    
     properties
         Vehicle_id
     end

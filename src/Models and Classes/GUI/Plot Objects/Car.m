@@ -8,6 +8,8 @@ classdef Car < ActivatablePlotObject
     %   |__|            |
     %               y <- 
     
+    % Contributors: Johannes Pintscher
+    
     properties (Access = public)
         position    % position of origin [x y]
         dimension   % dimensions of object [width length]

@@ -1,3 +1,5 @@
+% Contributors: Qianwei Yang, Mustafa Saraoglu
+
 %% Run this script for the Bird-Eye View Visualization of the main 2D simulation
 % This script:
 % 1- should be run after finishing the main simulation on the 2D plot because the logged data is required for this script.

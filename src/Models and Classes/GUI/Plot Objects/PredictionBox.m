@@ -12,6 +12,8 @@ classdef PredictionBox < ActivatablePlotObject
     %                |___|       
     % y-Axis <-                   
     %              
+    
+    % Contributors: Johannes Pintscher
   
     properties (Access = public)
         origin      % position of origin [x y]

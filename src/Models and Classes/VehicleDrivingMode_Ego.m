@@ -3,6 +3,8 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
     % Behavioral Planner - Vehicle determines its driving mode.
     %
     
+    % Contributors: Qihang Shi, Mustafa Saraoglu, Johannes Pintscher
+   
     % Public, tunable properties
     properties
         Vehicle_id

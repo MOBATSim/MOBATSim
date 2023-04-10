@@ -3,6 +3,8 @@ classdef BuchiAutomata < handle
     %final states.
     %   Detailed explanation goes here
     
+    % Contributors: Johannes Pintscher
+    
      properties
         states                  (1,:) string    % states Q
         symbols                 (1,:) cell      % symbols Sig

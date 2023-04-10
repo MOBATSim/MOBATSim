@@ -1,3 +1,5 @@
+% Contributors: Johannes Pintscher
+
 % Pairs of directions that are crossing at the crossroad ("ne" means
 % Nort-East)
 crossingPaths = ["ne", "ew";

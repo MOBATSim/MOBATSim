@@ -3,6 +3,8 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
     % Vehicle Sensor Block: Ideal radar implementation in MOBATSim.
     %
     
+    % Contributors: Mustafa Saraoglu, Qihang Shi, Johannes Pintscher
+    
     % Public, tunable properties
     properties
         Vehicle_id

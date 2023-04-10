@@ -2,6 +2,8 @@ classdef CrossroadUnit < handle
     %UNTITLED Summary of this class goes here
     %   Detailed explanation goes here
     
+    % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
+    
     properties
         %static
         id                  (1,1) double            % identification of the crossroad unit

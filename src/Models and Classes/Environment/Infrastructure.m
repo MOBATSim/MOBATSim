@@ -2,6 +2,8 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     % This block initializes the vehicles on the map, draws and updates their positions on the 2D plot. When a collision happens, the MAP instance detects it and stops the colliding vehicles. Apart from that, it contains an AIM (Autonomous Intersection Manager) to avoid conflictions on intersections. The decisions are sent to the vehicles as stop, wait, and go.
     %
     
+    % Contributors: Mustafa Saraoglu, Fabian Hart, Johannes Pintscher, Qianwei Yang
+    
     properties (Nontunable)
         % This property is needed to set the output size of this block       
         nrVehicles % Number of vehicles

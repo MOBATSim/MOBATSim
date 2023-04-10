@@ -3,6 +3,8 @@ classdef SafetyPropertyBA < BuchiAutomata
     %same time.
     %   This is a specific Büchi Automata.
     
+    % Contributors: Johannes Pintscher
+    
     methods
         function obj = SafetyPropertyBA(crossingDirections)
             %SAFETYPROPERTYBA  A property that prohibits two directions are driven at the

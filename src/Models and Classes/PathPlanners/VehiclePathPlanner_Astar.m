@@ -4,6 +4,8 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
     % This template includes the minimum set of functions required
     % to define a System object with discrete state.
     
+    % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
+    
     methods
         % Constructor
         function obj = VehiclePathPlanner_Astar(varargin)

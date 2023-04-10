@@ -2,6 +2,8 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
         & matlab.system.mixin.CustomIcon
     % This Path Planner Block uses A* algorithm to find routes to reach the destination node according to the shared data from the other vehicles.
 
+    % Contributors: Fabian Hart, Erik Noack, Mustafa Saraoglu, Laura Slabon
+    
     % Public, tunable properties
     properties
         Vehicle_id

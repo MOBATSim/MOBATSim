@@ -1,6 +1,8 @@
 classdef GridMap < Map
     % Grid-based Map object inherited from Map Class
     
+    % Contributors: Erik Noack, Mustafa Saraoglu, Qianwei Yang, Johannes Pintscher
+    
     properties
         bogMap                          % Binary occupancy grid object
         gridResolution = 0.25           % Number of cells per 1 length unit on the map

@@ -1,3 +1,5 @@
+% Contributors: Qianwei Yang, Mustafa Saraoglu
+
 %% Run this script for the Cuboid World or Unreal Engine 4 Simulation of the 2D MOBATSim simulation
 % This script:
 % 1- should be run after finishing the main simulation on the 2D plot because the logged data is required for this script.

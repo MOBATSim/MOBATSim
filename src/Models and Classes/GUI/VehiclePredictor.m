@@ -2,6 +2,8 @@ classdef VehiclePredictor < handle
     %VEHICLEPREDICTOR Makes all the predictions used by Vehicle Analysing Window
     %   Detailed explanation goes here 
     
+    % Contributors: Johannes Pintscher
+    
     properties
         % Simulation
         currentSimTime          (1,1) double = 0    % current simulation time

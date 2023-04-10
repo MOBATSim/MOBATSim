@@ -2,6 +2,8 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
     % Behavioral Planner - Vehicle determines its driving mode.
     %
+    
+    % Contributors: Mustafa Saraoglu, Johannes Pintscher
 
     % Public, tunable properties
     properties

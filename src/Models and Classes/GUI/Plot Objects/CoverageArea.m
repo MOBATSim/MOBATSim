@@ -7,6 +7,9 @@ classdef CoverageArea < ActivatablePlotObject
     %   |  |            ^ x
     %   |__|            |
     %               y <- 
+    
+    % Contributors: Johannes Pintscher
+    
     properties (Access = public)
         origin      % position of origin [x y]
         dimension   % dimensions of object [width length]

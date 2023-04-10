@@ -4,6 +4,7 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
     % This template includes most, but not all, possible properties, attributes,
     % and methods that you can implement for a System object in Simulink.
     
+    % Contributors: Mustafa Saraoglu, Johannes Pintscher
 
     methods
         % Constructor

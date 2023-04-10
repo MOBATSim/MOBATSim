@@ -12,6 +12,8 @@ classdef Bar < ActivatablePlotObject
     % y-Axis <-                   
     %
     
+    % Contributors: Johannes Pintscher
+    
     properties (Access = public)
         origin      % position of origin [x y]
         width       % width of bar

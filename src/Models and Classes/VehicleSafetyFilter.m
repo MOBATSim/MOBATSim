@@ -1,6 +1,8 @@
 classdef VehicleSafetyFilter < matlab.System & handle & matlab.system.mixin.Propagates
     % VEHICLESAFETYFILTER Limit target acceleration and steering angle
     %
+    
+    % Contributors: Johannes Pintscher, Mustafa Saraoglu
 
     % Public, tunable properties
     properties

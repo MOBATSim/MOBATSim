@@ -11,6 +11,9 @@ classdef Ruler < ActivatablePlotObject
     %                 | label        
     % y-Axis <-      _|_             
     %              
+    
+    % Contributors: Johannes Pintscher
+    
     properties (Access = public)
         origin      % position of origin [x y]
         width       % width of ruler

@@ -6,6 +6,9 @@ classdef Arrow < ActivatablePlotObject
     %    |          ^ x
     %    |          |
     %           y <- 
+    
+    % Contributors: Johannes Pintscher
+    
     properties (Access = public)
         origin      % position of origin [x y]
         headLength  % length of the x or y part of one side of the arrow head

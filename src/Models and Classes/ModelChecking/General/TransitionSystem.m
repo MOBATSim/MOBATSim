@@ -3,6 +3,8 @@ classdef TransitionSystem < handle
     %inital states, atomic propositions and labels.
     %   Detailed explanation goes here
     
+    % Contributors: Johannes Pintscher
+    
     properties
         states                  (1,:) string    % states S
         actions                 (1,:) string    % actions Act

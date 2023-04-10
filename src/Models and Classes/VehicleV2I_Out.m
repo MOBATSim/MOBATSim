@@ -2,6 +2,8 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         & matlab.system.mixin.CustomIcon
     % Sends requests to the Infrastructure for crossroads and right of way.
     %
+    
+    % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
 
     % Public, tunable properties
     properties

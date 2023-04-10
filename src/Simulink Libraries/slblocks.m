@@ -3,6 +3,8 @@ function blkStruct = slblocks
 % should appear in the Library Browser with the 
 % name 'MOBATSim'
 
+% Contributors: Laura Slabon
+
     Browser.Library = 'MOBATSim_Library';
     % 'MOBATSim_Library' is the name of the library
 

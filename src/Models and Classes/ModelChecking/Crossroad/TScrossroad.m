@@ -3,6 +3,8 @@ classdef TScrossroad < TransitionSystem
     %transition systems.
     %   Detailed explanation goes here
     
+    % Contributors: Johannes Pintscher
+    
     methods
         function obj = TScrossroad(vehDirs)
             %TSCROSSROAD Directions from the vehicles that are crossing the

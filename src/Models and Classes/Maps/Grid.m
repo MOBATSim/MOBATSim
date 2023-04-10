@@ -1,6 +1,8 @@
 classdef Grid
     %Every grid location needs an object to store data
     
+    % Contributors: Erik Noack, Mustafa Saraoglu, Johannes Pintscher
+    
     properties
         coordinates = [];       %[x,y]
         successors = [];        %[every GridLocation we can reach from this GL]

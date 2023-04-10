@@ -2,6 +2,8 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
     % This blocks generates waypoints for the Pure Pursuit lateral controller.
     %
     
+    % Contributors: Qihang Shi, Mustafa Saraoglu, Johannes Pintscher, Manuel Schirmer
+    
     % Pre-computed constants
     properties(Access = private)  
         Kpoints = 6; % The number of next path points to be output to the Pure Pursuit controller

@@ -2,6 +2,8 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
     % This blocks generates the reference pose required by the Stanley Lateral Controller.
     %
     
+    % Contributors: Qihang Shi, Mustafa Saraoglu, Johannes Pintscher, Qianwei Yang, Manuel Schirmer
+    
     % Pre-computed constants
     properties(Access = private)
         referencePose = [0; 0; 0];
