@@ -3,9 +3,7 @@
 [MOBATSim project](https://tu-dresden.de/ing/elektrotechnik/ifa/at/forschung/research-projects) started as a closed project at the [Chair of Automation](https://tu-dresden.de/ing/elektrotechnik/ifa/at) at TU Dresden in September 2017; the first open-source version was published on GitHub under MIT license on July 21, 2020.
 We acknowledge the contributions of all the students and supervisors.
 
-## Code Submission
-
-The contributions that are merged to the project's main branch are summarized and listed below. As most project parts are done collaboratively, this list may not be complete.
+The contributions that are merged to the project's main branch are summarized and listed below. As most project parts are done collaboratively, so this list may not be complete.
 All the studies regarding the student theses, SA (Studienarbeit) and DA (Diplomarbeit), are conducted at the [Chair of Automation](https://tu-dresden.de/ing/elektrotechnik/ifa/at) at Technische Universität Dresden (TU Dresden). 
 
 1.	Mustafa Saraoğlu (PhD 2017-2023)
@@ -22,7 +20,7 @@ All the studies regarding the student theses, SA (Studienarbeit) and DA (Diploma
     * Implementation of autonomous intersection management algorithms.
 
 3.	Marta Valdes Martin (external contribution)
-    * MOBATSim logo design, MOBATSim icon set, and visuals for the Simulink blocks.
+    * Images: MOBATSim logo, MOBATSim icon set used as custom Simulink block icons.
 
 4.	Müjdat Korkmaz (external contribution)
     * Previous website design and improvement suggestions in the readme file. 
@@ -67,7 +65,7 @@ All the studies regarding the student theses, SA (Studienarbeit) and DA (Diploma
 14.	Patrick Suwinski (SHK 2021)
     * Improvements and clarification in the documentation.
     
-## Project Supervisors
+# Project Supervisors
 
 1.	[Prof. Dr. techn. Klaus Janschek](https://tu-dresden.de/ing/elektrotechnik/ifa/at/die-professur/inhaber) has been the principal investigator and the project supervisor at the Chair of Automation at TU Dresden since the start of the project in September 2017 and still is.
 2.	[Herr Jun.-Prof. Dr.-Ing. Andrey Morozov](https://www.ias.uni-stuttgart.de/institut/team/Morozov/) was the co-supervisor as a post-doctoral researcher at the Chair of Automation at TU Dresden from September 2017 until March 2020.

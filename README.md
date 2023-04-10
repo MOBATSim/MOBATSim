@@ -13,7 +13,9 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation f
 # Table of contents
 1. [Version and Toolbox Requirements](#VersionRequirements)
 2. [Citation](#citation)
-3. [Getting Started](#gettingstarted)
+3. [License](#license)
+4. [Contributors](#contributors)
+5. [Getting Started](#gettingstarted)
 
 
 <a name="VersionRequirements"></a>
@@ -58,11 +60,18 @@ BibTex:
                 keywords = "Autonomous driving, Fault injection, Error propagation, Safety analysis, Traffic simulator",
                 }
 ```
-<a name="contribution"></a>
 
+<a name="license"></a>
+## License
+
+Please read the [LICENSE](https://github.com/MOBATSim/MOBATSim/blob/main/LICENSE) file for the terms and conditions in the project root folder.
+
+
+<a name="Contributors"></a>
+## Contributors
 
 **We would like to acknowledge the help and support in the development of MOBATSim of the following contributors:** Sheng Ding, Manuel Schirmer, Johannes Pintscher, Laura Slabon, Qianwei Yang, Qihang Shi, Wenkai Wu, Maoxuan Zhao, Erik Noack, Fabian Hart, Müjdat Korkmaz, Marta Valdes Martin, Mustafa Saraoğlu.
-Please refer to the CONTRIBUTORS.md file for a more detailed list of contributions.
+Please refer to the CONTRIBUTORS.md file for a more detailed list of contributions. Besides, files contain individual contributors at the top or at the bottom of the file.
 
 
 <a name="gettingstarted"></a>
