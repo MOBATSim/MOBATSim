@@ -1,6 +1,9 @@
 function invalidNodes = checkNodesValid(occupiedNodes,forbiddenNodes)
 %CHECKNODESVALID Test of all occupied nodes are not a forbidden node
 %   Detailed explanation goes here
+
+% Contributors: Johannes Pintscher
+
     invalidNodes = [];
     % Check all elements
     for i=1:numel(occupiedNodes)

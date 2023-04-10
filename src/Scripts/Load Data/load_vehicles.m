@@ -1,6 +1,8 @@
 function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, map)
     % Generation of vehicles
     
+    % Contributors: Mustafa Saraoglu, Qihang Shi, Johannes Pintscher
+    
     %% Names
     % To add a vehicle just add a new name to VehicleNames
     VehicleNames = [{'V1'} ...

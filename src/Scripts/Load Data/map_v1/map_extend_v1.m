@@ -1,8 +1,11 @@
 function [Route_LaneNumber, waypoints, connections_translation, connections_circle] = map_extend_v1()
+
+    % Contributors: Qianwei Yang, Mustafa Saraoglu, Johannes Pintscher
+    
     %% Load data file
     load('map_v1.mat','data');  % Map data (.mat format) taken as the OUTPUT of the "drivingScenarioDesigner App"
 
-    % Original map waypoints to put the converted waypoints from OPENDrive into the right order of sequence in MOBATSim
+    % Original map waypoints to put the converted waypoints from the .mat file into the right order of sequence in MOBATSim
     load('waypoints_origin.mat','waypoints_origin');  % (Important to keep the crossroad waypoints correct)
 
     %% Initialization

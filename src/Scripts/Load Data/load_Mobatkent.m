@@ -1,8 +1,10 @@
 function [mapName, waypoints, connections_circle, connections_translation, ...
           startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent()
 
+    % Contributors: Mustafa Saraoglu, Fabian Hart, Qianwei Yang, Johannes Pintscher
+      
     mapName = 'Mobatkent';
-
+    
     % x and z, 1st and 3rd column, are used as the directions to make it suitable for the 3D animation
     % +z direction is like -y in cartesian 2D plot
     waypoints = [[0 0 0]

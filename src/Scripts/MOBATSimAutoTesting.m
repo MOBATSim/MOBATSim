@@ -1,6 +1,9 @@
 function MOBATSimAutoTesting(options)
 %MOBATSim TEST Script: Simulation-based testing with different driving scenarios.
 %   All scenarios have to produce the [PASSED] as the output without errors
+
+% Contributors: Johannes Pintscher, Mustafa Saraoglu
+
     arguments
         options.simStopTime         (1,1) double    = 50                    % Time to test the scenarios in seconds
         options.scenarioNames       (1,:) string    = [ "Urban City Traffic", ...

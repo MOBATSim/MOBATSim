@@ -1,4 +1,7 @@
 function [startingPoints, destinationPoints, maxSpeeds] = load_scenario(scenarioName)
+
+% Contributors: Mustafa Saraoglu, Qianwei Yang, Qihang Shi, Johannes Pintscher
+
     switch scenarioName
         case 'Urban City Traffic'
         % Vehicle 2 makes lane change on straight road + Vehicle 5 change planned Path

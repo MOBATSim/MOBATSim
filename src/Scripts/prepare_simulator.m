@@ -2,6 +2,9 @@ function prepare_simulator(options)
 %% Init file for MOBATSim    
     % This function prepares the simulation
     %   After calling this function the simulation can run
+    
+    % Contributors: Johannes Pintscher, Mustafa Saraoglu, Qianwei Yang, Erik Noack
+    
     arguments
         options.Analysing           (1,1) logical   = false                 % Activate the analysing functions
         options.modelName           (1,1) string    = 'MOBATSim'            % Name of the simulink model
@@ -71,7 +74,7 @@ function prepare_simulator(options)
 
     %% Load the Map
     [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
-        startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
+        startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_file();%load extended map
         
     %% Generate the 2D Map and the instance from the Map class
     Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap,"showNodeNumbers",~options.simpleMap);

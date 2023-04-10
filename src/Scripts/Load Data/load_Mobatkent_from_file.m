@@ -1,6 +1,8 @@
 function [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
-          startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive(convert)
+          startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_file(convert)
       %% Map Data for Mobatkent Map
+      
+      % Contributors: Qianwei Yang, Mustafa Saraoglu, Johannes Pintscher
       
       arguments
           convert (1,1) logical = false
