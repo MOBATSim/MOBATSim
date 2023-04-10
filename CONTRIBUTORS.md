@@ -63,6 +63,9 @@ All the studies regarding the student theses, SA (Studienarbeit) and DA (Diploma
 
 13.	Sheng Ding (PhD)
     * Alternative implementation of vehicle kinematic bicycle models in Simulink.
+
+14.	Patrick Suwinski (SHK 2021)
+    * Improvements and clarification in the documentation.
     
 ## Project Supervisors
 
