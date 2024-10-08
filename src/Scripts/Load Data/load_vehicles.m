@@ -1,4 +1,4 @@
-function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, map)
+function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, map, collisionReport)
     % Generation of vehicles
     
     % Contributors: Mustafa Saraoglu, Qihang Shi, Johannes Pintscher
@@ -58,7 +58,7 @@ function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, 
         % Generate vehicle
         NewVehicle = Vehicle(j,VehicleNames{j},startingPoints(j),destinationPoints(j),...
         maxSpeeds(j),sizes(j,:),dataLinksV2V(j,:),dataLinksV2I(j),masses(j),...
-        frontSensorRange(j),AEBdistance(j),minDeceleration(j),map);
+        frontSensorRange(j),AEBdistance(j),minDeceleration(j),map, collisionReport);
     
         % Add vehicle to array
         Vehicles = [Vehicles NewVehicle];  %#ok<AGROW>

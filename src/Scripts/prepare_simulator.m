@@ -16,6 +16,7 @@ function prepare_simulator(options)
         options.destinationPoints   (1,:) double    = []                    % Custom destination points for vehicles
         options.maxSpeeds           (1,:) double    = []                    % Custom max speeds for vehicles
         options.simpleMap           (1,1) logical   = false                 % Displays the map in a simpler way
+        options.collisionReport     (1,1) logical   = false                 % Outputs collision report
     end
        
     hold off
@@ -80,7 +81,7 @@ function prepare_simulator(options)
     Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap,"showNodeNumbers",~options.simpleMap);
 
     %% Load Vehicles    
-    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map);
+    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map, options.collisionReport);
 
     %% Initialize Vehicles on the Map
     Map.Vehicles = Vehicles;

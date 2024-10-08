@@ -86,10 +86,11 @@ classdef Vehicle < handle
         V2VdataLink
         V2IdataLink
         map             %    map - Every vehicle takes an instance of the map
+        collisionReport
     end
     
     methods
-        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration, map)
+        function obj = Vehicle(id, car_name,startingPoint,destinationPoint,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration, map, collisionReport)
             obj.id = id;
             obj.name = car_name;
                         
@@ -140,6 +141,8 @@ classdef Vehicle < handle
             obj.pathInfo.routeEndDistance = [];
                         
             obj.map = map;
+            
+            obj.collisionReport =collisionReport;
            
             
             obj.V2VdataLink = dataLinkV2V;
@@ -222,7 +225,42 @@ classdef Vehicle < handle
             Box2 = getHitbox(car);
             hasCollided = checkIntersection(vehicle,Box1,Box2);
             if hasCollided == true
-                % Collision occurs
+                %% Collision report output -> Command Window
+                if ~vehicle.status.collided
+                    disp("Collision Between Vehicles:")
+                    disp([vehicle.id car.id]);
+                    % First vehicle
+                    disp("Collided Vehicle:");
+                    disp([vehicle.id]);
+                    disp("Position:")
+                    disp([vehicle.dynamics.position(1) -vehicle.dynamics.position(3) vehicle.dynamics.speed]);
+                    disp("Driving Mode:")
+                    disp(vehicle.status.drivingMode);
+                    disp("Lane ID:")
+                    disp(vehicle.pathInfo.laneId);
+                    disp("Current Route")
+                    disp(vehicle.pathInfo.currentRoute)
+                    disp("Last waypoint")
+                    disp(vehicle.pathInfo.lastWaypoint)
+                end
+                if ~car.status.collided
+                    disp("Collision Between Vehicles:")
+                    disp([car.id vehicle.id]);
+                    % Second vehicle
+                    disp("Collided Vehicle:");
+                    disp([car.id]);
+                    disp("Position:")
+                    disp([car.dynamics.position(1) -car.dynamics.position(3) car.dynamics.speed]);
+                    disp("Driving Mode:")
+                    disp(car.status.drivingMode);
+                    disp("Lane ID:")
+                    disp(car.pathInfo.laneId);
+                    disp("Current Route")
+                    disp(car.pathInfo.currentRoute)
+                    disp("Last waypoint")
+                    disp(car.pathInfo.lastWaypoint)
+                end
+                %% Collision occurs
                 vehicle.vehiclesCollide(car);
             end
             
