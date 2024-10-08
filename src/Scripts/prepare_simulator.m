@@ -18,7 +18,8 @@ function prepare_simulator(options)
         options.simpleMap           (1,1) logical   = false                 % Displays the map in a simpler way
         options.collisionReport     (1,1) logical   = false                 % Outputs collision report
     end
-       
+    
+    % To keep the command window clear
     hold off
     warning off
     mpcverbosity off;
