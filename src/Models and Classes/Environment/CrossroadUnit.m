@@ -37,7 +37,7 @@ classdef CrossroadUnit < handle
                 brakingNodes                               (1,4) double
                 stoppingNodes                              (1,4) double
                 leavingNodes                               (1,4) double
-                configurations.mode                        (1,1) CrossroadModeEnum = CrossroadModeEnum.FCFS % mode in which the crossroad operates
+                configurations.mode                        (1,1) CrossroadModeEnum = CrossroadModeEnum.IntelligentDecision % mode in which the crossroad operates
                 configurations.energyEquation              (1,1) logical   = false  % 0 for time optimized approach, 1 for energy optimized approach          
             end
             

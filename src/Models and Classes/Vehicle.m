@@ -14,7 +14,7 @@ classdef Vehicle < handle
     %    vehiclesCollide                - Stops the vehicles if a collision has happened
     %    checkIntersection              - Checks if hitboxes intersect to raise the collision flag
     %    checkifDestinationReached      - Checks if the vehicle has reached its destination waypoint
-
+    
     % SET Methods:
     %    setStopAtNextWaypoint          - Makes the vehicle stop at the next waypoint
     %    setStopStatus                  - Stops the vehicle
@@ -32,7 +32,7 @@ classdef Vehicle < handle
     %    setYawAngle                    - Sets the yaw angle value
     %    setPosition                    - Sets the position value
     %    setInitialRouteAndTrajectory   - Sets the initial route and trajectory for a vehicle to start
-
+    
     properties
         id              %    id - Unique id of a vehicle
         name            %    name - A custom name for a vehicle
@@ -45,7 +45,7 @@ classdef Vehicle < handle
         %         maxSpeed
         %         orientation
         %         minDeceleration
-        %         acceleration                  acceleration applied to model        
+        %         acceleration                  acceleration applied to model
         %         steeringAngle                 steering angle applied to model
         sensors
         %         safeDistance
@@ -62,7 +62,7 @@ classdef Vehicle < handle
         %         collided
         %         ttc                           time to collision
         %         brakingFlag                   vehicle stops at next waypoint
-        %         inCrossroad                   at which crossroad unit and in which section 
+        %         inCrossroad                   at which crossroad unit and in which section
         pathInfo
         %         currentTrajectory
         %         currentRoute
@@ -93,7 +93,7 @@ classdef Vehicle < handle
         function obj = Vehicle(id, car_name,startingPoint,destinationPoint,maxSpeed,size,dataLinkV2V,dataLinkV2I,mass,frontSensorRange,AEBdistance,minDeceleration, map, collisionReport)
             obj.id = id;
             obj.name = car_name;
-                        
+            
             obj.physics.size = size; %Should be edited according to the vehicle
             obj.physics.mass = mass; %kg Should be edited according to the vehicle
             
@@ -112,7 +112,7 @@ classdef Vehicle < handle
             obj.sensors.distanceToLeadingVehicle    = Inf;
             obj.sensors.leadingVehicleSpeed         = -1;
             obj.sensors.leadingVehicle = [];
-            obj.sensors.rearVehicleSafetyMargin = 1000; % Only used by the Ego Vehicle at the moment                       
+            obj.sensors.rearVehicleSafetyMargin = 1000; % Only used by the Ego Vehicle at the moment
             
             obj.setDrivingMode(0);
             obj.setStopStatus(true);
@@ -120,7 +120,7 @@ classdef Vehicle < handle
             obj.status.ttc = 1000;
             obj.status.brakingFlag = 0;
             obj.status.inCrossroad = [0 0];
-                        
+            
             obj.pathInfo.currentTrajectory = [];
             obj.pathInfo.currentRoute =0;
             obj.pathInfo.destinationReached = false;
@@ -139,11 +139,11 @@ classdef Vehicle < handle
             obj.pathInfo.s = 0;
             obj.pathInfo.d = 0;
             obj.pathInfo.routeEndDistance = [];
-                        
+            
             obj.map = map;
             
             obj.collisionReport =collisionReport;
-           
+            
             
             obj.V2VdataLink = dataLinkV2V;
             obj.V2IdataLink = dataLinkV2I;
@@ -154,7 +154,7 @@ classdef Vehicle < handle
         
         function bool = checkWaypointReached(car,Destination)
             % Consider waypoint/destination reached when the distance is smaller than a threshold (1 meter).
-            if (car.pathInfo.routeEndDistance<1) || (norm(Destination-car.dynamics.position)<1)      
+            if (car.pathInfo.routeEndDistance<1) || (norm(Destination-car.dynamics.position)<1)
                 lastWaypoint = car.map.get_waypoint_from_coordinates(Destination);
                 car.setLastWaypoint(lastWaypoint); % Vehicle Set
                 
@@ -201,7 +201,7 @@ classdef Vehicle < handle
             else % Destination Reached // CurrentRoute stays the same
                 currentRoute = car.pathInfo.currentRoute;
             end
-        end       
+        end
         
         function reached = checkifDestinationReached(car)
             reached = false;
@@ -217,7 +217,7 @@ classdef Vehicle < handle
             end
         end
         
-        %% Collision Detection Functions             
+        %% Collision Detection Functions
         function checkCollision(vehicle,car)
             %this function should be seperate from the sensor because sensor can be faulty but collision will appear as
             %an accident so to create the conditions for instant stop we need to keep it as a seperate function
@@ -226,40 +226,43 @@ classdef Vehicle < handle
             hasCollided = checkIntersection(vehicle,Box1,Box2);
             if hasCollided == true
                 %% Collision report output -> Command Window
-                if ~vehicle.status.collided
-                    disp("Collision Between Vehicles:")
-                    disp([vehicle.id car.id]);
-                    % First vehicle
-                    disp("Collided Vehicle:");
-                    disp([vehicle.id]);
-                    disp("Position:")
-                    disp([vehicle.dynamics.position(1) -vehicle.dynamics.position(3) vehicle.dynamics.speed]);
-                    disp("Driving Mode:")
-                    disp(vehicle.status.drivingMode);
-                    disp("Lane ID:")
-                    disp(vehicle.pathInfo.laneId);
-                    disp("Current Route")
-                    disp(vehicle.pathInfo.currentRoute)
-                    disp("Last waypoint")
-                    disp(vehicle.pathInfo.lastWaypoint)
+                if vehicle.collisionReport
+                    if ~vehicle.status.collided
+                        disp("Collision Between Vehicles:")
+                        disp([vehicle.id car.id]);
+                        % First vehicle
+                        disp("Collided Vehicle:");
+                        disp([vehicle.id]);
+                        disp("Position:")
+                        disp([vehicle.dynamics.position(1) -vehicle.dynamics.position(3) vehicle.dynamics.speed]);
+                        disp("Driving Mode:")
+                        disp(vehicle.status.drivingMode);
+                        disp("Lane ID:")
+                        disp(vehicle.pathInfo.laneId);
+                        disp("Current Route")
+                        disp(vehicle.pathInfo.currentRoute)
+                        disp("Last waypoint")
+                        disp(vehicle.pathInfo.lastWaypoint)
+                    end
+                    if ~car.status.collided
+                        disp("Collision Between Vehicles:")
+                        disp([car.id vehicle.id]);
+                        % Second vehicle
+                        disp("Collided Vehicle:");
+                        disp([car.id]);
+                        disp("Position:")
+                        disp([car.dynamics.position(1) -car.dynamics.position(3) car.dynamics.speed]);
+                        disp("Driving Mode:")
+                        disp(car.status.drivingMode);
+                        disp("Lane ID:")
+                        disp(car.pathInfo.laneId);
+                        disp("Current Route")
+                        disp(car.pathInfo.currentRoute)
+                        disp("Last waypoint")
+                        disp(car.pathInfo.lastWaypoint)
+                    end
                 end
-                if ~car.status.collided
-                    disp("Collision Between Vehicles:")
-                    disp([car.id vehicle.id]);
-                    % Second vehicle
-                    disp("Collided Vehicle:");
-                    disp([car.id]);
-                    disp("Position:")
-                    disp([car.dynamics.position(1) -car.dynamics.position(3) car.dynamics.speed]);
-                    disp("Driving Mode:")
-                    disp(car.status.drivingMode);
-                    disp("Lane ID:")
-                    disp(car.pathInfo.laneId);
-                    disp("Current Route")
-                    disp(car.pathInfo.currentRoute)
-                    disp("Last waypoint")
-                    disp(car.pathInfo.lastWaypoint)
-                end
+                
                 %% Collision occurs
                 vehicle.vehiclesCollide(car);
             end
@@ -300,7 +303,7 @@ classdef Vehicle < handle
             car2.setCollided(true);
             car2.setStopStatus(true);
         end
-              
+        
         function CollisionFlag = checkIntersection(~,BoxA,BoxB)
             
             CornersAx = transpose(BoxA(1,:));
@@ -347,7 +350,7 @@ classdef Vehicle < handle
             if stop % If Status Stop then the speed should be zero instantly (slowing down is not factored in yet but might come with the next update)
                 car.updateActualSpeed(0);
             end
-        end      
+        end
         
         function setCurrentRoute(car, RouteID)
             car.pathInfo.currentRoute = RouteID;
@@ -373,7 +376,7 @@ classdef Vehicle < handle
                 car.sensors.leadingVehicleSpeed = -1;
                 relSpeed = 0; % to get a infinite time to collision
             end
-            car.status.ttc = distanceToLeading/relSpeed; % time to collision           
+            car.status.ttc = distanceToLeading/relSpeed; % time to collision
             
             %% Rear vehicle
             
@@ -425,7 +428,7 @@ classdef Vehicle < handle
         end
         
         function bool = setRouteCompleted(car,bool)
-            car.pathInfo.routeCompleted = bool;  
+            car.pathInfo.routeCompleted = bool;
         end
         
         function bool = setDestinationReached(car,bool)
@@ -433,7 +436,7 @@ classdef Vehicle < handle
             car.setRouteCompleted(bool);
             
         end
-                      
+        
         function setYawAngle(car,YawAngle)
             % Set the yaw angle in rad
             car.dynamics.orientation = [0 1 0 YawAngle];
@@ -450,7 +453,7 @@ classdef Vehicle < handle
             
             car.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
             car.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
-            car.setRouteCompleted(false);                % Vehicle - Set Functions  
+            car.setRouteCompleted(false);                % Vehicle - Set Functions
         end
         
         

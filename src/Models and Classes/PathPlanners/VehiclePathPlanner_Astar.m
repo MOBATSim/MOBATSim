@@ -38,7 +38,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             %path = [nr of nodes from start to finish]
             %% Initialization
             if isempty(futureData)
-                futureData = [0 0 0 0 0 -1]; % 1x6 to fit the output size
+                futureData = [0 0 0 0 0 1]; % 1x6 to fit the output size
             end
             
             % Create a table for all the waypoints (nodes) where each row index is an identifier for a waypoint
