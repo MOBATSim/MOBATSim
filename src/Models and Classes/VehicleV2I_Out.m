@@ -4,12 +4,12 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
     %
     
     % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
-
+    
     % Public, tunable properties
     properties
         Vehicle_id
     end
-        
+    
     % Pre-computed constants
     properties(Access = private)
         vehicle
@@ -34,10 +34,10 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");           
+            obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
             obj.inCrossroad = [0 0];
         end
-          
+        
         
         function V2Idata = stepImpl(obj,waypointReached)
             %This block shouldn't run if the vehicle has reached its
@@ -48,27 +48,29 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                 % When waypoints are reached, check for crossroad actions
                 %Output the V2I data
                 if waypointReached
-                    V2Idata = obj.checkCrossroadActions(obj.vehicle,obj.vehicle.pathInfo.lastWaypoint);
+                    V2Idata = obj.determineIntersectionZone(obj.vehicle,obj.vehicle.pathInfo.lastWaypoint);
                 else
                     V2Idata = [0 0];
                 end
                 
             end
-        end      
+        end
         
-        function V2Idata = checkCrossroadActions(obj,car,current_point)
-            % check for crossroad actions
+        function V2Idata = determineIntersectionZone(obj,car,current_point)
+            % Vehicle signals the AIM the intersection zone it is in
             map = car.map;
             
+            %% The vehicle is recently arriving -> Intersection Starting Nodes
             if nnz(cat(1,map.crossroadUnits.startingNodes)==current_point)
                 crossroadId = find(any(cat(1,map.crossroadUnits.startingNodes)==current_point,2));
                 car.status.inCrossroad = [crossroadId 1];
-                                
+                
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 1];
                 end
                 
-            elseif nnz(cat(1,map.crossroadUnits.brakingNodes)==current_point) % car reaches Braking Point 
+                %% The vehicle has reached the braking point -> Intersection Braking Nodes
+            elseif nnz(cat(1,map.crossroadUnits.brakingNodes)==current_point) % car reaches Braking Point
                 crossroadId = find(any(cat(1,map.crossroadUnits.brakingNodes)==current_point,2));
                 car.status.inCrossroad = [crossroadId 2];
                 
@@ -76,15 +78,17 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                     V2Idata = [crossroadId 2];
                 end
                 
+                %% The vehicle has reached the stopping point before the Conflict Zone -> Intersection Stopping Nodes
             elseif nnz(cat(1,map.crossroadUnits.stoppingNodes)==current_point) % car reaches Stopping Point
                 crossroadId = find(any(cat(1,map.crossroadUnits.stoppingNodes)==current_point,2));
                 car.status.inCrossroad = [crossroadId 3];
                 V2Idata = [crossroadId 3];
                 
+                %% The vehicle leaves the Conflict Zone thus the Intersection -> Intersection Leaving Nodes
             elseif nnz(cat(1,map.crossroadUnits.leavingNodes)==current_point)>0 % car leaves crossroad
                 crossroadId = find(any(cat(1,map.crossroadUnits.leavingNodes)==current_point,2));
                 if obj.vehicle.V2IdataLink==1
-                    V2Idata = [crossroadId 4];   
+                    V2Idata = [crossroadId 4];
                 end
                 car.status.inCrossroad = [0 0];
             else
@@ -93,7 +97,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         end
         
         
-        %% Standard Simulink Output functions      
+        %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj
             
@@ -103,7 +107,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             % Set private and protected properties
             %s.myproperty = obj.myproperty;
         end
-
+        
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_6- V2l.png");
@@ -119,7 +123,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             loadObjectImpl@matlab.System(obj,s,wasLocked);
         end
         
-
+        
     end
     
     methods(Static, Access = protected)
@@ -138,7 +142,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             % Initialize / reset discrete-state properties
         end
         
-                function ds = getDiscreteStateImpl(~)
+        function ds = getDiscreteStateImpl(~)
             % Return structure of properties with DiscreteState attribute
             ds = struct([]);
         end

@@ -5,7 +5,9 @@ function MOBATSimAutoTesting(options)
 % Contributors: Johannes Pintscher, Mustafa Saraoglu
 
     arguments
-        options.simStopTime         (1,1) double    = 120    % Time to test the scenarios in seconds
+        options.simStopTime         (1,1) double    = 120   % Time to test the scenarios in seconds
+        options.firstScenarioID     (1,1) double    = 1     % Start from scenario i
+        options.lastScenarioID      (1,1) double    = 25    % Simulate until scenario j
         options.scenarioNames       (1,:) string    = [ "Urban City Traffic", ...
                                                         "Curved Road Overtaking", ...
                                                         "Merge Collision", ...
@@ -24,7 +26,13 @@ function MOBATSimAutoTesting(options)
                                                         "Scenario 16", ...
                                                         "Scenario 17", ...
                                                         "Scenario 18", ...
-                                                        "Scenario 19"];     % Scenarios to test
+                                                        "Scenario 19", ...
+                                                        "Scenario 20", ...
+                                                        "Scenario 21", ...
+                                                        "Scenario 22", ...
+                                                        "Scenario 23", ...
+                                                        "Scenario 24", ...
+                                                        "Scenario 25"];     % Scenarios to test
     end
 
     % List of results for every scenario
@@ -33,9 +41,21 @@ function MOBATSimAutoTesting(options)
     fileID = fopen('AutoTestReport.txt','w');
     % Header
     fprintf(fileID,'Automatic Test Report\n\r');
+    
+    %% Timer starts
     tic;
-    % Test each scenario
-    for i=1:length(options.scenarioNames)
+    
+    %% Which scenarios are simulated - All or a custom range
+    if (options.firstScenarioID==1) && (options.lastScenarioID==length(options.scenarioNames))
+        disp('All scenarios will be simulated');
+    else
+        % Custom range of scenarios defined by the user
+        disp(['Only the scenarios starting with id: ' int2str(options.firstScenarioID) ...
+            ' until id: ' int2str(options.lastScenarioID) ' will be simulated.']);
+    end
+    
+    %% Test each scenario
+    for i=options.firstScenarioID:options.lastScenarioID
         try
             % prepare and run simulation
             prepare_simulator("scenarioName",options.scenarioNames(i),"simStopTime",options.simStopTime);

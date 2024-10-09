@@ -96,6 +96,37 @@ switch scenarioName
         startingPoints =    [57  25  21  19  11  10   3  54  15   9];
         destinationPoints = [35  32  23  25  54  33  47  26  57  60];
         maxSpeeds =         [20  15   7   8  16  17   5   6  13  18];
+        
+    case 'Scenario 20'
+        startingPoints =    [35  37  14  10  58   4  12  19  38  53];
+        destinationPoints = [33  54  24  64  60  25  46  36  22  27];
+        maxSpeeds =         [ 7  13  10  20  14   5   7  12  19  19];
+        
+    case 'Scenario 21'
+        startingPoints =    [31  38  18  47  52  64  20   7  61  48];
+        destinationPoints = [25   3  34  36  58  18  57  19   8  46];
+        maxSpeeds =         [11  14  18  13  14  14  20   8  10   7];
+        
+    case 'Scenario 22'
+        startingPoints =    [23   8  12   4  47  25  61  13  29  27];
+        destinationPoints = [7  45  61  39  55   9  59  64  14   1];
+        maxSpeeds =         [6   8  10  19   9   5  16   8  12   6];
+        
+    case 'Scenario 23'
+        startingPoints =    [21   3  35  45  36  37   6  40   7  39];
+        destinationPoints = [52  33  54  36  31  15  32  48  14  24];
+        maxSpeeds =         [7   5  10   6  19  16   5  13  11  19];
+        
+    case 'Scenario 24'
+        startingPoints =    [58  28  39  31  11  10  13  25  61  23];
+        destinationPoints = [36  59  16  64  20  55  23  45  31  61];
+        maxSpeeds =         [15  11  20  12  15  16  18  20   8  16];
+        
+        
+    case 'Scenario 25'
+        startingPoints =    [61  40   7  38  37  48  52  26  14  32];
+        destinationPoints = [59  19  47   9  58   2  15  16  36  33];
+        maxSpeeds =         [15  14  11  20  19  17  11   5   8  13];
 end
 
 end

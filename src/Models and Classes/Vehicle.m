@@ -427,6 +427,10 @@ classdef Vehicle < handle
             car.pathInfo.lastWaypoint = lastWaypoint;
         end
         
+        function setBrakingFlag(car,stopFlag)
+            car.status.brakingFlag = stopFlag;
+        end
+        
         function bool = setRouteCompleted(car,bool)
             car.pathInfo.routeCompleted = bool;
         end
