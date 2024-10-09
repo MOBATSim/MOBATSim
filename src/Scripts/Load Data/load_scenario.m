@@ -91,6 +91,11 @@ switch scenarioName
         startingPoints =    [13  17   6  55  29  57  18  54  22  53];
         destinationPoints = [19  40  58  60  25  10  52   4  41  17];
         maxSpeeds =         [18  11  13  14  18   9  14  19  10   8];
+        
+    case 'Scenario 19'
+        startingPoints =    [57  25  21  19  11  10   3  54  15   9];
+        destinationPoints = [35  32  23  25  54  33  47  26  57  60];
+        maxSpeeds =         [20  15   7   8  16  17   5   6  13  18];
 end
 
 end

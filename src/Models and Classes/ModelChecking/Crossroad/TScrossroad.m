@@ -73,10 +73,11 @@ classdef TScrossroad < TransitionSystem
             
             % If both atInput and atPassing are not empty check for the same directions
             if ~(isempty(atInput) || isempty(atPassing))
-                sameDirs = (atInput == atPassing);
-                if any(sameDirs)
+                % Find the indices of strings that exist in atPassing in atInput
+                idx = contains(atInput,intersect(atInput,atPassing));
+                if any(idx)  
                     % Remove the same direction from the atInput as it should have a pass
-                    atInput(sameDirs)=[];
+                    atInput(idx)=[];
                 end
             end
             
