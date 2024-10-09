@@ -49,7 +49,13 @@ function randomized_ScenarioTesting(options)
             prepare_simulator("startingPoints",startingSet(StartingIdx)',"destinationPoints",destinationSet(DestinationIdx)',"maxSpeeds",maxSpeedSet,"simStopTime",options.simStopTime);
             mpcverbosity off; % Make sure that the MPC doesn't fill the command window
             run_Sim();
+            
             disp("Successful simulation:"+ num2str(i));
+            
+            disp(["Starting Points:" num2str(startingSet(StartingIdx))]);
+            disp(["Destination Points:" num2str(destinationSet(DestinationIdx))]);
+            disp(["Max Speeds:" num2str(maxSpeedSet')]);
+            disp(["Simulation Time:" num2str(options.simStopTime)])
             
         catch ME
            
