@@ -37,28 +37,43 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             
             for i=1:size(V2Idata,1)
                 
-                crossroadNr = V2Idata(i,1);     % number of crossroad the vehicle is passing
-                crossroadPart = V2Idata(i,2);   % part of the crossroad the vehicle is passing
+                intersectionID = V2Idata(i,1);  % ID of the intersection: 
+                                                % 0 -> none
+                                                % 1 -> 4x4 in west
+                                                % 2 -> t-junction in east
+                                                
+                vehicleStateatIntersection = V2Idata(i,2); % Vehicle's state at the intersection
+                                                % 0 -> "x" (not at any intersection)
+                                                % 1 -> "d" (at decision node)
+                                                % 2 -> "i" (at incoming node)
+                                                % 3 -> "p" (at conflict zone)
+                                                % 4 -> "o" (at outgoing node)
                 
-                if crossroadNr ~= 0
+                if intersectionID ~= 0 % The vehicle is at some intersection
                     vehicle = obj.Vehicles(i);
-                    if crossroadPart == 1
-                        % Car reaches the crossroad
-                        crossroadUnits(crossroadNr).carReachesCrossroad(vehicle);
-                    elseif crossroadPart == 2
-                        % Car reaches the braking point
-                        crossroadUnits(crossroadNr).carReachesBrakingPoint(vehicle, obj.Vehicles);
-                    elseif crossroadPart == 3
-                        % Car reaches the start of the crossroad
-                        crossroadUnits(crossroadNr).carReachesStartingPoint(vehicle);
-                    elseif crossroadPart == 4
-                        % Car leaves the crossroad
-                        crossroadUnits(crossroadNr).carLeavesCrossroad(vehicle, obj.Vehicles);
+                    
+                    % Vehicle is at the decision node (just arrived at the intersection)
+                    if vehicleStateatIntersection == 1
+                        crossroadUnits(intersectionID).carReachesCrossroad(vehicle);
+                        
+                    % Vehicle is at the incoming node (has to GO or WAIT depending on the AIM's decision)
+                    elseif vehicleStateatIntersection == 2
+                        crossroadUnits(intersectionID).carReachesBrakingPoint(vehicle, obj.Vehicles);
+                        
+                    % Vehicle is passing (in the conflict zone -> has to keep going)
+                    elseif vehicleStateatIntersection == 3
+                        crossroadUnits(intersectionID).carReachesStartingPoint(vehicle);
+                          
+                    % Vehicle is at the outgoing node (leaving the intersection)
+                    elseif vehicleStateatIntersection == 4
+                        crossroadUnits(intersectionID).carLeavesCrossroad(vehicle, obj.Vehicles);
                     end
+                    
                 end
+                
             end
             
-            % Update conventional traffic systems
+            %% (Only for TrafficLight) Update conventional traffic systems
             for i=1:length(crossroadUnits)
                 if crossroadUnits(i).mode == CrossroadModeEnum.TrafficLight
                     crossroadUnits(i).updateConventionalTrafficLightSystem(obj.getCurrentTime);
@@ -66,18 +81,18 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             end
             
             
-            % get the braking flag arrays from all crossroad units
+            %% Get the braking flag arrays (stop commands) from all crossroad units (AIM algorithms)
             StopCommands = cat(1,obj.map.crossroadUnits.vehicleOrders);
             
-            % Only brake when in crossroad zone 2 (between braking and stopping point)
+            %% If Stop command is given -> brake between the "incoming node" and the "conflict zone" at the intersection zone
             for i=size(StopCommands,1):-1:1
-                if obj.Vehicles(StopCommands(i)).status.inCrossroad(2) ~= 2
+                if obj.Vehicles(StopCommands(i)).status.atIntersection(2) ~= "i"
                     % Delete when not in this zone from braking array
                     StopCommands(i,:) = [];
                 end
             end
             
-            %% 2D Traffic Plot + Path Dynamic Highlight
+            %% This Infrastructure Block handles: 2D Traffic Plot + Path Dynamic Highlight
             if mod(obj.getCurrentTime,0.2) == 0
                 obj.map.dynamicTrafficPlot(); % Update Vehicle locations and speeds
                 
@@ -86,7 +101,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                 end
             end
             
-            %% Collision detection
+            %% This Infrastructure Block also handles: Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 allVehiclePositions = cat(1,cat(1,cat(1,obj.map.Vehicles).dynamics).position);
                 allVehicleDistancesMatrix = dist(allVehiclePositions'); % Distance between all vehicles

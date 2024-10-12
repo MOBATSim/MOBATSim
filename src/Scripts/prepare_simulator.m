@@ -16,7 +16,7 @@ function prepare_simulator(options)
         options.destinationPoints   (1,:) double    = []                    % Custom destination points for vehicles
         options.maxSpeeds           (1,:) double    = []                    % Custom max speeds for vehicles
         options.simpleMap           (1,1) logical   = false                 % Displays the map in a simpler way
-        options.collisionReport     (1,1) logical   = false                 % Outputs collision report
+        options.collisionReport     (1,1) double    = 0                     % Outputs collision report
     end
     
     % To keep the command window clear

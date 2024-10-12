@@ -8,6 +8,7 @@ function MOBATSimAutoTesting(options)
         options.simStopTime         (1,1) double    = 120   % Time to test the scenarios in seconds
         options.firstScenarioID     (1,1) double    = 1     % Start from scenario i
         options.lastScenarioID      (1,1) double    = 25    % Simulate until scenario j
+        options.collisionReport     (1,1) double    = 0     % Outputs collision report
         options.scenarioNames       (1,:) string    = [ "Urban City Traffic", ...
                                                         "Curved Road Overtaking", ...
                                                         "Merge Collision", ...
@@ -47,18 +48,23 @@ function MOBATSimAutoTesting(options)
     
     %% Which scenarios are simulated - All or a custom range
     if (options.firstScenarioID==1) && (options.lastScenarioID==length(options.scenarioNames))
-        disp('All scenarios will be simulated');
+        disp('All scenarios will be simulated...');
     else
         % Custom range of scenarios defined by the user
-        disp(['Only the scenarios starting with id: ' int2str(options.firstScenarioID) ...
-            ' until id: ' int2str(options.lastScenarioID) ' will be simulated.']);
+        disp('Only the specified scenarios will be simulated...');
+        
+        % Check input options to the function and rearrange the inconsistencies
+        if length(options.scenarioNames) ~= ((options.lastScenarioID+1) - options.firstScenarioID)
+            options.firstScenario = 1;
+            options.lastScenarioID = length(options.scenarioNames);
+        end
     end
     
     %% Test each scenario
     for i=options.firstScenarioID:options.lastScenarioID
         try
             % prepare and run simulation
-            prepare_simulator("scenarioName",options.scenarioNames(i),"simStopTime",options.simStopTime);
+            prepare_simulator("scenarioName",options.scenarioNames(i),"collisionReport",options.collisionReport,"simStopTime",options.simStopTime);
             mpcverbosity off; % Make sure that the MPC doesn't fill the command window
             run_Sim();
             passed(i) = "PASSED";

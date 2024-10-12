@@ -62,7 +62,7 @@ classdef Vehicle < handle
         %         collided
         %         ttc                           time to collision
         %         brakingFlag                   vehicle stops at next waypoint
-        %         inCrossroad                   at which crossroad unit and in which section
+        %         atIntersection                at which Intersection and in which state
         pathInfo
         %         currentTrajectory
         %         currentRoute
@@ -86,7 +86,7 @@ classdef Vehicle < handle
         V2VdataLink
         V2IdataLink
         map             %    map - Every vehicle takes an instance of the map
-        collisionReport
+        collisionReport % Command Window output: 0 -> off, 1 -> on, 2-> report only collisions at intersections
     end
     
     methods
@@ -119,7 +119,7 @@ classdef Vehicle < handle
             obj.setCollided(false);
             obj.status.ttc = 1000;
             obj.status.brakingFlag = 0;
-            obj.status.inCrossroad = [0 0];
+            obj.status.atIntersection = [0 "x"];
             
             obj.pathInfo.currentTrajectory = [];
             obj.pathInfo.currentRoute =0;
@@ -224,10 +224,12 @@ classdef Vehicle < handle
             Box1 = getHitbox(vehicle);
             Box2 = getHitbox(car);
             hasCollided = checkIntersection(vehicle,Box1,Box2);
+            
+            %% If collision has happened
             if hasCollided == true
                 %% Collision report output -> Command Window
-                if vehicle.collisionReport
-                    if ~vehicle.status.collided
+                if vehicle.collisionReport == 1
+                    if ~vehicle.status.collided % If the vehicle just collided (not already collided before)
                         disp("Collision Between Vehicles:")
                         disp([vehicle.id car.id]);
                         % First vehicle
@@ -237,14 +239,36 @@ classdef Vehicle < handle
                         disp([vehicle.dynamics.position(1) -vehicle.dynamics.position(3) vehicle.dynamics.speed]);
                         disp("Driving Mode:")
                         disp(vehicle.status.drivingMode);
-                        disp("Lane ID:")
-                        disp(vehicle.pathInfo.laneId);
                         disp("Current Route")
                         disp(vehicle.pathInfo.currentRoute)
                         disp("Last waypoint")
                         disp(vehicle.pathInfo.lastWaypoint)
+                        if ~(vehicle.status.atIntersection(2) == "x")
+                            disp(["Vehicle collided at intersection id:" num2str(vehicle.status.atIntersection(1))])
+                            disp(["Vehicle's state at intersection was: " vehicle.status.atIntersection(2)])
+                        end
                     end
-                    if ~car.status.collided
+                    
+                    %% Collision report output (Only intersection) -> Command Window
+                elseif vehicle.collisionReport == 2
+                    if ~vehicle.status.collided % If the vehicle just collided (not already collided before)
+                        if ~(vehicle.status.atIntersection(2) == "x")
+
+                            disp("Collision Between Vehicles:")
+                            disp([vehicle.id car.id]);
+                            disp("Collided Vehicle:");
+                            disp([vehicle.id])
+                            disp(["Vehicle collided at intersection id:" num2str(vehicle.status.atIntersection(1))])
+                            disp(["Vehicle's state at intersection was: " vehicle.status.atIntersection(2)])
+                        end
+                    end
+                    
+                end
+                
+                %% The other car has also recently collided (was not already in collision state before)
+                if ~car.status.collided
+                    %% Collision report output -> Command Window
+                    if car.collisionReport == 1
                         disp("Collision Between Vehicles:")
                         disp([car.id vehicle.id]);
                         % Second vehicle
@@ -254,12 +278,30 @@ classdef Vehicle < handle
                         disp([car.dynamics.position(1) -car.dynamics.position(3) car.dynamics.speed]);
                         disp("Driving Mode:")
                         disp(car.status.drivingMode);
-                        disp("Lane ID:")
-                        disp(car.pathInfo.laneId);
                         disp("Current Route")
                         disp(car.pathInfo.currentRoute)
                         disp("Last waypoint")
                         disp(car.pathInfo.lastWaypoint)
+                        
+                        if ~(car.status.atIntersection(2) == "x")             
+                            disp(["Vehicle collided at intersection id:" num2str(car.status.atIntersection(1))])
+                            disp(["Vehicle's state at intersection was: " car.status.atIntersection(2)])
+                        end
+                        
+                        %% Collision report output (Only intersection) -> Command Window
+                    elseif car.collisionReport == 2
+                        if ~car.status.collided % If the vehicle just collided (not already collided before)
+                            if ~(car.status.atIntersection(2) == "x")
+                                
+                                disp("Collision Between Vehicles:")
+                                disp([car.id vehicle.id]);
+                                disp("Collided Vehicle:");
+                                disp([car.id]);
+                                disp(["Vehicle collided at intersection id:" num2str(car.status.atIntersection(1))])
+                                disp(["Vehicle's state at intersection was: " car.status.atIntersection(2)])
+                            end
+                        end
+                        
                     end
                 end
                 

@@ -9,6 +9,7 @@ function randomized_ScenarioTesting(options)
         options.simNumber               (1,1) double     = 4      % How many simulations to run
         options.MaxSpeedLowerBound      (1,1) double     = 5      % Default value for lower max speed value
         options.MaxSpeedUpperBound      (1,1) double     = 20     % Default value for upper max speed value
+        options.collisionReport         (1,1) double     = 0      % Outputs collision report
     end
     
     %% Set starting and destination sets
@@ -46,7 +47,7 @@ function randomized_ScenarioTesting(options)
             
             disp("Simulation number:"+ num2str(i));
             % prepare and run simulation
-            prepare_simulator("startingPoints",startingSet(StartingIdx)',"destinationPoints",destinationSet(DestinationIdx)',"maxSpeeds",maxSpeedSet,"simStopTime",options.simStopTime);
+            prepare_simulator("startingPoints",startingSet(StartingIdx)',"destinationPoints",destinationSet(DestinationIdx)',"maxSpeeds",maxSpeedSet,"collisionReport",options.collisionReport,"simStopTime",options.simStopTime);
             mpcverbosity off; % Make sure that the MPC doesn't fill the command window
             run_Sim();
             

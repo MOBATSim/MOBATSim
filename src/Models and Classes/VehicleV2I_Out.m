@@ -14,12 +14,13 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         vehicle
         futureData
-        inCrossroad % [crossroadId crossroadZone]
-        % crossroadZone:
-        % 1 -> arrivingZone
-        % 2 -> brakingZone
-        % 3 -> intersectionZone
-        % 4 -> leavingZone
+        atIntersection % [IntersectionID IntersectionNode]
+        % Intersection Zone:
+        % x -> Not in Intersection
+        % d -> Decision Node
+        % i -> Incoming Node
+        % p -> Passing (In Conflict Zone)
+        % o -> Outgoing Node
     end
     
     methods
@@ -35,7 +36,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
-            obj.inCrossroad = [0 0];
+            obj.atIntersection = [0 "x"];
         end
         
         
@@ -63,7 +64,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             %% The vehicle is recently arriving -> Intersection Starting Nodes
             if nnz(cat(1,map.crossroadUnits.startingNodes)==current_point)
                 crossroadId = find(any(cat(1,map.crossroadUnits.startingNodes)==current_point,2));
-                car.status.inCrossroad = [crossroadId 1];
+                car.status.atIntersection = [crossroadId "d"];
                 
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 1];
@@ -72,7 +73,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                 %% The vehicle has reached the braking point -> Intersection Braking Nodes
             elseif nnz(cat(1,map.crossroadUnits.brakingNodes)==current_point) % car reaches Braking Point
                 crossroadId = find(any(cat(1,map.crossroadUnits.brakingNodes)==current_point,2));
-                car.status.inCrossroad = [crossroadId 2];
+                car.status.atIntersection = [crossroadId "i"];
                 
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 2];
@@ -81,7 +82,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                 %% The vehicle has reached the stopping point before the Conflict Zone -> Intersection Stopping Nodes
             elseif nnz(cat(1,map.crossroadUnits.stoppingNodes)==current_point) % car reaches Stopping Point
                 crossroadId = find(any(cat(1,map.crossroadUnits.stoppingNodes)==current_point,2));
-                car.status.inCrossroad = [crossroadId 3];
+                car.status.atIntersection = [crossroadId "p"];
                 V2Idata = [crossroadId 3];
                 
                 %% The vehicle leaves the Conflict Zone thus the Intersection -> Intersection Leaving Nodes
@@ -90,7 +91,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
                 if obj.vehicle.V2IdataLink==1
                     V2Idata = [crossroadId 4];
                 end
-                car.status.inCrossroad = [0 0];
+                car.status.atIntersection = [0 "x"];
             else
                 V2Idata = [0 0];
             end

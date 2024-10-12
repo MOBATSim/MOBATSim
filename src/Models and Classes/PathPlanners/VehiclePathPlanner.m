@@ -40,7 +40,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 if obj.vehicle.pathInfo.calculateNewPathFlag == 1
                     
                     %If not in intersection
-                    if ~any(obj.vehicle.status.inCrossroad)
+                    if obj.vehicle.status.atIntersection(2) == "x"
                         
                         obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false
                         %% OtherVehiclesFutureData Processing
@@ -69,7 +69,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                         % PlannerType: Digraph_Astar= 1, shortestPathFinder= 2
                         
                         %% If waypoint reached but in intersection -> Do not replan/change path
-                        elseif any(obj.vehicle.status.inCrossroad)
+                        elseif obj.vehicle.status.atIntersection(2) == "d" || obj.vehicle.status.atIntersection(2) == "i" || obj.vehicle.status.atIntersection(2) == "p"
                             % Do not change the planned path after entering the intersection
                             obj.vehicle.pathInfo.calculateNewPathFlag = 0;
                             % Waypoint reached flag "true" to enable AIM algorithm to manage intersection
