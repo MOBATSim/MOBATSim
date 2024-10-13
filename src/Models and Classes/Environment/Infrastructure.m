@@ -70,7 +70,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             
             %% (Only for TrafficLight) Update conventional traffic systems
             for i=1:length(AIM_Units)
-                if AIM_Units(i).mode == CrossroadModeEnum.TrafficLight
+                if AIM_Units(i).mode == IM_Algorithm_Enum.TrafficLight
                     AIM_Units(i).updateConventionalTrafficLightSystem(obj.getCurrentTime);
                 end
             end

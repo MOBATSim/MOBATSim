@@ -1,5 +1,5 @@
-classdef CrossroadModeEnum
-    %CROSSROADMODEENUM Enumeration for different crossroad modes
+classdef IM_Algorithm_Enum
+    %IM_Algorithm_Enum Enumeration for different crossroad modes
     %   Detailed explanation goes here
     
     % Contributors: Johannes Pintscher

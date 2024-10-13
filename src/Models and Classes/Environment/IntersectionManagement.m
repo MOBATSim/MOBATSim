@@ -7,7 +7,7 @@ classdef IntersectionManagement < handle
     properties
         %static
         id                  (1,1) double            % identification of the crossroad unit
-        mode                (1,1) CrossroadModeEnum % mode in which the crossroad operates     
+        mode                (1,1) IM_Algorithm_Enum % the type of intersection management algorithm     
         startingNodes
         brakingNodes
         stoppingNodes
@@ -37,7 +37,7 @@ classdef IntersectionManagement < handle
                 brakingNodes                               (1,4) double
                 stoppingNodes                              (1,4) double
                 leavingNodes                               (1,4) double
-                configurations.mode                        (1,1) CrossroadModeEnum = CrossroadModeEnum.IntelligentDecision % mode in which the crossroad operates
+                configurations.mode                        (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % mode in which the crossroad operates
                 configurations.energyEquation              (1,1) logical   = false  % 0 for time optimized approach, 1 for energy optimized approach          
             end
             
@@ -46,7 +46,7 @@ classdef IntersectionManagement < handle
             obj.brakingNodes            = brakingNodes;
             obj.stoppingNodes           = stoppingNodes;
             obj.leavingNodes            = leavingNodes;                         
-            obj.mode                    = configurations.mode; % crossroad mode
+            obj.mode                    = configurations.mode; % the type of Intersection Management Algorithm
             obj.params.energyEquation   = configurations.energyEquation;
             
             % edit all the parameters at this point to change the algorithm
@@ -85,15 +85,15 @@ classdef IntersectionManagement < handle
             
             % Select action according to selected mode
             switch(obj.mode)
-                case CrossroadModeEnum.TrafficLight
+                case IM_Algorithm_Enum.TrafficLight
                     
                     % PLACEHOLDER
                     
-                case CrossroadModeEnum.FCFS
+                case IM_Algorithm_Enum.FCFS
                     
                     % PLACEHOLDER
                     
-                case CrossroadModeEnum.IntelligentDecision
+                case IM_Algorithm_Enum.IntelligentDecision
                     
                     % Add vehicle to arriving queue
                     arrivingGroupEntry = obj.makeArrivingGroupEntry(vehicle, obj.startingNodes, obj.leavingNodes);
@@ -111,7 +111,7 @@ classdef IntersectionManagement < handle
             
             % Select action according to selected mode
             switch(obj.mode)
-                case CrossroadModeEnum.TrafficLight
+                case IM_Algorithm_Enum.TrafficLight
                     
                     % Add vehicle to arriving queue
                     arrivingGroupEntry = obj.makeArrivingGroupEntry(vehicle, obj.brakingNodes, obj.leavingNodes);
@@ -119,7 +119,7 @@ classdef IntersectionManagement < handle
                         obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
                     end
                     
-                case CrossroadModeEnum.FCFS
+                case IM_Algorithm_Enum.FCFS
                     
                     % Add vehicle to arriving queue
                     arrivingGroupEntry = obj.makeArrivingGroupEntry(vehicle, obj.brakingNodes, obj.leavingNodes);
@@ -129,7 +129,7 @@ classdef IntersectionManagement < handle
                     % call crossroad algorithm
                     [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     
-                case CrossroadModeEnum.IntelligentDecision
+                case IM_Algorithm_Enum.IntelligentDecision
                     
                     % call crossroad algorithm
                     [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
@@ -144,14 +144,14 @@ classdef IntersectionManagement < handle
             
             % Select action according to selected mode
             switch(obj.mode)
-                case CrossroadModeEnum.TrafficLight
+                case IM_Algorithm_Enum.TrafficLight
                     
                     if ~isempty(obj.leavingGroup)
                         % Remove vehicle from leavingGroup
                         obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
                     end
                     
-                case CrossroadModeEnum.FCFS
+                case IM_Algorithm_Enum.FCFS
                     
                     if ~isempty(obj.leavingGroup)                       
                         % Remove vehicle from leavingGroup
@@ -161,7 +161,7 @@ classdef IntersectionManagement < handle
                         [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     end
                     
-                case CrossroadModeEnum.IntelligentDecision
+                case IM_Algorithm_Enum.IntelligentDecision
                     
                     if ~isempty(obj.leavingGroup)                        
                         % Remove vehicle from leavingGroup
@@ -292,12 +292,12 @@ classdef IntersectionManagement < handle
             
             % Build priority group in dependency of the selected mode
             switch(obj.mode)
-                case CrossroadModeEnum.FCFS
+                case IM_Algorithm_Enum.FCFS
                     
                     % add all arriving vehicles
                     priorityGroup = arrivingGroup;
                     
-                case CrossroadModeEnum.IntelligentDecision
+                case IM_Algorithm_Enum.IntelligentDecision
                     
                     % add all vehicles to priority group that reach the
                     % crossroad starting point in time critical estimated time
@@ -317,8 +317,8 @@ classdef IntersectionManagement < handle
             % the priority for each car in the first-order vehicle group (priorityGroup) is calculated
             
             switch(obj.mode)
-                case CrossroadModeEnum.FCFS
-                    
+                
+                case IM_Algorithm_Enum.FCFS
                     % use the first entry of priority group, it is the first
                     % one that reaches the crossroad
                     
@@ -330,7 +330,7 @@ classdef IntersectionManagement < handle
                     % when crossroad is empty
                     priorityGroup(1,5) = 1;
                     
-                case CrossroadModeEnum.IntelligentDecision
+                case IM_Algorithm_Enum.IntelligentDecision
                     
                     for i=size(priorityGroup,1):-1:1
                         priorityGroupMember = priorityGroup(i,:);
@@ -508,7 +508,7 @@ classdef IntersectionManagement < handle
             vehicleOrders = obj.defineVehicleOrders(vehicleQueue(:,1:2), selectedCombination);
             
             % FCFS
-            if obj.mode == CrossroadModeEnum.FCFS
+            if obj.mode == IM_Algorithm_Enum.FCFS
                 % let no vehicles pass, when there is still one
                 % on crossroad
                 if ~isempty(occupiedDirections)
