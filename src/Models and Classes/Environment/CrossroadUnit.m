@@ -127,12 +127,12 @@ classdef CrossroadUnit < handle
                         obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
                     end
                     % call crossroad algorithm
-                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     
                 case CrossroadModeEnum.IntelligentDecision
                     
                     % call crossroad algorithm
-                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     
             end            
         end
@@ -158,7 +158,7 @@ classdef CrossroadUnit < handle
                         obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
                         
                         % call crossroad algorithm
-                        [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                        [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     end
                     
                 case CrossroadModeEnum.IntelligentDecision
@@ -168,16 +168,15 @@ classdef CrossroadUnit < handle
                         obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
                         
                         % call crossroad algorithm
-                        [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.runCrossroadAlgorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                        [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     end
                     
             end
             
         end
         
-        function [vehicleOrders, arrivingGroup, leavingGroup] = runCrossroadAlgorithm(obj, vehicles, arrivingGroup, leavingGroup)
-            % This is the main method for the intelligent crossroad manager
-            % algorithm.
+        function [vehicleOrders, arrivingGroup, leavingGroup] = run_AIM_Algorithm(obj, vehicles, arrivingGroup, leavingGroup)
+            % This is the main method for the AIM algorithm.
             
             % Only when a vehicle is arriving execute the algorithm
             if ~isempty(obj.arrivingGroup)
@@ -384,27 +383,7 @@ classdef CrossroadUnit < handle
                     end
                 end
             end
-        end
-        
-%         function numDirections = convertStringToNumDirection(~, stringDirections)
-%             % Convert direction in string ("NS") to numeric direction ("13")
-%             
-%             numDirections = zeros(size(stringDirections,1));
-%             for i=1:length(stringDirections)
-%                 for j=1:strlength(stringDirections(i))
-%                     switch extract(stringDirections(i),j)
-%                         case "N"
-%                             numDirections(i,j) = 1;
-%                         case "E"
-%                             numDirections(i,j) = 2;
-%                         case "S"
-%                             numDirections(i,j) = 3;
-%                         case "W"
-%                             numDirections(i,j) = 4;
-%                     end
-%                 end
-%             end
-%         end
+        end       
 
         function vehicleOrders = getVehicleOrders(obj, priorityGroup, leavingGroup)
              % find highest priority crossroad configuration
@@ -688,8 +667,7 @@ classdef CrossroadUnit < handle
                 conflicting = true;
             end
         end
-        
-        
+               
         function updateConventionalTrafficLightSystem(obj, currentTime)
             % this function regulate the current traffic for a
             % conventional traffic light system
