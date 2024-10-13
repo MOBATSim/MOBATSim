@@ -1,6 +1,6 @@
 classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
-    % Sends requests to the Infrastructure for crossroads and right of way.
+    % Sends requests to the AIM (implemented inside Infrastructure) to receive go/stop commands for crossing intersections.
     %
     
     % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
@@ -46,7 +46,8 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             if obj.vehicle.pathInfo.destinationReached
                 V2Idata = [0 0];
             else
-                % When waypoints are reached, check for crossroad actions
+                % When waypoints are reached, check if arriving at an intersection 
+                % (so that communication with AIM can be established)
                 %Output the V2I data
                 if waypointReached
                     V2Idata = obj.determineIntersectionZone(obj.vehicle,obj.vehicle.pathInfo.lastWaypoint);
@@ -62,34 +63,34 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             map = car.map;
             
             %% The vehicle is recently arriving -> Intersection Starting Nodes
-            if nnz(cat(1,map.crossroadUnits.startingNodes)==current_point)
-                crossroadId = find(any(cat(1,map.crossroadUnits.startingNodes)==current_point,2));
-                car.status.atIntersection = [crossroadId "d"];
+            if nnz(cat(1,map.AIM_Units.startingNodes)==current_point)
+                intersectionID = find(any(cat(1,map.AIM_Units.startingNodes)==current_point,2));
+                car.status.atIntersection = [intersectionID "d"];
                 
                 if obj.vehicle.V2IdataLink==1
-                    V2Idata = [crossroadId 1];
+                    V2Idata = [intersectionID 1];
                 end
                 
                 %% The vehicle has reached the braking point -> Intersection Braking Nodes
-            elseif nnz(cat(1,map.crossroadUnits.brakingNodes)==current_point) % car reaches Braking Point
-                crossroadId = find(any(cat(1,map.crossroadUnits.brakingNodes)==current_point,2));
-                car.status.atIntersection = [crossroadId "i"];
+            elseif nnz(cat(1,map.AIM_Units.brakingNodes)==current_point) % car reaches Braking Point
+                intersectionID = find(any(cat(1,map.AIM_Units.brakingNodes)==current_point,2));
+                car.status.atIntersection = [intersectionID "i"];
                 
                 if obj.vehicle.V2IdataLink==1
-                    V2Idata = [crossroadId 2];
+                    V2Idata = [intersectionID 2];
                 end
                 
                 %% The vehicle has reached the stopping point before the Conflict Zone -> Intersection Stopping Nodes
-            elseif nnz(cat(1,map.crossroadUnits.stoppingNodes)==current_point) % car reaches Stopping Point
-                crossroadId = find(any(cat(1,map.crossroadUnits.stoppingNodes)==current_point,2));
-                car.status.atIntersection = [crossroadId "p"];
-                V2Idata = [crossroadId 3];
+            elseif nnz(cat(1,map.AIM_Units.stoppingNodes)==current_point) % car reaches the Stopping Point
+                intersectionID = find(any(cat(1,map.AIM_Units.stoppingNodes)==current_point,2));
+                car.status.atIntersection = [intersectionID "p"];
+                V2Idata = [intersectionID 3];
                 
                 %% The vehicle leaves the Conflict Zone thus the Intersection -> Intersection Leaving Nodes
-            elseif nnz(cat(1,map.crossroadUnits.leavingNodes)==current_point)>0 % car leaves crossroad
-                crossroadId = find(any(cat(1,map.crossroadUnits.leavingNodes)==current_point,2));
+            elseif nnz(cat(1,map.AIM_Units.leavingNodes)==current_point)>0 % car leaves leaves the intersection
+                intersectionID = find(any(cat(1,map.AIM_Units.leavingNodes)==current_point,2));
                 if obj.vehicle.V2IdataLink==1
-                    V2Idata = [crossroadId 4];
+                    V2Idata = [intersectionID 4];
                 end
                 car.status.atIntersection = [0 "x"];
             else

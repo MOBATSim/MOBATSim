@@ -1,5 +1,5 @@
 classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagates & matlab.system.mixin.CustomIcon
-    % This block initializes the vehicles on the map, draws and updates their positions on the 2D plot. When a collision happens, the MAP instance detects it and stops the colliding vehicles. Apart from that, it contains an AIM (Autonomous Intersection Manager) to avoid conflictions on intersections. The decisions are sent to the vehicles as stop, wait, and go.
+    % This block initializes the vehicles on the map, draws and updates their positions on the 2D plot. When a collision happens, the MAP instance detects it and stops the colliding vehicles. Apart from that, it contains an AIM (Autonomous Intersection Manager) to avoid conflictions on intersections. The decisions are sent to the vehicles as GO/STOP.
     %
     
     % Contributors: Mustafa Saraoglu, Fabian Hart, Johannes Pintscher, Qianwei Yang
@@ -22,18 +22,12 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     end
     
     methods(Access = protected)
-        
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_5- Intersection.png");
-        end      
-        
+
         function StopCommands = stepImpl(obj, V2Idata)
-            % Implement algorithm. Calculate y as a function of input u and
-            % discrete states.
+            % Signal output is the Go/Stop commands (Apart from the visual output or collision detection done without signals but accessing variables) 
             
-            %% Crossroad units           
-            crossroadUnits = obj.map.crossroadUnits;
+            %% Autononomous Intersection Management (AIM) Units           
+            AIM_Units = obj.map.AIM_Units;
             
             for i=1:size(V2Idata,1)
                 
@@ -49,24 +43,25 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                                                 % 3 -> "p" (at conflict zone)
                                                 % 4 -> "o" (at outgoing node)
                 
-                if intersectionID ~= 0 % The vehicle is at some intersection
+                %% Check if any vehicle at intersection from V2I Data
+                if intersectionID ~= 0 % If the vehicle is at some intersection
                     vehicle = obj.Vehicles(i);
                     
-                    % Vehicle is at the decision node (just arrived at the intersection)
+                    % Vehicle is at the DECISION NODE (just arrived at the intersection)
                     if vehicleStateatIntersection == 1
-                        crossroadUnits(intersectionID).carReachesCrossroad(vehicle);
+                        AIM_Units(intersectionID).vehicleReachesDecisionNode(vehicle);
                         
                     % Vehicle is at the incoming node (has to GO or WAIT depending on the AIM's decision)
                     elseif vehicleStateatIntersection == 2
-                        crossroadUnits(intersectionID).carReachesBrakingPoint(vehicle, obj.Vehicles);
+                        AIM_Units(intersectionID).vehicleReachesIncomingNode(vehicle, obj.Vehicles);
                         
                     % Vehicle is passing (in the conflict zone -> has to keep going)
                     elseif vehicleStateatIntersection == 3
-                        crossroadUnits(intersectionID).carReachesStartingPoint(vehicle);
+                        % No change in states for the vehicle until it leaves the intersection
                           
                     % Vehicle is at the outgoing node (leaving the intersection)
                     elseif vehicleStateatIntersection == 4
-                        crossroadUnits(intersectionID).carLeavesCrossroad(vehicle, obj.Vehicles);
+                        AIM_Units(intersectionID).vehicleLeavesIntersection(vehicle, obj.Vehicles);
                     end
                     
                 end
@@ -74,15 +69,15 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             end
             
             %% (Only for TrafficLight) Update conventional traffic systems
-            for i=1:length(crossroadUnits)
-                if crossroadUnits(i).mode == CrossroadModeEnum.TrafficLight
-                    crossroadUnits(i).updateConventionalTrafficLightSystem(obj.getCurrentTime);
+            for i=1:length(AIM_Units)
+                if AIM_Units(i).mode == CrossroadModeEnum.TrafficLight
+                    AIM_Units(i).updateConventionalTrafficLightSystem(obj.getCurrentTime);
                 end
             end
             
             
             %% Get the braking flag arrays (stop commands) from all crossroad units (AIM algorithms)
-            StopCommands = cat(1,obj.map.crossroadUnits.vehicleOrders);
+            StopCommands = cat(1,obj.map.AIM_Units.vehicleOrders);
             
             %% If Stop command is given -> brake between the "incoming node" and the "conflict zone" at the intersection zone
             for i=size(StopCommands,1):-1:1
@@ -116,6 +111,11 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             if obj.vehicleAnalysingWindow ~= false % call only if window is generated
                 obj.vehicleAnalysingWindow.update(obj.getCurrentTime);
             end
+        end
+        
+        function icon = getIconImpl(~)
+            % Define icon for System block
+            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_5- Intersection.png");
         end
         
         %%

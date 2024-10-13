@@ -79,9 +79,9 @@ classdef CrossroadUnit < handle
             overlappingTable = table(NE,NS,ES,EW,SN,SW,WN,WE);
         end        
         
-        function carReachesCrossroad(obj,vehicle)
-            % when a car is reaching the starting node of a crossroad, the
-            % car has to be registrated in the arriving queue
+        function vehicleReachesDecisionNode(obj,vehicle)
+            % When a vehicle reaches the decision node of an intersection,
+            % it has to be registered in the arriving queue
             
             % Select action according to selected mode
             switch(obj.mode)
@@ -105,9 +105,9 @@ classdef CrossroadUnit < handle
             
         end
         
-        function carReachesBrakingPoint(obj, vehicle, vehicles)
-            % this function is executed when a car reaches the braking
-            % point.
+        function vehicleReachesIncomingNode(obj, vehicle, vehicles)
+            % this function is executed when a vehicle reaches the incoming
+            % node so that it has to either GO or STOP.
             
             % Select action according to selected mode
             switch(obj.mode)
@@ -136,30 +136,10 @@ classdef CrossroadUnit < handle
                     
             end            
         end
-        
-        function carReachesStartingPoint(obj, ~)
-            % car reaches the start of the crossroad
-            
-            % Select action according to selected mode
-            switch(obj.mode)
-                case CrossroadModeEnum.TrafficLight
-                    
-                    % PLACEHOLDER
-                    
-                case CrossroadModeEnum.FCFS
-                    
-                    % PLACEHOLDER
-                    
-                case CrossroadModeEnum.IntelligentDecision
-                    
-                    % PLACEHOLDER
-                    
-            end
-        end
-        
-        function carLeavesCrossroad(obj,vehicle, vehicles)
-            % when a vehicle reaches the leaving node of a crossroad, the
-            % main algorithm has to be executed again and the car has to be
+                
+        function vehicleLeavesIntersection(obj,vehicle, vehicles)
+            % When a vehicle reaches the outgoing node of an intersection, the
+            % AIM algorithm has to be executed again and the vehicle has to be
             % deleted from the leaving queue
             
             % Select action according to selected mode
@@ -228,7 +208,7 @@ classdef CrossroadUnit < handle
                         
                     catch
                         
-                        disp('crossroad error');
+                        disp('Intersection management error');
                         
                     end
                     

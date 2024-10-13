@@ -11,8 +11,8 @@ classdef Map < handle
         directedGraph
         Vehicles                %vector of all vehicles: line = nr
         plots
-        crossroadUnits          % objects controling a crossroad
-        Route_LaneNumber % lane number of the route
+        AIM_Units               % The AIM algorithm controlling an intersection
+        Route_LaneNumber        % Lane number of the route
     end
     
     methods
@@ -27,11 +27,12 @@ classdef Map < handle
             obj.plots.trajectories = [];
             obj.Route_LaneNumber = Route_LaneNumber;
             
-            % Crossroad units            
+            %% LOAD AIM units            
             for i = 1:  size(startingNodes,1)
                 
-                obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i, startingNodes(i,:),brakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
+                obj.AIM_Units = [obj.AIM_Units; CrossroadUnit(i, startingNodes(i,:),brakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
             end
+            %% LOAD MAP
             %% Calculate curved distances (Lengths of circular routes)
             distancesCircle = ones(1,size(connections_circle,1)); % memory preallocation
             for i = 1:size(connections_circle,1)
