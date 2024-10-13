@@ -30,7 +30,7 @@ classdef Map < handle
             %% LOAD AIM units            
             for i = 1:  size(startingNodes,1)
                 
-                obj.AIM_Units = [obj.AIM_Units; CrossroadUnit(i, startingNodes(i,:),brakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
+                obj.AIM_Units = [obj.AIM_Units; IntersectionManagement(i, startingNodes(i,:),brakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
             end
             %% LOAD MAP
             %% Calculate curved distances (Lengths of circular routes)

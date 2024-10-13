@@ -1,4 +1,4 @@
-classdef CrossroadUnit < handle
+classdef IntersectionManagement < handle
     %UNTITLED Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -30,7 +30,7 @@ classdef CrossroadUnit < handle
     end
     
     methods
-        function obj = CrossroadUnit(id, startingNodes,brakingNodes,stoppingNodes,leavingNodes, configurations)
+        function obj = IntersectionManagement(id, startingNodes,brakingNodes,stoppingNodes,leavingNodes, configurations)
             arguments
                 id                                         (1,1) double
                 startingNodes                              (1,4) double
