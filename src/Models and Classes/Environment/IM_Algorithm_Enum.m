@@ -1,5 +1,5 @@
 classdef IM_Algorithm_Enum
-    %IM_Algorithm_Enum Enumeration for different crossroad modes
+    %IM_Algorithm_Enum Enumeration for different intersection management algorithms modes
     %   Detailed explanation goes here
     
     % Contributors: Johannes Pintscher

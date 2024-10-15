@@ -1,12 +1,12 @@
 classdef IntersectionManagement < handle
-    %UNTITLED Summary of this class goes here
+    %IntersectionManagement Manages the intersection passing order of the incoming vehicles. "Intersection" is also referred to as "Crossroad" in other (usually older) parts of the code.
     %   Detailed explanation goes here
     
     % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
     
     properties
         %static
-        id                  (1,1) double            % identification of the crossroad unit
+        id                  (1,1) double            % ID of the intersection management unit
         mode                (1,1) IM_Algorithm_Enum % the type of intersection management algorithm     
         startingNodes
         brakingNodes
@@ -19,8 +19,8 @@ classdef IntersectionManagement < handle
              % energyEquation                     
         overlappingTable    % each column contains the overlapping directions of direction in header
         vehicleOrders       % array with rows containing the vehicle id and the order [ vehicleId order] ( 0 = go, 1 = stop)
-        arrivingGroup       % all vehicles arriving at the crossroad
-        leavingGroup        % all vehicles on the crossroad
+        arrivingGroup       % all vehicles arriving at the intersection
+        leavingGroup        % all vehicles at the intersection
         % Conventional traffic lights
         stateStartingTime       = 0   % when the new traffic state has started
         currentState            = 1   % current traffic light state
@@ -37,7 +37,7 @@ classdef IntersectionManagement < handle
                 brakingNodes                               (1,4) double
                 stoppingNodes                              (1,4) double
                 leavingNodes                               (1,4) double
-                configurations.mode                        (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % mode in which the crossroad operates
+                configurations.mode                        (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % the mode in which the intersection management algorithm operates
                 configurations.energyEquation              (1,1) logical   = false  % 0 for time optimized approach, 1 for energy optimized approach          
             end
             
@@ -57,12 +57,12 @@ classdef IntersectionManagement < handle
             %constant platooning time behind the car ahead is set:
             obj.params.platooningTimeBehind = 0.2;
             
-            % table containing all overlaps of the crossroad
+            % Table that contains all overlaps paths at the intersection
             obj.overlappingTable = obj.generateOverlappingTable();
         end %Constructor
         
         function overlappingTable = generateOverlappingTable(~)
-            % table containing all overlapping lanes on crossroad
+            % Generates the table that contains all overlaps paths at the intersection
             
             % the direction in one array are colliding with the direction
             % that is the variable name
@@ -126,12 +126,12 @@ classdef IntersectionManagement < handle
                     if ~isempty(arrivingGroupEntry)
                         obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
                     end
-                    % call crossroad algorithm
+                    % Run the intersection management algorithm
                     [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     
                 case IM_Algorithm_Enum.IntelligentDecision
                     
-                    % call crossroad algorithm
+                    % Run the intersection management algorithm
                     [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     
             end            
@@ -157,7 +157,7 @@ classdef IntersectionManagement < handle
                         % Remove vehicle from leavingGroup
                         obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
                         
-                        % call crossroad algorithm
+                        % Run the intersection management algorithm
                         [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     end
                     
@@ -167,7 +167,7 @@ classdef IntersectionManagement < handle
                         % Remove vehicle from leavingGroup
                         obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
                         
-                        % call crossroad algorithm
+                        % Run the intersection management algorithm
                         [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
                     end
                     
@@ -195,7 +195,7 @@ classdef IntersectionManagement < handle
             % add a vehicle to arriving group
                 
                 entry = [];
-                % check that cars destination is not  before crossroad
+                % check that cars destination is not  before the intersection
                 if length(vehicle.pathInfo.path)>3
                     arrivingDirection = find(vehicle.pathInfo.lastWaypoint == startingNodes); % from which direction the car is coming 1=N, 2=E, 3=S, 4=W
                     
@@ -248,7 +248,7 @@ classdef IntersectionManagement < handle
             % get and add priorities to the priority group, vehicles in this group are
             % considered by the algorithm
             
-            % get priority group by looking at vehicles close to crossroad
+            % get priority group by looking at vehicles close to the intersection
             priorityGroup = obj.getPriorityGroup(vehicles, arrivingGroup);
             
             % calculate priorities for priority group
@@ -260,7 +260,7 @@ classdef IntersectionManagement < handle
             % in this function we delimitate vehicles with close ETAs. The
             % parameter we are using is criticalETA (in our paper: deltaETA)
             
-            % directions from that the vehicles enter the crossroad
+            % directions from that the vehicles enter the intersection
             arrivingDirection = arrivingGroup(:,2);
             
             % we loop through all vehicles to get the estimated time of
@@ -300,7 +300,7 @@ classdef IntersectionManagement < handle
                 case IM_Algorithm_Enum.IntelligentDecision
                     
                     % add all vehicles to priority group that reach the
-                    % crossroad starting point in time critical estimated time
+                    % Intersection starting point in time critical estimated time
                     % of arrival
                     priorityGroup = arrivingGroup(arrivingGroup(:,4) <= obj.params.criticalETA,:);
                     
@@ -320,14 +320,14 @@ classdef IntersectionManagement < handle
                 
                 case IM_Algorithm_Enum.FCFS
                     % use the first entry of priority group, it is the first
-                    % one that reaches the crossroad
+                    % one that reaches the intersection
                     
                     % give every member a negative priority so that they are
                     % not used in combinations because of bad priority
                     priorityGroup(:,5) = -1;
                     
-                    % only the first one that reached the crossroad should pass
-                    % when crossroad is empty
+                    % only the first one that reached the intersection should pass
+                    % when the intersection is empty
                     priorityGroup(1,5) = 1;
                     
                 case IM_Algorithm_Enum.IntelligentDecision
@@ -354,7 +354,7 @@ classdef IntersectionManagement < handle
                         vehiclesInFront(priorityGroup(i,3) == priorityGroup(1:i-1,3)) = false;
                         
                         % Set negative priority so that this vehicle is not
-                        % considerd in passing the crossroad
+                        % considerd in passing the intersection
                         if any(vehiclesInFront)
                             priority = -1;
                         end
@@ -386,10 +386,10 @@ classdef IntersectionManagement < handle
         end       
 
         function vehicleOrders = getVehicleOrders(obj, priorityGroup, leavingGroup)
-             % find highest priority crossroad configuration
+            % Find highest priority intersection passing order
             % 1. start with the first car in priority group
-            % 2. check if car can pass crossroad with current cars on it
-            % 3. when yes, add car to a crossroad list and select an other
+            % 2. check if car can pass the intersection with current cars on it
+            % 3. when yes, add car to a intersection list and select an other
             % car
             % 4. when no, choose an other car and start with point 2
             % 5. also check next selected car and continue selecting until
@@ -397,14 +397,14 @@ classdef IntersectionManagement < handle
             % 6. Save priority value
             % 7. Do this for every car-combination in list.
             
-            % get directions from cars already on crossroad
+            % get directions from cars already at the intersection
             if ~isempty(leavingGroup)
                 occupiedDirections = obj.convertNumToStringDirection(leavingGroup(:,2:3));
             else
                 occupiedDirections = [];
             end
             
-            % group of vehicles that want to pass the crossroad in string
+            % group of vehicles that want to pass the intersection in string
             % directions
             % vehicle id | direction ("NS") | priority
             vehicleQueue = [priorityGroup(:,1) obj.convertNumToStringDirection(priorityGroup(:,2:3)) priorityGroup(:,5)];
@@ -415,15 +415,15 @@ classdef IntersectionManagement < handle
             
 
             % get all possible directions that are not blocked by vehicles
-            % at crossroad
+            % at the intersection
             possibleDirections = obj.getAllPossibleDirections(vehicleQueue(:,2), occupiedDirections);
             
-            % add all possible directions for crossroad to list of possible
+            % add all possible directions for the intersection to list of possible
             % combinations
             allCombinations = possibleDirections;
             
             % a combination is a row of directions that could applied to
-            % the crossroad without overlapping or crossing
+            % the intersection without overlapping or crossing
             
 
 
@@ -459,7 +459,7 @@ classdef IntersectionManagement < handle
             selectedCombination = allCombinations(indexHighestPriority);
             
             %--------------------------------------------------------------
-            % Verify the selected crossroad commands
+            % Verify the selected intersection management go/stop commands
             %--------------------------------------------------------------
             if obj.id == 1
                 % for positive result test
@@ -499,7 +499,7 @@ classdef IntersectionManagement < handle
                 verified = TScrossroad.verifyModel(lower(atInput), lower(atPassing), crossingPaths);
                 
                 if ~verified
-                    error("CrossroadManager " +obj.id+ " wanted to take a forbidden action with a possible collision!\n" + ...
+                    error("Intersection Management Algorithm " +obj.id+ " wanted to take a forbidden action with a possible collision!\n" + ...
                           get_param('MOBATSim','SimulationTime')+"s Forbidden Directions:" + sprintf(' %s %s', atInput, atPassing));
                 end
             end
@@ -509,8 +509,7 @@ classdef IntersectionManagement < handle
             
             % FCFS
             if obj.mode == IM_Algorithm_Enum.FCFS
-                % let no vehicles pass, when there is still one
-                % on crossroad
+                % let no vehicles pass, when there is still one at the intersection
                 if ~isempty(occupiedDirections)
                     vehicleOrders(:,2) = 1;
                 end
@@ -537,7 +536,7 @@ classdef IntersectionManagement < handle
                     % so same directions could be in priority list multiple
                     % times.
                     % Order is not important, because same direction can
-                    % every time cross or not cross crossroad and only
+                    % every time cross or not cross the intersection and only
                     % highest priority sum is considered, so wrong partial
                     % assignment does not matter.
                     currentPriorityList(priorityIndex(1),:) = []; % delete entry for this combination
@@ -548,7 +547,7 @@ classdef IntersectionManagement < handle
         function vehicleOrders = defineVehicleOrders(~, vehicleQueue, allowedDirections)
             % define a order for every vehicle from vehicle queue
             %   vehicleQueue        list of vehicle ids and direction they are driving
-            %   selectedCombination list of all allowed directions to drive on crossroad
+            %   selectedCombination list of all allowed directions to drive at the intersection
             
             % no allowed direction exists
             if isempty(allowedDirections)
@@ -702,8 +701,7 @@ classdef IntersectionManagement < handle
         end
         
         function vehicleOrders = getConventionalVehicleOrders(obj, arrivingGroup, currentState, waitingState)
-            % set the vehicle orders for vehilces using a traffic light at
-            % the crossroad
+            % set the vehicle orders for vehilces using a traffic light at the intersection
             
             % get vehicles that need orders
             if isempty(arrivingGroup)
@@ -780,7 +778,7 @@ classdef IntersectionManagement < handle
         
         function timeToReach = calculateEstimatedTimeOfArrival(obj,vehicle,stoppingNode,ETAcarInFront, estimatedAcceleration)
             % calculate the time of arrival at the stopping node of the
-            % crossroad for a specific vehicle
+            % intersection for a specific vehicle
             
             maxSpeed = vehicle.dynamics.maxSpeed;
             currentSpeed = vehicle.dynamics.speed;

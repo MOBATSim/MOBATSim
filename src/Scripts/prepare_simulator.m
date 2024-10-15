@@ -92,7 +92,7 @@ function prepare_simulator(options)
     [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
     
     % Check selected starting and destination points are valid
-    forbiddenNodes = [brakingNodes; stoppingNodes]; % vehicles should not stop in front or on crossroad
+    forbiddenNodes = [brakingNodes; stoppingNodes]; % vehicles should not stop in front or in the intersection
     invalidNodes = checkNodesValid([startingPoints, destinationPoints], forbiddenNodes);
     if ~isempty(invalidNodes)
         % Construct an exception for wrong waypoints
