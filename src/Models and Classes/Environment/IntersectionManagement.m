@@ -413,10 +413,13 @@ classdef IntersectionManagement < handle
             % matching directions
             priorityList = [vehicleQueue(:,2) vehicleQueue(:,3)];
             
-
             % get all possible directions that are not blocked by vehicles
-            % at the intersection
-            possibleDirections = obj.getAllPossibleDirections(vehicleQueue(:,2), occupiedDirections);
+            % at the intersection (exclude rear vehicles as they cannot
+            % move if the front vehicles' path directions are not allowed)
+            idx_rearVehicles = vehicleQueue(:,3) == "-1";
+            vehicleQueueWithoutRearVehicles = vehicleQueue;
+            vehicleQueueWithoutRearVehicles(idx_rearVehicles,:) = [];
+            possibleDirections = obj.getAllPossibleDirections(vehicleQueueWithoutRearVehicles(:,2), occupiedDirections);
             
             % add all possible directions for the intersection to list of possible
             % combinations
@@ -450,6 +453,7 @@ classdef IntersectionManagement < handle
                 % select next combination entry
                 i = i+1;
             end
+            
             
             % Get priority for every combination
             combinationPriorities = obj.assignPriorities(allCombinations, priorityList);
@@ -641,8 +645,9 @@ classdef IntersectionManagement < handle
             % 1. Direction is connected to own direction
             % 2. Direction is crossing own direction
             
-            % get all directions with same start direction
-            conflictingStarts = directions(ismember(extract(directions,1), extract(ownDirection,1)));
+            % get all directions with same start direction 
+            % NOTE*(removed because vehicles can keep safe distance if they are coming from the same incoming node)
+            % conflictingStarts = directions(ismember(extract(directions,1), extract(ownDirection,1)));
             
             % get all directions with same destination direction
             conflictingDestinations = directions(ismember(extract(directions,2), extract(ownDirection,2)));
@@ -658,7 +663,10 @@ classdef IntersectionManagement < handle
             end
             
             % add all conflicting path to one array
-            conflictingDirections = [conflictingStarts; conflictingDestinations; conflictingCrossings];
+            % See NOTE* for why commented out: 
+            %conflictingDirections = [conflictingStarts; conflictingDestinations; conflictingCrossings];
+            conflictingDirections = [conflictingDestinations; conflictingCrossings];
+            
             
             % remove directions that are the SAME as the own direction,
             % because more than one vehicle can travel in same direction
