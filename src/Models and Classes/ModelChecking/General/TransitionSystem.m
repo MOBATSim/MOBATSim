@@ -3,7 +3,7 @@ classdef TransitionSystem < handle
     %inital states, atomic propositions and labels.
     %   Detailed explanation goes here
     
-    % Contributors: Johannes Pintscher
+    % Contributors: Johannes Pintscher, Mustafa Saraoglu
     
     properties
         states                  (1,:) string    % states S
@@ -127,6 +127,10 @@ classdef TransitionSystem < handle
                     end
                 end
             end
+            
+            % Depth First Search - To get only the states reachable from
+            % the initial state
+            Trm = DFS_fromInitialState(Trm,Im);
             
             % Atomic propositions
             APm = BA.states;

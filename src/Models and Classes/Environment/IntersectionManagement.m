@@ -354,7 +354,9 @@ classdef IntersectionManagement < handle
                         vehiclesInFront(priorityGroup(i,3) == priorityGroup(1:i-1,3)) = false;
                         
                         % Set negative priority so that this vehicle is not
-                        % considerd in passing the intersection
+                        % considerd in passing the intersection:
+                        % Otherwise the front vehicle might get a "stop" command
+                        % and the rear vehicle a "go" which blocks the intersection
                         if any(vehiclesInFront)
                             priority = -1;
                         end
@@ -385,19 +387,17 @@ classdef IntersectionManagement < handle
             end
         end       
 
-        function vehicleOrders = getVehicleOrders(obj, priorityGroup, leavingGroup)
+        function vehicleStopCommands = getVehicleOrders(obj, priorityGroup, leavingGroup)
             % Find highest priority intersection passing order
             % 1. start with the first car in priority group
-            % 2. check if car can pass the intersection with current cars on it
-            % 3. when yes, add car to a intersection list and select an other
-            % car
-            % 4. when no, choose an other car and start with point 2
-            % 5. also check next selected car and continue selecting until
-            % no car is left in list.
-            % 6. Save priority value
-            % 7. Do this for every car-combination in list.
+            % 2. check if the vehicle can pass the intersection without colliding with the current vehicles in the intersection
+            % 3. If yes, add the vehicle to a intersection list and select another vehicle
+            % 4. If no, choose another vehicle and re-evaluate point 2.
+            % 5. Check the next selected vehicle and continue selecting until no vehicle is left in list.
+            % 6. Save the priority value
+            % 7. Do this for every vehicle-combination in the list.
             
-            % get directions from cars already at the intersection
+            % Get directions from the vehicle already in the intersection conflict zone
             if ~isempty(leavingGroup)
                 occupiedDirections = obj.convertNumToStringDirection(leavingGroup(:,2:3));
             else
@@ -459,15 +459,18 @@ classdef IntersectionManagement < handle
             selectedCombination = allCombinations(indexHighestPriority);
             
             %--------------------------------------------------------------
-            % Verify the selected intersection management go/stop commands
+            % Verify the selected AIM "go" commands by generating a
+            % verified Transition System for the allowed directions
             %--------------------------------------------------------------
-            if obj.id == 1
+            if obj.id == 1 % Verification only for the 4x4 intersection in the west with id:1
                 % for positive result test
                 atInput = split(selectedCombination,"-");
                 % for negative result test
                 %atInput = vehicleQueue(:,2)';
                 atPassing = occupiedDirections;
-                crossingPaths = ["ne", "ew";
+                
+                % The paths that overlap in intersection id:1
+                pathConflicts = ["ne", "ew";
                     "ne", "wn";
                     "ne", "es";
                     "ne", "sn";
@@ -496,22 +499,25 @@ classdef IntersectionManagement < handle
                     "sn", "wn";
                     "se", "we"];
                 
-                verified = TScrossroad.verifyModel(lower(atInput), lower(atPassing), crossingPaths);
+                % To further test the safety filter (verification of the "go" actions taken by the AIM) one can
+                % overwrite the values of "atPassing" and "atInput" with conflicting paths
+                % in order to see if the "verified" variable results "false".
+                verified = TScrossroad.verifyModel(lower(atInput), lower(atPassing), pathConflicts);
                 
                 if ~verified
-                    error("Intersection Management Algorithm " +obj.id+ " wanted to take a forbidden action with a possible collision!\n" + ...
+                    disp("Intersection Management Algorithm " +obj.id+ " wanted to take a forbidden action with a possible collision! At time:" + ...
                           get_param('MOBATSim','SimulationTime')+"s Forbidden Directions:" + sprintf(' %s %s', atInput, atPassing));
                 end
             end
             %--------------------------------------------------------------
-            % Define commands for every vehicle (stop, go)
-            vehicleOrders = obj.defineVehicleOrders(vehicleQueue(:,1:2), selectedCombination);
+            % Define "stop" commands for every vehicle (1 = stop, 0 = go in this section)
+            vehicleStopCommands = obj.defineVehicleOrders(vehicleQueue(:,1:2), selectedCombination);
             
-            % FCFS
+            %% FCFS
             if obj.mode == IM_Algorithm_Enum.FCFS
                 % let no vehicles pass, when there is still one at the intersection
                 if ~isempty(occupiedDirections)
-                    vehicleOrders(:,2) = 1;
+                    vehicleStopCommands(:,2) = 1;
                 end
             end
         end
@@ -562,9 +568,9 @@ classdef IntersectionManagement < handle
             for i=1:size(vehicleQueue,1)
                 % 'go' when own direction one of allowed directions
                 if any(vehicleQueue(i,2) == allowedDirections)
-                    vehicleOrders(i,2) = 0; % 0 means 'go' for the car
+                    vehicleOrders(i,2) = 0; % 0 means 'go' for the vehicle
                 else
-                    vehicleOrders(i,2) = 1; % 1 means 'stop' for the car
+                    vehicleOrders(i,2) = 1; % 1 means 'stop' for the vehicle
                 end
             end
                 
