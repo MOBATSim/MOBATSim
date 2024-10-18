@@ -645,9 +645,10 @@ classdef IntersectionManagement < handle
             % 1. Direction is connected to own direction
             % 2. Direction is crossing own direction
             
-            % get all directions with same start direction 
-            % NOTE*(removed because vehicles can keep safe distance if they are coming from the same incoming node)
-            % conflictingStarts = directions(ismember(extract(directions,1), extract(ownDirection,1)));
+            % get all directions with same start direction
+            % (A very fast vehicle might a very slow vehicle that is in the next route at the intersection, 
+            % safety first so the fast vehicle stops if passing from the same incoming node)
+            conflictingStarts = directions(ismember(extract(directions,1), extract(ownDirection,1)));
             
             % get all directions with same destination direction
             conflictingDestinations = directions(ismember(extract(directions,2), extract(ownDirection,2)));
@@ -662,10 +663,8 @@ classdef IntersectionManagement < handle
                 conflictingCrossings = [];
             end
             
-            % add all conflicting path to one array
-            % See NOTE* for why commented out: 
-            %conflictingDirections = [conflictingStarts; conflictingDestinations; conflictingCrossings];
-            conflictingDirections = [conflictingDestinations; conflictingCrossings];
+            % add all conflicting paths to one array
+            conflictingDirections = [conflictingStarts; conflictingDestinations; conflictingCrossings];
             
             
             % remove directions that are the SAME as the own direction,
