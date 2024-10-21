@@ -13,16 +13,22 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         map = evalin('base','Map');
         Vehicles = evalin('base','Vehicles'); % prepare for logging test data
-    end
-    
-    
-    % Pre-computed constants
-    properties(Access = private)
         vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow_Gui');
+        collisionCheckingDistanceThreshold
     end
+    
     
     methods(Access = protected)
 
+        function setupImpl(obj)
+            % Perform one-time calculations, such as computing constants
+            allVehiclePhysics = cat(1,obj.Vehicles.physics);
+            allVehicleSizes = cat(1,allVehiclePhysics.size);
+            % Calculate the maximum possible distance between two vehicles
+            % when they are about the collide (sqrt(width^2 + length^2) + someDelta (0.5 meters to account for discretization errors)
+            obj.collisionCheckingDistanceThreshold = sqrt(max(allVehicleSizes(:,2))^2 + max(allVehicleSizes(:,3))^2)+0.5;
+        end
+        
         function StopCommands = stepImpl(obj, V2Idata)
             % Signal output is the Go/Stop commands (Apart from the visual output or collision detection done without signals but accessing variables) 
             
@@ -100,10 +106,10 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 allVehiclePositions = cat(1,cat(1,cat(1,obj.map.Vehicles).dynamics).position);
                 allVehicleDistancesMatrix = dist(allVehiclePositions'); % Distance between all vehicles
-                [row,column] = find(triu(allVehicleDistancesMatrix<20,1)); % The value 20 is the threshold for checking for collision
+                [row,column] = find(triu(allVehicleDistancesMatrix<obj.collisionCheckingDistanceThreshold,1)); % Find all values lower than obj.collisionCheckingDistanceThreshold to check for collisions
                 if ~isempty(column)
-                    for k = 1:length(column) % If there are vehicle closer than 20 meters, check the collision for vehicle column(k) to row(k)
-                        obj.map.Vehicles(column(k)).checkCollision(obj.map.Vehicles(row(k)));
+                    for k = 1:length(column) % If there are vehicles closer than the threshold, check the collision for vehicle column(k) to row(k)
+                        obj.map.Vehicles(column(k)).checkCollisionBetweenVehicles(obj.map.Vehicles(row(k)));
                     end
                 end
             end

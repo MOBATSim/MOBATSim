@@ -9,7 +9,7 @@ classdef Vehicle < handle
     %    checkWaypointReached           - Checks if the vehicle has reached its next waypoint
     %    generateTrajectoryFromPath     - Generates a trajectory from the path information
     %    generateCurrentRoute           - Finds the current route from the path and the last waypoint information
-    %    checkCollision                 - Checks if a collision has happened with another vehicle
+    %    checkCollisionBetweenVehicles  - Checks if a collision has happened with another vehicle
     %    getHitbox                      - Gets the hitbox of vehicles to check for collision
     %    vehiclesCollide                - Stops the vehicles if a collision has happened
     %    checkIntersection              - Checks if hitboxes intersect to raise the collision flag
@@ -218,7 +218,7 @@ classdef Vehicle < handle
         end
         
         %% Collision Detection Functions
-        function checkCollision(vehicle,car)
+        function checkCollisionBetweenVehicles(vehicle,car)
             %this function should be seperate from the sensor because sensor can be faulty but collision will appear as
             %an accident so to create the conditions for instant stop we need to keep it as a seperate function
             Box1 = getHitbox(vehicle);
