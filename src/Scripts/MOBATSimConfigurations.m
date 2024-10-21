@@ -16,10 +16,11 @@ classdef MOBATSimConfigurations
         maxSpeeds
         analysing           % analysing mode activated
         simpleMap           % Displays the map in a simpler way
+        IM_Mode             % Intersection management mode
     end
     
     methods
-        function obj = MOBATSimConfigurations(modelName, mapName, simStopTime, simTs,  scenarioName, startingPoints, destinationPoints, maxSpeeds, analysing, simpleMap)
+        function obj = MOBATSimConfigurations(modelName, mapName, simStopTime, simTs,  scenarioName, startingPoints, destinationPoints, maxSpeeds, analysing, simpleMap, IM_Mode)
             % Save the current configuration
             obj.modelName = modelName;
             obj.mapName = mapName;
@@ -31,9 +32,10 @@ classdef MOBATSimConfigurations
             obj.maxSpeeds = maxSpeeds;
             obj.analysing = analysing;
             obj.simpleMap = simpleMap;
+            obj.IM_Mode = IM_Mode;
         end
         
-        function differences = compareConfigurations(obj, modelName, mapName, simStopTime, simTs,  scenarioName, startingPoints, destinationPoints, maxSpeeds, analysing, simpleMap)
+        function differences = compareConfigurations(obj, modelName, mapName, simStopTime, simTs,  scenarioName, startingPoints, destinationPoints, maxSpeeds, analysing, simpleMap, IM_Mode)
             % compare the input values with this configuration
             
             differences = [ obj.modelName           ~= modelName; ...
@@ -45,7 +47,8 @@ classdef MOBATSimConfigurations
                             any(obj.destinationPoints   ~= destinationPoints); ...
                             any(obj.maxSpeeds           ~= maxSpeeds); ...
                             obj.analysing           ~= analysing; ...
-                            obj.simpleMap           ~= simpleMap];
+                            obj.simpleMap           ~= simpleMap; ...
+                            obj.IM_Mode             ~= IM_Mode];
          
         end
         

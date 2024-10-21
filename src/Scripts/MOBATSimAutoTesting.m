@@ -9,6 +9,7 @@ function MOBATSimAutoTesting(options)
         options.firstScenarioID     (1,1) double    = 1     % Start from scenario i
         options.lastScenarioID      (1,1) double    = 30    % Simulate until scenario j
         options.collisionReport     (1,1) double    = 0     % Outputs collision report
+        options.IM_Mode             (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % The intersection management algorithm mode
         options.scenarioNames       (1,:) string    = [ "Urban City Traffic", ...
                                                         "Curved Road Overtaking", ...
                                                         "Merge Collision", ...
@@ -57,33 +58,29 @@ function MOBATSimAutoTesting(options)
     else
         % Custom range of scenarios defined by the user
         disp('Only the specified scenarios will be simulated...');
-        
-        % Check input options to the function and rearrange the inconsistencies
-        if length(options.scenarioNames) ~= ((options.lastScenarioID+1) - options.firstScenarioID)
-            options.firstScenario = 1;
-            options.lastScenarioID = length(options.scenarioNames);
-        end
     end
     
+    j = 0;
     %% Test each scenario
     for i=options.firstScenarioID:options.lastScenarioID
+        j = j + 1;
         try
             % prepare and run simulation
-            prepare_simulator("scenarioName",options.scenarioNames(i),"collisionReport",options.collisionReport,"simStopTime",options.simStopTime);
+            prepare_simulator("scenarioName",options.scenarioNames(i),"collisionReport",options.collisionReport,"IM_Mode", options.IM_Mode,"simStopTime",options.simStopTime);
             mpcverbosity off; % Make sure that the MPC doesn't fill the command window
             run_Sim();
-            passed(i) = "PASSED";
+            passed(j) = "PASSED";
         catch ME
-            passed(i) = "ERROR";
+            passed(j) = "ERROR";
         end
 
         % Display scenario name and if passed    
-        disp("<strong>" + options.scenarioNames(i) + ":</strong>" + " [" + passed(i) +"]");
+        disp("<strong>" + options.scenarioNames(i) + ":</strong>" + " [" + passed(j) +"]");
         % Add this information also to the report
-        fprintf(fileID,'%s: [%s]\n',options.scenarioNames(i),passed(i));
+        fprintf(fileID,'%s: [%s]\n',options.scenarioNames(i),passed(j));
 
         % Display only the exception message, but dont interrupt the execution
-        if  passed(i) ~= "PASSED"
+        if  passed(j) ~= "PASSED"
             fprintf(2,ME.cause{1}.message + "\n");
         end
     end

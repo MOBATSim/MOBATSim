@@ -6,12 +6,12 @@ switch scenarioName
     case 'Urban City Traffic'
         % Vehicle 2 makes lane change on straight road + Vehicle 5 change planned Path
         startingPoints =    [46 47 84 3  54 64 58 57 4 63];
-        destinationPoints = [54 51 82 26 3  42 27 25 26 47];
+        destinationPoints = [54 51 82 26 3  24 27 25 26 47];
         maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
     case 'Curved Road Overtaking'
         % Vehicle 2 makes lane change on curved road + Vehicle 5 change planned Path
         startingPoints =    [46 29 84 3  54 64 58 57 4 63];
-        destinationPoints = [54 24 82 26 3  42 27 25 26 47];
+        destinationPoints = [54 24 82 26 3  24 27 25 26 47];
         maxSpeeds =         [3  18  3 7  14 10 0.1 4 10 10];
     case 'Merge Collision'
         % Road merging Vehicle Convoy Scenario + V5 stops and blocks the road merge causing a collision
@@ -26,31 +26,31 @@ switch scenarioName
     case 'High Speed Collision'
         % V3 hits V4 with high speed - front collision
         startingPoints =    [46 47 7  27 85 52 64 57 15 63];
-        destinationPoints = [54 51 26 26 23 27 42 25 59 47];
+        destinationPoints = [54 51 26 26 23 27 24 25 59 47];
         maxSpeeds =         [3  15 35 1  6  10 10 12 10 10];
     case 'Collision Merge'
         % V3 merges the road from left while V4 goes straight and collides
         startingPoints =     [46 47 6  7  85 52 64 57 15 63];
-        destinationPoints =  [54 51 27 26 27 23 42 25 59 47];
+        destinationPoints =  [54 51 27 26 27 23 24 25 59 47];
         maxSpeeds =          [3 15 10 5.55 6 10 10 12 10 10];
     case 'Complex Crossroad'
         % Complex crossroad scenario + V8 collides with V1
         startingPoints =    [8  46 29 18 41 52 64 6 15 63];
-        destinationPoints = [26 47 51 1  3  27 42 25 7 46];
+        destinationPoints = [26 47 51 1  3  27 24 25 7 46];
         maxSpeeds = [20 15 10 10 14 20 10 12 10 10];
     case 'Extra Complex Crossroad'
         % Extra complex crossroad scenario
         startingPoints =    [8  46 29 18 53 52 65 6 15 64];
-        destinationPoints = [59 47 51 1  3  27 42 25 60 46];
+        destinationPoints = [59 47 51 1  3  27 24 25 60 46];
         maxSpeeds = [20 20 10 10 14 20 15 12 10 20];
     case 'Counterexample Crossroad Safety'
         % Counterexample crossroad safety
         startingPoints =    [18 72 84 3  21 65 79 19 4 20];
-        destinationPoints = [17 51 82 26 17  42 60 17 26 17];
+        destinationPoints = [17 51 82 26 17  24 60 17 26 17];
         maxSpeeds =         [3  8.7  3 7  14 10 0.1 4 10 10];
     case 'Mayhem'
         startingPoints =    [46 53 54 51 44 9  65 27 30 6];
-        destinationPoints = [25 64 24 16 10 59 42 10 11 24];
+        destinationPoints = [25 64 24 16 10 59 23 10 11 24];
         maxSpeeds = [28 25 10 25 38 25 25 30 11 15];
     case 'Convoy Platoons'
         % road merging scenario
@@ -59,7 +59,7 @@ switch scenarioName
         maxSpeeds = [13 13 11 9 13 13 8 14 4 13];
     case 'Vehicle Safety Filter Test'
         startingPoints =    [46 85 47 3  54 64 58 57 4 63];
-        destinationPoints = [52 51 51 26 3  42 27 25 26 47];
+        destinationPoints = [52 51 51 26 3  24 27 25 26 47];
         maxSpeeds =         [5  18 20 7  14 10 0.1 4 10 10];
         
     case 'Scenario 13'

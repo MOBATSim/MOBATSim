@@ -16,7 +16,7 @@ classdef Map < handle
     end
     
     methods
-        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
+        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber, IM_Mode)
             obj.mapName = mapName;
             obj.waypoints = waypoints;
             obj.Vehicles = []; % Vehicles are added after vehicle generation
@@ -29,8 +29,7 @@ classdef Map < handle
             
             %% LOAD AIM units            
             for i = 1:  size(startingNodes,1)
-                
-                obj.AIM_Units = [obj.AIM_Units; IntersectionManagement(i, startingNodes(i,:),brakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
+                obj.AIM_Units = [obj.AIM_Units; IntersectionManagement(i, startingNodes(i,:),brakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:), IM_Mode)];
             end
             %% LOAD MAP
             %% Calculate curved distances (Lengths of circular routes)

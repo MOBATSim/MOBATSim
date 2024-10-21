@@ -17,6 +17,7 @@ function prepare_simulator(options)
         options.maxSpeeds           (1,:) double    = []                    % Custom max speeds for vehicles
         options.simpleMap           (1,1) logical   = false                 % Displays the map in a simpler way
         options.collisionReport     (1,1) double    = 0                     % Outputs collision report
+        options.IM_Mode             (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % the mode in which the intersection management algorithm operates
     end
     
     % To keep the command window clear
@@ -59,7 +60,8 @@ function prepare_simulator(options)
                                                         destinationPoints, ...
                                                         maxSpeeds, ...
                                                         options.Analysing, ...
-                                                        options.simpleMap);
+                                                        options.simpleMap, ...
+                                                        options.IM_Mode);
         
         % if there are no differences, preparation is done                                        
         if ~any(differences)
@@ -79,7 +81,7 @@ function prepare_simulator(options)
         startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_file();%load extended map
         
     %% Generate the 2D Map and the instance from the Map class
-    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap,"showNodeNumbers",~options.simpleMap);
+    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,options.IM_Mode,"showLaneNumbers",~options.simpleMap,"showNodeNumbers",~options.simpleMap);
 
     %% Load Vehicles    
     Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map, options.collisionReport);
@@ -128,7 +130,8 @@ function prepare_simulator(options)
                                      destinationPoints, ...
                                      maxSpeeds, ...
                                      options.Analysing, ...
-                                     options.simpleMap);
+                                     options.simpleMap, ...
+                                     options.IM_Mode);
         
 
     %% Assign all needed workspace variables to the "base" workspace

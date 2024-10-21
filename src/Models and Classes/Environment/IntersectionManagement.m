@@ -12,7 +12,7 @@ classdef IntersectionManagement < handle
         brakingNodes
         stoppingNodes
         leavingNodes
-        params
+        AIMparams
              % alpha
              % criticalETA
              % platooningTimeBehind
@@ -22,23 +22,23 @@ classdef IntersectionManagement < handle
         arrivingGroup       % all vehicles arriving at the intersection
         leavingGroup        % all vehicles at the intersection
         % Conventional traffic lights
-        stateStartingTime       = 0   % when the new traffic state has started
-        currentState            = 1   % current traffic light state
-        stateDuration           = 7   % the duration a state stays active
-        waitingBetweenStates    = 7   % the duration between to states
+        TLparams
+            % stateStartingTime       = 0   % when the new traffic state starts
+            % currentState            = 1   % current traffic light state
+            % stateDuration           = 7   % the duration for a state to stay active
+            % waitingBetweenStates    = 7   % the duration between to states
              
     end
     
     methods
-        function obj = IntersectionManagement(id, startingNodes,brakingNodes,stoppingNodes,leavingNodes, configurations)
+        function obj = IntersectionManagement(id, startingNodes,brakingNodes,stoppingNodes,leavingNodes, mode)
             arguments
                 id                                         (1,1) double
                 startingNodes                              (1,4) double
                 brakingNodes                               (1,4) double
                 stoppingNodes                              (1,4) double
                 leavingNodes                               (1,4) double
-                configurations.mode                        (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % the mode in which the intersection management algorithm operates
-                configurations.energyEquation              (1,1) logical   = false  % 0 for time optimized approach, 1 for energy optimized approach          
+                mode                                       (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % the mode in which the intersection management algorithm operates
             end
             
             obj.id = id;          
@@ -46,16 +46,23 @@ classdef IntersectionManagement < handle
             obj.brakingNodes            = brakingNodes;
             obj.stoppingNodes           = stoppingNodes;
             obj.leavingNodes            = leavingNodes;                         
-            obj.mode                    = configurations.mode; % the type of Intersection Management Algorithm
-            obj.params.energyEquation   = configurations.energyEquation;
+            obj.mode                    = mode; % the type of Intersection Management Algorithm
             
-            % edit all the parameters at this point to change the algorithm
-            obj.params.criticalETA = 10; % delta_TTR in our paper
-            obj.params.alpha = 0.072;
-            obj.params.alpha2 = 0.001;
+            %% Parameters for the Intelligent Decision AIM algorithm
+            % edit the parameters below to tune the algorithm
+            obj.AIMparams.energyEquation = false; % (false -> time optimized approach, true -> energy optimized approach)
+            obj.AIMparams.criticalETA = 10; % delta_TTR in our paper
+            obj.AIMparams.alpha = 0.072;
+            obj.AIMparams.alpha2 = 0.001;
             %platooning control isn't working as expected, therefore a
             %constant platooning time behind the car ahead is set:
-            obj.params.platooningTimeBehind = 0.2;
+            obj.AIMparams.platooningTimeBehind = 0.2;
+            
+            %% Parameters for the Traffic Light algorithm
+            obj.TLparams.stateStartingTime = 0; % when the new traffic state starts
+            obj.TLparams.currentState = 1; % current traffic light state
+            obj.TLparams.stateDuration = 7; % the duration for a state to stay active
+            obj.TLparams.waitingBetweenStates = 7; % the duration between to states
             
             % Table that contains all overlaps paths at the intersection
             obj.overlappingTable = obj.generateOverlappingTable();
@@ -302,7 +309,7 @@ classdef IntersectionManagement < handle
                     % add all vehicles to priority group that reach the
                     % Intersection starting point in time critical estimated time
                     % of arrival
-                    priorityGroup = arrivingGroup(arrivingGroup(:,4) <= obj.params.criticalETA,:);
+                    priorityGroup = arrivingGroup(arrivingGroup(:,4) <= obj.AIMparams.criticalETA,:);
                     
                     % if there is no car in the group take the nearest car
                     if isempty(priorityGroup)
@@ -335,12 +342,12 @@ classdef IntersectionManagement < handle
                     for i=size(priorityGroup,1):-1:1
                         priorityGroupMember = priorityGroup(i,:);
                         vehicle = vehicles(priorityGroupMember(1));
-                        if obj.params.energyEquation == 0
+                        if obj.AIMparams.energyEquation == 0
                             % time optimized priority formula
-                            priority = 1 + vehicle.dynamics.speed * obj.params.alpha;
+                            priority = 1 + vehicle.dynamics.speed * obj.AIMparams.alpha;
                         else
                             % energy optimized priority formula
-                            priority = 1 + (vehicle.dynamics.speed)^2 * obj.params.alpha2 * vehicle.physics.mass;
+                            priority = 1 + (vehicle.dynamics.speed)^2 * obj.AIMparams.alpha2 * vehicle.physics.mass;
                         end
                         
                         % Vehicles that are blocked by other vehicles in front
@@ -691,7 +698,7 @@ classdef IntersectionManagement < handle
             % 4.  EW direction with left
             
             % Change to waiting
-            if currentTime > (obj.stateStartingTime + obj.stateDuration)
+            if currentTime > (obj.TLparams.stateStartingTime + obj.TLparams.stateDuration)
                 % stop all cars
                 waitingState = true;
             else
@@ -699,14 +706,14 @@ classdef IntersectionManagement < handle
             end
             
             % Go to next state
-            if currentTime > (obj.stateStartingTime + obj.stateDuration + obj.waitingBetweenStates)
-                obj.currentState = mod(obj.currentState,4)+1; % go to next state
-                obj.stateStartingTime = obj.stateStartingTime + obj.stateDuration + obj.waitingBetweenStates;
+            if currentTime > (obj.TLparams.stateStartingTime + obj.TLparams.stateDuration + obj.TLparams.waitingBetweenStates)
+                obj.TLparams.currentState = mod(obj.TLparams.currentState,4)+1; % go to next state
+                obj.TLparams.stateStartingTime = obj.TLparams.stateStartingTime + obj.TLparams.stateDuration + obj.TLparams.waitingBetweenStates;
             end
             
             % Get orders for every vehicle according to the traffic light
             % state
-            obj.vehicleOrders = obj.getConventionalVehicleOrders(obj.arrivingGroup, obj.currentState, waitingState);
+            obj.vehicleOrders = obj.getConventionalVehicleOrders(obj.arrivingGroup, obj.TLparams.currentState, waitingState);
             
             % Move all vehicles with GO order to leaving group
             [obj.arrivingGroup, obj.leavingGroup] = obj.moveFromArrivingToLeavingGroup(obj.arrivingGroup, obj.leavingGroup, obj.vehicleOrders);
@@ -823,7 +830,7 @@ classdef IntersectionManagement < handle
             if (ETAcarInFront ~= 0) && (ETAcarInFront > timeToReach)
                 % if there is a car in front and it is slower, vehicle will
                 % arrive after the car in front
-                timeToReach = ETAcarInFront + obj.params.platooningTimeBehind; % platooninTimeBehind is time distance the vehicle is driving behind
+                timeToReach = ETAcarInFront + obj.AIMparams.platooningTimeBehind; % platooninTimeBehind is time distance the vehicle is driving behind
             end
         end
         
