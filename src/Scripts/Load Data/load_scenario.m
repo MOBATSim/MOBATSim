@@ -27,9 +27,9 @@ switch scenarioName
     case 'Scenario 4'
         % Previous name: 'Curved Road Overtaking'
         % Vehicle 2 makes lane change on curved road + Vehicle 5 change planned Path
-        startingPoints      = [46 29 84 3  54 64 58 57 4 63];
-        destinationPoints   = [54 24 82 26 3  24 27 25 26 47];
-        maxSpeeds           = [3  18  3 7  14 10 0.1 4 10 10];
+        startingPoints      = [46  29  84   3  54  64   58  57   4  63];
+        destinationPoints   = [54  24  82  26   3  24   27  25  26  47];
+        maxSpeeds           = [3   18   3   7  14  10  0.1   4  10  10];
         
     case 'Scenario 5'
         % Previous name: 'Merge Collision'
