@@ -14,14 +14,14 @@ function randomized_ScenarioTesting(options)
     
     %% Set starting and destination sets
     AllSets = 1:78;
-    OnlyStartingSet = [30 38 6 53 29 28 37 5];
-    OnlyDestinationSet = [16 1 2 59 60];
-    crossroadPointsSet = [56 72 73 65 51 44 70 71 74 75 78 68 62 49 66 77 43 69 50 67 63 42 76];
+    OnlyStartingWaypointsSet = [30 38 6 53 29 28 37 5];
+    OnlyDestinationWaypointsSet = [16 1 2 59 60];
+    IntersectionWaypointsSet = [56 72 73 65 51 44 70 71 74 75 78 68 62 49 66 77 43 69 50 67 63 42 76];
     
-    RemoveFromStarting = intersect(AllSets,[OnlyDestinationSet crossroadPointsSet]);
+    RemoveFromStarting = intersect(AllSets,[OnlyDestinationWaypointsSet IntersectionWaypointsSet]);
     startingSet = setxor(AllSets,RemoveFromStarting);
     
-    RemoveFromDestination = intersect(AllSets,[OnlyStartingSet crossroadPointsSet]);
+    RemoveFromDestination = intersect(AllSets,[OnlyStartingWaypointsSet IntersectionWaypointsSet]);
     destinationSet = setxor(AllSets,RemoveFromDestination);
     
     %% Start the timer to measure the wall-clock time for the entire simulations

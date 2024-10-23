@@ -1,5 +1,5 @@
 classdef I2V < matlab.System & matlab.system.mixin.CustomIcon
-    % This block sends the signals of the AIM (Autonomous Intersection Manager) signals to the vehicles approaching or passing crossroads.
+    % This block sends the signals of the AIM (Autonomous Intersection Manager) signals to the vehicles approaching or passing intersections.
     %
 
     % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
