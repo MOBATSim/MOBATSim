@@ -46,9 +46,10 @@ function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, 
     AEBdistance = 15.* ones(1,nrVehicles);
     
     %% Dynamics
-    % add default max speed 10 for every vehicle where no max speed is given
-    maxSpeeds(end+1:nrVehicles) = 10;
+    % Default max speed of 40 m/s for vehicles
+    maxSpeeds(maxSpeeds>40) = 40;
     
+    % Min deceleration value for emergency brakes
     minDeceleration = -9.15.* ones(1,nrVehicles); % -9.15 m/s^2 dec
 
    
