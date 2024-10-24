@@ -55,10 +55,10 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                         waypointReached =1;                                 %Output 2: Waypoint Reached enabler
                         
                         if ~isequal(previousPath,obj.vehicle.pathInfo.path) % If the vehicle has changed it's planned path
-                            currentRoute = obj.vehicle.generateCurrentRoute(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
-                            obj.vehicle.setCurrentRoute(currentRoute); % Set the new current Route
-                            currentTrajectory = obj.vehicle.generateTrajectoryFromPath(obj.vehicle.pathInfo.path);
-                            obj.vehicle.setCurrentTrajectory(currentTrajectory); % Generate the new current trajectory
+                            currentRouteID = obj.vehicle.getCurrentRouteID(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
+                            obj.vehicle.setCurrentRouteID(currentRouteID); % Set the new current Route
+                            currentRoute = obj.vehicle.getRouteFromPath(obj.vehicle.pathInfo.path);
+                            obj.vehicle.setCurrentRoute(currentRoute); % Set the new route as current route
                             obj.vehicle.pathInfo.pathChangedCounter = obj.vehicle.pathInfo.pathChangedCounter + 1;
                         end
                         

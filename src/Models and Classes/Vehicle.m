@@ -5,10 +5,10 @@ classdef Vehicle < handle
     % Contributors: Mustafa Saraoglu, Fabian Hart, Qihang Shi, Johannes Pintscher, Laura Slabon
     
     % VEHICLE Methods:
-    %    Vehicle - Constructer Method   - Generates the vehicle with the initial values as inputs
+    %    Vehicle - Constructor Method   - Generates the vehicle with the initial values as inputs
     %    checkWaypointReached           - Checks if the vehicle has reached its next waypoint
-    %    generateTrajectoryFromPath     - Generates a trajectory from the path information
-    %    generateCurrentRoute           - Finds the current route from the path and the last waypoint information
+    %    getRouteFromPath               - Derives the route information from the path
+    %    getCurrentRouteID              - Finds the current route ID from the path and the last waypoint information
     %    checkCollisionBetweenVehicles  - Checks if a collision has happened with another vehicle
     %    getHitbox                      - Gets the hitbox of vehicles to check for collision
     %    vehiclesCollide                - Stops the vehicles if a collision has happened
@@ -18,12 +18,12 @@ classdef Vehicle < handle
     % SET Methods:
     %    setStopAtNextWaypoint          - Makes the vehicle stop at the next waypoint
     %    setStopStatus                  - Stops the vehicle
-    %    setCurrentRoute                - Sets the current route
+    %    setCurrentRouteID              - Sets the current route ID
     %    setPath                        - Sets the current path
     %    setVehicleSensorDetection      - Registers the front and rear vehicle detections
     %    setDrivingMode                 - Sets the vehicle's driving mode
     %    setCollided                    - Changes the vehicle's collided status
-    %    setCurrentTrajectory           - Sets the current trajectory
+    %    setCurrentRoute                - Sets the current route for the vehicle according to the format the route data
     %    updateActualSpeed              - Sets the vehicle dynamics speed value
     %    updateVehicleFrenetPosition    - Updates vehicle's <s,d> values according to its own Frenet Frame
     %    setLastWaypoint                - Sets the last waypoint
@@ -31,7 +31,7 @@ classdef Vehicle < handle
     %    setDestinationReached          - Sets the value for when the destination is reached
     %    setYawAngle                    - Sets the yaw angle value
     %    setPosition                    - Sets the position value
-    %    setInitialRouteAndTrajectory   - Sets the initial route and trajectory for a vehicle to start
+    %    setInitialRoute                - Sets the initial route for a vehicle to start
     
     properties
         id              %    id - Unique id of a vehicle
@@ -64,8 +64,8 @@ classdef Vehicle < handle
         %         brakingFlag                   vehicle stops at next waypoint
         %         atIntersection                at which Intersection and in which state
         pathInfo
-        %         currentTrajectory
         %         currentRoute
+        %         currentRouteID
         %         destinationReached
         %         stopAt
         %         startingPoint
@@ -121,8 +121,8 @@ classdef Vehicle < handle
             obj.status.brakingFlag = 0;
             obj.status.atIntersection = [0 "x"];
             
-            obj.pathInfo.currentTrajectory = [];
-            obj.pathInfo.currentRoute =0;
+            obj.pathInfo.currentRoute = [];
+            obj.pathInfo.currentRouteID =0;
             obj.pathInfo.destinationReached = false;
             obj.pathInfo.stopAt = 0;
             obj.pathInfo.startingPoint = startingPoint;
@@ -159,13 +159,13 @@ classdef Vehicle < handle
                 car.setLastWaypoint(lastWaypoint); % Vehicle Set
                 
                 if ~(car.checkifDestinationReached()) % Check if destination reached
-                    % If not -> find the next route and calculate the trajectory
+                    % If not -> find the next route ID and set the current route for the vehicle
                     car.pathInfo.s = 0;%reset s at the end of road
-                    nextRoute = car.generateCurrentRoute(car.pathInfo.path,lastWaypoint);
-                    car.setCurrentRoute(nextRoute);
+                    nextRouteID = car.getCurrentRouteID(car.pathInfo.path,lastWaypoint);
+                    car.setCurrentRouteID(nextRouteID);
                     car.pathInfo.path(1) = [];
-                    currentTrajectory = car.generateTrajectoryFromPath(car.pathInfo.path);
-                    car.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
+                    currentRoute = car.getRouteFromPath(car.pathInfo.path);
+                    car.setCurrentRoute(currentRoute); % Vehicle - Set Functions
                     car.pathInfo.calculateNewPathFlag = 1; % Path Planner should calculate a new path to account for road changes
                 end
                 bool = true;
@@ -174,40 +174,40 @@ classdef Vehicle < handle
             end
         end
         
-        function currentTrajectory = generateTrajectoryFromPath(car,path)
-            % Format of route for vehicle dynamics (translation)
+        function currentRoute = getRouteFromPath(car,path)
+            % Straight route segment
             if (isempty(find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)), 1 )) == false)
                 index = find((car.map.connections.translation(:,1) == path(1) )&(car.map.connections.translation(:,2)== path(2)) );
-                currentTrajectory = [car.map.waypoints(car.map.connections.translation(index,1),:);
+                currentRoute = [car.map.waypoints(car.map.connections.translation(index,1),:);
                     car.map.waypoints(car.map.connections.translation(index,2),:);
                     zeros(1,3);
                     zeros(1,3)];
             end
-            % Format of route for vehicle dynamics (curves)
+            % Curved route segment
             if (isempty(find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)), 1 )) == false)
                 index = find((car.map.connections.circle(:,1) == path(1) )&(car.map.connections.circle(:,2)== path(2)) );
-                currentTrajectory = [car.map.waypoints(car.map.connections.circle(index,1),:);
+                currentRoute = [car.map.waypoints(car.map.connections.circle(index,1),:);
                     car.map.waypoints(car.map.connections.circle(index,2),:);
                     abs(car.map.connections.circle(index,3)),car.map.connections.circle(index,4),car.map.connections.circle(index,6);
                     -sign(car.map.connections.circle(index,3))*ones(1,3)];
             end
         end
         
-        function currentRoute = generateCurrentRoute(car, path, lastWaypoint)
+        function currentRouteID = getCurrentRouteID(car, path, lastWaypoint)
             
             idx = find(path==lastWaypoint);
             if idx+1<=length(path) % Next Route
-                currentRoute = car.map.getRouteIDfromPath([path(idx) path(idx+1)]);
-            else % Destination Reached // CurrentRoute stays the same
-                currentRoute = car.pathInfo.currentRoute;
+                currentRouteID = car.map.getRouteIDfromPath([path(idx) path(idx+1)]);
+            else % Destination Reached // CurrentRouteID stays the same
+                currentRouteID = car.pathInfo.currentRouteID;
             end
         end
         
         function reached = checkifDestinationReached(car)
             reached = false;
-            if ~car.pathInfo.destinationReached % The vehicle hasn't reached before so it is equal to zero
+            if ~car.pathInfo.destinationReached % If the vehicle hasn't already reached
                 if car.pathInfo.lastWaypoint == car.pathInfo.destinationPoint
-                    % Vehicle has reached its destination
+                    % Vehicle has reached its destination now
                     reached = car.setDestinationReached(true);
                     % Stop the vehicle
                     car.setStopStatus(true);
@@ -240,7 +240,7 @@ classdef Vehicle < handle
                         disp("Driving Mode:")
                         disp(vehicle.status.drivingMode);
                         disp("Current Route")
-                        disp(vehicle.pathInfo.currentRoute)
+                        disp(vehicle.pathInfo.currentRouteID)
                         disp("Last waypoint")
                         disp(vehicle.pathInfo.lastWaypoint)
                         if ~(vehicle.status.atIntersection(2) == "x")
@@ -279,7 +279,7 @@ classdef Vehicle < handle
                         disp("Driving Mode:")
                         disp(car.status.drivingMode);
                         disp("Current Route")
-                        disp(car.pathInfo.currentRoute)
+                        disp(car.pathInfo.currentRouteID)
                         disp("Last waypoint")
                         disp(car.pathInfo.lastWaypoint)
                         
@@ -394,8 +394,8 @@ classdef Vehicle < handle
             end
         end
         
-        function setCurrentRoute(car, RouteID)
-            car.pathInfo.currentRoute = RouteID;
+        function setCurrentRouteID(car, RouteID)
+            car.pathInfo.currentRouteID = RouteID;
         end
         
         function setPath(car, newPath)
@@ -440,18 +440,18 @@ classdef Vehicle < handle
             car.status.collided = collided;
         end
         
-        function setCurrentTrajectory(car, currentTrajectory)
-            car.pathInfo.currentTrajectory = currentTrajectory;
+        function setCurrentRoute(car, currentRoute)
+            car.pathInfo.currentRoute = currentRoute;
             
             % Calculate the current route length
-            if currentTrajectory(3,1) % if curved
-                startingPoint = currentTrajectory(1,[1 3]).*[1 -1]; % Get the starting point
-                rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
+            if currentRoute(3,1) % if curved
+                startingPoint = currentRoute(1,[1 3]).*[1 -1]; % Get the starting point
+                rotationCenter = currentRoute(3,[2 3]).*[1 -1]; % Get the rotation center
                 R = norm(startingPoint-rotationCenter); % Get the radius of the rotation
                 
-                car.pathInfo.routeLength = currentTrajectory(3,1)*R; % Arc length := theta*Radius
+                car.pathInfo.routeLength = currentRoute(3,1)*R; % Arc length := theta*Radius
             else % if straight
-                car.pathInfo.routeLength = norm(currentTrajectory(2,:)-currentTrajectory(1,:)); % Straight road length
+                car.pathInfo.routeLength = norm(currentRoute(2,:)-currentRoute(1,:)); % Straight road length
             end
         end
         
@@ -492,13 +492,13 @@ classdef Vehicle < handle
             car.dynamics.position = newPosition;
         end
         
-        function setInitialRouteAndTrajectory(car)
-            % The Vehicle determines the initial trajectory and route
-            nextRoute = car.generateCurrentRoute(car.pathInfo.path,car.pathInfo.lastWaypoint);
-            currentTrajectory = car.generateTrajectoryFromPath(car.pathInfo.path);
+        function setInitialRoute(car)
+            % The Vehicle determines the initial route
+            nextRoute = car.getCurrentRouteID(car.pathInfo.path,car.pathInfo.lastWaypoint);
+            currentRoute = car.getRouteFromPath(car.pathInfo.path);
             
-            car.setCurrentRoute(nextRoute);              % Vehicle - Set Functions
-            car.setCurrentTrajectory(currentTrajectory); % Vehicle - Set Functions
+            car.setCurrentRouteID(nextRoute);              % Vehicle - Set Functions
+            car.setCurrentRoute(currentRoute); % Vehicle - Set Functions
             car.setRouteCompleted(false);                % Vehicle - Set Functions
         end
         

@@ -14,6 +14,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
         
         laneWidth = 3.7; % Standard road width
         ref_d = 0; % The reference lateral coordinate "d" for tracking the right or the left lane
+        Ts = 0.02; % Block sample time for calculating the trajectories
         
         laneChangeTime = 4; % Default lane-changing maneuver time duration
         laneChangingPoints =[]; % Arrays of waypoints to follow for lane changing
@@ -28,7 +29,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
     end
     
     methods(Static)
-        function [refPosition, refOrientation] = Frenet2Cartesian(s, d, currentTrajectory)
+        function [refPosition, refOrientation] = Frenet2Cartesian(s, d, currentRoute)
             %this function transfer a position in Frenet coordinate into Cartesian coordinate
             %input:
             %route is a 2x2 array [x_s y_s;x_e y_e]contains the startpoint and the endpoint of the road
@@ -39,9 +40,9 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             %orientation_Cart is the angle of the tangent vector on the reference roadline and the x axis of cartesian
             %detail information check Frenet.mlx
             
-            route = currentTrajectory([1, 2], [1, 3]).*[1, -1; 1, -1];
+            route = currentRoute([1, 2], [1, 3]).*[1, -1; 1, -1];
 
-            if currentTrajectory(3, 1) == 0 % Check if the road segment is straight
+            if currentRoute(3, 1) == 0 % Check if the road segment is straight
                 route_Vector = route(2, :) - route(1, :);
                 route_UnitVector = route_Vector/norm(route_Vector);
                 normalVector = [-route_UnitVector(2), route_UnitVector(1)];% Fast rotation by 90 degrees to find the normal vector  
@@ -50,8 +51,8 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
                 refOrientation = atan2(route_UnitVector(2), route_UnitVector(1))*ones(length(s), 1); % reverse tangent of unit vector
                 
             else  % If it is not straight, then it is curved
-                rotationCenter = currentTrajectory(3, [2, 3]).*[1, -1]; % Get the rotation center
-                cclockwise = currentTrajectory(4, 1); % Get if the turning is clockwise or counterclockwise
+                rotationCenter = currentRoute(3, [2, 3]).*[1, -1]; % Get the rotation center
+                cclockwise = currentRoute(4, 1); % Get if the turning is clockwise or counterclockwise
 
                 startPointVector = route(1,:) - rotationCenter;% Vector pointing from the rotation point to the start point
                 r = norm(startPointVector); % Get the radius of the rotation
@@ -65,7 +66,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             end
         end
         
-        function [s,d] = Cartesian2Frenet(currentTrajectory,Vpos_C)
+        function [s,d] = Cartesian2Frenet(currentRoute,Vpos_C)
             %Transform a position in Cartesian coordinate into Frenet coordinate
             
             %Function Inputs:
@@ -78,9 +79,9 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             %s:                     Traversed length along the reference roadline
             %d:                     Lateral offset - positive d means to the left of the reference road 
             
-            route = currentTrajectory([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route            
+            route = currentRoute([1,2],[1,3]).*[1 -1;1 -1];%Start- and endpoint of the current route            
             
-            if currentTrajectory(3,1) == 0  % Straight road := radian value equals to zero
+            if currentRoute(3,1) == 0  % Straight road := radian value equals to zero
                 route_Vector = route(2,:)-route(1,:);
                 route_UnitVector = route_Vector/norm(route_Vector);
                 posVector = Vpos_C-route(1,:); % Vector pointing from the route start point to the vehicle
@@ -98,15 +99,15 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
                 
             else % Curved Road
                 
-                rotationCenter = currentTrajectory(3,[2 3]).*[1 -1]; % Get the rotation center
+                rotationCenter = currentRoute(3,[2 3]).*[1 -1]; % Get the rotation center
                 startPointVector = route(1,:)-rotationCenter;% Vector pointing to the start of the route from the rotation center
                 r = norm(startPointVector); % Get the radius of the rotation
                 
                 posVector = Vpos_C-rotationCenter;% the vector from rotation center pointing the vehicle
                 l = norm(posVector);
                 
-                % currentTrajectory(4,1) == +1 for CounterClockwise direction 
-                d=(l-r)*currentTrajectory(4,1); % lateral displacement of the vehicle from the d=0 reference road (arc)
+                % currentRoute(4,1) == +1 for CounterClockwise direction 
+                d=(l-r)*currentRoute(4,1); % lateral displacement of the vehicle from the d=0 reference road (arc)
                               
                 angle = real(acos(dot(posVector,startPointVector)/(l*r))); % Angle between vectors
                 % One possible issue is that arccos doesn't distinguish the vector being ahead or behind, therefore when the 
@@ -159,6 +160,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
+            obj.Ts = obj.getSampleTime.SampleTime; % Block sample time for calculating the trajectories;
         end
                          
         function registerVehiclePoseAndSpeed(~,car,pose,speed)
@@ -167,7 +169,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             car.updateActualSpeed(speed);                       % Sets the vehicle speed
         end
         
-        function newWPs_Cartesian = generateMinJerkTrajectory(obj,car,t_f,changeLane,s_current,currentTrajectory)
+        function newWPs_Cartesian = generateMinJerkTrajectory(obj,car,t_f,changeLane,s_current,currentRoute)
             % Minimum Jerk Trajectory Generation            
             if changeLane ==1 % To the left
                 y_f = obj.laneWidth; % Target lateral - d coordinate
@@ -200,7 +202,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             % Solve for the coefficients using 6 linear equations with 6 boundary conditions at t = ti and t = tf
             a = linsolve(A,B);
                         
-            tP = 0:0.02:t_f; % To calculate the lane changing path points for the trajectory with 0.2 s intervals
+            tP = 0:obj.Ts:t_f; % To calculate the lane changing path points for the trajectory with "Ts" (sample time of the block) intervals
 
             d_trajectory = a(1)+a(2)*tP+a(3)*tP.^2+a(4)*tP.^3+a(5)*tP.^4+a(6)*tP.^5; % "d" coordinates corresponding to the trajectory
             obj.ref_d = a(1)+a(2)*t_f+a(3)*t_f^2+a(4)*t_f^3+a(5)*t_f^4+a(6)*t_f^5; % reference "d" value by the end of the lane changing maneuver
@@ -219,10 +221,10 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
             s = s_current;
             for k = 1:length(tP) % Numerical integration: Sum up speed in s direction * deltaT 
                 s_trajectory(k) = s;
-                s = s + s_dot_trajectory(k)*0.02;
+                s = s + s_dot_trajectory(k)*obj.Ts;
             end
             
-            [laneChangingPositionsCartesian, roadOrientation] = obj.Frenet2Cartesian(s_trajectory', d_trajectory', currentTrajectory);
+            [laneChangingPositionsCartesian, roadOrientation] = obj.Frenet2Cartesian(s_trajectory', d_trajectory', currentRoute);
             orientation_trajectory = atan2(d_dot_trajectory', s_dot_trajectory') + roadOrientation;
             
             isFeasible = obj.checkFeasibilityTrajectory(laneChangingPositionsCartesian(:, 1), ...

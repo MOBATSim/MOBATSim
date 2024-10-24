@@ -6,18 +6,19 @@ function prepare_simulator(options)
     % Contributors: Johannes Pintscher, Mustafa Saraoglu, Qianwei Yang, Erik Noack
     
     arguments
-        options.Analysing           (1,1) logical   = false         % Activate the analysing functions
-        options.modelName           (1,1) string    = 'MOBATSim'    % Name of the simulink model
-        options.mapName             (1,1) string    = 'Mobatkent'   % Name of the map
-        options.simStopTime         (1,1) double    = 120           % Simulation stop time in seconds
-        options.simTs               (1,1) double    = 0.02          % Simulation time step: sample time of the simulation (may not be stable if changed)
-        options.scenarioName        (1,1) string    = 'Scenario 1'  % Scenario sets start points, destination points and maxSpeeds
-        options.startingPoints      (1,:) double    = []            % Custom starting points for vehicles
-        options.destinationPoints   (1,:) double    = []            % Custom destination points for vehicles
-        options.maxSpeeds           (1,:) double    = []            % Custom max speeds for vehicles
-        options.simpleMap           (1,1) logical   = false         % Displays the map in a simpler way
-        options.collisionReport     (1,1) double    = 0             % Outputs collision report
-        options.IM_Mode             (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % the mode in which the intersection management algorithm operates
+        options.modelName         (1,1) string    = 'MOBATSim'      % Name of the simulink model
+        options.mapName           (1,1) string    = 'Mobatkent'     % Name of the map
+        options.scenarioName      (1,1) string    = 'Scenario 1'    % Scenario sets start points, destination points and maxSpeeds
+        options.simStopTime       (1,1) double    = 120             % Simulation stop time in seconds
+        options.simTs             (1,1) double    = 0.02            % Simulation time step: sample time of the simulation (may not be stable if changed)
+        options.IM_Mode           (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % the mode in which the intersection management algorithm operates
+        options.simpleMap         (1,1) logical   = false           % Displays the map without waypoint or route numbers
+        options.startingPoints    (1,:) double    = []              % Custom starting points for vehicles
+        options.destinationPoints (1,:) double    = []              % Custom destination points for vehicles
+        options.maxSpeeds         (1,:) double    = []              % Custom max speeds for vehicles
+        options.collisionReport   (1,1) double    = 0               % Outputs collision report
+        options.analysisWindow    (1,1) logical   = false           % Activates the vehicle analysis window
+
     end
     
     % To keep the command window clear
@@ -59,7 +60,7 @@ function prepare_simulator(options)
                                                         startingPoints, ...
                                                         destinationPoints, ...
                                                         maxSpeeds, ...
-                                                        options.Analysing, ...
+                                                        options.analysisWindow, ...
                                                         options.simpleMap, ...
                                                         options.IM_Mode);
         
@@ -112,7 +113,7 @@ function prepare_simulator(options)
     close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow'));
     
     % Generate Analysing Classes
-    if options.Analysing
+    if options.analysisWindow
         vehiclePredictor = VehiclePredictor(Vehicles, 2); % part for all calculations and stuff shown on vehicle analysing window
         vehicleAnalysingWindow_Gui = VehicleAnalysingWindow_Gui(vehiclePredictor);
         assignin('base','vehiclePredictor',vehiclePredictor);
@@ -129,7 +130,7 @@ function prepare_simulator(options)
                                      startingPoints, ...
                                      destinationPoints, ...
                                      maxSpeeds, ...
-                                     options.Analysing, ...
+                                     options.analysisWindow, ...
                                      options.simpleMap, ...
                                      options.IM_Mode);
         
