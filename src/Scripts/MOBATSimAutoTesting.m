@@ -67,7 +67,6 @@ function MOBATSimAutoTesting(options)
         try
             % prepare and run simulation
             prepare_simulator("scenarioName",options.scenarioNames(i),"collisionReport",options.collisionReport,"IM_Mode", options.IM_Mode,"simStopTime",options.simStopTime);
-            mpcverbosity off; % Make sure that the MPC doesn't fill the command window
             run_Sim();
             passed(j) = "PASSED";
         catch ME

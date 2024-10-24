@@ -46,27 +46,28 @@ function randomized_ScenarioTesting(options)
         try
             
             disp("Simulation number:"+ num2str(i));
-            % prepare and run simulation
+            
+            %% Prepare and run simulation
             prepare_simulator("startingPoints",startingSet(StartingIdx)',"destinationPoints",destinationSet(DestinationIdx)',"maxSpeeds",maxSpeedSet,"collisionReport",options.collisionReport,"simStopTime",options.simStopTime);
-            mpcverbosity off; % Make sure that the MPC doesn't fill the command window
             run_Sim();
+            
+            %% Simulation runs without errors        
+            disp(["Starting Points:" num2str(startingSet(StartingIdx))]);
+            disp(["Destination Points:" num2str(destinationSet(DestinationIdx))]);
+            disp(["Max Speeds:" num2str(maxSpeedSet')]);
+            disp(["Simulation Time:" num2str(options.simStopTime)])
             
             disp("Successful simulation:"+ num2str(i));
             
+        catch ME
+            %% Simulation encounters errors
             disp(["Starting Points:" num2str(startingSet(StartingIdx))]);
             disp(["Destination Points:" num2str(destinationSet(DestinationIdx))]);
             disp(["Max Speeds:" num2str(maxSpeedSet')]);
             disp(["Simulation Time:" num2str(options.simStopTime)])
             
-        catch ME
-           
             disp(ME);
-            disp("Discard simulation:"+ num2str(i));
-            disp(["Starting Points:" num2str(startingSet(StartingIdx))]);
-            disp(["Destination Points:" num2str(destinationSet(DestinationIdx))]);
-            disp(["Max Speeds:" num2str(maxSpeedSet')]);
-            disp(["Simulation Time:" num2str(options.simStopTime)])
-
+            disp("Failed simulation:"+ num2str(i));
         end
 
     end

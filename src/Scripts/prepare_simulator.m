@@ -23,7 +23,7 @@ function prepare_simulator(options)
     % To keep the command window clear
     hold off
     warning off
-    mpcverbosity off;
+
     %% Load Scenario
     [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName);
     
