@@ -31,7 +31,6 @@ function [mapName, waypoints, connections_circle, connections_translation, ...
     [250  0 250]
     [320  0 250]
     [370  0 200]
-    %[370  0 170]
     [370  0 130]
     [330 0 90]
     [170 0 90]
@@ -68,7 +67,7 @@ function [mapName, waypoints, connections_circle, connections_translation, ...
     [90  0 -450]
     [-120  0 -380]
     [305  0 -24]
-    %new waypoints for crossing
+    % New waypoints for Intersection
     [20 0 -120]
     [-240 0 -120]
     [-340 0 -120]
@@ -87,7 +86,7 @@ function [mapName, waypoints, connections_circle, connections_translation, ...
     [220  0 -100]
     [370  0 -140]
     [370  0 -240]
-    [-140  0 -100] %trying now
+    [-140  0 -100]
 
 
 
@@ -154,7 +153,6 @@ function [mapName, waypoints, connections_circle, connections_translation, ...
     [21 20 100]
     [23 22 100]
     [25 24 100]
-    %[26 25 100]
     [27 26 100]
     [3 27 100]
     [28 23 100]
@@ -172,7 +170,6 @@ function [mapName, waypoints, connections_circle, connections_translation, ...
     [47 46 100]
     [50 79 100]
     [79 44 100]
-    %[50 44 100] %trying now
     [51 78 100]
     [78 77 100]
     [77 42 100]
@@ -199,10 +196,10 @@ function [mapName, waypoints, connections_circle, connections_translation, ...
 
     ];
 
-    % crossroads waypoint defintions
+    % Intersection Waypoint Defintions
     %             N W S E
-    % crossroad 1 x x x x
-    % crossroad 2 x x x x
+    % Intersection 1 x x x x (4x4 Intersection in the west of the map)
+    % Intersection 2 x x x x (T-Junction in the east part of the map)
 
     startingNodes = [56    72    73    65;
         51     0     0    44];

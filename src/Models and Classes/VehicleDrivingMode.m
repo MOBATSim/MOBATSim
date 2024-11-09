@@ -90,14 +90,14 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             end           
             
             if(obj.vehicle.pathInfo.stopAt ~= 0)
-                %Output 5: Distance to stop before a crossroad
+                %Output 5: Distance to stop before an intersection
                 Dist2Stop = norm(obj.vehicle.dynamics.position - obj.vehicle.map.get_coordinates_from_waypoint(obj.vehicle.pathInfo.stopAt));
                 if DrivingMode ~= 3
-                    % choose approach the crossroad when not stopping
+                    % Choose to approach the intersection when not stopping
                     DrivingMode = 4;
                 end
             else
-                %Output 5: Distance to stop before a crossroad
+                %Output 5: Distance to stop before an intersection
                 Dist2Stop = 0;
             end
             obj.vehicle.setDrivingMode(DrivingMode);           

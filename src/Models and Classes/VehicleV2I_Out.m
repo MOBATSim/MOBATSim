@@ -1,25 +1,26 @@
 classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
-    % Sends requests to the Infrastructure for crossroads and right of way.
+    % Sends requests to the AIM (implemented inside Infrastructure) to receive go/stop commands for crossing intersections.
     %
     
     % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
-
+    
     % Public, tunable properties
     properties
         Vehicle_id
     end
-        
+    
     % Pre-computed constants
     properties(Access = private)
         vehicle
         futureData
-        inCrossroad % [crossroadId crossroadZone]
-        % crossroadZone:
-        % 1 -> arrivingZone
-        % 2 -> brakingZone
-        % 3 -> intersectionZone
-        % 4 -> leavingZone
+        atIntersection % [IntersectionID IntersectionNode]
+        % Intersection Zone:
+        % x -> Not in Intersection
+        % d -> Decision Node
+        % i -> Incoming Node
+        % p -> Passing (In Conflict Zone)
+        % o -> Outgoing Node
     end
     
     methods
@@ -34,10 +35,10 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
         %% Common functions
         function setupImpl(obj)
             % Perform one-time calculations, such as computing constants
-            obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");           
-            obj.inCrossroad = [0 0];
+            obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
+            obj.atIntersection = [0 "x"];
         end
-          
+        
         
         function V2Idata = stepImpl(obj,waypointReached)
             %This block shouldn't run if the vehicle has reached its
@@ -45,55 +46,60 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             if obj.vehicle.pathInfo.destinationReached
                 V2Idata = [0 0];
             else
-                % When waypoints are reached, check for crossroad actions
+                % When waypoints are reached, check if arriving at an intersection 
+                % (so that communication with AIM can be established)
                 %Output the V2I data
                 if waypointReached
-                    V2Idata = obj.checkCrossroadActions(obj.vehicle,obj.vehicle.pathInfo.lastWaypoint);
+                    V2Idata = obj.determineIntersectionZone(obj.vehicle,obj.vehicle.pathInfo.lastWaypoint);
                 else
                     V2Idata = [0 0];
                 end
                 
             end
-        end      
+        end
         
-        function V2Idata = checkCrossroadActions(obj,car,current_point)
-            % check for crossroad actions
+        function V2Idata = determineIntersectionZone(obj,car,current_point)
+            % Vehicle signals the AIM the intersection zone it is in
             map = car.map;
             
-            if nnz(cat(1,map.crossroadUnits.startingNodes)==current_point)
-                crossroadId = find(any(cat(1,map.crossroadUnits.startingNodes)==current_point,2));
-                car.status.inCrossroad = [crossroadId 1];
-                                
-                if obj.vehicle.V2IdataLink==1
-                    V2Idata = [crossroadId 1];
-                end
-                
-            elseif nnz(cat(1,map.crossroadUnits.brakingNodes)==current_point) % car reaches Braking Point 
-                crossroadId = find(any(cat(1,map.crossroadUnits.brakingNodes)==current_point,2));
-                car.status.inCrossroad = [crossroadId 2];
+            %% The vehicle is recently arriving -> Intersection Starting Nodes
+            if nnz(cat(1,map.AIM_Units.startingNodes)==current_point)
+                intersectionID = find(any(cat(1,map.AIM_Units.startingNodes)==current_point,2));
+                car.status.atIntersection = [intersectionID "d"];
                 
                 if obj.vehicle.V2IdataLink==1
-                    V2Idata = [crossroadId 2];
+                    V2Idata = [intersectionID 1];
                 end
                 
-            elseif nnz(cat(1,map.crossroadUnits.stoppingNodes)==current_point) % car reaches Stopping Point
-                crossroadId = find(any(cat(1,map.crossroadUnits.stoppingNodes)==current_point,2));
-                car.status.inCrossroad = [crossroadId 3];
-                V2Idata = [crossroadId 3];
+                %% The vehicle has reached the braking point -> Intersection Braking Nodes
+            elseif nnz(cat(1,map.AIM_Units.brakingNodes)==current_point) % car reaches Braking Point
+                intersectionID = find(any(cat(1,map.AIM_Units.brakingNodes)==current_point,2));
+                car.status.atIntersection = [intersectionID "i"];
                 
-            elseif nnz(cat(1,map.crossroadUnits.leavingNodes)==current_point)>0 % car leaves crossroad
-                crossroadId = find(any(cat(1,map.crossroadUnits.leavingNodes)==current_point,2));
                 if obj.vehicle.V2IdataLink==1
-                    V2Idata = [crossroadId 4];   
+                    V2Idata = [intersectionID 2];
                 end
-                car.status.inCrossroad = [0 0];
+                
+                %% The vehicle has reached the stopping point before the Conflict Zone -> Intersection Stopping Nodes
+            elseif nnz(cat(1,map.AIM_Units.stoppingNodes)==current_point) % car reaches the Stopping Point
+                intersectionID = find(any(cat(1,map.AIM_Units.stoppingNodes)==current_point,2));
+                car.status.atIntersection = [intersectionID "p"];
+                V2Idata = [intersectionID 3];
+                
+                %% The vehicle leaves the Conflict Zone thus the Intersection -> Intersection Leaving Nodes
+            elseif nnz(cat(1,map.AIM_Units.leavingNodes)==current_point)>0 % car leaves leaves the intersection
+                intersectionID = find(any(cat(1,map.AIM_Units.leavingNodes)==current_point,2));
+                if obj.vehicle.V2IdataLink==1
+                    V2Idata = [intersectionID 4];
+                end
+                car.status.atIntersection = [0 "x"];
             else
                 V2Idata = [0 0];
             end
         end
         
         
-        %% Standard Simulink Output functions      
+        %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj
             
@@ -103,7 +109,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             % Set private and protected properties
             %s.myproperty = obj.myproperty;
         end
-
+        
         function icon = getIconImpl(~)
             % Define icon for System block
             icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_6- V2l.png");
@@ -119,7 +125,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             loadObjectImpl@matlab.System(obj,s,wasLocked);
         end
         
-
+        
     end
     
     methods(Static, Access = protected)
@@ -138,7 +144,7 @@ classdef VehicleV2I_Out < matlab.System & handle & matlab.system.mixin.Propagate
             % Initialize / reset discrete-state properties
         end
         
-                function ds = getDiscreteStateImpl(~)
+        function ds = getDiscreteStateImpl(~)
             % Return structure of properties with DiscreteState attribute
             ds = struct([]);
         end

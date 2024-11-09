@@ -6,7 +6,7 @@ function [Route_LaneNumber, waypoints, connections_translation, connections_circ
     load('map_v1.mat','data');  % Map data (.mat format) taken as the OUTPUT of the "drivingScenarioDesigner App"
 
     % Original map waypoints to put the converted waypoints from the .mat file into the right order of sequence in MOBATSim
-    load('waypoints_origin.mat','waypoints_origin');  % (Important to keep the crossroad waypoints correct)
+    load('waypoints_origin.mat','waypoints_origin');  % (Important to keep the intersection waypoints correct)
 
     %% Initialization
     waypoints_new = [];% waypoints of the extended map before the right sequence is ordered
@@ -31,7 +31,7 @@ function [Route_LaneNumber, waypoints, connections_translation, connections_circ
     % Take the first column (APP), multiply by -1, make it the third column (MOBATSim)
     waypoints_new(:,1) = -uniqueWaypoints(:,2);
     waypoints_new(:,3) = -uniqueWaypoints(:,1);
-    % Put the new waypoints into order to have the right sequence as previous MOBATKent Map -> (Important to keep the crossroad waypoints correct)
+    % Put the new waypoints into order to have the right sequence as previous MOBATKent Map -> (Important to keep the intersection waypoints correct)
     waypoints =  Order_sequence(waypoints_origin,waypoints_new);
 
     %% Conversion back to DrivingScenarioDesigner APP

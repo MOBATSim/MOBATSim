@@ -1,5 +1,5 @@
 classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagates & matlab.system.mixin.CustomIcon
-    % This block initializes the vehicles on the map, draws and updates their positions on the 2D plot. When a collision happens, the MAP instance detects it and stops the colliding vehicles. Apart from that, it contains an AIM (Autonomous Intersection Manager) to avoid conflictions on intersections. The decisions are sent to the vehicles as stop, wait, and go.
+    % This block initializes the vehicles on the map, draws and updates their positions on the 2D plot. When a collision happens, the MAP instance detects it and stops the colliding vehicles. Apart from that, it contains an AIM (Autonomous Intersection Manager) to avoid conflictions on intersections. The decisions are sent to the vehicles as GO/STOP.
     %
     
     % Contributors: Mustafa Saraoglu, Fabian Hart, Johannes Pintscher, Qianwei Yang
@@ -13,71 +13,87 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
     properties(Access = private)
         map = evalin('base','Map');
         Vehicles = evalin('base','Vehicles'); % prepare for logging test data
-    end
-    
-    
-    % Pre-computed constants
-    properties(Access = private)
         vehicleAnalysingWindow = evalin('base','vehicleAnalysingWindow_Gui');
+        collisionCheckingDistanceThreshold
     end
+    
     
     methods(Access = protected)
-        
-        function icon = getIconImpl(~)
-            % Define icon for System block
-            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_5- Intersection.png");
-        end      
+
+        function setupImpl(obj)
+            % Perform one-time calculations, such as computing constants
+            allVehiclePhysics = cat(1,obj.Vehicles.physics);
+            allVehicleSizes = cat(1,allVehiclePhysics.size);
+            % Calculate the maximum possible distance between two vehicles
+            % when they are about the collide (sqrt(width^2 + length^2) + someDelta (0.5 meters to account for discretization errors)
+            obj.collisionCheckingDistanceThreshold = sqrt(max(allVehicleSizes(:,2))^2 + max(allVehicleSizes(:,3))^2)+0.5;
+        end
         
         function StopCommands = stepImpl(obj, V2Idata)
-            % Implement algorithm. Calculate y as a function of input u and
-            % discrete states.
+            % Signal output is the Go/Stop commands (Apart from the visual output or collision detection done without signals but accessing variables) 
             
-            %% Crossroad units           
-            crossroadUnits = obj.map.crossroadUnits;
+            %% Autononomous Intersection Management (AIM) Units           
+            AIM_Units = obj.map.AIM_Units;
             
             for i=1:size(V2Idata,1)
                 
-                crossroadNr = V2Idata(i,1);     % number of crossroad the vehicle is passing
-                crossroadPart = V2Idata(i,2);   % part of the crossroad the vehicle is passing
+                intersectionID = V2Idata(i,1);  % ID of the intersection: 
+                                                % 0 -> none
+                                                % 1 -> 4x4 in west
+                                                % 2 -> t-junction in east
+                                                
+                vehicleStateatIntersection = V2Idata(i,2); % Vehicle's state at the intersection
+                                                % 0 -> "x" (not at any intersection)
+                                                % 1 -> "d" (at decision node)
+                                                % 2 -> "i" (at incoming node)
+                                                % 3 -> "p" (at conflict zone)
+                                                % 4 -> "o" (at outgoing node)
                 
-                if crossroadNr ~= 0
+                %% Check if any vehicle at intersection from V2I Data
+                if intersectionID ~= 0 % If the vehicle is at some intersection
                     vehicle = obj.Vehicles(i);
-                    if crossroadPart == 1
-                        % Car reaches the crossroad
-                        crossroadUnits(crossroadNr).carReachesCrossroad(vehicle);
-                    elseif crossroadPart == 2
-                        % Car reaches the braking point
-                        crossroadUnits(crossroadNr).carReachesBrakingPoint(vehicle, obj.Vehicles);
-                    elseif crossroadPart == 3
-                        % Car reaches the start of the crossroad
-                        crossroadUnits(crossroadNr).carReachesStartingPoint(vehicle);
-                    elseif crossroadPart == 4
-                        % Car leaves the crossroad
-                        crossroadUnits(crossroadNr).carLeavesCrossroad(vehicle, obj.Vehicles);
+                    
+                    % Vehicle is at the DECISION NODE (just arrived at the intersection)
+                    if vehicleStateatIntersection == 1
+                        AIM_Units(intersectionID).vehicleReachesDecisionNode(vehicle);
+                        
+                    % Vehicle is at the incoming node (has to GO or WAIT depending on the AIM's decision)
+                    elseif vehicleStateatIntersection == 2
+                        AIM_Units(intersectionID).vehicleReachesIncomingNode(vehicle, obj.Vehicles);
+                        
+                    % Vehicle is passing (in the conflict zone -> has to keep going)
+                    elseif vehicleStateatIntersection == 3
+                        % No change in states for the vehicle until it leaves the intersection
+                          
+                    % Vehicle is at the outgoing node (leaving the intersection)
+                    elseif vehicleStateatIntersection == 4
+                        AIM_Units(intersectionID).vehicleLeavesIntersection(vehicle, obj.Vehicles);
                     end
+                    
+                end
+                
+            end
+            
+            %% (Only for TrafficLight) Update conventional traffic systems
+            for i=1:length(AIM_Units)
+                if AIM_Units(i).mode == IM_Algorithm_Enum.TrafficLight
+                    AIM_Units(i).updateConventionalTrafficLightSystem(obj.getCurrentTime);
                 end
             end
             
-            % Update conventional traffic systems
-            for i=1:length(crossroadUnits)
-                if crossroadUnits(i).mode == CrossroadModeEnum.TrafficLight
-                    crossroadUnits(i).updateConventionalTrafficLightSystem(obj.getCurrentTime);
-                end
-            end
             
+            %% Get the braking flag arrays (stop commands) from all crossroad units (AIM algorithms)
+            StopCommands = cat(1,obj.map.AIM_Units.vehicleOrders);
             
-            % get the braking flag arrays from all crossroad units
-            StopCommands = cat(1,obj.map.crossroadUnits.vehicleOrders);
-            
-            % Only brake when in crossroad zone 2 (between braking and stopping point)
+            %% If Stop command is given -> brake between the "incoming node" and the "conflict zone" at the intersection zone
             for i=size(StopCommands,1):-1:1
-                if obj.Vehicles(StopCommands(i)).status.inCrossroad(2) ~= 2
+                if obj.Vehicles(StopCommands(i)).status.atIntersection(2) ~= "i"
                     % Delete when not in this zone from braking array
                     StopCommands(i,:) = [];
                 end
             end
             
-            %% 2D Traffic Plot + Path Dynamic Highlight
+            %% This Infrastructure Block handles: 2D Traffic Plot + Path Dynamic Highlight
             if mod(obj.getCurrentTime,0.2) == 0
                 obj.map.dynamicTrafficPlot(); % Update Vehicle locations and speeds
                 
@@ -86,14 +102,14 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
                 end
             end
             
-            %% Collision detection
+            %% This Infrastructure Block also handles: Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 allVehiclePositions = cat(1,cat(1,cat(1,obj.map.Vehicles).dynamics).position);
                 allVehicleDistancesMatrix = dist(allVehiclePositions'); % Distance between all vehicles
-                [row,column] = find(triu(allVehicleDistancesMatrix<20,1)); % The value 20 is the threshold for checking for collision
+                [row,column] = find(triu(allVehicleDistancesMatrix<obj.collisionCheckingDistanceThreshold,1)); % Find all values lower than obj.collisionCheckingDistanceThreshold to check for collisions
                 if ~isempty(column)
-                    for k = 1:length(column) % If there are vehicle closer than 20 meters, check the collision for vehicle column(k) to row(k)
-                        obj.map.Vehicles(column(k)).checkCollision(obj.map.Vehicles(row(k)));
+                    for k = 1:length(column) % If there are vehicles closer than the threshold, check the collision for vehicle column(k) to row(k)
+                        obj.map.Vehicles(column(k)).checkCollisionBetweenVehicles(obj.map.Vehicles(row(k)));
                     end
                 end
             end
@@ -101,6 +117,11 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             if obj.vehicleAnalysingWindow ~= false % call only if window is generated
                 obj.vehicleAnalysingWindow.update(obj.getCurrentTime);
             end
+        end
+        
+        function icon = getIconImpl(~)
+            % Define icon for System block
+            icon = matlab.system.display.Icon("MOBATSIM-Icon-Set_5- Intersection.png");
         end
         
         %%

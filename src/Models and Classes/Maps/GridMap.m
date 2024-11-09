@@ -15,7 +15,7 @@ classdef GridMap < Map
     
     methods
         %% constructor and visualization creation
-        function obj = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber, configuration)
+        function obj = GridMap(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber, IM_Mode, configuration)
                         
             arguments
                 mapName                         (1,1) string
@@ -27,12 +27,13 @@ classdef GridMap < Map
                 stoppingNodes                   (:,:) double
                 leavingNodes                    (:,:) double
                 Route_LaneNumber                (:,2) double
+                IM_Mode                         (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % the mode in which the intersection management algorithm operates
                 configuration.showLaneNumbers   (1,1) logical   = true                 % Plot the number of every lane at the map
                 configuration.showNodeNumbers   (1,1) logical   = true                 % Plot the number of every node at the map
             end
             
             
-            obj = obj@Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber);
+            obj = obj@Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber, IM_Mode);
             
             obj.colorMatrix = [1 0 0;       %1  red
                 1 1 0 ;                     %2	yellow

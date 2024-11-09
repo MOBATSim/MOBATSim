@@ -34,16 +34,16 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                 nextWPs = repmat([pose(1) pose(2)],obj.Kpoints,1); % Output: PathPoints for Pure Pursuit
                 return;
             elseif obj.vehicle.pathInfo.routeCompleted % The Vehicle determines the initial trajectory and route
-                obj.vehicle.setInitialRouteAndTrajectory();
+                obj.vehicle.setInitialRoute();
             end
             %%
             
             % Calculate helping variables for the reference path calculation
-            currentTrajectory = obj.vehicle.pathInfo.currentTrajectory;
+            currentRoute = obj.vehicle.pathInfo.currentRoute;
             Vpos_C = [pose(1) pose(2)];%Position of the vehicle in Cartesian coordinate
             
             % Determine Vehicle's Position in Frenet Coordinates
-            [s,d] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C); % Determine current <s,d>
+            [s,d] = obj.Cartesian2Frenet(currentRoute,Vpos_C); % Determine current <s,d>
             
             % Update Vehicle Frenet Coordinates <s,d>
             obj.vehicle.updateVehicleFrenetPosition(s,d);
@@ -52,11 +52,11 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
             obj.currentPathPoints = obj.generatePathFollowingWaypoints(Vpos_C,obj.vehicle.pathInfo.BOGPath,obj.Kpoints);
             
             % Check if the Waypoint is Reached
-            obj.vehicle.checkWaypointReached(currentTrajectory(2,:));      
+            obj.vehicle.checkWaypointReached(currentRoute(2,:));      
             
             % Generate lane changing trajectory if commanded and not generated yet
             if ~(changeLane==0) && isempty(obj.laneChangingPoints)
-                obj.laneChangingPoints  = obj.generateMinJerkTrajectory(obj.vehicle, obj.laneChangeTime, changeLane, s, currentTrajectory);
+                obj.laneChangingPoints  = obj.generateMinJerkTrajectory(obj.vehicle, obj.laneChangeTime, changeLane, s, currentRoute);
                 obj.laneChangingPoints = obj.laneChangingPoints(:, 1:2); % Orientation not necessary for Pure Pursuit
             end
             
@@ -71,7 +71,7 @@ classdef PurePursuit_WPGenerator < LocalTrajectoryPlanner
                     s_next = (s:4:obj.vehicle.pathInfo.routeEndDistance+s)';
                     d_next=repmat(obj.ref_d,length(s_next),1);
                     % s_next already starts from "s" therefore "0" is sent as the current "s" to the function below
-                    [nextWPs, ~] = obj.Frenet2Cartesian(s_next,d_next,currentTrajectory);
+                    [nextWPs, ~] = obj.Frenet2Cartesian(s_next,d_next,currentRoute);
                     nextWPs = obj.checkNextWPsOutputSize(nextWPs,obj.Kpoints);
 
                 else % If the vehicle is on the right lane, it follows the generated path points

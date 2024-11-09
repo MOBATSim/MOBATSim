@@ -35,7 +35,7 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
                 RouteID = [RouteID; obj.vehicle.map.getRouteIDfromPath([obj.vehicle.pathInfo.path(i)  obj.vehicle.pathInfo.path(i+1)])];
             end
             %The last three columns are to fit the data according to other PathPlanner FutureDatas
-            FuturePlan = [(ones(1,size(Path,2)-1).*obj.vehicle.id)' RouteID zeros(size(Path,2)-1,3) (ones(1,size(Path,2)-1)*-3)'];
+            FuturePlan = [(ones(1,size(Path,2)-1).*obj.vehicle.id)' RouteID zeros(size(Path,2)-1,3) (ones(1,size(Path,2)-1)*2)'];
             
         end
         

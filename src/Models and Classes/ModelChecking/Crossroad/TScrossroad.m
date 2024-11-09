@@ -64,7 +64,23 @@ classdef TScrossroad < TransitionSystem
                 % no vehicle on crossroad
                 verified = true;
                 return;
+            else
+                % Remove same directions (two vehicles starting and heading
+                % the same way) as they shouldn't affect the passing order.
+                atInput = unique(atInput);
+                atPassing = unique(atPassing);
             end
+            
+            % If both atInput and atPassing are not empty check for the same directions
+            if ~(isempty(atInput) || isempty(atPassing))
+                % Find the indices of strings that exist in atPassing in atInput
+                idx = contains(atInput,intersect(atInput,atPassing));
+                if any(idx)  
+                    % Remove the same direction from the atInput as it should have a pass
+                    atInput(idx)=[];
+                end
+            end
+            
             % Get current state and directions from atInput and atPassing
             directions = strings(0,0);
             currentState = strings(1);
