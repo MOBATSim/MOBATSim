@@ -513,15 +513,33 @@ classdef IntersectionManagement < handle
                 % To further test the safety filter (verification of the "go" actions taken by the AIM) one can
                 % overwrite the values of "atPassing" and "atInput" with conflicting paths
                 % in order to see if the "verified" variable results "false".
-                verified = TScrossroad.verifyModel(lower(atInput), lower(atPassing), pathConflicts);
+                [verified, currentSafeActions] = TScrossroad.verifyModel(lower(atInput), lower(atPassing), pathConflicts, selectedCombination);
                 
-                if ~verified
+                if verified
+                    % If safety of the planned AIM command is verified -> Apply AIM commands
+                    
+                elseif ~verified
+                    % If not verified, choose an action from the safe TS_C  
                     disp("Intersection Management Algorithm " +obj.id+ " wanted to take a forbidden action with a possible collision! At time:" + ...
-                          get_param('MOBATSim','SimulationTime')+"s Forbidden Directions:" + sprintf(' %s %s', atInput, atPassing));
+                        get_param('MOBATSim','SimulationTime')+"s Forbidden Directions:" + sprintf(' %s %s', atInput, atPassing));
+                    
+                    safeDirections = strings(1,size(currentSafeActions,2));
+                    for k = 1:size(currentSafeActions,1)
+                        safeDirections(k) = upper(eraseBetween(currentSafeActions(k),1,1));
+                    end
+                    
+                    safeCombination = join(safeDirections,"-");
+                    selectedCombination= safeCombination;
+                    % TODO: Potential issue with the same source directions
+                    % -> Maybe filter this outside of this function for vehicles at 
+                    % the same incoming node following each other
                 end
+                
+
+                
             end
             %--------------------------------------------------------------
-            % Define "stop" commands for every vehicle (1 = stop, 0 = go in this section)
+            % Send "stop" commands for every vehicle (1 = stop, 0 = go in this section)
             vehicleStopCommands = obj.defineVehicleOrders(vehicleQueue(:,1:2), selectedCombination);
             
             %% FCFS

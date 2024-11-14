@@ -51,14 +51,16 @@ classdef TScrossroad < TransitionSystem
     end
     
     methods(Static)
-        function verified = verifyModel(atInput, atPassing,crossingPaths)
+        function [verified, currentActions] = verifyModel(atInput, atPassing,crossingPaths, plannedActionsByAIM)
             %VERIFYMODEL Verify the selected directions with model checking
             %   Detailed explanation goes here
             arguments
                 atInput         (1,:) string % contains directions from vehicles at input nodes
                 atPassing       (1,:) string % contains directions from vehicles passing the crossroad
                 crossingPaths   (:,2) string % contains string pairs that show crossing paths at crossroad
+                plannedActionsByAIM (1,:) string % contains planned actions by AIM to be verified
             end
+            
             
             if isempty(atInput) && isempty(atPassing)
                 % no vehicle on crossroad
@@ -70,6 +72,15 @@ classdef TScrossroad < TransitionSystem
                 atInput = unique(atInput);
                 atPassing = unique(atPassing);
             end
+            
+            %% TODO: Check if this part is necessary for the verification
+            % inside this function or should it be done outside (in IntersectionManagement.m)
+            % Format the Planned AIM decisions
+            if ~isempty(plannedActionsByAIM)
+                AIMdecisions = split(plannedActionsByAIM,"-");
+                AIMdecisions = unique(append('g',lower(AIMdecisions)))';
+            end
+            %%
             
             % If both atInput and atPassing are not empty check for the same directions
             if ~(isempty(atInput) || isempty(atPassing))
@@ -83,14 +94,14 @@ classdef TScrossroad < TransitionSystem
             
             % Get current state and directions from atInput and atPassing
             directions = strings(0,0);
-            currentState = strings(1);
+            initialState = strings(1);
             if ~isempty(atInput)
                 directions = atInput;
-                currentState = join(repmat("i",1,length(atInput)),"");
+                initialState = join(repmat("i",1,length(atInput)),"");
             end
             if ~isempty(atPassing)
                 directions(end+1:end+length(atPassing)) = atPassing;
-                currentState = currentState + join(repmat("p",1,length(atPassing)),"");
+                initialState = initialState + join(repmat("p",1,length(atPassing)),"");
             end
             
             % Generate Transition System for the crossroad
@@ -99,22 +110,29 @@ classdef TScrossroad < TransitionSystem
             % Generate a verified Transition System with Büchi Automata
             TS.synthesizeWithSPs(crossingPaths);
             
+            % Start checking from the initial state as the current state
+            currentState = initialState;
+            
             % check if state exists
             if any(currentState == TS.states)
-                % get all actions that should be done
+                % Get all actions that should be done
                 currentActions = TS.actions(contains(TS.actions,directions(1,:)));
-                % check all actions
+                
+                % Check all actions
                 for i=1:length(currentActions)
                     if any(all([currentState currentActions(i)] == TS.transitions(:,[1 3]),2))
                         % action exists!! :)
                         % go to state corresponding to this action
                         currentState = TS.transitions(all([currentState currentActions(i)] == TS.transitions(:,[1 3]),2),2);
                     else
+                        % Find the only safe actions that exist in TS from the current state and output them
+                        allTransitionsFromCurrentState = TS.transitions(:,[1 3]);
+                        currentActions = allTransitionsFromCurrentState(currentState==allTransitionsFromCurrentState(:,1),2);
                         verified = false;
                         return
                     end
                 end
-                % all actions are possible
+                % All actions are possible
                 verified = true;
             else
                 verified = false;
