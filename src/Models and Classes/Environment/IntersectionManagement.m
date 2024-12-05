@@ -20,7 +20,7 @@ classdef IntersectionManagement < handle
         overlappingTable    % each column contains the overlapping directions of direction in header
         vehicleOrders       % array with rows containing the vehicle id and the order [ vehicleId order] ( 0 = go, 1 = stop)
         arrivingGroup       % all vehicles arriving at the intersection
-        leavingGroup        % all vehicles at the intersection
+        passingGroup        % all vehicles at the intersection
         % Conventional traffic lights
         TLparams
             % stateStartingTime       = 0   % when the new traffic state starts
@@ -134,12 +134,12 @@ classdef IntersectionManagement < handle
                         obj.arrivingGroup(end+1,:) = arrivingGroupEntry;
                     end
                     % Run the intersection management algorithm
-                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                    [obj.vehicleOrders, obj.arrivingGroup, obj.passingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.passingGroup);
                     
                 case IM_Algorithm_Enum.IntelligentDecision
                     
                     % Run the intersection management algorithm
-                    [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                    [obj.vehicleOrders, obj.arrivingGroup, obj.passingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.passingGroup);
                     
             end            
         end
@@ -153,36 +153,36 @@ classdef IntersectionManagement < handle
             switch(obj.mode)
                 case IM_Algorithm_Enum.TrafficLight
                     
-                    if ~isempty(obj.leavingGroup)
-                        % Remove vehicle from leavingGroup
-                        obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                    if ~isempty(obj.passingGroup)
+                        % Remove vehicle from passingGroup
+                        obj.passingGroup(obj.passingGroup(:,1)== vehicle.id,:) = [];
                     end
                     
                 case IM_Algorithm_Enum.FCFS
                     
-                    if ~isempty(obj.leavingGroup)                       
-                        % Remove vehicle from leavingGroup
-                        obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                    if ~isempty(obj.passingGroup)                       
+                        % Remove vehicle from passingGroup
+                        obj.passingGroup(obj.passingGroup(:,1)== vehicle.id,:) = [];
                         
                         % Run the intersection management algorithm
-                        [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                        [obj.vehicleOrders, obj.arrivingGroup, obj.passingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.passingGroup);
                     end
                     
                 case IM_Algorithm_Enum.IntelligentDecision
                     
-                    if ~isempty(obj.leavingGroup)                        
-                        % Remove vehicle from leavingGroup
-                        obj.leavingGroup(obj.leavingGroup(:,1)== vehicle.id,:) = [];
+                    if ~isempty(obj.passingGroup)                        
+                        % Remove vehicle from passingGroup
+                        obj.passingGroup(obj.passingGroup(:,1)== vehicle.id,:) = [];
                         
                         % Run the intersection management algorithm
-                        [obj.vehicleOrders, obj.arrivingGroup, obj.leavingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.leavingGroup);
+                        [obj.vehicleOrders, obj.arrivingGroup, obj.passingGroup] = obj.run_AIM_Algorithm(vehicles, obj.arrivingGroup, obj.passingGroup);
                     end
                     
             end
             
         end
         
-        function [vehicleOrders, arrivingGroup, leavingGroup] = run_AIM_Algorithm(obj, vehicles, arrivingGroup, leavingGroup)
+        function [vehicleOrders, arrivingGroup, passingGroup] = run_AIM_Algorithm(obj, vehicles, arrivingGroup, passingGroup)
             % This is the main method for the AIM algorithm.
             
             % Only when a vehicle is arriving execute the algorithm
@@ -190,9 +190,9 @@ classdef IntersectionManagement < handle
                 % get all prioritized vehicles and their priorities
                 priorityGroup = obj.buildPriorityGroup(vehicles, arrivingGroup);
                 % give every priority vehicle a GO/STOP order
-                vehicleOrders = obj.getVehicleOrders(priorityGroup, leavingGroup);
+                vehicleOrders = obj.getVehicleOrders(priorityGroup, passingGroup);
                 % transfer vehicles that will pass to leaving group
-                [arrivingGroup, leavingGroup] = obj.moveFromArrivingToLeavingGroup(arrivingGroup, leavingGroup, vehicleOrders);
+                [arrivingGroup, passingGroup] = obj.moveFromArrivingToPassingGroup(arrivingGroup, passingGroup, vehicleOrders);
             else
                 vehicleOrders = [];
             end
@@ -224,7 +224,7 @@ classdef IntersectionManagement < handle
                 end
         end
 
-        function [arrivingGroup, leavingGroup] = moveFromArrivingToLeavingGroup(~, arrivingGroup, leavingGroup, vehicleOrders)
+        function [arrivingGroup, passingGroup] = moveFromArrivingToPassingGroup(~, arrivingGroup, passingGroup, vehicleOrders)
             % Move all vehicles that got a 'go' command from the arriving
             % group to the leaving group
             
@@ -241,10 +241,10 @@ classdef IntersectionManagement < handle
                 return
             end
             
-            % move every passing vehicle from arrivingGroup to leavingGroup
+            % move every passing vehicle from arrivingGroup to passingGroup
             entriesLeaving = arrivingGroup(any(arrivingGroup(:,1) == passingVehicles',2),:);
-            % add leaving to leavingGroup
-            leavingGroup(end+1:end+size(entriesLeaving,1),:) = entriesLeaving;
+            % add leaving to passingGroup
+            passingGroup(end+1:end+size(entriesLeaving,1),:) = entriesLeaving;
             % remove leaving from arrivingGroup
             arrivingGroup(any(arrivingGroup(:,1) == passingVehicles',2),:) = [];                
             
@@ -394,7 +394,7 @@ classdef IntersectionManagement < handle
             end
         end       
 
-        function vehicleStopCommands = getVehicleOrders(obj, priorityGroup, leavingGroup)
+        function vehicleStopCommands = getVehicleOrders(obj, priorityGroup, passingGroup)
             % Find highest priority intersection passing order
             % 1. start with the first car in priority group
             % 2. check if the vehicle can pass the intersection without colliding with the current vehicles in the intersection
@@ -405,8 +405,8 @@ classdef IntersectionManagement < handle
             % 7. Do this for every vehicle-combination in the list.
             
             % Get directions from the vehicle already in the intersection conflict zone
-            if ~isempty(leavingGroup)
-                occupiedDirections = obj.convertNumToStringDirection(leavingGroup(:,2:3));
+            if ~isempty(passingGroup)
+                occupiedDirections = obj.convertNumToStringDirection(passingGroup(:,2:3));
             else
                 occupiedDirections = [];
             end
@@ -468,17 +468,26 @@ classdef IntersectionManagement < handle
             % Select combination with highest priority
             [~, indexHighestPriority] = max(combinationPriorities);
             selectedCombination = allCombinations(indexHighestPriority);
-            
+
             %--------------------------------------------------------------
             % Verify the selected AIM "go" commands by generating a
             % verified Transition System for the allowed directions
             %--------------------------------------------------------------
-            if obj.id == 1 % Verification only for the 4x4 intersection in the west with id:1
-                % for positive result test
-                atInput = split(selectedCombination,"-");
-                % for negative result test
-                %atInput = vehicleQueue(:,2)';
-                atPassing = occupiedDirections;
+            if obj.id == 1 && ~isempty(selectedCombination) % Verification only for the 4x4 intersection in the west with id:1 and if there is a new decision
+                
+                % Construct the current model for the safety verification
+                if ~isempty(obj.arrivingGroup)
+                    atInput = obj.convertNumToStringDirection(obj.arrivingGroup(:,2:3));                    
+                else
+                    atInput =[];
+                end
+                
+                if ~isempty(obj.passingGroup)
+                    atPassing = obj.convertNumToStringDirection(obj.passingGroup(:,2:3));
+                else
+                    atPassing =[];  
+                end
+                
                 
                 % The paths that overlap in intersection id:1
                 pathConflicts = ["ne", "ew";
@@ -509,39 +518,66 @@ classdef IntersectionManagement < handle
                     "sn", "we";
                     "sn", "wn";
                     "se", "we"];
-                
+                             
                 % To further test the safety filter (verification of the "go" actions taken by the AIM) one can
                 % overwrite the values of "atPassing" and "atInput" with conflicting paths
                 % in order to see if the "verified" variable results "false".
-                [verified, currentSafeActions] = TScrossroad.verifyModel(lower(atInput), lower(atPassing), pathConflicts, selectedCombination);
+                [verified, currentSafeActions] = TScrossroad.verifyPlannedAIMActions(lower(atInput), lower(atPassing), pathConflicts, selectedCombination);
                 
                 if verified
                     % If safety of the planned AIM command is verified -> Apply AIM commands
                     
                 elseif ~verified
-                    % If not verified, choose an action from the safe TS_C  
-                    disp("Intersection Management Algorithm " +obj.id+ " wanted to take a forbidden action with a possible collision! At time:" + ...
-                        get_param('MOBATSim','SimulationTime')+"s Forbidden Directions:" + sprintf(' %s %s', atInput, atPassing));
+                    % If not verified, choose a safe action available by the safety filter: 
+                    disp("Intersection Management Algorithm at IM" +obj.id+ " wanted to take a forbidden action that could have caused a collision!");
+                    disp("At time:" + get_param('MOBATSim','SimulationTime')+"s" );
+                    disp("Vehicle incoming directions: " + sprintf('%s', atInput));
+                    disp("Vehicle passing directions: " + sprintf('%s', atPassing));
+                    disp("Forbidden Go Action(s):" + selectedCombination);
                     
                     safeDirections = strings(1,size(currentSafeActions,2));
+                    safeActionByFilter = "";
+                    
                     for k = 1:size(currentSafeActions,1)
                         safeDirections(k) = upper(eraseBetween(currentSafeActions(k),1,1));
+                        if ~isempty(atPassing)
+                            if any(ismember(safeDirections(k),atPassing))
+                                safeActionByFilter = safeDirections(k);
+                                break
+                            end
+                        
+                        elseif ~isempty(atInput)
+                            if any(ismember(safeDirections(k),atInput))
+                                safeActionByFilter = safeDirections(k);
+                                break
+                            end
+                                                        
+                        end
                     end
                     
-                    safeCombination = join(safeDirections,"-");
-                    selectedCombination= safeCombination;
-                    % TODO: Potential issue with the same source directions
-                    % -> Maybe filter this outside of this function for vehicles at 
-                    % the same incoming node following each other
-                end
-                
+                    if isempty(safeActionByFilter)
+                        safeActionByFilter = safeDirections(1);
+                    end
+                    
+                    disp("Safety filter for AIM allows the following action(s): "+ safeActionByFilter);   
+                    selectedCombination= safeActionByFilter;
 
+                end
                 
             end
             %--------------------------------------------------------------
-            % Send "stop" commands for every vehicle (1 = stop, 0 = go in this section)
-            vehicleStopCommands = obj.defineVehicleOrders(vehicleQueue(:,1:2), selectedCombination);
+            % Determine the vehicles to receive commands from the AIM
+            vehiclesToReceiveCommands = []; 
+            for v = 1:size(obj.arrivingGroup,1)
+                vId = obj.arrivingGroup(v,1);
+                vDir = obj.convertNumToStringDirection(obj.arrivingGroup(v,2:3));
+                % Array of Vehicles: [ID, incoming-outgoing directions]
+                vehiclesToReceiveCommands = [vehiclesToReceiveCommands; num2str(vId) vDir];
+            end
+            % Send "stop" commands for every vehicle (1 = stop, 0 = go in this section) 
+            vehicleStopCommands = obj.defineVehicleOrders(vehiclesToReceiveCommands, selectedCombination);            
             
+
             %% FCFS
             if obj.mode == IM_Algorithm_Enum.FCFS
                 % let no vehicles pass, when there is still one at the intersection
@@ -734,7 +770,7 @@ classdef IntersectionManagement < handle
             obj.vehicleOrders = obj.getConventionalVehicleOrders(obj.arrivingGroup, obj.TLparams.currentState, waitingState);
             
             % Move all vehicles with GO order to leaving group
-            [obj.arrivingGroup, obj.leavingGroup] = obj.moveFromArrivingToLeavingGroup(obj.arrivingGroup, obj.leavingGroup, obj.vehicleOrders);
+            [obj.arrivingGroup, obj.passingGroup] = obj.moveFromArrivingToPassingGroup(obj.arrivingGroup, obj.passingGroup, obj.vehicleOrders);
                    
         end
         

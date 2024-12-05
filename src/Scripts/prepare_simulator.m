@@ -16,7 +16,7 @@ function prepare_simulator(options)
         options.startingPoints    (1,:) double    = []              % Custom starting points for vehicles
         options.destinationPoints (1,:) double    = []              % Custom destination points for vehicles
         options.maxSpeeds         (1,:) double    = []              % Custom max speeds for vehicles
-        options.collisionReport   (1,1) double    = 0               % Outputs collision report
+        options.collisionReport   (1,1) double    = 0               % 0 = no report, 1= Detailed collision report, 2=Only intersection
         options.analysisWindow    (1,1) logical   = false           % Activates the vehicle analysis window
 
     end

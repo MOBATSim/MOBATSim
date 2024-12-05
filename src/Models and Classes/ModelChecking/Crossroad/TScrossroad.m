@@ -51,7 +51,7 @@ classdef TScrossroad < TransitionSystem
     end
     
     methods(Static)
-        function [verified, currentActions] = verifyModel(atInput, atPassing,crossingPaths, plannedActionsByAIM)
+        function [verified, safeActions] = verifyPlannedAIMActions(atInput, atPassing,crossingPaths, plannedActionsByAIM)
             %VERIFYMODEL Verify the selected directions with model checking
             %   Detailed explanation goes here
             arguments
@@ -60,7 +60,6 @@ classdef TScrossroad < TransitionSystem
                 crossingPaths   (:,2) string % contains string pairs that show crossing paths at crossroad
                 plannedActionsByAIM (1,:) string % contains planned actions by AIM to be verified
             end
-            
             
             if isempty(atInput) && isempty(atPassing)
                 % no vehicle on crossroad
@@ -73,20 +72,13 @@ classdef TScrossroad < TransitionSystem
                 atPassing = unique(atPassing);
             end
             
-            %% TODO: Check if this part is necessary for the verification
-            % inside this function or should it be done outside (in IntersectionManagement.m)
-            % Format the Planned AIM decisions
-            if ~isempty(plannedActionsByAIM)
-                AIMdecisions = split(plannedActionsByAIM,"-");
-                AIMdecisions = unique(append('g',lower(AIMdecisions)))';
-            end
             %%
             
             % If both atInput and atPassing are not empty check for the same directions
             if ~(isempty(atInput) || isempty(atPassing))
                 % Find the indices of strings that exist in atPassing in atInput
                 idx = contains(atInput,intersect(atInput,atPassing));
-                if any(idx)  
+                if any(idx)
                     % Remove the same direction from the atInput as it should have a pass
                     atInput(idx)=[];
                 end
@@ -115,28 +107,74 @@ classdef TScrossroad < TransitionSystem
             
             % check if state exists
             if any(currentState == TS.states)
-                % Get all actions that should be done
+                % Get all actions that are safe to be applied in the current state (i.e., not discarded during the synthesis)
                 currentActions = TS.actions(contains(TS.actions,directions(1,:)));
                 
-                % Check all actions
-                for i=1:length(currentActions)
-                    if any(all([currentState currentActions(i)] == TS.transitions(:,[1 3]),2))
-                        % action exists!! :)
-                        % go to state corresponding to this action
-                        currentState = TS.transitions(all([currentState currentActions(i)] == TS.transitions(:,[1 3]),2),2);
+                
+                %% Safety verification (only verify if the planned AIM actions exist in TS_C)
+                
+                % Format the Planned AIM decisions
+                if ~isempty(plannedActionsByAIM)
+                    AIMdecisions = split(plannedActionsByAIM,"-");
+                    AIMdecisions = unique(append('g',lower(AIMdecisions)))';
+                    
+                    % Check if the new actions planned by AIM are in the current actions that lead to the safe states
+                    if any(ismember(AIMdecisions,currentActions))
+                        
+                        safeActions = [];
+                        
+                        for i=1:length(AIMdecisions)
+                            if any(all([currentState AIMdecisions(i)] == TS.transitions(:,[1 3]),2))
+                                % action exists!! :)
+                                % go to state corresponding to this action
+                                currentState = TS.transitions(all([currentState AIMdecisions(i)] == TS.transitions(:,[1 3]),2),2);
+                                safeActions = [safeActions AIMdecisions(i)];
+                            else
+                                % Unsafe action/decision by AIM -> Find safe alternatives
+                                safeActions = [];
+                                verified = false;
+                                % Find the only safe actions that exist in TS from the current state and output them
+                                allTransitionsFromCurrentState = TS.transitions(:,[1 3]);
+                                allActions = allTransitionsFromCurrentState(currentState==allTransitionsFromCurrentState(:,1),2)';
+                                
+                                for j=1:length(allActions)
+                                    if any(all([currentState allActions(j)] == TS.transitions(:,[1 3]),2))
+                                        currentState = TS.transitions(all([currentState allActions(j)] == TS.transitions(:,[1 3]),2),2);
+                                        safeActions = [safeActions allActions(j)];
+                                    end
+                                end
+                                
+                                return % Output verified = false, and safeActions
+                            end
+                        end
+                        
+                        verified = true;
+                        return
+                        
                     else
+                        % Unsafe action/decision by AIM -> Find safe alternatives
+                        safeActions = [];
+                        verified = false;
                         % Find the only safe actions that exist in TS from the current state and output them
                         allTransitionsFromCurrentState = TS.transitions(:,[1 3]);
-                        currentActions = allTransitionsFromCurrentState(currentState==allTransitionsFromCurrentState(:,1),2);
-                        verified = false;
-                        return
+                        allActions = allTransitionsFromCurrentState(currentState==allTransitionsFromCurrentState(:,1),2)';
+                        
+                        for j=1:length(allActions)
+                            if any(all([currentState allActions(j)] == TS.transitions(:,[1 3]),2))
+                                currentState = TS.transitions(all([currentState allActions(j)] == TS.transitions(:,[1 3]),2),2);
+                                safeActions = [safeActions allActions(j)];
+                            end
+                        end
+                        
+                        return % Output verified = false, and safeActions
                     end
+                    
+                    
                 end
-                % All actions are possible
-                verified = true;
-            else
-                verified = false;
-            end  
+                
+                
+                
+            end
             
         end
     end

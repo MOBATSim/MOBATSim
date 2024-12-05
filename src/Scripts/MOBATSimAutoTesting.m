@@ -8,7 +8,7 @@ function MOBATSimAutoTesting(options)
         options.simStopTime         (1,1) double    = 120   % Time to test the scenarios in seconds
         options.firstScenarioID     (1,1) double    = 1     % Start from scenario i
         options.lastScenarioID      (1,1) double    = 30    % Simulate until scenario j
-        options.collisionReport     (1,1) double    = 0     % Outputs collision report
+        options.collisionReport     (1,1) double    = 0     % 0 = no report, 1= Detailed collision report, 2=Only intersection
         options.IM_Mode             (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % The intersection management algorithm mode
         options.scenarioNames       (1,:) string    = [ "Scenario 1", ...
                                                         "Scenario 2", ...
