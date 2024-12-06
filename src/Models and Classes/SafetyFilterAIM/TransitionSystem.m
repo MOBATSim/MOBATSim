@@ -1,9 +1,9 @@
 classdef TransitionSystem < handle
-    %TRANSITIONSYSTEM State system with states, actions, transitions,
-    %inital states, atomic propositions and labels.
-    %   Detailed explanation goes here
+    %TRANSITIONSYSTEM State system with states, actions, transitions, inital states, atomic propositions and labels.
     
     % Contributors: Johannes Pintscher, Mustafa Saraoglu
+    % Based on: https://github.com/johannes-pi/TSModelCheckerMATLAB
+    % License: https://github.com/johannes-pi/TSModelCheckerMATLAB/blob/main/LICENSE
     
     properties
         states                  (1,:) string    % states S
@@ -17,7 +17,6 @@ classdef TransitionSystem < handle
     methods
         function obj = TransitionSystem(states, actions, transitions, initialStates, atomicProps, labels)
             %TRANSITIONSYSTEM Construct an instance of this class
-            %   Detailed explanation goes here
             obj.states = states;
             obj.actions = actions;
             obj.transitions = transitions;

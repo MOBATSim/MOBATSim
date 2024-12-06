@@ -82,7 +82,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             end
             
             
-            %% Get the braking flag arrays (stop commands) from all crossroad units (AIM algorithms)
+            %% Get the braking flag arrays (stop commands) from all intersection I2V units (AIM algorithms)
             StopCommands = cat(1,obj.map.AIM_Units.vehicleOrders);
             
             %% If Stop command is given -> brake between the "incoming node" and the "conflict zone" at the intersection zone

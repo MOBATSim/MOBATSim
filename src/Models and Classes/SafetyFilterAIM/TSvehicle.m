@@ -10,7 +10,7 @@ classdef TSvehicle < TransitionSystem
             %TSVEHICLE Construct an instance of this class
 
             arguments
-                direction   (1,1) string    % direction of the vehicles passing the crossroad
+                direction   (1,1) string    % direction of the vehicles passing the intersection
             end
             
             % States

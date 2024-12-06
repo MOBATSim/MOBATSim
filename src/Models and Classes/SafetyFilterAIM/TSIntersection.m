@@ -8,11 +8,9 @@ classdef TSIntersection < TransitionSystem
     
     methods
         function obj = TSIntersection(vehDirs)
-            %TSCROSSROAD Directions from the vehicles that are crossing the
-            %crossroad.
-            %   Detailed explanation goes here
+            %TSCROSSROAD Directions from the vehicles that are crossing the intersection.
             arguments
-                vehDirs                 (1,:) string    % directions of different vehicles on crossroad
+                vehDirs                 (1,:) string    % directions of different vehicles on the intersection
             end
             
             % generate a transition system for every vehicle
@@ -20,8 +18,8 @@ classdef TSIntersection < TransitionSystem
                 TSvehicles(i) = TSvehicle(vehDirs(i));
             end
             
-            % Parallelize all this vehicle transition systems to one crossroad
-            % transition system
+            % Parallelize all vehicle transition systems and 
+            % generate an interleaved transition system of the intersection
             TSp = TransitionSystem.parallelize(TSvehicles);
             % Construct transition system
             obj@TransitionSystem(TSp.states, TSp.actions, TSp.transitions, TSp.initialStates, TSp.atomicProps, TSp.labels);
@@ -33,7 +31,7 @@ classdef TSIntersection < TransitionSystem
             %property is generated from the crossing directions.
             arguments
                 obj                 (1,1) TransitionSystem % the transition system to check and modify
-                crossingDirections  (:,2) string % contains string pairs that show crossing paths at crossroad
+                crossingDirections  (:,2) string % contains string pairs that show crossing paths at the intersection
             end
             
             % Make a safety property for every crossing directions pair and
@@ -57,13 +55,13 @@ classdef TSIntersection < TransitionSystem
             %   Detailed explanation goes here
             arguments
                 atInput         (1,:) string % contains directions from vehicles at input nodes
-                atPassing       (1,:) string % contains directions from vehicles passing the crossroad
-                crossingPaths   (:,2) string % contains string pairs that show crossing paths at crossroad
+                atPassing       (1,:) string % contains directions from vehicles passing the intersection
+                crossingPaths   (:,2) string % contains string pairs that show crossing paths at the intersection
                 plannedActionsByAIM (1,:) string % contains planned actions by AIM to be verified
             end
             
             if isempty(atInput) && isempty(atPassing)
-                % no vehicle on crossroad
+                % no vehicle on the intersection
                 verified = true;
                 return;
             else
