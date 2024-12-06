@@ -1,12 +1,13 @@
-classdef TScrossroad < TransitionSystem
-    %TSCROSSROAD Transition sytem of the whole crossroad with all vehicle
-    %transition systems.
-    %   Detailed explanation goes here
+classdef TSIntersection < TransitionSystem
+    %TSCROSSROAD Transition system of the intersection with all vehicles
+    %modeled as transition systems according to their planned paths.
     
     % Contributors: Johannes Pintscher
+    % Based on: https://github.com/johannes-pi/TSModelCheckerMATLAB
+    % License: https://github.com/johannes-pi/TSModelCheckerMATLAB/blob/main/LICENSE
     
     methods
-        function obj = TScrossroad(vehDirs)
+        function obj = TSIntersection(vehDirs)
             %TSCROSSROAD Directions from the vehicles that are crossing the
             %crossroad.
             %   Detailed explanation goes here
@@ -96,8 +97,8 @@ classdef TScrossroad < TransitionSystem
                 initialState = initialState + join(repmat("p",1,length(atPassing)),"");
             end
             
-            % Generate Transition System for the crossroad
-            TS = TScrossroad(directions);
+            % Generate Transition System for the intersection
+            TS = TSIntersection(directions);
             
             % Generate a verified Transition System with Büchi Automata
             TS.synthesizeWithSPs(crossingPaths);

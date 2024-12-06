@@ -1,15 +1,16 @@
 classdef SafetyPropertyBA < BuchiAutomata
-    %SAFETYPROPERTYBA A property that prohibits two directions are driven at the
-    %same time.
+    %SAFETYPROPERTYBA A safety property that prohibits two vehicles coming from directions that overlap on the intersection.
     %   This is a specific Büchi Automata.
     
     % Contributors: Johannes Pintscher
+    % Based on: https://github.com/johannes-pi/TSModelCheckerMATLAB
+    % License: https://github.com/johannes-pi/TSModelCheckerMATLAB/blob/main/LICENSE
     
     methods
         function obj = SafetyPropertyBA(crossingDirections)
             %SAFETYPROPERTYBA  A property that prohibits two directions are driven at the
             %same time.
-            %   Detailed explanation goes here
+
             arguments
                 crossingDirections  (1,2) string % two directions that are crossing each other
             end

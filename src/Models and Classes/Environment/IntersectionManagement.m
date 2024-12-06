@@ -522,7 +522,7 @@ classdef IntersectionManagement < handle
                 % To further test the safety filter (verification of the "go" actions taken by the AIM) one can
                 % overwrite the values of "atPassing" and "atInput" with conflicting paths
                 % in order to see if the "verified" variable results "false".
-                [verified, currentSafeActions] = TScrossroad.verifyPlannedAIMActions(lower(atInput), lower(atPassing), pathConflicts, selectedCombination);
+                [verified, currentSafeActions] = TSIntersection.verifyPlannedAIMActions(lower(atInput), lower(atPassing), pathConflicts, selectedCombination);
                 
                 if verified
                     % If safety of the planned AIM command is verified -> Apply AIM commands

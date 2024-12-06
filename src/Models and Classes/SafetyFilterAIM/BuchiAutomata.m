@@ -1,9 +1,9 @@
 classdef BuchiAutomata < handle
-    %BUCHIAUTOMATA Automata with states, symbols, transitions, initial and
-    %final states.
-    %   Detailed explanation goes here
+    % BUCHI AUTOMATA: Automata with states, symbols, transitions, initial and final states.
     
     % Contributors: Johannes Pintscher
+    % Based on: https://github.com/johannes-pi/TSModelCheckerMATLAB
+    % License: https://github.com/johannes-pi/TSModelCheckerMATLAB/blob/main/LICENSE
     
      properties
         states                  (1,:) string    % states Q
@@ -16,7 +16,6 @@ classdef BuchiAutomata < handle
     methods
         function obj = BuchiAutomata(states, symbols, transitions, initialStates, finalStates)
             %BUCHIAUTOMATA Construct an instance of this class
-            %   Detailed explanation goes here
             obj.states = states;
             obj.symbols = symbols;
             obj.transitions = transitions;

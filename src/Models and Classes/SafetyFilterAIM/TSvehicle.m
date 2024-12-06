@@ -1,17 +1,14 @@
 classdef TSvehicle < TransitionSystem
-    %TSVEHICLE Transition system of a vehicle on a crossroad.
-    %   Detailed explanation goes here
+    % TSVEHICLE Transition system of a vehicle on an intersection according to its planned path.
     
     % Contributors: Johannes Pintscher
-    
-    properties
-        Property1
-    end
+    % Based on: https://github.com/johannes-pi/TSModelCheckerMATLAB
+    % License: https://github.com/johannes-pi/TSModelCheckerMATLAB/blob/main/LICENSE
     
     methods
         function obj = TSvehicle(direction)
             %TSVEHICLE Construct an instance of this class
-            %   Detailed explanation goes here
+
             arguments
                 direction   (1,1) string    % direction of the vehicles passing the crossroad
             end
