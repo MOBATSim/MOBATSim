@@ -1,5 +1,5 @@
 function [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
-          startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent()
+          startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_MapSpecifications()
 
     % Contributors: Mustafa Saraoglu, Fabian Hart, Qianwei Yang, Johannes Pintscher
       

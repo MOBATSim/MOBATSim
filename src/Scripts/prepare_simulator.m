@@ -79,7 +79,7 @@ function prepare_simulator(options)
 
     %% Load the Map
     [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
-        startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent();
+        startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_MapSpecifications();
 
     %% Generate the 2D Map and the instance from the Map class
     Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,options.IM_Mode,"showLaneNumbers",~options.simpleMap,"showNodeNumbers",~options.simpleMap);
