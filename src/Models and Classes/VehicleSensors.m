@@ -132,7 +132,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
                     % This exception happens only when following vehicles
                     % reach waypoints and not update their trajectory at the right place
                     if ~(car.pathInfo.laneId == vehicle_.pathInfo.laneId)
-                        % Sense side vehicle for a safe lane-changing (TODO: Register as Side vehicle for more complicated algorithms)
+                        % Perceive side vehicle for a safe lane-changing
                         relativeDistance = (car.pathInfo.s - vehicle_.pathInfo.s)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
                         rearDetection(end+1,:) = [vehicle_.id relativeDistance]; %#ok<AGROW>
                     else

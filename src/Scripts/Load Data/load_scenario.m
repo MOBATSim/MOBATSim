@@ -54,7 +54,7 @@ switch scenarioName
         
     case 'Scenario 8'
         % Previous name: 'Complex Crossroad'
-        % Complex crossroad scenario + V8 collides with V1
+        % Complex intersection scenario + V8 collides with V1
         startingPoints      = [ 8  46  29  18  41  52  64   6  15  63];
         destinationPoints   = [26  47  51   1   3  27  24  25   7  46];
         maxSpeeds           = [20  15  10  10  14  20  10  12  10  10];

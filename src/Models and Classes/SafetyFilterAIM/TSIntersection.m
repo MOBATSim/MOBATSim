@@ -2,13 +2,37 @@ classdef TSIntersection < TransitionSystem
     %TSCROSSROAD Transition system of the intersection with all vehicles
     %modeled as transition systems according to their planned paths.
     
-    % Contributors: Johannes Pintscher
+    % Contributors: Johannes Pintscher, Mustafa Saraoglu
     % Based on: https://github.com/johannes-pi/TSModelCheckerMATLAB
     % License: https://github.com/johannes-pi/TSModelCheckerMATLAB/blob/main/LICENSE
     
+    %%
+    % MIT License
+    % 
+    % Copyright (c) 2021 johannes-pi
+    % 
+    % Permission is hereby granted, free of charge, to any person obtaining a copy
+    % of this software and associated documentation files (the "Software"), to deal
+    % in the Software without restriction, including without limitation the rights
+    % to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    % copies of the Software, and to permit persons to whom the Software is
+    % furnished to do so, subject to the following conditions:
+    % 
+    % The above copyright notice and this permission notice shall be included in all
+    % copies or substantial portions of the Software.
+    % 
+    % THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    % IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    % FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    % AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    % LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    % OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    % SOFTWARE.
+    %%
+    
     methods
         function obj = TSIntersection(vehDirs)
-            %TSCROSSROAD Directions from the vehicles that are crossing the intersection.
+            %TSINTERSECTION Directions from the vehicles that are crossing the intersection.
             arguments
                 vehDirs                 (1,:) string    % directions of different vehicles on the intersection
             end
@@ -25,7 +49,7 @@ classdef TSIntersection < TransitionSystem
             obj@TransitionSystem(TSp.states, TSp.actions, TSp.transitions, TSp.initialStates, TSp.atomicProps, TSp.labels);
         end
         
-        function synthesizeWithSPs(obj, crossingDirections)
+        function TS_C = synthesizeWithSPs(obj, crossingDirections)
             %SYNTHESISWITHSPS Synthesize with safety property to exclude
             %states that does not meet the safety property. The safety
             %property is generated from the crossing directions.
@@ -45,6 +69,8 @@ classdef TSIntersection < TransitionSystem
                     obj.synthesizeWithBA(safetyProperty);
                 end
             end
+            
+            TS_C = obj; % Assign the verified TS as a new variable TS_C
             
         end
     end
@@ -71,9 +97,7 @@ classdef TSIntersection < TransitionSystem
                 atPassing = unique(atPassing);
             end
             
-            %%
-            
-            % If both atInput and atPassing are not empty check for the same directions
+            %% If both atInput and atPassing are not empty check for the same directions
             if ~(isempty(atInput) || isempty(atPassing))
                 % Find the indices of strings that exist in atPassing in atInput
                 idx = contains(atInput,intersect(atInput,atPassing));
@@ -95,19 +119,27 @@ classdef TSIntersection < TransitionSystem
                 initialState = initialState + join(repmat("p",1,length(atPassing)),"");
             end
             
-            % Generate Transition System for the intersection
+            %% Generate Transition System for the intersection
             TS = TSIntersection(directions);
             
-            % Generate a verified Transition System with Büchi Automata
-            TS.synthesizeWithSPs(crossingPaths);
+            %% Generate a verified Transition System with Büchi Automata
+            TS_C = TS.synthesizeWithSPs(crossingPaths);
             
-            % Start checking from the initial state as the current state
+            %% Alternatively,
+            % The generated TS_C (verified transition system according to the safety properties) 
+            % can be saved in the current folder. This would allow for the reuse of the safety filter 
+            % for the same input at the intersection.
+            % This feature is not implemented in this version to avoid overcrowding the folder with 
+            % files for all possible combinations of incoming and outgoing vehicles at the intersection.
+            % Instead, a new TS_C is generated each time it is required.
+            
+            %% Start checking from the initial state as the current state
             currentState = initialState;
             
             % check if state exists
-            if any(currentState == TS.states)
+            if any(currentState == TS_C.states)
                 % Get all actions that are safe to be applied in the current state (i.e., not discarded during the synthesis)
-                currentActions = TS.actions(contains(TS.actions,directions(1,:)));
+                currentActions = TS_C.actions(contains(TS_C.actions,directions(1,:)));
                 
                 
                 %% Safety verification (only verify if the planned AIM actions exist in TS_C)
@@ -123,22 +155,22 @@ classdef TSIntersection < TransitionSystem
                         safeActions = [];
                         
                         for i=1:length(AIMdecisions)
-                            if any(all([currentState AIMdecisions(i)] == TS.transitions(:,[1 3]),2))
+                            if any(all([currentState AIMdecisions(i)] == TS_C.transitions(:,[1 3]),2))
                                 % action exists!! :)
                                 % go to state corresponding to this action
-                                currentState = TS.transitions(all([currentState AIMdecisions(i)] == TS.transitions(:,[1 3]),2),2);
+                                currentState = TS_C.transitions(all([currentState AIMdecisions(i)] == TS_C.transitions(:,[1 3]),2),2);
                                 safeActions = [safeActions AIMdecisions(i)];
                             else
                                 % Unsafe action/decision by AIM -> Find safe alternatives
                                 safeActions = [];
                                 verified = false;
-                                % Find the only safe actions that exist in TS from the current state and output them
-                                allTransitionsFromCurrentState = TS.transitions(:,[1 3]);
+                                % Find the only safe actions that exist in TS_C from the current state and output them
+                                allTransitionsFromCurrentState = TS_C.transitions(:,[1 3]);
                                 allActions = allTransitionsFromCurrentState(currentState==allTransitionsFromCurrentState(:,1),2)';
                                 
                                 for j=1:length(allActions)
-                                    if any(all([currentState allActions(j)] == TS.transitions(:,[1 3]),2))
-                                        currentState = TS.transitions(all([currentState allActions(j)] == TS.transitions(:,[1 3]),2),2);
+                                    if any(all([currentState allActions(j)] == TS_C.transitions(:,[1 3]),2))
+                                        currentState = TS_C.transitions(all([currentState allActions(j)] == TS_C.transitions(:,[1 3]),2),2);
                                         safeActions = [safeActions allActions(j)];
                                     end
                                 end
@@ -154,13 +186,13 @@ classdef TSIntersection < TransitionSystem
                         % Unsafe action/decision by AIM -> Find safe alternatives
                         safeActions = [];
                         verified = false;
-                        % Find the only safe actions that exist in TS from the current state and output them
-                        allTransitionsFromCurrentState = TS.transitions(:,[1 3]);
+                        % Find the only safe actions that exist in TS_C from the current state and output them
+                        allTransitionsFromCurrentState = TS_C.transitions(:,[1 3]);
                         allActions = allTransitionsFromCurrentState(currentState==allTransitionsFromCurrentState(:,1),2)';
                         
                         for j=1:length(allActions)
-                            if any(all([currentState allActions(j)] == TS.transitions(:,[1 3]),2))
-                                currentState = TS.transitions(all([currentState allActions(j)] == TS.transitions(:,[1 3]),2),2);
+                            if any(all([currentState allActions(j)] == TS_C.transitions(:,[1 3]),2))
+                                currentState = TS_C.transitions(all([currentState allActions(j)] == TS_C.transitions(:,[1 3]),2),2);
                                 safeActions = [safeActions allActions(j)];
                             end
                         end

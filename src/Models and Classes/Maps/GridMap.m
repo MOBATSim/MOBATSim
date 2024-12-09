@@ -363,7 +363,7 @@ classdef GridMap < Map
                 phiStart = angle(complex((pStart(1)-pCenter(1)) , (pStart(2)-pCenter(2))));
                 phiGoal = angle(complex((pGoal(1)-pCenter(1)) , (pGoal(2)-pCenter(2))));
                 direction = sign(circ(t,3));
-                % make angle allways usable
+                % make angle always usable
                 if phiStart <0
                     phiStart = phiStart + 2*3.1415;
                 end
@@ -568,7 +568,7 @@ classdef GridMap < Map
                 %is closest to the radius
                 nextPix = [];   %the next pixel to draw in grid
                 nextPhi = 0;
-                deltaR = 200000;     %set up distance to the radius point with angle phi to be allways higher first try
+                deltaR = 200000;     %set up distance to the radius point with angle phi to be always higher first try
                 %for every neighbour
                 for x = -1 : 1
                     for y = -1 : 1
