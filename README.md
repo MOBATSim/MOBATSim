@@ -46,33 +46,75 @@ Saraoglu, M., Morozov, A., & Janschek, K. (2019). MOBATSim: MOdel-Based Autonomo
 BibTex:
 ```
 @article{MOBATSim,
-                title = {{MOBATSim}: {MOdel}-Based Autonomous Traffic Simulation Framework for Fault-Error-Failure Chain Analysis},
-                journal = "IFAC-PapersOnLine",
-                volume = "52",
-                number = "8",
-                pages = "239 - 244",
-                year = "2019",
-                note = "10th IFAC Symposium on Intelligent Autonomous Vehicles IAV 2019",
-                issn = "2405-8963",
-                doi = "https://doi.org/10.1016/j.ifacol.2019.08.077",
-                url = "http://www.sciencedirect.com/science/article/pii/S2405896319304100",
-                author = "Mustafa Saraoglu and Andrey Morozov and Klaus Janschek",
-                keywords = "Autonomous driving, Fault injection, Error propagation, Safety analysis, Traffic simulator",
-                }
+                title = {MOBATSim: MOdel-Based Autonomous Traffic Simulation Framework for Fault-Error-Failure Chain Analysis},
+                journal = {IFAC-PapersOnLine},
+                volume = {52},
+                number = {8},
+                pages = {239-244},
+                year = {2019},
+                note = {10th IFAC Symposium on Intelligent Autonomous Vehicles IAV 2019},
+                issn = {2405-8963},
+                doi = {https://doi.org/10.1016/j.ifacol.2019.08.077},
+                url = {https://www.sciencedirect.com/science/article/pii/S2405896319304100},
+                author = {Mustafa Saraoglu and Andrey Morozov and Klaus Janschek},
+                keywords = {Autonomous driving, Fault injection, Error propagation, Safety analysis, Traffic simulator},
+}
 ```
+
+**Other papers published by our research group related to MOBATSim:**
+
+```
+@article{HART2019,
+                title = {Fail-safe Priority-based Approach for Autonomous Intersection Management},
+                journal = {IFAC-PapersOnLine},
+                volume = {52},
+                number = {8},
+                pages = {233-238},
+                year = {2019},
+                note = {10th IFAC Symposium on Intelligent Autonomous Vehicles IAV 2019},
+                issn = {2405-8963},
+                doi = {https://doi.org/10.1016/j.ifacol.2019.08.076},
+                url = {https://www.sciencedirect.com/science/article/pii/S2405896319304082},
+                author = {Fabian Hart and Mustafa Saraoglu and Andrey Morozov and Klaus Janschek},
+                keywords = {Traffic control, scheduling algorithms, autonomous vehicles, safety-critical},
+}
+```
+
+```
+@article{SARAOGLU2022,
+                title = {Designing a Safe Intersection Management Algorithm using Formal Methods},
+                journal = {IFAC-PapersOnLine},
+                volume = {55},
+                number = {14},
+                pages = {22-27},
+                year = {2022},
+                note = {11th IFAC Symposium on Intelligent Autonomous Vehicles IAV 2022},
+                issn = {2405-8963},
+                doi = {https://doi.org/10.1016/j.ifacol.2022.07.577},
+                url = {https://www.sciencedirect.com/science/article/pii/S2405896322009880},
+                author = {Mustafa Saraoglu and Johannes Pintscher and Klaus Janschek},
+                keywords = {Formal methods, safety, design, verification, autonomous systems, traffic control},
+}
+```
+
+Apart from the papers listed above, the PhD thesis by Mustafa Saraoğlu, entitled *On Safety Assessment of Automated Driving Systems Using Simulation-based Testing and Formal Methods*, provides relevant information about the structure of the simulation framework in certain sections of the work.
+
+
 
 <a name="license"></a>
 ## License
 
-Please read the [LICENSE](https://github.com/MOBATSim/MOBATSim/blob/main/LICENSE) file for the terms and conditions in the project root folder.
-
+Please refer to the [LICENSE](https://github.com/MOBATSim/MOBATSim/blob/main/LICENSE) file in the project root directory for the terms and conditions.
 
 <a name="Contributors"></a>
 ## Contributors
 
 **We would like to acknowledge the help and support in the development of MOBATSim of the following contributors:** Sheng Ding, Manuel Schirmer, Johannes Pintscher, Laura Slabon, Qianwei Yang, Qihang Shi, Wenkai Wu, Maoxuan Zhao, Erik Noack, Fabian Hart, Müjdat Korkmaz, Marta Valdes Martin, Mustafa Saraoğlu.
-Please refer to the CONTRIBUTORS.md file for a more detailed list of contributions. Besides, files contain individual contributors at the top or at the bottom of the file.
+Please refer to the CONTRIBUTORS.md file for a more detailed list of contributions. Additionally, each file contains a list of individual contributors at the top or bottom.
 
+**We would like to express our sincere gratitude to Prof. Dr. techn. Klaus Janschek (2017-2024) and Herr Jun.-Prof. Dr.-Ing. Andrey Morozov (2017-2020) for their invaluable guidance, support, and expertise throughout the course of this project.**
+
+**Information about MOBATSim, other research projects at our institute, as well as relevant acknowledgments for project management, the team, and funding can be found here:**  https://tu-dresden.de/ing/elektrotechnik/ifa/at/forschung/research-projects
 
 <a name="gettingstarted"></a>
 ## Getting Started
