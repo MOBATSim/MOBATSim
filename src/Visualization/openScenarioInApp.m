@@ -7,7 +7,7 @@
 % 3- opens the drivingScenarioDesigner APP to simulate the vehicle trajectories in the Cuboid World or using Unreal Engine 4
 
 %% Load all the road information 
-MOBATKent_Scenario = scenario_map_v1(); % Output of a function automatically generated from the drivingScenarioDesigner after designing the roads
+MOBATKent_Scenario = loadScenarioSpecs_2D_3D(); % Output of a function automatically generated from the drivingScenarioDesigner after designing the roads
 
 %% Load all vehicles and generate Trajectories
 step_length = 20; % Sampling of WAYPOINTS and SPEEDS -> if this script takes too long to run, increase this number!

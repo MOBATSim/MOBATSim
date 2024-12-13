@@ -41,7 +41,7 @@ classdef VehiclePredictor < handle
     
     properties
         % Environment
-        drivingScenarioRoads    (:,:) drivingScenario = scenario_map_v1()   % driving scenario, but only containing roads 
+        drivingScenarioRoads    (:,:) drivingScenario = loadScenarioSpecs_2D_3D()   % driving scenario, but only containing roads 
     end
     
     methods
