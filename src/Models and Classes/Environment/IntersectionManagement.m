@@ -50,7 +50,7 @@ classdef IntersectionManagement < handle
             %% Parameters for the Intelligent Decision AIM algorithm
             % edit the parameters below to tune the algorithm
             obj.AIMparams.energyEquation = false; % (false -> time optimized approach, true -> energy optimized approach)
-            obj.AIMparams.criticalETA = 10; % delta_TTR in our paper
+            obj.AIMparams.criticalETA = 10; % delta_TTR in our paper HART2019 (link in the readme.md file)
             obj.AIMparams.alpha = 0.072;
             obj.AIMparams.alpha2 = 0.001;
             %platooning control isn't working as expected, therefore a
@@ -264,7 +264,7 @@ classdef IntersectionManagement < handle
         
         function priorityGroup = getPriorityGroup(obj, vehicles, arrivingGroup) % get first order vehicle group which only is considered in the algorithm
             % in this function we delimitate vehicles with close ETAs. The
-            % parameter we are using is criticalETA (in our paper: deltaETA)
+            % parameter we are using is criticalETA (in our paper HART2019: deltaETA (link in the readme.md file))
             
             % directions from that the vehicles enter the intersection
             arrivingDirection = arrivingGroup(:,2);
@@ -521,6 +521,8 @@ classdef IntersectionManagement < handle
                 % To further test the safety filter (verification of the "go" actions taken by the AIM) one can
                 % overwrite the values of "atPassing" and "atInput" with conflicting paths
                 % in order to see if the "verified" variable results "false".
+                % Refer to our paper SARAOGLU2022 (link in the readme.md file) for more details 
+                % regarding the safety filter based on the control protocol synthesis
                 [verified, currentSafeActions] = TSIntersection.verifyPlannedAIMActions(lower(atInput), lower(atPassing), pathConflicts, selectedCombination);
                 
                 if verified
