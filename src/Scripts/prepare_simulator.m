@@ -21,7 +21,7 @@ function prepare_simulator(options)
 
     end
     
-    % To keep the command window clear
+    %% Keep the command window clear
     hold off
     warning off
 
@@ -44,8 +44,7 @@ function prepare_simulator(options)
     
 
     %% Check if preparation can be skipped
-
-    % initial conditions
+    % Initial conditions
     simNotStarted = isempty(evalin('base','who(''-regexp'', ''V[0-9]*_'')'));
     configExists = evalin('base','exist(''configs'',''var'')');
     
@@ -71,7 +70,6 @@ function prepare_simulator(options)
     end
     
     %% Clear all data and release maps including invisible handles to make sure that the simulations can be repeated
-    
     if evalin('base','exist(''Map'',''var'')')
         evalin('base','clear all');
         evalin('base','close all');
@@ -91,28 +89,37 @@ function prepare_simulator(options)
     Map.Vehicles = Vehicles;
     Map.initCarDescriptionPlot();
 
-    % Create Binary Occupancy Grid Map
+    %% Create Binary Occupancy Grid Map
     [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
     
-    % Check selected starting and destination points are valid
-    forbiddenNodes = [brakingNodes; stoppingNodes]; % vehicles should not stop in front or in the intersection
-    invalidNodes = checkNodesValid([startingPoints, destinationPoints], forbiddenNodes);
+    %% Check selected starting and destination points are valid
+    forbiddenNodes = [brakingNodes; stoppingNodes]; % vehicles should not stop in front or in the intersection    
+    occupiedNodes = [startingPoints, destinationPoints];
+    
+    invalidNodes = [];
+    for i=1:numel(occupiedNodes)
+        % check if an occupied node is actually a forbidden node
+        if any(occupiedNodes(i) == forbiddenNodes,'all')
+            invalidNodes(end+1) = occupiedNodes(i); %#ok<AGROW>
+        end
+    end
+    
     if ~isempty(invalidNodes)
         % Construct an exception for wrong waypoints
         errID = 'PREPARATION:NodesOccupied';
-        msg = "Vehicles starting waypoint or destination waypoint is on forbidden nodes: " + strjoin(string(invalidNodes));
+        msg = "Vehicles starting or destination waypoint is on forbidden nodes: " + strjoin(string(invalidNodes));
         baseException = MException(errID,msg);
         throw(baseException);
     end
     
-    % Open the MOBATSim Simulink Model
+    %% Open the MOBATSim Simulink Model
     open_system(options.modelName)
     
-    %% Initalize Analysis Window
+    %% Activative the Vehicle Analysis Window (optional)
     % Close Vehicle Analysis Window
     close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow'));
     
-    % Generate Analysing Classes
+    %% Initalize Analysis Window
     if options.analysisWindow
         vehiclePredictor = VehiclePredictor(Vehicles, 2); % part for all calculations and stuff shown on vehicle analysing window
         vehicleAnalysingWindow_Gui = VehicleAnalysingWindow_Gui(vehiclePredictor);

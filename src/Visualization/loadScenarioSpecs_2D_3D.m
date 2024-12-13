@@ -1,7 +1,6 @@
 function scenario = loadScenarioSpecs_2D_3D()
 % Get map information from drivingScenarioDesigner
-% this function is used in 2D and 3D visualisation (openScenarioInApp.m)
-% make sure the function name is the same as file name.
+% The output of this function is used in various 2D and 3D visualisation options.
 
 % createDrivingScenario Returns the drivingScenario defined in the Designer
 
