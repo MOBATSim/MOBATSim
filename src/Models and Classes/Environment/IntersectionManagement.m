@@ -1,6 +1,5 @@
 classdef IntersectionManagement < handle
     %IntersectionManagement Manages the intersection passing order of the incoming vehicles. "Intersection" is also referred to as "Crossroad" in other (usually older) parts of the code.
-    %   Detailed explanation goes here
     
     % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
     
