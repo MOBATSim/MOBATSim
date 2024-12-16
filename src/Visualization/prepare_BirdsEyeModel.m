@@ -1,10 +1,10 @@
 % Contributors: Qianwei Yang, Mustafa Saraoglu
 
-%% Run this script for the Bird-Eye View Visualization of the main 2D simulation
+%% Run this script for the Bird's-Eye Model for the visualization of the simulation
 % This script:
 % 1- should be run after finishing the main simulation on the 2D plot because the logged data is required for this script.
 % 2- has to be run in order to update the trajectories after each driving scenario in the main simulation.
-% 3- creates the drivingScenario object that is used by the "ScenarioReader" block in BirdsEyeViewModel.slx Simulink Model.
+% 3- creates the drivingScenario object that is used by the "ScenarioReader" block in BirdsEyeModel.slx Simulink Model.
 
 %% Load all the road information 
 MOBATKent_Scenario = loadScenarioSpecs_2D_3D(); % Output of a function automatically generated from the drivingScenarioDesigner after designing the roads
