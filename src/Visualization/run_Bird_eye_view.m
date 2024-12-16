@@ -95,7 +95,7 @@ speed = V10_speed.Data(1:step_length:end);
 defineTrajectory(car10, waypoints, speed);
 
 %% Open the Simulink Model for the ScenarioReader block and the Bird-Eye View visualization
-open('BirdsEyeViewModel.slx')
+open('BirdsEyeModel.slx')
 
 %% This function uses try-catch-try structure as a workaround the geometric errors caused by the "trajectory" function
 function defineTrajectory(car, waypoints, speed)
