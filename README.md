@@ -22,19 +22,16 @@ MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation f
 
 ## **Version and Toolbox Requirements** 
 
-MOBATSim is developed with Release 2020b of MATLAB® and Simulink®. There may be issues and unexpected errors with other versions. Therefore, for running MOBATSim, the requirement is **R2020b** version for the following MathWorks products and toolboxes:
+MOBATSim was developed using **MATLAB® and Simulink® Release 2020b**. Please note that this project is no longer actively maintained, and no testing has been performed with newer versions of MATLAB® or Simulink®. As a result, there may be issues or unexpected errors with other versions. To run MOBATSim, the following MathWorks products and toolboxes (version **R2020b**) are required, based on the dependency analysis conducted in the project file:
 
 * MATLAB®
 * Simulink®
 * Automated Driving Toolbox™
-* Control System Toolbox™
-* Deep Learning Toolbox™
 * Model Predictive Control Toolbox™
-* Robotics System Toolbox™
-* Simulink 3D Animation™ (only required for the 3D Animation Virtual World)
-* Stateflow®
-* Symbolic Math Toolbox™
-
+* Simulink® 3D Animation™ (only required for the 3D Animation Visualization)
+* Simulink® Coder™
+  
+Note that some of the required functionalities may be shared across other toolboxes or products. For more detailed information, please run the dependency analysis for the project.
 
 <a name="citation"></a>
 ## Citation
