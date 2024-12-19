@@ -130,7 +130,7 @@ classdef GridMap < Map
                 end
                 %create an array with all angles between start and goal
                 phi1 = phiStart : direction*0.01 : phiGoal;
-                %set first and last, to make shure there are no gaps in the
+                %set first and last, to make sure there are no gaps in the
                 %plot because of rounding errors
                 phi1(1) = phiStart;
                 phi1(end) = phiGoal;
