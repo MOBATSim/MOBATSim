@@ -78,7 +78,7 @@ classdef TSIntersection < TransitionSystem
     methods(Static)
         function [verified, safeActions] = verifyPlannedAIMActions(atInput, atPassing,crossingPaths, plannedActionsByAIM)
             %VERIFYMODEL Verify the selected directions with model checking
-            %   Detailed explanation goes here
+
             arguments
                 atInput         (1,:) string % contains directions from vehicles at input nodes
                 atPassing       (1,:) string % contains directions from vehicles passing the intersection

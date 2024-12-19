@@ -51,7 +51,7 @@ classdef TransitionSystem < handle
         
         function plotedDigraph = plotTS(obj, figureNr)
             %PLOTEDDIGRAPH Plot a transition system as digraph.
-            %   Detailed explanation goes here
+
             arguments
                 obj
                 figureNr (1,1) double = 0 % the figure number the digraph should be plotted in
@@ -330,7 +330,7 @@ classdef TransitionSystem < handle
         function parallelizedTS = parallelize(transitionSystems)
             %PARALLELIZE Parallelise two transition systems that are active at
             %the same time.
-            %   Detailed explanation goes here
+
             arguments
                 transitionSystems    (1,:) TransitionSystem % the transition systems to parallelize
             end

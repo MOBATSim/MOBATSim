@@ -1,6 +1,6 @@
 classdef Car < ActivatablePlotObject
     %CAR  A graphical plotted component displaying a car in bep
-    %   Detailed explanation goes here
+    
     %
     %    __
     %   |  |
