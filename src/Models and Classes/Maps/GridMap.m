@@ -61,9 +61,9 @@ classdef GridMap < Map
         end %Constructor
         
         function generateMapVisual(obj,displayInGridCoordinates,lineWidth, showLaneNumbers, showNodeNumbers)
-            %This function plots any XML Map of MOBATSim. Keep in mind that you have to
+            %This function plots any Map of MOBATSim. Keep in mind that you have to
             %do a coordinate transformation between normal coordinates and grid / mobatsim
-            %Input: XML Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
+            %Input: Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
             
             %% prepare everything
             hold off
@@ -241,7 +241,7 @@ classdef GridMap < Map
         function [bogMap,xOff,yOff] = generateBOGrid(map)
             %create binary occupancy grid object and grid location objects
             %all cells are drawn like pixel and connect to each other
-            %Input: XML map object
+            %Input: map object
             %Output: binary occupancy map object, x-offset, y-offset
             
             %% prepare for drawing
@@ -389,7 +389,7 @@ classdef GridMap < Map
         
         function bogPath = generate_BOGPath(map,path,carID,oldBOGPath)
             %This is helper function that plots the current position and path of all Vehicles on the map
-            %Input: map is the XML map object,
+            %Input: map is the map object,
             %displayInGridCoordinates is a boolean: true = display grid, false = display normal plot
             
             %% prepare Path colors
