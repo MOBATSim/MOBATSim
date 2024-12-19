@@ -27,6 +27,7 @@ MOBATSim was developed using **MATLAB® and Simulink® Release 2020b**. Please n
 * MATLAB®
 * Simulink®
 * Automated Driving Toolbox™
+* Navigation Toolbox™
 * Model Predictive Control Toolbox™
 * Simulink® 3D Animation™ (only required for the 3D Animation Visualization)
 * Simulink® Coder™
