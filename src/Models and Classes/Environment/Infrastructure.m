@@ -82,7 +82,7 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             end
             
             
-            %% Get the braking flag arrays (stop commands) from all crossroad units (AIM algorithms)
+            %% Get the braking flag arrays (stop commands) from all intersection I2V units (AIM algorithms)
             StopCommands = cat(1,obj.map.AIM_Units.vehicleOrders);
             
             %% If Stop command is given -> brake between the "incoming node" and the "conflict zone" at the intersection zone
@@ -105,8 +105,20 @@ classdef Infrastructure < matlab.System & handle & matlab.system.mixin.Propagate
             %% This Infrastructure Block also handles: Collision detection
             if obj.getCurrentTime>0.1 % If you check collision right away, all vehicles collide at time 0.0
                 allVehiclePositions = cat(1,cat(1,cat(1,obj.map.Vehicles).dynamics).position);
-                allVehicleDistancesMatrix = dist(allVehiclePositions'); % Distance between all vehicles
+                               
+                % Calculate pairwise distance between all vehicles
+                allVehicleDistancesMatrix = zeros(length(obj.map.Vehicles));
+                for i = 1:length(obj.map.Vehicles)
+                    for j = i+1:length(obj.map.Vehicles)
+                        % Calculate Euclidean distance between vehicles i and j
+                        % Only the upper triangular matrix with (i,j) is needed as the matrix is symmetric
+                        allVehicleDistancesMatrix(i, j) = sqrt((allVehiclePositions(i, 1) - allVehiclePositions(j, 1))^2 + (allVehiclePositions(i, 3) - allVehiclePositions(j, 3))^2);
+                    end
+                end
+
+                % Find vehicles closer than the threshold to check for collision
                 [row,column] = find(triu(allVehicleDistancesMatrix<obj.collisionCheckingDistanceThreshold,1)); % Find all values lower than obj.collisionCheckingDistanceThreshold to check for collisions
+                
                 if ~isempty(column)
                     for k = 1:length(column) % If there are vehicles closer than the threshold, check the collision for vehicle column(k) to row(k)
                         obj.map.Vehicles(column(k)).checkCollisionBetweenVehicles(obj.map.Vehicles(row(k)));

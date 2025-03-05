@@ -61,9 +61,9 @@ classdef GridMap < Map
         end %Constructor
         
         function generateMapVisual(obj,displayInGridCoordinates,lineWidth, showLaneNumbers, showNodeNumbers)
-            %This function plots any XML Map of MOBATSim. Keep in mind that you have to
+            %This function plots any Map of MOBATSim. Keep in mind that you have to
             %do a coordinate transformation between normal coordinates and grid / mobatsim
-            %Input: XML Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
+            %Input: Map object of MOBATSim, boolean wether to plot mobatsim or grid coordinates
             
             %% prepare everything
             hold off
@@ -130,7 +130,7 @@ classdef GridMap < Map
                 end
                 %create an array with all angles between start and goal
                 phi1 = phiStart : direction*0.01 : phiGoal;
-                %set first and last, to make shure there are no gaps in the
+                %set first and last, to make sure there are no gaps in the
                 %plot because of rounding errors
                 phi1(1) = phiStart;
                 phi1(end) = phiGoal;
@@ -241,7 +241,7 @@ classdef GridMap < Map
         function [bogMap,xOff,yOff] = generateBOGrid(map)
             %create binary occupancy grid object and grid location objects
             %all cells are drawn like pixel and connect to each other
-            %Input: XML map object
+            %Input: map object
             %Output: binary occupancy map object, x-offset, y-offset
             
             %% prepare for drawing
@@ -363,7 +363,7 @@ classdef GridMap < Map
                 phiStart = angle(complex((pStart(1)-pCenter(1)) , (pStart(2)-pCenter(2))));
                 phiGoal = angle(complex((pGoal(1)-pCenter(1)) , (pGoal(2)-pCenter(2))));
                 direction = sign(circ(t,3));
-                % make angle allways usable
+                % make angle always usable
                 if phiStart <0
                     phiStart = phiStart + 2*3.1415;
                 end
@@ -389,7 +389,7 @@ classdef GridMap < Map
         
         function bogPath = generate_BOGPath(map,path,carID,oldBOGPath)
             %This is helper function that plots the current position and path of all Vehicles on the map
-            %Input: map is the XML map object,
+            %Input: map is the map object,
             %displayInGridCoordinates is a boolean: true = display grid, false = display normal plot
             
             %% prepare Path colors
@@ -568,7 +568,7 @@ classdef GridMap < Map
                 %is closest to the radius
                 nextPix = [];   %the next pixel to draw in grid
                 nextPhi = 0;
-                deltaR = 200000;     %set up distance to the radius point with angle phi to be allways higher first try
+                deltaR = 200000;     %set up distance to the radius point with angle phi to be always higher first try
                 %for every neighbour
                 for x = -1 : 1
                     for y = -1 : 1

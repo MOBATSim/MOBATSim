@@ -1,6 +1,6 @@
 classdef Map < handle
     %Map Superclass for all maps.
-    %   Detailed explanation goes here
+
     
     % Contributors: Fabian Hart, Mustafa Saraoglu, Qianwei Yang, Johannes Pintscher
     

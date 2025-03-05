@@ -1,13 +1,13 @@
 % Contributors: Qianwei Yang, Mustafa Saraoglu
 
-%% Run this script for the Bird-Eye View Visualization of the main 2D simulation
+%% Run this script for the Bird's-Eye Model for the visualization of the simulation
 % This script:
 % 1- should be run after finishing the main simulation on the 2D plot because the logged data is required for this script.
 % 2- has to be run in order to update the trajectories after each driving scenario in the main simulation.
-% 3- creates the drivingScenario object that is used by the "ScenarioReader" block in BirdsEyeViewModel.slx Simulink Model.
+% 3- creates the drivingScenario object that is used by the "ScenarioReader" block in BirdsEyeModel.slx Simulink Model.
 
 %% Load all the road information 
-MOBATKent_Scenario = scenario_map_v1(); % Output of a function automatically generated from the drivingScenarioDesigner after designing the roads
+MOBATKent_Scenario = loadScenarioSpecs_2D_3D(); % Output of a function automatically generated from the drivingScenarioDesigner after designing the roads
 
 %% Load all vehicles and generate Trajectories
 step_length = 20; % Sampling of WAYPOINTS and SPEEDS -> if this script takes too long to run, increase this number!
@@ -95,7 +95,7 @@ speed = V10_speed.Data(1:step_length:end);
 defineTrajectory(car10, waypoints, speed);
 
 %% Open the Simulink Model for the ScenarioReader block and the Bird-Eye View visualization
-open('BirdsEyeViewModel.slx')
+open('BirdsEyeModel.slx')
 
 %% This function uses try-catch-try structure as a workaround the geometric errors caused by the "trajectory" function
 function defineTrajectory(car, waypoints, speed)

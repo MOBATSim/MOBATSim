@@ -1,7 +1,6 @@
 classdef (Abstract) ActivatablePlotObject < handle
     %ACTIVATABLEPLOTOBJECT A basic class for all plotted objects that could
     %be activated to allow showing them
-    %   Detailed explanation goes here
     
     % Contributors: Johannes Pintscher
     

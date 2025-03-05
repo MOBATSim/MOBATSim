@@ -2,7 +2,7 @@ classdef VehiclePredictor < handle
     %VEHICLEPREDICTOR Makes all the predictions used by Vehicle Analysing Window
     %   Detailed explanation goes here 
     
-    % Contributors: Johannes Pintscher
+    % Contributors: Johannes Pintscher, Mustafa Saraoglu
     
     properties
         % Simulation
@@ -41,13 +41,13 @@ classdef VehiclePredictor < handle
     
     properties
         % Environment
-        drivingScenarioRoads    (:,:) drivingScenario = scenario_map_v1()   % driving scenario, but only containing roads 
+        drivingScenarioRoads    (:,:) drivingScenario = loadScenarioSpecs_2D_3D()   % driving scenario, but only containing roads 
     end
     
     methods
         function obj = VehiclePredictor(vehicles, egoVehicleId)
             %VEHICLEPREDICTOR Construct an instance of this class
-            %   Detailed explanation goes here
+
             
             % set properties
             obj.vehicles = vehicles;
@@ -204,8 +204,13 @@ classdef VehiclePredictor < handle
             % transform positions from global to ego coordinate system
             [positionsToEgo, yawToEgo] = obj.transformToEgoCoord(positions2D, orientations(:,4));
             
-            % get all vehicles in radius to ego vehicle
-            distancesToOthers = dist(positionsToEgo,positionsToEgo(egoVehicle.id,:)'); % calculate distances from ego vehicle to other vehicles
+            % get all vehicles in radius to ego vehicle            
+            distancesToOthers = zeros(length(obj.vehicles),1);
+            for i = 1:length(distancesToOthers)
+                % Calculate Euclidean distance between the ego vehicle and the others
+                distancesToOthers(i) = sqrt((positionsToEgo(i, 1) - positionsToEgo(egoVehicle.id,1))^2 + (positionsToEgo(i, 2) - positionsToEgo(egoVehicle.id,2))^2);
+            end
+            
             nearVehicles = distancesToOthers<radius; % select only vehicles closer than 150 m for plotting
             nearVehicles(egoVehicle.id) = 0; % remove ego vehicle from list
             

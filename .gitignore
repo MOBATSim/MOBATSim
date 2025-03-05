@@ -5,6 +5,7 @@
 # Windows default autosave extension
 *.asv
 LICENCE
+Thumbs.db
 
 # OSX / *nix default autosave extension
 *.m~

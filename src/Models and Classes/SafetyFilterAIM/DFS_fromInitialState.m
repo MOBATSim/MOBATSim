@@ -2,6 +2,8 @@ function [newTrm] = DFS_fromInitialState(Trm,initialState)
 %   DFS Algorithm to get all reachable states from the initial state
 
 % Contributors: Mustafa Saraoglu
+% Based on: https://github.com/MOBATSim/TSModelCheckerMATLAB which is
+% forked from: https://github.com/johannes-pi/TSModelCheckerMATLAB
 
 notVisitedStates = unique([Trm(:,1);Trm(:,2)]); % Gather all the unique states
 notVisitedStates(1,:) = []; % Remove the initial State
@@ -24,8 +26,6 @@ while ~isempty(PushedStates) % Continue until no more states to push
         PushedStates(1,:) = []; % Remove from the stack
         
     end
-    
-    
     
 end
 

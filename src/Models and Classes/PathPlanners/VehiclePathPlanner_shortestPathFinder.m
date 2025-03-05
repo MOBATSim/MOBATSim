@@ -40,7 +40,9 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
         end
         
         function futureData = deleteCollidedVehicleFutureData(~,futureData)
-            % TODO: fix the architecture for this abstract method later
+            % Actually, shortestPathFinder doesn't need to consider the
+            % other vehicles' future data as it doesn't plan according to
+            % the other vehicles but finds the shortest path on the graph
         end
     end
     

@@ -29,7 +29,7 @@ classdef PredictionBox < ActivatablePlotObject
         function obj = PredictionBox(axes, origin, width, option)
             %PredictionBox Construct an instance with origin at xPos,yPos and
             %distance in x direction
-            %   Detailed explanation goes here
+            
             arguments
                 axes                (1,1) matlab.ui.control.UIAxes
                 origin              (1,2) double = [0 0]        % [x y]

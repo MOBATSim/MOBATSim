@@ -1,6 +1,6 @@
 classdef CoverageArea < ActivatablePlotObject
     %COVERAGEAREA  A graphical plotted component that shows a covered area
-    %   Detailed explanation goes here
+    
     %
     %    __
     %   |  |

@@ -30,7 +30,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
         
-        function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop, laneChange] = stepImpl(obj, vehicleDetected) %#ok<INUSD>
+        function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop, laneChange] = stepImpl(obj, vehicleDetected)
             %This block shouldn't run if the ego vehicle has reached its destination
             if obj.vehicle.pathInfo.destinationReached
                 SpeedReference=0;
@@ -100,12 +100,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 end
                 
             end
-            
-            
-            
-            
-            
-            
+                        
             if(obj.vehicle.pathInfo.stopAt ~= 0)
                 %Output 5: Distance to stop before an intersection
                 Dist2Stop = norm(obj.vehicle.dynamics.position - obj.vehicle.map.get_coordinates_from_waypoint(obj.vehicle.pathInfo.stopAt));
@@ -121,7 +116,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             
             
         end
-        %% helper function
+        %% Helper functions for rule-based lane changing decisions for the Ego vehicle (Vehicle 2)
         function laneChange = switch_decision(obj)
             
             if checkNecessaryConditionsforLaneChanging(obj)

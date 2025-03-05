@@ -1,6 +1,6 @@
 classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.Propagates & matlab.system.mixin.SampleTime & matlab.system.mixin.CustomIcon
     %LocalTrajectoryPlanner Superclass for generating necessary inputs for the lateral controllers.
-    %   Detailed explanation goes here
+
     
     % Contributors: Mustafa Saraoglu, Qihang Shi, Qianwei Yang, Johannes Pintscher, Manuel Schirmer
     
@@ -23,7 +23,7 @@ classdef LocalTrajectoryPlanner < matlab.System & handle & matlab.system.mixin.P
     methods
         function obj = LocalTrajectoryPlanner(varargin)
             %WAYPOINTGENERATOR Construct an instance of this class
-            %   Detailed explanation goes here
+
             setProperties(obj,nargin,varargin{:});
         end
     end

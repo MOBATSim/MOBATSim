@@ -56,9 +56,10 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
             % Update Vehicle Frenet Coordinates <s,d>
             obj.vehicle.updateVehicleFrenetPosition(s,d)
             
-            if changeLane 
+            if changeLane
+                % Generate lane changing points according to minimum lateral jerk trajectory 
+                % for the lateral controllers to follow
                 obj.laneChangingPoints  = obj.generateMinJerkTrajectory(obj.vehicle, obj.laneChangeTime, changeLane, s, currentRoute);
-                % TODO: Update necessary when current trajectory changes during maneuver
             end
             
             if ~isempty(obj.laneChangingPoints) % Executing maneuver

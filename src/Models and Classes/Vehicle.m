@@ -332,8 +332,9 @@ classdef Vehicle < handle
             p4r = centerP+Rmatrix*p4;
             
             Hitbox = [p1r p2r p3r p4r];
-            %Hitbox = [p1r p2r p3r p4r p1r]; %use this if we want to plot the collision scene like X-Ray
             
+            % Uncomment this for plotting the collision scene in details
+            %Hitbox = [p1r p2r p3r p4r p1r]; 
             
         end
         
@@ -376,7 +377,6 @@ classdef Vehicle < handle
         end
         
         %% SET/GET Functions to control the value changes in the properties
-        
         function setStopAtNextWaypoint(car, brakingFlag)
             % set stopAt if the vehicle should stop at next waypoint
             
@@ -460,8 +460,8 @@ classdef Vehicle < handle
         end
         
         function updateVehicleFrenetPosition(car, s,d)
-            car.pathInfo.s = s; % driven length in Frenet
-            car.pathInfo.d = d; % lateral offset in Frenet
+            car.pathInfo.s = s; % Driven longitudinal length in Frenet frame
+            car.pathInfo.d = d; % Lateral offset in Frenet frame
             car.pathInfo.routeEndDistance = car.pathInfo.routeLength-s; % Distance until the end of the current route
         end
         
@@ -497,9 +497,9 @@ classdef Vehicle < handle
             nextRoute = car.getCurrentRouteID(car.pathInfo.path,car.pathInfo.lastWaypoint);
             currentRoute = car.getRouteFromPath(car.pathInfo.path);
             
-            car.setCurrentRouteID(nextRoute);              % Vehicle - Set Functions
-            car.setCurrentRoute(currentRoute); % Vehicle - Set Functions
-            car.setRouteCompleted(false);                % Vehicle - Set Functions
+            car.setCurrentRouteID(nextRoute);           % Vehicle - Set Functions
+            car.setCurrentRoute(currentRoute);          % Vehicle - Set Functions
+            car.setRouteCompleted(false);               % Vehicle - Set Functions
         end
         
         

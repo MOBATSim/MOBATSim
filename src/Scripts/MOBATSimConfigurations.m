@@ -1,7 +1,7 @@
 classdef MOBATSimConfigurations
     %MOBATSimConfigurations Contains the configuration of the current
     %simulation
-    %   Detailed explanation goes here
+
     
     % Contributors: Johannes Pintscher, Mustafa Saraoglu
     
