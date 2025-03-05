@@ -1,5 +1,7 @@
-function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, map)
+function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, map, collisionReport)
     % Generation of vehicles
+    
+    % Contributors: Mustafa Saraoglu, Qihang Shi, Johannes Pintscher
     
     %% Names
     % To add a vehicle just add a new name to VehicleNames
@@ -32,11 +34,11 @@ function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, 
     dataLinksV2I = ones(1,nrVehicles);
 
     %% Starting points
-    % add default starting point 2 for every vehicle where no starting point is given
+    % Add default starting point "2" for every vehicle where no starting point is given
     startingPoints(end+1:nrVehicles) = 2;
     
     %% Destination points
-    % add default destination point 1 for every vehicle where no destination point is given
+    % Add default destination waypoint "1" for any vehicle that does not have a destination waypoint
     destinationPoints(end+1:nrVehicles) = 1;
     
     %% Sensors
@@ -44,21 +46,22 @@ function Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, 
     AEBdistance = 15.* ones(1,nrVehicles);
     
     %% Dynamics
-    % add default max speed 10 for every vehicle where no max speed is given
-    maxSpeeds(end+1:nrVehicles) = 10;
+    % Default max speed of 40 m/s for vehicles
+    maxSpeeds(maxSpeeds>40) = 40;
     
+    % Min deceleration value for emergency brakes
     minDeceleration = -9.15.* ones(1,nrVehicles); % -9.15 m/s^2 dec
-
-   
-    %% Generate vehicles
+ 
+    %% Instantiate Vehicles
     Vehicles = [];
-    for j=1:nrVehicles
-        % Generate vehicle
+    
+    for j=1:nrVehicles        
+        % New Vehicle
         NewVehicle = Vehicle(j,VehicleNames{j},startingPoints(j),destinationPoints(j),...
         maxSpeeds(j),sizes(j,:),dataLinksV2V(j,:),dataLinksV2I(j),masses(j),...
-        frontSensorRange(j),AEBdistance(j),minDeceleration(j),map);
+        frontSensorRange(j),AEBdistance(j),minDeceleration(j),map, collisionReport);
     
-        % Add vehicle to array
+        % Add new vehicle to the Vehicles array
         Vehicles = [Vehicles NewVehicle];  %#ok<AGROW>
     end
 end

@@ -11,6 +11,9 @@ classdef Ruler < ActivatablePlotObject
     %                 | label        
     % y-Axis <-      _|_             
     %              
+    
+    % Contributors: Johannes Pintscher
+    
     properties (Access = public)
         origin      % position of origin [x y]
         width       % width of ruler
@@ -28,7 +31,7 @@ classdef Ruler < ActivatablePlotObject
         function obj = Ruler(axes, origin, width, option)
             %RULER Construct an instance with origin at center lower end
             %and plot it into the parent axis component
-            %   Detailed explanation goes here
+
             arguments
                 axes                (1,1) matlab.ui.control.UIAxes
                 origin              (1,2) double = [0 0]        % [x y]

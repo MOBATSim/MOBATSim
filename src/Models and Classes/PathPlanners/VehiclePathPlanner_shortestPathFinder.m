@@ -4,6 +4,7 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
     % This template includes most, but not all, possible properties, attributes,
     % and methods that you can implement for a System object in Simulink.
     
+    % Contributors: Mustafa Saraoglu, Johannes Pintscher
 
     methods
         % Constructor
@@ -34,12 +35,14 @@ classdef VehiclePathPlanner_shortestPathFinder < VehiclePathPlanner
                 RouteID = [RouteID; obj.vehicle.map.getRouteIDfromPath([obj.vehicle.pathInfo.path(i)  obj.vehicle.pathInfo.path(i+1)])];
             end
             %The last three columns are to fit the data according to other PathPlanner FutureDatas
-            FuturePlan = [(ones(1,size(Path,2)-1).*obj.vehicle.id)' RouteID zeros(size(Path,2)-1,3) (ones(1,size(Path,2)-1)*-3)'];
+            FuturePlan = [(ones(1,size(Path,2)-1).*obj.vehicle.id)' RouteID zeros(size(Path,2)-1,3) (ones(1,size(Path,2)-1)*2)'];
             
         end
         
         function futureData = deleteCollidedVehicleFutureData(~,futureData)
-            % TODO: fix the architecture for this abstract method later
+            % Actually, shortestPathFinder doesn't need to consider the
+            % other vehicles' future data as it doesn't plan according to
+            % the other vehicles but finds the shortest path on the graph
         end
     end
     

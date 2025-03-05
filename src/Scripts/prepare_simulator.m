@@ -2,22 +2,29 @@ function prepare_simulator(options)
 %% Init file for MOBATSim    
     % This function prepares the simulation
     %   After calling this function the simulation can run
+    
+    % Contributors: Johannes Pintscher, Mustafa Saraoglu, Qianwei Yang, Erik Noack
+    
     arguments
-        options.Analysing           (1,1) logical   = false                 % Activate the analysing functions
-        options.modelName           (1,1) string    = 'MOBATSim'            % Name of the simulink model
-        options.mapName             (1,1) string    = 'Mobatkent'           % Name of the map
-        options.simStopTime         (1,1) double    = 80                    % Simulation stop time in seconds
-        options.simTs               (1,1) double    = 0.02                  % Simulation time step: sample time of the simulation (may not be stable if changed)
-        options.scenarioName        (1,1) string    = 'Urban City Traffic'  % Scenario sets start points, destination points and maxSpeeds
-        options.startingPoints      (1,:) double    = []                    % Custom starting points for vehicles
-        options.destinationPoints   (1,:) double    = []                    % Custom destination points for vehicles
-        options.maxSpeeds           (1,:) double    = []                    % Custom max speeds for vehicles
-        options.simpleMap           (1,1) logical   = false                 % Displays the map in a simpler way
+        options.modelName         (1,1) string    = 'MOBATSim'      % Name of the simulink model
+        options.mapName           (1,1) string    = 'Mobatkent'     % Name of the map
+        options.scenarioName      (1,1) string    = 'Scenario 1'    % Scenario sets start points, destination points and maxSpeeds
+        options.simStopTime       (1,1) double    = 120             % Simulation stop time in seconds
+        options.simTs             (1,1) double    = 0.02            % Simulation time step: sample time of the simulation (may not be stable if changed)
+        options.IM_Mode           (1,1) IM_Algorithm_Enum = IM_Algorithm_Enum.IntelligentDecision % the mode in which the intersection management algorithm operates
+        options.simpleMap         (1,1) logical   = false           % Displays the map without waypoint or route numbers
+        options.startingPoints    (1,:) double    = []              % Custom starting points for vehicles
+        options.destinationPoints (1,:) double    = []              % Custom destination points for vehicles
+        options.maxSpeeds         (1,:) double    = []              % Custom max speeds for vehicles
+        options.collisionReport   (1,1) double    = 0               % 0 = no report, 1= Detailed collision report, 2=Only intersection
+        options.analysisWindow    (1,1) logical   = false           % Activates the vehicle analysis window
+
     end
-       
+    
+    %% Keep the command window clear
     hold off
     warning off
-    mpcverbosity off;
+
     %% Load Scenario
     [startingPoints, destinationPoints, maxSpeeds] = load_scenario(options.scenarioName);
     
@@ -37,8 +44,7 @@ function prepare_simulator(options)
     
 
     %% Check if preparation can be skipped
-
-    % initial conditions
+    % Initial conditions
     simNotStarted = isempty(evalin('base','who(''-regexp'', ''V[0-9]*_'')'));
     configExists = evalin('base','exist(''configs'',''var'')');
     
@@ -53,8 +59,9 @@ function prepare_simulator(options)
                                                         startingPoints, ...
                                                         destinationPoints, ...
                                                         maxSpeeds, ...
-                                                        options.Analysing, ...
-                                                        options.simpleMap);
+                                                        options.analysisWindow, ...
+                                                        options.simpleMap, ...
+                                                        options.IM_Mode);
         
         % if there are no differences, preparation is done                                        
         if ~any(differences)
@@ -63,7 +70,6 @@ function prepare_simulator(options)
     end
     
     %% Clear all data and release maps including invisible handles to make sure that the simulations can be repeated
-    
     if evalin('base','exist(''Map'',''var'')')
         evalin('base','clear all');
         evalin('base','close all');
@@ -71,41 +77,50 @@ function prepare_simulator(options)
 
     %% Load the Map
     [Route_LaneNumber, waypoints, connections_translation, connections_circle, ...
-        startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_Mobatkent_from_opendrive();%load extended map
-        
+        startingNodes, brakingNodes, stoppingNodes, leavingNodes] = load_MapSpecifications();
+
     %% Generate the 2D Map and the instance from the Map class
-    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,"showLaneNumbers",~options.simpleMap,"showNodeNumbers",~options.simpleMap);
+    Map = GridMap(options.mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes,Route_LaneNumber,options.IM_Mode,"showLaneNumbers",~options.simpleMap,"showNodeNumbers",~options.simpleMap);
 
     %% Load Vehicles    
-    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map);
+    Vehicles = load_vehicles(startingPoints, destinationPoints, maxSpeeds, Map, options.collisionReport);
 
     %% Initialize Vehicles on the Map
     Map.Vehicles = Vehicles;
     Map.initCarDescriptionPlot();
 
-    % Create Binary Occupancy Grid Map
+    %% Create Binary Occupancy Grid Map
     [Map.bogMap,Map.xOffset,Map.yOffset] = Map.generateBOGrid(Map);
     
-    % Check selected starting and destination points are valid
-    forbiddenNodes = [brakingNodes; stoppingNodes]; % vehicles should not stop in front or on crossroad
-    invalidNodes = checkNodesValid([startingPoints, destinationPoints], forbiddenNodes);
+    %% Check selected starting and destination points are valid
+    forbiddenNodes = [brakingNodes; stoppingNodes]; % vehicles should not stop in front or in the intersection    
+    occupiedNodes = [startingPoints, destinationPoints];
+    
+    invalidNodes = [];
+    for i=1:numel(occupiedNodes)
+        % check if an occupied node is actually a forbidden node
+        if any(occupiedNodes(i) == forbiddenNodes,'all')
+            invalidNodes(end+1) = occupiedNodes(i); %#ok<AGROW>
+        end
+    end
+    
     if ~isempty(invalidNodes)
         % Construct an exception for wrong waypoints
         errID = 'PREPARATION:NodesOccupied';
-        msg = "Vehicles starting waypoint or destination waypoint is on forbidden nodes: " + strjoin(string(invalidNodes));
+        msg = "Vehicles starting or destination waypoint is on forbidden nodes: " + strjoin(string(invalidNodes));
         baseException = MException(errID,msg);
         throw(baseException);
     end
     
-    % Open the MOBATSim Simulink Model
+    %% Open the MOBATSim Simulink Model
     open_system(options.modelName)
     
-    %% Initalize Analysis Window
+    %% Activative the Vehicle Analysis Window (optional)
     % Close Vehicle Analysis Window
     close(findall(groot,'Type','figure','Tag','vehicleAnalysingWindow'));
     
-    % Generate Analysing Classes
-    if options.Analysing
+    %% Initalize Analysis Window
+    if options.analysisWindow
         vehiclePredictor = VehiclePredictor(Vehicles, 2); % part for all calculations and stuff shown on vehicle analysing window
         vehicleAnalysingWindow_Gui = VehicleAnalysingWindow_Gui(vehiclePredictor);
         assignin('base','vehiclePredictor',vehiclePredictor);
@@ -113,7 +128,7 @@ function prepare_simulator(options)
         vehicleAnalysingWindow_Gui = false;
     end   
       
-    %% Make a MOBATSim Configuration
+    %% Save configuration
     configs = MOBATSimConfigurations(options.modelName, ...
                                      options.mapName, ...
                                      options.simStopTime, ...
@@ -122,8 +137,9 @@ function prepare_simulator(options)
                                      startingPoints, ...
                                      destinationPoints, ...
                                      maxSpeeds, ...
-                                     options.Analysing, ...
-                                     options.simpleMap);
+                                     options.analysisWindow, ...
+                                     options.simpleMap, ...
+                                     options.IM_Mode);
         
 
     %% Assign all needed workspace variables to the "base" workspace

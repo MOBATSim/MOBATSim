@@ -1,7 +1,9 @@
 classdef I2V < matlab.System & matlab.system.mixin.CustomIcon
-    % This block sends the signals of the AIM (Autonomous Intersection Manager) signals to the vehicles approaching or passing crossroads.
+    % This block sends the signals of the AIM (Autonomous Intersection Manager) signals to the vehicles approaching or passing intersections.
     %
 
+    % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
+    
     % Pre-computed constants
     properties(Access = private)
         Vehicles = evalin('base','Vehicles');
@@ -19,7 +21,7 @@ classdef I2V < matlab.System & matlab.system.mixin.CustomIcon
                         % find which row of the Flags refer to the current vehicle
                         row = vehicle.id==Flags(:,1);
                         % get the braking flag value determined by the infrastructure
-                        vehicle.status.brakingFlag = Flags(row,2);
+                        vehicle.setBrakingFlag(Flags(row,2));
                     end
                 end
             end

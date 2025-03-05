@@ -12,6 +12,8 @@ classdef Bar < ActivatablePlotObject
     % y-Axis <-                   
     %
     
+    % Contributors: Johannes Pintscher
+    
     properties (Access = public)
         origin      % position of origin [x y]
         width       % width of bar
@@ -26,7 +28,7 @@ classdef Bar < ActivatablePlotObject
         function obj = Bar(axes, origin, width, option)
             %BAR Construct an instance with origin, defined width and at
             %least a label next to bar
-            %   Detailed explanation goes here
+            
             arguments
                 axes                (1,1) matlab.ui.control.UIAxes
                 origin              (1,2) double = [0 0]        % [x y]

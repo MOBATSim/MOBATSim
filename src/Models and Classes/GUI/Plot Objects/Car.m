@@ -1,12 +1,14 @@
 classdef Car < ActivatablePlotObject
     %CAR  A graphical plotted component displaying a car in bep
-    %   Detailed explanation goes here
+    
     %
     %    __
     %   |  |
     %   |  |            ^ x
     %   |__|            |
     %               y <- 
+    
+    % Contributors: Johannes Pintscher
     
     properties (Access = public)
         position    % position of origin [x y]

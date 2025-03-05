@@ -1,6 +1,8 @@
 classdef Map < handle
     %Map Superclass for all maps.
-    %   Detailed explanation goes here
+
+    
+    % Contributors: Fabian Hart, Mustafa Saraoglu, Qianwei Yang, Johannes Pintscher
     
     properties
         mapName
@@ -9,12 +11,12 @@ classdef Map < handle
         directedGraph
         Vehicles                %vector of all vehicles: line = nr
         plots
-        crossroadUnits          % objects controling a crossroad
-        Route_LaneNumber % lane number of the route
+        AIM_Units               % The AIM algorithm controlling an intersection
+        Route_LaneNumber        % Lane number of the route
     end
     
     methods
-        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber)
+        function obj = Map(mapName,waypoints, connections_circle,connections_translation, startingNodes, brakingNodes, stoppingNodes, leavingNodes, Route_LaneNumber, IM_Mode)
             obj.mapName = mapName;
             obj.waypoints = waypoints;
             obj.Vehicles = []; % Vehicles are added after vehicle generation
@@ -25,11 +27,11 @@ classdef Map < handle
             obj.plots.trajectories = [];
             obj.Route_LaneNumber = Route_LaneNumber;
             
-            % Crossroad units            
+            %% LOAD AIM units            
             for i = 1:  size(startingNodes,1)
-                
-                obj.crossroadUnits = [obj.crossroadUnits; CrossroadUnit(i, startingNodes(i,:),brakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:))];
+                obj.AIM_Units = [obj.AIM_Units; IntersectionManagement(i, startingNodes(i,:),brakingNodes(i,:),stoppingNodes(i,:),leavingNodes(i,:), IM_Mode)];
             end
+            %% LOAD MAP
             %% Calculate curved distances (Lengths of circular routes)
             distancesCircle = ones(1,size(connections_circle,1)); % memory preallocation
             for i = 1:size(connections_circle,1)

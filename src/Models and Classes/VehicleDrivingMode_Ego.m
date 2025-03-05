@@ -3,6 +3,8 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
     % Behavioral Planner - Vehicle determines its driving mode.
     %
     
+    % Contributors: Qihang Shi, Mustafa Saraoglu, Johannes Pintscher
+   
     % Public, tunable properties
     properties
         Vehicle_id
@@ -28,7 +30,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
             obj.vehicle = evalin('base', "Vehicles(" + obj.Vehicle_id + ")");
         end
         
-        function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop, laneChange] = stepImpl(obj, vehicleDetected) %#ok<INUSD>
+        function [SpeedReference, DistanceReference,LeadSpeed, DrivingMode, Dist2Stop, laneChange] = stepImpl(obj, vehicleDetected)
             %This block shouldn't run if the ego vehicle has reached its destination
             if obj.vehicle.pathInfo.destinationReached
                 SpeedReference=0;
@@ -98,28 +100,23 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                 end
                 
             end
-            
-            
-            
-            
-            
-            
+                        
             if(obj.vehicle.pathInfo.stopAt ~= 0)
-                %Output 5: Distance to stop before a crossroad
+                %Output 5: Distance to stop before an intersection
                 Dist2Stop = norm(obj.vehicle.dynamics.position - obj.vehicle.map.get_coordinates_from_waypoint(obj.vehicle.pathInfo.stopAt));
                 if DrivingMode ~= 3
-                    % choose approach the crossroad when not stopping
+                    % Choose to approach the intersection when not stopping
                     DrivingMode = 4;
                 end
             else
-                %Output 5: Distance to stop before a crossroad
+                %Output 5: Distance to stop before an intersection
                 Dist2Stop = 0;
             end
             obj.vehicle.setDrivingMode(DrivingMode);
             
             
         end
-        %% helper function
+        %% Helper functions for rule-based lane changing decisions for the Ego vehicle (Vehicle 2)
         function laneChange = switch_decision(obj)
             
             if checkNecessaryConditionsforLaneChanging(obj)
@@ -139,8 +136,8 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
         end
         
         function allowed = checkNecessaryConditionsforLaneChanging(obj)
-            % Check if currentRoute variable Exists and NON-zero and NOT Single lane
-            if isempty(obj.vehicle.pathInfo.currentRoute) || obj.vehicle.pathInfo.currentRoute ==0 || obj.vehicle.map.get_lane_number_from_route(obj.vehicle.pathInfo.currentRoute)==1
+            % Check if currentRouteID variable Exists and NON-zero and NOT Single lane
+            if isempty(obj.vehicle.pathInfo.currentRouteID) || obj.vehicle.pathInfo.currentRouteID ==0 || obj.vehicle.map.get_lane_number_from_route(obj.vehicle.pathInfo.currentRouteID)==1
                 allowed = 0;
             else
                 % Check if there is enough distance in the route
@@ -152,7 +149,7 @@ classdef VehicleDrivingMode_Ego < matlab.System & matlab.system.mixin.Propagates
                         % Check if there is enough distance if the next route is also double lane and straight
                         % (plannedNextRoute for curved roads is dangerous because its curvature is unknown at the time)
                         plannedNextRoute = obj.vehicle.map.getRouteIDfromPath(obj.vehicle.pathInfo.path([2 3]));
-                        if ~isempty(plannedNextRoute) && ~(obj.vehicle.map.get_lane_number_from_route(plannedNextRoute)==1) && (obj.vehicle.pathInfo.currentTrajectory(3,1) == 0)
+                        if ~isempty(plannedNextRoute) && ~(obj.vehicle.map.get_lane_number_from_route(plannedNextRoute)==1) && (obj.vehicle.pathInfo.currentRoute(3,1) == 0)
                             allowed = 1;
                         else
                             allowed = 0;

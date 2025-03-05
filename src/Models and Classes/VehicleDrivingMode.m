@@ -2,6 +2,8 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
     % Behavioral Planner - Vehicle determines its driving mode.
     %
+    
+    % Contributors: Mustafa Saraoglu, Johannes Pintscher
 
     % Public, tunable properties
     properties
@@ -12,7 +14,6 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
     properties(Access = private)
         vehicle
         vehicles % for testing collision avoidance
-        oldNextWaypoint % check if next waypoint is free, for testing collision avoidance
     end
     
     methods
@@ -28,7 +29,6 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             % Perform one-time calculations, such as computing constants
             obj.vehicles = evalin('base','Vehicles'); % for testing collision avoidance
             obj.vehicle = obj.vehicles(obj.Vehicle_id);
-            obj.oldNextWaypoint = 0;
         end
                
         function [SpeedReference, DistanceReference, LeadSpeed, DrivingMode, Dist2Stop, laneChange] = stepImpl(obj, vehicleDetected)
@@ -88,94 +88,20 @@ classdef VehicleDrivingMode < matlab.System & matlab.system.mixin.Propagates ...
             end           
             
             if(obj.vehicle.pathInfo.stopAt ~= 0)
-                %Output 5: Distance to stop before a crossroad
+                %Output 5: Distance to stop before an intersection
                 Dist2Stop = norm(obj.vehicle.dynamics.position - obj.vehicle.map.get_coordinates_from_waypoint(obj.vehicle.pathInfo.stopAt));
                 if DrivingMode ~= 3
-                    % choose approach the crossroad when not stopping
+                    % Choose to approach the intersection when not stopping
                     DrivingMode = 4;
                 end
             else
-                %Output 5: Distance to stop before a crossroad
+                %Output 5: Distance to stop before an intersection
                 Dist2Stop = 0;
             end
             obj.vehicle.setDrivingMode(DrivingMode);           
             
-            
-            %%%%% Safety planner test %%%%%
-            enableSafetyPlanner = false; % condition to enable safety planner
-            if enableSafetyPlanner
-                % find an other car heading to the same waypoint
-                [lastWaypoints, nextWaypoints] = obj.getActiveWaypoints(obj.vehicles); % Get needed waypoints for check
-                
-                % check if next waypoint should be checked
-                checkNextWaypoint = (obj.oldNextWaypoint == lastWaypoints(obj.vehicle.id)) ... % when heading to another waypoint
-                                    || (obj.vehicle.dynamics.speed == 0); % or speed is zero
-                    
-                if checkNextWaypoint
-                    % check if next waypoint is free
-                    competingCarId = obj.checkNextWaypointClear(obj.vehicle.id, lastWaypoints, nextWaypoints);
-                    if competingCarId
-                        % a competing car to waypoint is found
-                        competingCarSpeed = obj.vehicles(competingCarId).dynamics.speed;
-                        if (competingCarSpeed ~= 0) ...
-                           || (competingCarSpeed == 0) && (competingCarId>=obj.vehicle.id)
-                            % stop when the other is already moving to next waypoint or
-                            % is waiting but has higher Id
-                            
-                            % Level 2 = Emergency Brake
-                            DrivingMode = 3;
-                        end
-                    end
-                end
-                
-                
-            end
         end
-        
-        function [lastWaypoints, nextWaypoints] = getActiveWaypoints(~, vehicles)
-            % get the waypoints all vehicle come from and go to
-            % ATTENTION: a vehicle should not pass a waypoint twice
-            
-            lastWaypoints = [];
-            nextWaypoints = [];
-            for i = 1:length(vehicles)
-                % get actual waypoint from every vehicle
-                pathInfo = vehicles(i).pathInfo;
-                % get last waypoint
-                lastWaypoints = [lastWaypoints; pathInfo.lastWaypoint];
-                % find the point after the last waypoint when not
-                % destination reached
-                if ~pathInfo.destinationReached
-                    nextWaypoint = pathInfo.path(find(pathInfo.path == pathInfo.lastWaypoint)+1);
-                    nextWaypoints = [nextWaypoints; nextWaypoint];
-                else
-                    % when destination is reached, last waypoint is the
-                    % next waypoint
-                    nextWaypoints = [nextWaypoints; pathInfo.lastWaypoint];
-                end
-                
-            end
-        end 
-        
-        function competingCarId = checkNextWaypointClear(~, carId, lastWaypoints, nextWaypoints)
-            % Check if an other, competing car is heading to next waypoint from an other waypoint
-
-            for i = 1:length(nextWaypoints)
-                if (nextWaypoints(carId) == nextWaypoints(i))&&(i~=carId)
-                    % Check only other cars with the same next waypoint
-                    if lastWaypoints(carId) ~= lastWaypoints(i)
-                        % Find other cars coming from an other waypoint
-                        % (on the same lane (last waypoint) sensor detects
-                        % other vehicle)
-                        competingCarId = i; % the other car also heading to this waypoint
-                        return
-                    end
-                end
-            end
-            % no other car found heading to the next waypoint
-            competingCarId = false;
-        end
-        
+     
         %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj

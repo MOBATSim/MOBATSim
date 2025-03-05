@@ -3,6 +3,8 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
     % Vehicle Sensor Block: Ideal radar implementation in MOBATSim.
     %
     
+    % Contributors: Mustafa Saraoglu, Qihang Shi, Johannes Pintscher
+    
     % Public, tunable properties
     properties
         Vehicle_id
@@ -44,7 +46,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             % Default values for NO DETECTION ->
             if obj.vehicle.pathInfo.destinationReached ...              % IF the vehicle has reached destination
                     || obj.vehicle.status.stop == true ...              % OR the vehicle has stopped
-                    || isempty(obj.vehicle.pathInfo.currentTrajectory)  % OR the vehicle has no planned trajectory
+                    || isempty(obj.vehicle.pathInfo.currentRoute)  % OR the vehicle has no planned route
                 
                 distanceToLeading = Inf;
                 distanceToRear = Inf;                
@@ -123,14 +125,14 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
             
             i = 1:length(Vehicles);
             i(car.id)=[]; % Remove the car with the same id
-            VehiclesOnSameRoute = Vehicles(i(car.pathInfo.currentRoute == [cat(1,Vehicles(i).pathInfo).currentRoute]));
+            VehiclesOnSameRoute = Vehicles(i(car.pathInfo.currentRouteID == [cat(1,Vehicles(i).pathInfo).currentRouteID]));
             
             if ~isempty(VehiclesOnSameRoute) % If there are other vehicles on the same route
                 for vehicle_=VehiclesOnSameRoute
                     % This exception happens only when following vehicles
                     % reach waypoints and not update their trajectory at the right place
                     if ~(car.pathInfo.laneId == vehicle_.pathInfo.laneId)
-                        % Sense side vehicle for a safe lane-changing (TODO: Register as Side vehicle for more complicated algorithms)
+                        % Perceive side vehicle for a safe lane-changing
                         relativeDistance = (car.pathInfo.s - vehicle_.pathInfo.s)-((vehicle_.physics.size(3)/2)+(car.physics.size(3)/2));
                         rearDetection(end+1,:) = [vehicle_.id relativeDistance]; %#ok<AGROW>
                     else
@@ -161,13 +163,13 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         function frontDetection = findVehiclesOnTheNextRoute(~,car,Vehicles)
             frontDetection = [];
             i = 1:length(Vehicles);
-            idx = car.map.getForwardNeighbourRoutes(car.pathInfo.currentRoute) == cat(2,cat(2,Vehicles(i).pathInfo).currentRoute);
+            idx = car.map.getForwardNeighbourRoutes(car.pathInfo.currentRouteID) == cat(2,cat(2,Vehicles(i).pathInfo).currentRouteID);
             [~, idx] = find(idx,length(i), 'first');
             
             for j=1:length(idx)
                 %Check if there is a vehicle on the next
                 %neighbouring routes                
-                relativeDistance = (norm(car.dynamics.position-car.pathInfo.currentTrajectory(2,:)) + Vehicles(idx(j)).pathInfo.s)-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
+                relativeDistance = (norm(car.dynamics.position-car.pathInfo.currentRoute(2,:)) + Vehicles(idx(j)).pathInfo.s)-((Vehicles(idx(j)).physics.size(3)/2)+(car.physics.size(3)/2));
                 frontDetection(end+1,:) = [Vehicles(idx(j)).id relativeDistance]; %#ok<AGROW>                          
             end
                     
@@ -176,7 +178,7 @@ classdef VehicleSensors < matlab.System & handle & matlab.system.mixin.Propagate
         function rearDetection = findVehiclesOnThePreviousRoutes(~,car,Vehicles)
             rearDetection = [];
             i = 1:length(Vehicles);
-            idx = car.map.getBackwardNeighbourRoutes(car.pathInfo.currentRoute) == cat(2,cat(2,Vehicles(i).pathInfo).currentRoute);
+            idx = car.map.getBackwardNeighbourRoutes(car.pathInfo.currentRouteID) == cat(2,cat(2,Vehicles(i).pathInfo).currentRouteID);
             [~, idx] = find(idx,length(i), 'first');
             
             for j=1:length(idx)

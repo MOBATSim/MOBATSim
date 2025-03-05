@@ -1,7 +1,9 @@
 classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propagates ...
         & matlab.system.mixin.CustomIcon
     % This Path Planner Block uses A* algorithm to find routes to reach the destination node according to the shared data from the other vehicles.
-
+    
+    % Contributors: Fabian Hart, Erik Noack, Mustafa Saraoglu, Laura Slabon
+    
     % Public, tunable properties
     properties
         Vehicle_id
@@ -35,42 +37,54 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 waypointReached=0;                                  %Output: Waypoint Reached enabler
             else
                 %% Check if the vehicle has reached a waypoint / Then it should reupdate its plan
-                if obj.vehicle.pathInfo.calculateNewPathFlag == 1 
+                if obj.vehicle.pathInfo.calculateNewPathFlag == 1
                     
-                    obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false       
-                    %% OtherVehiclesFutureData Processing
-                    OtherVehiclesFutureData = obj.CollectFutureData(obj.Map.Vehicles, CommunicationIDs);
-                    OtherVehiclesFutureData = obj.checkEmptyFutureData(OtherVehiclesFutureData); % Replace empty by zeros of nx6
-                    OtherVehiclesFutureData = obj.deleteCollidedVehicleFutureData(OtherVehiclesFutureData); % Delete collided Vehicles' Future Data
-                    
-                    %% This is an abstract method that is implemented separately in each PathPlanner subclass
-                    % Build the future plan by deriving the next routes and building the path
-                    previousPath = obj.vehicle.pathInfo.path;
-                    FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
-                    waypointReached =1;                                 %Output 2: Waypoint Reached enabler
-                    
-                    if ~isequal(previousPath,obj.vehicle.pathInfo.path) % If the vehicle has changed it's planned path
-                        currentRoute = obj.vehicle.generateCurrentRoute(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
-                        obj.vehicle.setCurrentRoute(currentRoute); % Set the new current Route
-                        currentTrajectory = obj.vehicle.generateTrajectoryFromPath(obj.vehicle.pathInfo.path);
-                        obj.vehicle.setCurrentTrajectory(currentTrajectory); % Generate the new current trajectory
-                        obj.vehicle.pathInfo.pathChangedCounter = obj.vehicle.pathInfo.pathChangedCounter + 1;
+                    %If not in intersection
+                    if obj.vehicle.status.atIntersection(2) == "x"
+                        
+                        obj.vehicle.setStopStatus(false); % Vehicle continues to move/ Stop Status -> set to false
+                        %% OtherVehiclesFutureData Processing
+                        OtherVehiclesFutureData = obj.CollectFutureData(obj.Map.Vehicles, CommunicationIDs);
+                        OtherVehiclesFutureData = obj.checkEmptyFutureData(OtherVehiclesFutureData); % Replace empty by zeros of nx6
+                        OtherVehiclesFutureData = obj.deleteCollidedVehicleFutureData(OtherVehiclesFutureData); % Delete collided Vehicles' Future Data
+                        
+                        %% This is an abstract method that is implemented separately in each PathPlanner subclass
+                        % Build the future plan by deriving the next routes and building the path
+                        previousPath = obj.vehicle.pathInfo.path;
+                        FuturePlan = obj.findPath(OtherVehiclesFutureData); %Output 1: Future plan of the vehicle
+                        waypointReached =1;                                 %Output 2: Waypoint Reached enabler
+                        
+                        if ~isequal(previousPath,obj.vehicle.pathInfo.path) % If the vehicle has changed it's planned path
+                            currentRouteID = obj.vehicle.getCurrentRouteID(obj.vehicle.pathInfo.path,obj.vehicle.pathInfo.lastWaypoint);
+                            obj.vehicle.setCurrentRouteID(currentRouteID); % Set the new current Route
+                            currentRoute = obj.vehicle.getRouteFromPath(obj.vehicle.pathInfo.path);
+                            obj.vehicle.setCurrentRoute(currentRoute); % Set the new route as current route
+                            obj.vehicle.pathInfo.pathChangedCounter = obj.vehicle.pathInfo.pathChangedCounter + 1;
+                        end
+                        
+                        obj.vehicle.pathInfo.futureData = FuturePlan;
+                        obj.vehicle.pathInfo.calculateNewPathFlag = 0;
+                        %% ------------------------------ FuturePlan Structure ------------------------------ nx6 ---------------
+                        % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | PlannerType
+                        % PlannerType: Digraph_Astar= 1, shortestPathFinder= 2
+                        
+                        %% If waypoint reached but in intersection -> Do not replan/change path
+                        elseif obj.vehicle.status.atIntersection(2) == "d" || obj.vehicle.status.atIntersection(2) == "i" || obj.vehicle.status.atIntersection(2) == "p"
+                            % Do not change the planned path after entering the intersection
+                            obj.vehicle.pathInfo.calculateNewPathFlag = 0;
+                            % Waypoint reached flag "true" to enable AIM algorithm to manage intersection
+                            waypointReached =1;
                     end
                     
-                    obj.vehicle.pathInfo.futureData = FuturePlan;
-                    obj.vehicle.pathInfo.calculateNewPathFlag = 0;
-                    %% ------------------------------ FuturePlan Structure ------------------------------ nx6 --------------- 
-                    % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | PlannerType
-                    % PlannerType: DigraphA*= -1, D*ExtraLite= -2, Shortest= -3, GridA*= non negative value
                 else
                     %% If the Vehicle is still on Route -> Vehicle's future plan stays the same
                     %Output: Waypoint Reached enabler
-                    waypointReached =0;                               
+                    waypointReached =0;
                 end
                 
                 %% Stop at next waypoint
                 obj.vehicle.setStopAtNextWaypoint(obj.vehicle.status.brakingFlag)
-
+                
             end
             
             %% Grid path generation
@@ -96,7 +110,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
                 OtherVehiclesFutureData = [0 0 0 0 0 0]; % Default nx6 Structure to avoid any size errors
             end
         end
-                       
+        
         function path = composePath(~,waypoints, startingPoint, endingPoint)
             %% define path from waypoints array
             predecessor = waypoints(endingPoint,2);
@@ -118,7 +132,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
             path = fliplr(path);
             
         end
-                       
+        
         %% Standard Simulink Output functions
         function s = saveObjectImpl(obj)
             % Set properties in structure s to values in object obj
@@ -211,7 +225,7 @@ classdef VehiclePathPlanner < matlab.System & handle & matlab.system.mixin.Propa
     %% Abstract Methods / Must be implemented by Subclasses
     methods (Abstract, Access = protected)
         % --------------------------------FuturePlan Structure----nx6-----------------------------------
-        % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | -1 for Digraph
+        % | car.id | RouteID | Estimated Average Speed | Estimated Entrance Time | Estimated Exit Time | 1 for Digraph_Astar, 2 for ShortestPathFinder
         FuturePlan = findPath(obj,OtherVehiclesFutureData)
         
         % Every Path Planner should delete the collided Vehicle Future Data in their own way

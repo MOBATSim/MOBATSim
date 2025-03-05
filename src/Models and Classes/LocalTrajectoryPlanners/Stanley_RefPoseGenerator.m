@@ -2,6 +2,8 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
     % This blocks generates the reference pose required by the Stanley Lateral Controller.
     %
     
+    % Contributors: Qihang Shi, Mustafa Saraoglu, Johannes Pintscher, Qianwei Yang, Manuel Schirmer
+    
     % Pre-computed constants
     properties(Access = private)
         referencePose = [0; 0; 0];
@@ -41,22 +43,23 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
                 
                 return;
             elseif obj.vehicle.pathInfo.routeCompleted % The Vehicle determines the initial trajectory and route
-                obj.vehicle.setInitialRouteAndTrajectory();
+                obj.vehicle.setInitialRoute();
             end
             
             % Calculate helping variables for the reference path calculation
-            currentTrajectory = obj.vehicle.pathInfo.currentTrajectory;
+            currentRoute = obj.vehicle.pathInfo.currentRoute;
             Vpos_C = [pose(1) pose(2)];
             
             % Cartesian to Frenet Coordinate Transformation
-            [s,d] = obj.Cartesian2Frenet(currentTrajectory,Vpos_C); % Determine current <s,d>
+            [s,d] = obj.Cartesian2Frenet(currentRoute,Vpos_C); % Determine current <s,d>
             
             % Update Vehicle Frenet Coordinates <s,d>
             obj.vehicle.updateVehicleFrenetPosition(s,d)
             
-            if changeLane 
-                obj.laneChangingPoints  = obj.generateMinJerkTrajectory(obj.vehicle, obj.laneChangeTime, changeLane, s, currentTrajectory);
-                % TODO: Update necessary when current trajectory changes during maneuver
+            if changeLane
+                % Generate lane changing points according to minimum lateral jerk trajectory 
+                % for the lateral controllers to follow
+                obj.laneChangingPoints  = obj.generateMinJerkTrajectory(obj.vehicle, obj.laneChangeTime, changeLane, s, currentRoute);
             end
             
             if ~isempty(obj.laneChangingPoints) % Executing maneuver
@@ -67,16 +70,16 @@ classdef Stanley_RefPoseGenerator < LocalTrajectoryPlanner
                     obj.finishLaneChangingManeuver(0.05);
                 end
             else % Add <delta s>
-                [s, ~] = obj.Cartesian2Frenet(currentTrajectory, centerFrontAxle_C); % Projection of font axle positon on current Frenet reference trajectory
+                [s, ~] = obj.Cartesian2Frenet(currentRoute, centerFrontAxle_C); % Projection of font axle positon on current Frenet reference trajectory
                 % Generate Reference Pose for Stanley / obj.ref_d is the reference lateral displacement value
-                [refPos, refOrientation] = obj.Frenet2Cartesian(s, obj.ref_d, currentTrajectory);%Coordinate Conversion function
+                [refPos, refOrientation] = obj.Frenet2Cartesian(s, obj.ref_d, currentRoute);%Coordinate Conversion function
             end
             
             %Required format for the Stanley controller
             obj.referencePose = [refPos(1); refPos(2); rad2deg(refOrientation)]; % Orientation in degree for Stanley
             
             % Check if the Waypoint is Reached
-            obj.vehicle.checkWaypointReached(currentTrajectory(2,:));
+            obj.vehicle.checkWaypointReached(currentRoute(2,:));
      
             %Output 1: Reference Pose on the followed trajectory
             referencePose = obj.referencePose';

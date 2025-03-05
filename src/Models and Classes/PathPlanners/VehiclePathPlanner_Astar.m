@@ -4,6 +4,8 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
     % This template includes the minimum set of functions required
     % to define a System object with discrete state.
     
+    % Contributors: Fabian Hart, Mustafa Saraoglu, Johannes Pintscher
+    
     methods
         % Constructor
         function obj = VehiclePathPlanner_Astar(varargin)
@@ -36,7 +38,7 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
             %path = [nr of nodes from start to finish]
             %% Initialization
             if isempty(futureData)
-                futureData = [0 0 0 0 0 -1]; % 1x6 to fit the output size
+                futureData = [0 0 0 0 0 1]; % 1x6 to fit the output size
             end
             
             % Create a table for all the waypoints (nodes) where each row index is an identifier for a waypoint
@@ -118,9 +120,9 @@ classdef VehiclePathPlanner_Astar < VehiclePathPlanner
                     %% Get another next possible waypoint to check -> Next iteration in loop
                     expandingWaypoint =  find(waypoints(:,6) == minCosts& waypoints(:,1)==1);
                     
-                    % if length(expandingWaypoint)>1 % In case there are two next possible waypoints with exact same costs == minCosts
-                    %   expandingWaypoint = expandingWaypoint(1);
-                    % end
+                    if length(expandingWaypoint)>1 % In case there are two next possible waypoints with exact same costs == minCosts
+                      expandingWaypoint = expandingWaypoint(1);
+                    end
                 end   
                 
             end

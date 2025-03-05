@@ -1,11 +1,14 @@
 classdef Arrow < ActivatablePlotObject
     %ARROW An arrow with flexible length
-    %   Detailed explanation goes here
+
     %
     %   /|\
     %    |          ^ x
     %    |          |
     %           y <- 
+    
+    % Contributors: Johannes Pintscher
+    
     properties (Access = public)
         origin      % position of origin [x y]
         headLength  % length of the x or y part of one side of the arrow head
@@ -19,7 +22,7 @@ classdef Arrow < ActivatablePlotObject
     methods
         function obj = Arrow(axes, origin, headLength, option)
             %ARROW Construct an arrow with origin at the arrow end
-            %   Detailed explanation goes here
+
             arguments
                 axes                (1,1) matlab.ui.control.UIAxes
                 origin              (1,2) double = [0 0]        % [x y]
