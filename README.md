@@ -2,10 +2,15 @@
 
 MOBATSim (Model-based Autonomous Traffic Simulation Framework) is a simulation framework based on MATLAB® and Simulink® that provides a set of customizable models and code for simulating automated driving systems. The project's main goal is to help users/students jump-start with a baseline template that lets them run traffic simulations, which also allows them to customize/experiment with path planning, decision-making, and control algorithms. The main use case is to run automated traffic simulations using Simulink models and MATLAB scripts/functions on a default map with streets and an intersection. By defining a driving scenario, the starting and destination points of the vehicles are set as initial conditions on the map. The trajectories of the simulated vehicles can be logged to assess the safety and the performance of the tested algorithm/controller or to visualize their behaviors using supported 2D and 3D visualization options. If you would like to read more about MOBATSim and how it can be used for simulation-based testing, make sure you check our [scientific paper](https://www.sciencedirect.com/science/article/pii/S2405896319304100).
 
-
 [![MOBATSim - MOBATSim](https://img.shields.io/static/v1?label=MOBATSim&message=MOBATSim&color=96D1AA&logo=github)](https://github.com/MOBATSim/MOBATSim)
 [![GitHub tag](https://img.shields.io/github/tag/MOBATSim/MOBATSim?include_prereleases=&sort=semver&color=96D1AA)](https://github.com/MOBATSim/MOBATSim/releases/)
 [![Cite our paper](https://img.shields.io/badge/Cite%20our%20paper-BibTex-blueviolet)](#citation)
+
+## Important Notice!
+
+**Project Status**: Archived
+
+**MOBATSim** project is no longer maintained. The repository remains publicly available for reference, but **no further updates, bug fixes, or support** will be provided. Thank you to everyone who has contributed, used, or supported this project!
 
 
 <img src="img/logo_big.jpg" alt="Combined Image" />
